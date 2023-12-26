@@ -4,5 +4,5 @@
 
 int main()
 {
-   
+  printf("Hello World from Merry!\n");  
 }
