@@ -1,0 +1,10 @@
+The memory allocators in Merry are of two types: EndMeet allocator and Temporary allocator.
+
+Temporary allocator is like the standard library provided allocator that provides memory for temporary things in the VM.
+The memory allocated by this allocator is almost freed immediately. EndMeet allocator have what can be called pools: small and big pools.
+The small pool is used when small amount of data is necessary whereas big pool is used when large amount of data is required.
+
+Temporary allocator recycles the initial memory while EndMeet can and will keep requesting for new memory if the ones in its control are consumed.
+EndMeet allocator is used by the VM's internal data structures for getting memory that is guranteed to be freed before the VM exits.
+
+Both allocators are thread safe.

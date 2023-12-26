@@ -67,13 +67,13 @@
 // for only x86_64 available
 #if defined(_MERRY_HOST_CPU_AMD_)
 // the CPU supports x86_64 instructions[can be set by intel processors as well]
-#define _ASP_HOST_CPU_x86_64_ARCH_ 1
+#define _MERRY_HOST_CPU_x86_64_ARCH_ 1
 #endif
 
 // for now we only do this for the linux systems because we don't know anything about other systems
 #if defined(__linux) || defined(__linux__) || defined(__gnu_linux__)
 // the os is linux
-#define _ASP_HOST_OS_LINUX_ 1
+#define _MERRY_HOST_OS_LINUX_ 1
 #endif
 
 #define _MERRY_TO_BOOL_(x) !!(x) // convert x to bool
@@ -87,9 +87,9 @@
 
 /*Based on optimizations, this may be set*/
 #if defined(_MERRY_OPTIMIZE_)
-#define _ASP_ALWAYS_INLINE static inline __attribute__((always_inline))
+#define _MERRY_ALWAYS_INLINE static inline __attribute__((always_inline))
 #else
-#define _ASP_ALWAYS_INLINE static inline
+#define _MERRY_ALWAYS_INLINE static inline
 #endif
 
 #define _MERRY_NO_DISCARD_ [[nodiscard]]
