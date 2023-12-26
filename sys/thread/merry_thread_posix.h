@@ -30,20 +30,20 @@
 /*Mutex*/
 struct MerryMutex
 {
-    pthread_mutex_t *mutex;
+    pthread_mutex_t mutex;
 };
 
 /*Condition variables*/
 struct MerryCond
 {
-    pthread_cond_t *cond;
+    pthread_cond_t cond;
 };
 
 /*Semaphores can be implemented when needed*/
 /*Threads*/
 struct MerryThread
 {
-    pthread_t *thread;
+    pthread_t thread;
 };
 
 #endif
