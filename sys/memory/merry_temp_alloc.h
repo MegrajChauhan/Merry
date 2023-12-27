@@ -42,10 +42,33 @@
 static mbptr_t merry_temp_start_address = NULL; // the starting address of the memory we will manage
 static mbptr_t merry_temp_end_address = NULL;   // the ending address of the memory we will manage
 static msize_t merry_temp_managed_size = 0;     // the size of memory managed by temporary allocator
-static mbptr_t merry_temp_current_pos = NULL;   // points to the first free byte of the managed block[Updated as the block gets used]
 static msize_t merry_temp_memory_in_use = 0;    // obtained by [managed_size - (current_pos - start_address)]
 
 /*Initialize the memory pool by size bytes by requesting the OS*/
-mret_t merry_temp_overseer_alloc(msize_t size);
+void *merry_temp_overseer_alloc(msize_t size);
+/*Free whatever memory was managed by the Overseer*/
+void merry_temp_overseer_free();
+/*Increase the memory pool size managed by the Overseer[Should be hardly used]*/
+mret_t merry_temp_overseer_increase_pool_size(msize_t inc_size);
+
+/*Allocator*/
+typedef struct MerryTempAllocator MerryTempAllocator;
+typedef struct MerryTempAllocBlock MerryTempAllocBlock; // the memory block
+
+struct MerryTempAllocBlock
+{
+    // first bit of this field will be used to check if the block is free or not
+    msize_t block_len; // number of bytes of this block
+    // for making the linked list
+    MerryTempAllocBlock *next;
+    MerryTempAllocBlock *prev;
+};
+
+// temporary allocator can use the Global declared variables of overseer for most of the information but use the functions to modify them
+struct MerryTempAllocator
+{
+
+    MerryMutex *lock; // the allocator is thread safe
+};
 
 #endif
