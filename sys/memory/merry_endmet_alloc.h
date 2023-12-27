@@ -1,5 +1,5 @@
 /*
- * Memory communication abstraction for the Merry VM
+ * End Meet Allocator for the Merry VM
  * MIT License
  *
  * Copyright (c) 2023 MegrajChauhan
@@ -22,21 +22,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifndef _MERRY_MEMORYABS_UNIX_
-#define _MERRY_MEMORYABS_UNIX_
+#ifndef _MERRY_MEMALLOC_ENDMEET_
+#define _MERRY_MEMALLOC_ENDMEET_
 
-#include <unistd.h>
-#include <sys/mman.h>
-#include "../thread/merry_thread.h"
+#include "../../utils/merry_config.h"
+#include "../../utils/merry_types.h"
+#include "../thread/merry_thread.h" // allocators are thread safe
 
-// For buffers, we cannot use this at all or we may need to modify this
+#if defined(_MERRY_HOST_OS_LINUX_)
+#include "merry_mem_unix.h"
+#define _MERRY_MEMEM_UNIX_ 1
+#endif
 
-// these are abstractions for getting more memory
-// for each host, we can use this abstraction to follow their conventions 
-#define _MERRY_INC_MEMLIM_(size) sbrk(size)
-#define _MERRY_MAP_MEM_(size) mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, 0, 0)
-#define _MERRY_UNMAP_MEM_(mem, size) munmap(mem, size)
 
-#define _MERRY_GET_CURRENT_BRK_POINT_ _MERRY_INC_MEMLIM_(0)
 
 #endif

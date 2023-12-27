@@ -1,5 +1,5 @@
 /*
- * Memory communication abstraction for the Merry VM
+ * Temporary allocator for the Merry VM
  * MIT License
  *
  * Copyright (c) 2023 MegrajChauhan
@@ -22,21 +22,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifndef _MERRY_MEMORYABS_UNIX_
-#define _MERRY_MEMORYABS_UNIX_
+#ifndef _MERRY_MEMALLOC_TEMP_
+#define _MERRY_MEMALLOC_TEMP_
 
-#include <unistd.h>
-#include <sys/mman.h>
-#include "../thread/merry_thread.h"
+#include "../../utils/merry_config.h"
+#include "../../utils/merry_types.h"
+#include "../thread/merry_thread.h" // allocators are thread safe
 
-// For buffers, we cannot use this at all or we may need to modify this
+#if defined(_MERRY_HOST_OS_LINUX_)
+#include "merry_mem_unix.h"
+#define _MERRY_MEMTP_UNIX_ 1
+#endif
 
-// these are abstractions for getting more memory
-// for each host, we can use this abstraction to follow their conventions 
-#define _MERRY_INC_MEMLIM_(size) sbrk(size)
-#define _MERRY_MAP_MEM_(size) mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, 0, 0)
-#define _MERRY_UNMAP_MEM_(mem, size) munmap(mem, size)
+/*We need sort of like sections or departments here to handle different tasks.*/
+/*One section needs to get memory from the OS, keep track of the memory we have and one needs to allocate that memory per request*/
+/*The other section also has to keep track of free blocks, allocated blocks and make sure that everything works out.*/
 
-#define _MERRY_GET_CURRENT_BRK_POINT_ _MERRY_INC_MEMLIM_(0)
+/*Overseer*/
+static mbptr_t merry_temp_start_address = NULL; // the starting address of the memory we will manage
+static mbptr_t merry_temp_end_address = NULL;   // the ending address of the memory we will manage
+static msize_t merry_temp_managed_size = 0;     // the size of memory managed by temporary allocator
+static mbptr_t merry_temp_current_pos = NULL;   // points to the first free byte of the managed block[Updated as the block gets used]
+
 
 #endif

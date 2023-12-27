@@ -136,7 +136,7 @@ mret_t merry_create_thread(MerryThread *thread, ThreadExecFunc func, void *arg)
     return RET_SUCCESS;
 }
 
-mret_t merry_thread_join(MerryThread *thread, mret_t *return_val)
+mret_t merry_thread_join(MerryThread *thread, void *return_val)
 {
     if (surelyF(thread == NULL))
         return RET_FAILURE;

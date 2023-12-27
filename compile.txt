@@ -1,1 +1,2 @@
+sys/src/merry_thread.c
 merry/merry.c

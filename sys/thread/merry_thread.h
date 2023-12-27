@@ -66,6 +66,6 @@ mret_t merry_create_detached_thread(MerryThread *thread, ThreadExecFunc func, vo
 // create thread with no atrributes
 mret_t merry_create_thread(MerryThread *thread, ThreadExecFunc func, void *arg);
 // join thread with the calling thread
-mret_t merry_thread_join(MerryThread *thread, mret_t *return_val);
+mret_t merry_thread_join(MerryThread *thread, void *return_val);
 
 #endif
