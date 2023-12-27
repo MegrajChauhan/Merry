@@ -43,6 +43,9 @@ static mbptr_t merry_temp_start_address = NULL; // the starting address of the m
 static mbptr_t merry_temp_end_address = NULL;   // the ending address of the memory we will manage
 static msize_t merry_temp_managed_size = 0;     // the size of memory managed by temporary allocator
 static mbptr_t merry_temp_current_pos = NULL;   // points to the first free byte of the managed block[Updated as the block gets used]
+static msize_t merry_temp_memory_in_use = 0;    // obtained by [managed_size - (current_pos - start_address)]
 
+/*Initialize the memory pool by size bytes by requesting the OS*/
+mret_t merry_temp_overseer_alloc(msize_t size);
 
 #endif
