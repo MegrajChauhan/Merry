@@ -76,7 +76,7 @@ struct MerryTempAllocBlock
 #define _MERRY_TEMP_GET_FREE_MEMSIZE_ (merry_temp_managed_size - merry_temp_memory_in_use)
 #define _MERRY_TEMP_GET_CURRENT_POS_ (merry_temp_start_address + merry_temp_memory_in_use)
 #define _MERRY_TEMP_UPDATE_MEM_USE_SIZE_(__add) merry_temp_memory_in_use += __add + _MERRY_TEMP_ALLOC_BLOCK_SIZE_
-#define _MERRY_TEMP_GET_INUSE_FLAG_(block) (block->block_len >> 63)
+#define _MERRY_TEMP_ARE_BLOCKSADJ_(block1) ((block1 + _MERRY_TEMP_ALLOC_BLOCK_SIZE_ + block1->block_len) == block1->next)
 
 // temporary allocator can use the Global declared variables of overseer for most of the information but use the functions to modify them
 // the allocator is required to update memory use
@@ -99,7 +99,54 @@ _MERRY_ALWAYS_INLINE merry_temp_update_alloclist(MerryTempAllocBlock *newblock)
 {
     // this will update the allocated_list
     if (allocator.allocated_list == NULL)
+    {
+        // since the list is circular meaning the block itself is the tail and the head
+        newblock->next = newblock;
+        newblock->prev = newblock;
         allocator.allocated_list = newblock; // set as the head
+    }
+    else
+    {
+        // we have to set this as the new tail
+        MerryTempAllocBlock *old_tail = allocator.allocated_list->prev; // the old tail
+        old_tail->next = newblock;                                      // the new tail
+        newblock->prev = old_tail;                                      // point to the older tail
+        newblock->next = allocator.allocated_list;                      // close the loop
+        allocator.allocated_list->prev = newblock;                      // point to the new tail
+    }
+}
+
+_MERRY_ALWAYS_INLINE MerryTempAllocBlock *merry_temp_get_first_fit(msize_t size)
+{
+    // find the block that has size bytes
+    // since this function is called when it is confirmed that the free list is not empty, we have nothing to worry about
+    MerryTempAllocBlock *temp = allocator.free_list;       // get the head
+    MerryTempAllocBlock *curr = allocator.free_list->next; // we loop until curr != temp
+    while (curr != temp)
+    {
+        if (curr->block_len >= size)
+            return curr;   // we have found it!
+        curr = curr->next; // update!
+    }
+    return RET_NULL; // we found none
+}
+
+_MERRY_ALWAYS_INLINE MerryTempAllocBlock *merry_temp_get_adjacent_free_blocks(msize_t size)
+{
+    // this will look for two adjacent memory blocks and then see if their combined size meets the requirement
+    // we also have to put the metadata size in consideration
+    MerryTempAllocBlock *temp = allocator.free_list;
+    MerryTempAllocBlock *curr = allocator.free_list->next;
+    while (curr != temp)
+    {
+        if (_MERRY_TEMP_ARE_BLOCKSADJ_(curr))
+        {
+            // if the blocks are adjacent
+            if ((curr->block_len + _MERRY_TEMP_ALLOC_BLOCK_SIZE_ + curr->next->block_len) >= size)
+                return curr; // we found the block we needed
+        }
+    }
+    return RET_NULL; // we found none
 }
 
 /*Allocate a block*/
