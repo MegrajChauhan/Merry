@@ -34,6 +34,8 @@
 #define _MERRY_MEMTP_UNIX_ 1
 #endif
 
+#define _MERRY_ALLOC_MAGIC_NUM_ 0xFFFFFFFFFFFFFFF8
+
 /*We need sort of like sections or departments here to handle different tasks.*/
 /*One section needs to get memory from the OS, keep track of the memory we have and one needs to allocate that memory per request*/
 /*The other section also has to keep track of free blocks, allocated blocks and make sure that everything works out.*/
@@ -52,23 +54,32 @@ void merry_temp_overseer_free();
 mret_t merry_temp_overseer_increase_pool_size(msize_t inc_size);
 
 /*Allocator*/
+
+_MERRY_ALWAYS_INLINE msize_t merry_align_size(msize_t size)
+{
+    return (size + 7) & _MERRY_ALLOC_MAGIC_NUM_;
+}
+
 typedef struct MerryTempAllocator MerryTempAllocator;
 typedef struct MerryTempAllocBlock MerryTempAllocBlock; // the memory block
 
 struct MerryTempAllocBlock
 {
     // first bit of this field will be used to check if the block is free or not
-    msize_t block_len; // number of bytes of this block
+    msize_t block_len; // number of bytes of this block[This is aligned to make memory access faster]
     // for making the linked list
     MerryTempAllocBlock *next;
     MerryTempAllocBlock *prev;
 };
 
+#define _MERRY_TEMP_ALLOC_BLOCK_SIZE_ sizeof(MerryTempAllocBlock)
+
 // temporary allocator can use the Global declared variables of overseer for most of the information but use the functions to modify them
 struct MerryTempAllocator
 {
-
-    MerryMutex *lock; // the allocator is thread safe
+    MerryTempAllocBlock *free_list;      // the free list
+    MerryTempAllocBlock *allocated_list; // the allocated list
+    MerryMutex *lock;                    // the allocator is thread safe
 };
 
 #endif
