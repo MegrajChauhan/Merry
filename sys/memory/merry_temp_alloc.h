@@ -94,8 +94,10 @@ static MerryTempAllocator allocator = {.free_list = NULL, .allocated_list = NULL
 // This ensures fast memory access but wastes a lot of memory which is worth the trade-off
 /*This initialization is a must*/
 mret_t merry_temp_alloc_init(msize_t init_size);
+/*free the allocator*/
+void merry_temp_alloc_free();
 
-_MERRY_ALWAYS_INLINE merry_temp_update_alloclist(MerryTempAllocBlock *newblock)
+_MERRY_ALWAYS_INLINE void merry_temp_update_alloclist(MerryTempAllocBlock *newblock)
 {
     // this will update the allocated_list
     if (allocator.allocated_list == NULL)
@@ -104,16 +106,14 @@ _MERRY_ALWAYS_INLINE merry_temp_update_alloclist(MerryTempAllocBlock *newblock)
         newblock->next = newblock;
         newblock->prev = newblock;
         allocator.allocated_list = newblock; // set as the head
+        return;
     }
-    else
-    {
-        // we have to set this as the new tail
-        MerryTempAllocBlock *old_tail = allocator.allocated_list->prev; // the old tail
-        old_tail->next = newblock;                                      // the new tail
-        newblock->prev = old_tail;                                      // point to the older tail
-        newblock->next = allocator.allocated_list;                      // close the loop
-        allocator.allocated_list->prev = newblock;                      // point to the new tail
-    }
+    // we have to set this as the new tail
+    MerryTempAllocBlock *old_tail = allocator.allocated_list->prev; // the old tail
+    old_tail->next = newblock;                                      // the new tail
+    newblock->prev = old_tail;                                      // point to the older tail
+    newblock->next = allocator.allocated_list;                      // close the loop
+    allocator.allocated_list->prev = newblock;                      // point to the new tail
 }
 
 _MERRY_ALWAYS_INLINE MerryTempAllocBlock *merry_temp_get_first_fit(msize_t size)
@@ -122,6 +122,8 @@ _MERRY_ALWAYS_INLINE MerryTempAllocBlock *merry_temp_get_first_fit(msize_t size)
     // since this function is called when it is confirmed that the free list is not empty, we have nothing to worry about
     MerryTempAllocBlock *temp = allocator.free_list;       // get the head
     MerryTempAllocBlock *curr = allocator.free_list->next; // we loop until curr != temp
+    if (temp->block_len >= size)
+        return temp;
     while (curr != temp)
     {
         if (curr->block_len >= size)
@@ -147,6 +149,22 @@ _MERRY_ALWAYS_INLINE MerryTempAllocBlock *merry_temp_get_adjacent_free_blocks(ms
         }
     }
     return RET_NULL; // we found none
+}
+
+_MERRY_ALWAYS_INLINE MerryTempAllocBlock *merry_temp_allocate_new_block(msize_t size)
+{
+    // size is aligned
+    if (_MERRY_TEMP_GET_FREE_MEMSIZE_ < size)
+    {
+        // there are no free blocks and we have no memory
+        if (merry_temp_overseer_increase_pool_size(size * 4) == RET_FAILURE)
+            return RET_NULL; // we got no new blocks
+    }
+    // we now have memory and can allocate new block
+    MerryTempAllocBlock *block = NULL;
+    block = (MerryTempAllocBlock *)(_MERRY_TEMP_GET_CURRENT_POS_); // get the new block
+    block->block_len = size;                                       // the size of the block[We do not need the in use flag]
+    return block;
 }
 
 /*Allocate a block*/
