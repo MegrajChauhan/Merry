@@ -34,6 +34,8 @@
 #define _MERRY_MEMTP_UNIX_ 1
 #endif
 
+#include <stdio.h> // remove
+
 #define _MERRY_ALLOC_MAGIC_NUM_ 0xFFFFFFFFFFFFFFF8
 
 _MERRY_ALWAYS_INLINE msize_t merry_align_size(msize_t size)
@@ -76,7 +78,7 @@ struct MerryTempAllocBlock
 #define _MERRY_TEMP_GET_FREE_MEMSIZE_ (merry_temp_managed_size - merry_temp_memory_in_use)
 #define _MERRY_TEMP_GET_CURRENT_POS_ (merry_temp_start_address + merry_temp_memory_in_use)
 #define _MERRY_TEMP_UPDATE_MEM_USE_SIZE_(__add) merry_temp_memory_in_use += __add + _MERRY_TEMP_ALLOC_BLOCK_SIZE_
-#define _MERRY_TEMP_ARE_BLOCKSADJ_(block1) ((block1 + _MERRY_TEMP_ALLOC_BLOCK_SIZE_ + block1->block_len) == block1->next)
+#define _MERRY_TEMP_ARE_BLOCKSADJ_(block1) (((mbptr_t)block1 + _MERRY_TEMP_ALLOC_BLOCK_SIZE_ + block1->block_len) == (mbptr_t)block1->next)
 
 // temporary allocator can use the Global declared variables of overseer for most of the information but use the functions to modify them
 // the allocator is required to update memory use
@@ -166,6 +168,7 @@ _MERRY_ALWAYS_INLINE MerryTempAllocBlock *merry_temp_get_adjacent_free_blocks(ms
             if ((curr->block_len + _MERRY_TEMP_ALLOC_BLOCK_SIZE_ + curr->next->block_len) >= size)
                 return curr; // we found the block we needed
         }
+        curr = curr->next;
     }
     return RET_NULL; // we found none
 }
@@ -192,5 +195,6 @@ mptr_t merry_temp_alloc(msize_t size);
 void merry_temp_free(mptr_t _ptr);
 
 // helper function
+void merry_print_allocator_info();
 
 #endif
