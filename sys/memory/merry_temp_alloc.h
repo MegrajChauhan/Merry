@@ -116,6 +116,25 @@ _MERRY_ALWAYS_INLINE void merry_temp_update_alloclist(MerryTempAllocBlock *newbl
     allocator.allocated_list->prev = newblock;                      // point to the new tail
 }
 
+_MERRY_ALWAYS_INLINE void merry_temp_update_freelist(MerryTempAllocBlock *newblock)
+{
+    // this will update the free list
+    if (allocator.free_list == NULL)
+    {
+        // since the list is circular meaning the block itself is the tail and the head
+        newblock->next = newblock;
+        newblock->prev = newblock;
+        allocator.free_list = newblock; // set as the head
+        return;
+    }
+    // we have to set this as the new tail
+    MerryTempAllocBlock *old_tail = allocator.free_list->prev; // the old tail
+    old_tail->next = newblock;                                 // the new tail
+    newblock->prev = old_tail;                                 // point to the older tail
+    newblock->next = allocator.free_list;                      // close the loop
+    allocator.free_list->prev = newblock;                      // point to the new tail
+}
+
 _MERRY_ALWAYS_INLINE MerryTempAllocBlock *merry_temp_get_first_fit(msize_t size)
 {
     // find the block that has size bytes
@@ -171,5 +190,7 @@ _MERRY_ALWAYS_INLINE MerryTempAllocBlock *merry_temp_allocate_new_block(msize_t 
 mptr_t merry_temp_alloc(msize_t size);
 /*Free the block*/
 void merry_temp_free(mptr_t _ptr);
+
+// helper function
 
 #endif
