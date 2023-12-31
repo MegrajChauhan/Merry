@@ -65,10 +65,7 @@ mptr_t merry_temp_alloc(msize_t size)
     size = merry_align_size(size); // get the aligned size
     if (size == 0)
         goto end; // failure
-    // we need to allocate under two circumstances
-    // 1. If we have free blocks
-    // 2. If we do not have free blocks
-    // first by second approach
+    // check if we have any memory we can recycle
     if (allocator.free_list == NULL)
     {
         // the free list is empty
@@ -76,37 +73,42 @@ mptr_t merry_temp_alloc(msize_t size)
         goto allocate_new_and_ret;
     }
     // the free list is not empty and hence we have some memory we can recycle
-    /*
-     Here are the things that can happen:
-     1. We have free blocks but they don't fulfill the requirement.
-     2. We have free blocks and they fulfill the requirement.
-     3. The free block is the head block
-    */
-    MerryTempAllocBlock *free_block = merry_temp_get_first_fit(size);
+    // we have various cases to handle here
+    MerryTempAllocBlock *free_block = merry_temp_get_first_fit(size); // get a free block that at least meets the requirement
+    // check if the fitting block is the head block
     if (free_block != RET_NULL && free_block == allocator.free_list)
     {
-        // the fitting block is the head block
         /*
           To be splittable, the block must have the at least the size equivalent to requested size + an additional block capable of storing 2 qwords or 16 bytes
         */
+        // allocate the pointer that will be sent
         __new_block = (mptr_t)((mbptr_t)free_block + _MERRY_TEMP_ALLOC_BLOCK_SIZE_);
+        // check if the requirement is barely fulfilled and IF the block is not splittable
         if (free_block->block_len == size || (free_block->block_len > size && (free_block->block_len < (size + _MERRY_TEMP_ALLOC_BLOCK_SIZE_ + 16))))
         {
+            // the block is not splittable
             if (free_block->next == free_block)
                 allocator.free_list = NULL;
             else
             {
                 free_block->next->prev = free_block->prev;
                 free_block->prev->next = free_block->next;
+                allocator.free_list = allocator.free_list->next;
             }
         }
         else
         {
             // the block fulfills even the splitting condition
             MerryTempAllocBlock *new_head = (MerryTempAllocBlock *)((mbptr_t)__new_block + size);
-            new_head->next = free_block->next;
-            new_head->prev = free_block->prev;
+            new_head->next = free_block->next == free_block ? new_head : free_block->next;
+            new_head->prev = free_block->next == free_block ? new_head : free_block->prev;
+            if (free_block->next != free_block)
+            {
+                free_block->next->prev = new_head;
+                free_block->prev->next = new_head;
+            }
             new_head->block_len = free_block->block_len - size - _MERRY_TEMP_ALLOC_BLOCK_SIZE_;
+            free_block->block_len -= (_MERRY_TEMP_ALLOC_BLOCK_SIZE_ + new_head->block_len);
             allocator.free_list = new_head;
         }
         merry_temp_update_alloclist(free_block);
@@ -133,6 +135,7 @@ mptr_t merry_temp_alloc(msize_t size)
             free_block->next->prev = replacement;
             free_block->prev->next = replacement;
             replacement->block_len = free_block->block_len - size - _MERRY_TEMP_ALLOC_BLOCK_SIZE_;
+            free_block->block_len -= (_MERRY_TEMP_ALLOC_BLOCK_SIZE_ + replacement->block_len);
         }
         merry_temp_update_alloclist(free_block);
         goto end;
@@ -153,6 +156,50 @@ mptr_t merry_temp_alloc(msize_t size)
         // we did find two adjacent free blocks
         // given how we search for two adjacent free blocks, we may be assured that the first of the two blocks will never be the head block
         // given this we need to address when the second of the free blocks is the head block
+        // UPDATE: Now that the search function has changed we have to keep in mind that even the head block can be returned
+        if (free_block == allocator.free_list)
+        {
+            // the head is the first free block
+            // the process is almost the same as before
+            __new_block = (mptr_t)((mbptr_t)free_block + _MERRY_TEMP_ALLOC_BLOCK_SIZE_); // set the pointer first
+            register msize_t temp = free_block->block_len + free_block->next->block_len;
+            if (temp == size || (temp > size && (temp < (size + 2 * _MERRY_TEMP_ALLOC_BLOCK_SIZE_ + 16))))
+            {
+                // the blocks are not splittable
+                // we use the entire two blocks for this allocation
+                // since we are in this condition it means that the first free block is the tail
+                if (allocator.free_list->next == free_block->prev)
+                {
+                    // if we only have 2 free blocks in the free list
+                    allocator.free_list = NULL;
+                }
+                else
+                {
+                    // we have more than that
+                    allocator.free_list->next->prev = free_block->prev->prev;
+                    free_block->prev->prev = allocator.free_list->next;
+                    allocator.free_list = allocator.free_list->next;
+                }
+                free_block->block_len += free_block->next->block_len + _MERRY_TEMP_ALLOC_BLOCK_SIZE_;
+            }
+            else
+            {
+                // the blocks are splittable
+                // this will replace the head
+                MerryTempAllocBlock *new_head = (MerryTempAllocBlock *)((mbptr_t)__new_block + size);
+                new_head->next = allocator.free_list->next == allocator.free_list->prev ? new_head : allocator.free_list->next;
+                new_head->prev = allocator.free_list->next == allocator.free_list->prev ? new_head : allocator.free_list->prev->prev;
+                if (allocator.free_list->next != allocator.free_list->prev)
+                {
+                    allocator.free_list->next->prev = new_head;
+                    allocator.free_list->prev->next = new_head;
+                }
+                new_head->block_len = free_block->block_len - size - _MERRY_TEMP_ALLOC_BLOCK_SIZE_;
+                allocator.free_list = new_head;
+            }
+            merry_temp_update_alloclist(free_block);
+            goto end;
+        }
         if (free_block->next == allocator.free_list)
         {
             // we have to either split it or allocate the entire two blocks
@@ -173,6 +220,7 @@ mptr_t merry_temp_alloc(msize_t size)
                 {
                     // we have more than that
                     allocator.free_list->next->prev = free_block->prev;
+                    free_block->prev->next = allocator.free_list->next;
                     allocator.free_list = allocator.free_list->next;
                 }
                 free_block->block_len += free_block->next->block_len + _MERRY_TEMP_ALLOC_BLOCK_SIZE_;
@@ -182,8 +230,13 @@ mptr_t merry_temp_alloc(msize_t size)
                 // the blocks are splittable
                 // this will replace the head
                 MerryTempAllocBlock *new_head = (MerryTempAllocBlock *)((mbptr_t)__new_block + size);
-                new_head->next = allocator.free_list->next;
-                new_head->prev = allocator.free_list->prev->prev;
+                new_head->next = (allocator.free_list->next == free_block) ? new_head : allocator.free_list->next;
+                new_head->prev = (allocator.free_list->next == free_block) ? new_head : allocator.free_list->prev->prev;
+                if (allocator.free_list->next != free_block)
+                {
+                    allocator.free_list->next->prev = new_head;
+                    allocator.free_list->prev->prev->next = new_head;
+                }
                 new_head->block_len = free_block->block_len - size - _MERRY_TEMP_ALLOC_BLOCK_SIZE_;
                 allocator.free_list = new_head;
             }

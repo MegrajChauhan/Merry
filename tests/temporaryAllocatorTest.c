@@ -28,10 +28,25 @@ int main()
     merry_temp_free(y);
     merry_temp_free(x);
     merry_print_allocator_info(); // get the details
-    int *p = (int*)merry_temp_alloc(40);
+    int *p = (int *)merry_temp_alloc(40);
     merry_print_allocator_info(); // get the details
     merry_temp_free(p);
     merry_temp_free(z);
     merry_print_allocator_info(); // get the details
+    // lets see if the allocator correctly splits the block
+    y = (char *)merry_temp_alloc(16);   // this should split the free 16 bytes
+    z = (double *)merry_temp_alloc(16); // further split
+    merry_print_allocator_info();       // get the details
+    int *q = (int *)merry_temp_alloc(1022);
+    if (q == RET_NULL)
+    {
+        printf("Error\n");
+        return 0;
+    }
+    merry_print_allocator_info();       // get the details
+    merry_temp_free(y);
+    merry_temp_free(z);
+    merry_temp_free(q);
+    merry_print_allocator_info();       // get the details
     merry_temp_alloc_free();
 }

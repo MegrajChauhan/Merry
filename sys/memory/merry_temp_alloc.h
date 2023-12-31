@@ -160,15 +160,25 @@ _MERRY_ALWAYS_INLINE MerryTempAllocBlock *merry_temp_get_adjacent_free_blocks(ms
     // we also have to put the metadata size in consideration
     MerryTempAllocBlock *temp = allocator.free_list;
     MerryTempAllocBlock *curr = allocator.free_list->next;
-    while (curr != temp)
+    // check if the free list only has one block
+    if (curr != temp)
     {
-        if (_MERRY_TEMP_ARE_BLOCKSADJ_(curr))
+        if (_MERRY_TEMP_ARE_BLOCKSADJ_(temp))
         {
             // if the blocks are adjacent
-            if ((curr->block_len + _MERRY_TEMP_ALLOC_BLOCK_SIZE_ + curr->next->block_len) >= size)
-                return curr; // we found the block we needed
+            if ((temp->block_len + _MERRY_TEMP_ALLOC_BLOCK_SIZE_ + temp->next->block_len) >= size)
+                return temp; // we found the block we needed and it is the head block
         }
-        curr = curr->next;
+        while (curr != temp)
+        {
+            if (_MERRY_TEMP_ARE_BLOCKSADJ_(curr))
+            {
+                // if the blocks are adjacent
+                if ((curr->block_len + _MERRY_TEMP_ALLOC_BLOCK_SIZE_ + curr->next->block_len) >= size)
+                    return curr; // we found the block we needed
+            }
+            curr = curr->next;
+        }
     }
     return RET_NULL; // we found none
 }
