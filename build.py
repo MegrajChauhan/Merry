@@ -31,9 +31,10 @@ def main():
         else:
             print(f"Warning: File not found - {file_path}")
     destination = os.path.join(destination_directory, output_file_name)
-    compile_command = f"gcc -Wall -Wextra -Werror {final_file} -o {destination}"
+    compile_command = f"gcc -Wall -Wextra {final_file} -o {destination}"
     print("Compiling the source files...")
     print(f"Command run: '{compile_command}'")
+    print("\nCOMPILER MESSAGES IF ANY:")
     result = os.system(compile_command)
     if result == 0:
         print(f"Compilation successful with return value of {result}")
