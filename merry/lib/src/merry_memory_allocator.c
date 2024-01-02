@@ -406,3 +406,8 @@ void merry_allocator_free(mptr_t _ptr)
     _ptr = NULL; // it cannot access this memory again
     merry_mutex_unlock(allocator.lock);
 }
+
+// this is also not going to be a pretty function
+mptr_t merry_allocator_realloc(mptr_t _old_ptr, msize_t new_size)
+{
+}

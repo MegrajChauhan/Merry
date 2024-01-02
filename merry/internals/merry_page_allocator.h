@@ -1,5 +1,5 @@
 /*
- * Types for the Merry VM
+ * Page allocator for the Memory of the Merry VM
  * MIT License
  *
  * Copyright (c) 2024 MegrajChauhan
@@ -22,47 +22,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+#ifndef _MERRY_PAGE_ALLOCATOR_
+#define _MERRY_PAGE_ALLOCATOR_
 
-#ifndef _MERRY_TYPES_
-#define _MERRY_TYPES_
+// the main job of this module is to abstract away the underlying communication with the OS for memory
+// Unlike the memory allocator, page allocator will specifically allocate pages for the Memory by directly mapping large memory portions from the OS.
+#include "merry_internals.h"
 
-#include "merry_config.h"
+#if defined(_MERRY_HOST_OS_LINUX_)
+#include <sys/mman.h> // for mmap
+#define _MERRY_PGALLOC_GET_PAGE_ mmap((void *)-1, _MERRY_MEMORY_ADDRESSES_PER_PAGE_, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0)
+#define _MERRY_PGALLOC_GIVE_PAGE_(addr) munmap(addr, _MERRY_MEMORY_ADDRESSES_PER_PAGE_)
+#define _MERRY_RET_GET_ERROR_ MAP_FAILED
+#define _MERRY_RET_GIVE_ERROR_ -1
+#endif
 
-// boolean types
-#define mtrue 1
-#define mfalse 0
+// this process can be cumbersome in Windows or similar systems where they refuse to provide the size of the memory we want but instead provide memory that is way
+// larger or smaller than what we want but that is a future me problem
 
-// for function returns
-#define RET_SUCCESS mtrue
-#define RET_FAILURE mfalse
-#define RET_AMBIGIOUS 2     // extra return to be used for any third sort of return
-#define RET_NULL (void *)-1 // used by functions
+mptr_t merry_pgalloc_get_page(void);
 
-typedef unsigned char mbool_t; // bool
-
-// these are the memory data types
-typedef unsigned char mbyte_t;
-typedef unsigned short mword_t;
-typedef unsigned int mdword_t;
-typedef _MERRY_LONG_ mqword_t;
-
-// some extra definitions
-typedef _MERRY_LONG_ maddress_t;
-typedef _MERRY_LONG_ msize_t;
-typedef mbool_t mret_t; // for function returns
-
-// define function pointers
-#define _MERRY_DEFINE_FUNC_PTR_(ret, func_name, ...) typedef ret (*func_name)(__VA_ARGS__);
-
-// pointers for memory types
-typedef mbyte_t *mbptr_t;
-typedef mword_t *mwptr_t;
-typedef mdword_t *mdptr_t;
-typedef mqword_t *mqptr_t;
-
-// redifinitions of C types
-typedef char *mstr_t;
-typedef const char *mcstr_t;
-typedef void *mptr_t;
+mret_t merry_pgalloc_give_page(mptr_t address);
 
 #endif

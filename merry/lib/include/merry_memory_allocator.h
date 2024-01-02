@@ -2,7 +2,7 @@
  * Memory allocator for the Merry VM
  * MIT License
  *
- * Copyright (c) 2023 MegrajChauhan
+ * Copyright (c) 2024 MegrajChauhan
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+// This is the worst memory allocator anyone can write but for now at least it works.
+
 #ifndef _MERRY_MEMORY_ALLOCATOR_
 #define _MERRY_MEMORY_ALLOCATOR_
 
@@ -135,5 +137,7 @@ void merry_allocator_alloc_free();
 mptr_t merry_allocator_alloc(msize_t size);
 /*Free the block*/
 void merry_allocator_free(mptr_t _ptr);
+/*reallocate a block*/
+mptr_t merry_allocator_realloc(mptr_t _old_ptr, msize_t new_size);
 
 #endif
