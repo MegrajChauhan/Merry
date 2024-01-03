@@ -26,8 +26,8 @@
 #define _MERRY_THREADSABS_
 
 #include <stdlib.h> // this module is allowed to use malloc
-#include "../../utils/merry_config.h"
-#include "../../utils/merry_types.h"
+#include "../utils/merry_config.h"
+#include "../utils/merry_types.h"
 
 typedef struct MerryMutex MerryMutex;
 typedef struct MerryCond MerryCond;

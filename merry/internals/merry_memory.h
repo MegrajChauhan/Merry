@@ -29,9 +29,9 @@
  The memory is going to be an array of bytes. It will follow the page model while using the endianness of the host to make things faster.
 */
 #include "merry_internals.h"
-#include "../lib/include/merry_memory_allocator.h"
-#include "merry_page_allocator.h"
-#include "../../sys/thread/merry_thread.h" // memory needs to be thread safe
+// #include "../lib/include/merry_memory_allocator.h"
+// #include "merry_page_allocator.h"
+#include "../../sys/merry_thread.h" // memory needs to be thread safe
 
 // declarations
 typedef struct MerryMemPageDetails MerryMemPageDetails; // the details about a memory page

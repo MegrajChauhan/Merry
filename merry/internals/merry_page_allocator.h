@@ -29,19 +29,6 @@
 // Unlike the memory allocator, page allocator will specifically allocate pages for the Memory by directly mapping large memory portions from the OS.
 #include "merry_internals.h"
 
-#if defined(_MERRY_HOST_OS_LINUX_)
-#include <sys/mman.h> // for mmap
-#define _MERRY_PGALLOC_GET_PAGE_ mmap((void *)-1, _MERRY_MEMORY_ADDRESSES_PER_PAGE_, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0)
-#define _MERRY_PGALLOC_GIVE_PAGE_(addr) munmap(addr, _MERRY_MEMORY_ADDRESSES_PER_PAGE_)
-#define _MERRY_RET_GET_ERROR_ MAP_FAILED
-#define _MERRY_RET_GIVE_ERROR_ -1
-#endif
 
-// this process can be cumbersome in Windows or similar systems where they refuse to provide the size of the memory we want but instead provide memory that is way
-// larger or smaller than what we want but that is a future me problem
-
-mptr_t merry_pgalloc_get_page(void);
-
-mret_t merry_pgalloc_give_page(mptr_t address);
 
 #endif
