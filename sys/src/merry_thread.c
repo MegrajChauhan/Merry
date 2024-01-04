@@ -2,7 +2,7 @@
 
 MerryMutex *merry_mutex_init()
 {
-    MerryMutex *mutex = (MerryMutex *)malloc(sizeof(MerryMutex));
+    MerryMutex *mutex = (MerryMutex *)merry_malloc(sizeof(MerryMutex));
     if (mutex == NULL)
         return RET_NULL; // failure to allocate
 #if defined(_MERRY_THREADS_POSIX_)
@@ -17,7 +17,7 @@ MerryMutex *merry_mutex_init()
 
 MerryCond *merry_cond_init()
 {
-    MerryCond *cond = (MerryCond *)malloc(sizeof(MerryCond));
+    MerryCond *cond = (MerryCond *)merry_malloc(sizeof(MerryCond));
     if (cond == NULL)
         return RET_NULL; // failure to allocate
 #if defined(_MERRY_THREADS_POSIX_)
@@ -32,7 +32,7 @@ MerryCond *merry_cond_init()
 
 MerryThread *merry_thread_init()
 {
-    MerryThread *thread = (MerryThread *)malloc(sizeof(MerryThread));
+    MerryThread *thread = (MerryThread *)merry_malloc(sizeof(MerryThread));
     if (thread == NULL)
         return RET_NULL;
     // we are simply initializing a MerryThread

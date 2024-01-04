@@ -29,7 +29,7 @@
 
 #include "../../../sys/merry_thread.h"
 #include "../../../sys/merry_mem.h"
-#include <unistd.h>
+#include <stdio.h> // remove this
 
 #define _MERRY_ALLOC_MAGIC_NUM_ 0xFFFFFFFFFFFFFFF8
 #define _MERRY_ALLOC_PAGE_LEN_ 4096
@@ -52,14 +52,14 @@ _MERRY_ALWAYS_INLINE msize_t merry_align_size(msize_t size)
 typedef struct MerryAllocBlock MerryAllocBlock;
 typedef struct MerryAllocPage MerryAllocPage;
 typedef struct MerryAllocator MerryAllocator;
-typedef struct MerryAllocRetBlock MerryAllocRetBlock;
 
 // the array of blocks is linear and not circular
 struct MerryAllocBlock
 {
-    msize_t _block_size;   // the size of the memory that this block is holding on to
-    MerryAllocBlock *next; // the next block
-    MerryAllocBlock *prev; // the previous block
+    msize_t _block_size;         // the size of the memory that this block is holding on to
+    MerryAllocBlock *next;       // the next block
+    MerryAllocBlock *prev;       // the previous block
+    MerryAllocPage *parent_page; // the page to which this block belongs to
 };
 
 struct MerryAllocPage
@@ -83,12 +83,6 @@ struct MerryAllocator
     MerryAllocPage *pg_misc; // the page for misc bytes memory chunk
 };
 
-struct MerryAllocRetBlock
-{
-    MerryAllocPage *page;
-    MerryAllocBlock *block;
-};
-
 #define _MERRY_ALLOC_BLOCK_SIZE_ (sizeof(MerryAllocBlock))
 #define _MERRY_ALLOCPG_SIZE_ (sizeof(MerryAllocPage))
 
@@ -103,11 +97,12 @@ struct MerryAllocRetBlock
 static MerryAllocator allocator;
 
 // we will iniitalize each page and be ready for allocation requests right away.
-// misc will be left out and not allocated unless requests for unsupported size is made
 mret_t merry_allocator_init();
 
 void merry_allocator_destroy();
 
 mptr_t merry_malloc(msize_t size);
+
+void merry_free(mptr_t _ptr);
 
 #endif

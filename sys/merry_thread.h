@@ -28,6 +28,7 @@
 #include <stdlib.h> // this module is allowed to use malloc
 #include "../utils/merry_config.h"
 #include "../utils/merry_types.h"
+#include "../merry/lib/include/merry_memory_allocator.h"
 
 typedef struct MerryMutex MerryMutex;
 typedef struct MerryCond MerryCond;
