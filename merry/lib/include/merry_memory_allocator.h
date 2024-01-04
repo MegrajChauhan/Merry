@@ -52,11 +52,14 @@ _MERRY_ALWAYS_INLINE msize_t merry_align_size(msize_t size)
 typedef struct MerryAllocBlock MerryAllocBlock;
 typedef struct MerryAllocPage MerryAllocPage;
 typedef struct MerryAllocator MerryAllocator;
+typedef struct MerryAllocRetBlock MerryAllocRetBlock;
 
+// the array of blocks is linear and not circular
 struct MerryAllocBlock
 {
     msize_t _block_size;   // the size of the memory that this block is holding on to
     MerryAllocBlock *next; // the next block
+    MerryAllocBlock *prev; // the previous block
 };
 
 struct MerryAllocPage
@@ -66,6 +69,8 @@ struct MerryAllocPage
     MerryAllocBlock *entry_non_free; // the first allocated block in the alloc page
     MerryAllocBlock *entry_free;     // the first free block in this alloc page
     msize_t _is_mapped;
+    unsigned int _remaining_page; // after allocating the memory how much of the page's size is left
+    unsigned int _used_size;      // how much has been allocated
 };
 
 struct MerryAllocator
@@ -76,6 +81,12 @@ struct MerryAllocator
     MerryAllocPage *pg_32;   // the page for 32 bytes memory chunk
     MerryAllocPage *pg_64;   // the page for 64 bytes memory chunk
     MerryAllocPage *pg_misc; // the page for misc bytes memory chunk
+};
+
+struct MerryAllocRetBlock
+{
+    MerryAllocPage *page;
+    MerryAllocBlock *block;
 };
 
 #define _MERRY_ALLOC_BLOCK_SIZE_ (sizeof(MerryAllocBlock))
