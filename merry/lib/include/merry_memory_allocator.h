@@ -29,7 +29,8 @@
 
 #include "../../../sys/merry_thread.h"
 #include "../../../sys/merry_mem.h"
-#include <stdio.h> // remove this
+// #include <stdio.h> // remove this
+#include <string.h> // for memcpy, memmove and memset
 
 #define _MERRY_ALLOC_MAGIC_NUM_ 0xFFFFFFFFFFFFFFF8
 #define _MERRY_ALLOC_PAGE_LEN_ 4096
@@ -102,6 +103,8 @@ mret_t merry_allocator_init();
 void merry_allocator_destroy();
 
 mptr_t merry_malloc(msize_t size);
+
+mptr_t merry_realloc(mptr_t _ptr, msize_t _new_size);
 
 void merry_free(mptr_t _ptr);
 

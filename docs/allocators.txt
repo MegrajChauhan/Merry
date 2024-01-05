@@ -8,3 +8,15 @@ Temporary allocator recycles the initial memory while EndMeet can and will keep 
 EndMeet allocator is used by the VM's internal data structures for getting memory that is guranteed to be freed before the VM exits.
 
 Both allocators are thread safe.
+
+UPDATE:
+These allocators are no more and we have only one allocator: Merry allocator. This allocator handles allocations in the same naive fashion as these old
+allocators and only different in the sense that it is more well structured. This allocator has what we can call "Pools" of fixed size as well as misc sizes.
+This allocator, upon initialization, gets more than 20KB of memory from the OS which it then divides into different "pages".
+One page only fulfills the request of one size. For eg: pg_8 handles request for pointers. These specific sizes will be updated as the VM grows since this
+allocator is specifically made for Merry so it makes sense that it is designed to handle the requests from the VM only.
+The major issue with this allocator currently is, the allocator itself. It is slow, inefficient and leaves a lot memory footprint.
+It doesn't handle memory properly, doesn't utilize memory properly, wastes a lot of bytes, asks for more memory than it utilizes.
+But apart from these issues, the allocator doesn't handle requests for sizes that is larger than its page size. That is because it is not coded to handle that 
+case. But it is for better. The only thing in the VM that would request more memory than the "page" size is the memory for memory page allocations.
+But this will be handled by the memory itself.

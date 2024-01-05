@@ -202,7 +202,13 @@ static mptr_t merry_allocator_alloc_misc(msize_t size)
     return temp == RET_NULL ? RET_NULL : temp;
 }
 
-/*REDUNDANCY ALERT!*/
+///////////////////////////////////////////////////////////////////////////////////////
+//                                                                                   //
+//                                                                                   //
+//                               REDUNDANCY ALERT!                                   //
+//                                                                                   //
+//                                                                                   //
+///////////////////////////////////////////////////////////////////////////////////////
 
 static void merry_allocator_update_pg8(MerryAllocBlock *details)
 {
@@ -247,23 +253,15 @@ static mptr_t merry_allocator_pg8_add_block()
             merry_allocator_update_pg8(new_block); // update
             return (mbptr_t)new_block + _MERRY_ALLOC_BLOCK_SIZE_;
         }
-        // go to the next page
         temp = temp->next_page;
     }
-    // since we are here than it would mean that we don't have any page that can fulfill the request
-    // we need to allocate a new page
     MerryAllocPage *new_page = merry_allocator_get_page();
     if (new_page == NULL)
     {
-        // we cannot to anything anymore
         return RET_NULL;
     }
-    // we now can do something
-    // first we make this new page the head
     new_page->next_page = allocator.pg_misc;
     allocator.pg_misc = new_page;
-    // we now allocate a new block
-    // since this is a new page it is empty
     new_block = (MerryAllocBlock *)new_page->_start_address;
     new_block->parent_page = new_page;
     new_block->_block_size = 8;
@@ -275,22 +273,14 @@ static mptr_t merry_allocator_pg8_add_block()
 
 static MerryAllocBlock *merry_allocator_find_free_pg8()
 {
-    // size is aligned
-    // we will need one function per page to traverse
     MerryAllocPage *temp = allocator.pg_8;
-    // temp will certainly not be NULL
     while (temp != NULL)
     {
-        // we will traverse all the free blocks in this page
         if (temp->entry_free != NULL)
         {
-            // if the free list is not empty
             MerryAllocBlock *_temp = temp->entry_free;
             while (_temp != NULL)
             {
-                // we won't split or merge for the sake of speed
-                // This allocator will leave a large memory footprint but since the VM will be the only one using it
-                // we can modify and upgrade this as we go
                 if (_temp->_block_size == 8)
                 {
                     return _temp;
@@ -305,15 +295,9 @@ static MerryAllocBlock *merry_allocator_find_free_pg8()
 
 static mptr_t merry_allocator_alloc_pg8()
 {
-    // size is aligned
-    // we will traverse the free list and see if we find any free blocks
-    // if we have multiple misc pages, we will traverse each page and look for a free block
-    // if we can't find one then we will allocate a new one
     MerryAllocBlock *free_block = merry_allocator_find_free_pg8();
     if (free_block != RET_NULL)
     {
-        // we found a fitting, free block
-        // we now just have to update the linked list
         if (free_block->next == free_block)
         {
             free_block->parent_page->entry_free = NULL; // the free list is now empty
@@ -326,8 +310,6 @@ static mptr_t merry_allocator_alloc_pg8()
         merry_allocator_update_pg8(free_block);                          // update the linked list
         return (mptr_t)((mbptr_t)free_block + _MERRY_ALLOC_BLOCK_SIZE_); // return the allocated block
     }
-    // if we are here then that means we found no free block
-    // we have to allocate a new one then
     mptr_t temp = merry_allocator_pg8_add_block(); // try getting new block
     return temp == RET_NULL ? RET_NULL : temp;
 }
@@ -375,23 +357,15 @@ static mptr_t merry_allocator_pg16_add_block()
             merry_allocator_update_pg16(new_block); // update
             return (mbptr_t)new_block + _MERRY_ALLOC_BLOCK_SIZE_;
         }
-        // go to the next page
         temp = temp->next_page;
     }
-    // since we are here than it would mean that we don't have any page that can fulfill the request
-    // we need to allocate a new page
     MerryAllocPage *new_page = merry_allocator_get_page();
     if (new_page == NULL)
     {
-        // we cannot to anything anymore
         return RET_NULL;
     }
-    // we now can do something
-    // first we make this new page the head
     new_page->next_page = allocator.pg_misc;
     allocator.pg_misc = new_page;
-    // we now allocate a new block
-    // since this is a new page it is empty
     new_block = (MerryAllocBlock *)new_page->_start_address;
     new_block->parent_page = new_page;
     new_block->_block_size = 16;
@@ -403,22 +377,14 @@ static mptr_t merry_allocator_pg16_add_block()
 
 static MerryAllocBlock *merry_allocator_find_free_pg16()
 {
-    // size is aligned
-    // we will need one function per page to traverse
     MerryAllocPage *temp = allocator.pg_16;
-    // temp will certainly not be NULL
     while (temp != NULL)
     {
-        // we will traverse all the free blocks in this page
         if (temp->entry_free != NULL)
         {
-            // if the free list is not empty
             MerryAllocBlock *_temp = temp->entry_free;
             while (_temp != NULL)
             {
-                // we won't split or merge for the sake of speed
-                // This allocator will leave a large memory footprint but since the VM will be the only one using it
-                // we can modify and upgrade this as we go
                 if (_temp->_block_size == 16)
                 {
                     return _temp;
@@ -433,15 +399,9 @@ static MerryAllocBlock *merry_allocator_find_free_pg16()
 
 static mptr_t merry_allocator_alloc_pg16()
 {
-    // size is aligned
-    // we will traverse the free list and see if we find any free blocks
-    // if we have multiple misc pages, we will traverse each page and look for a free block
-    // if we can't find one then we will allocate a new one
     MerryAllocBlock *free_block = merry_allocator_find_free_pg16();
     if (free_block != RET_NULL)
     {
-        // we found a fitting, free block
-        // we now just have to update the linked list
         if (free_block->next == free_block)
         {
             free_block->parent_page->entry_free = NULL; // the free list is now empty
@@ -454,8 +414,6 @@ static mptr_t merry_allocator_alloc_pg16()
         merry_allocator_update_pg16(free_block);                         // update the linked list
         return (mptr_t)((mbptr_t)free_block + _MERRY_ALLOC_BLOCK_SIZE_); // return the allocated block
     }
-    // if we are here then that means we found no free block
-    // we have to allocate a new one then
     mptr_t temp = merry_allocator_pg16_add_block(); // try getting new block
     return temp == RET_NULL ? RET_NULL : temp;
 }
@@ -464,7 +422,6 @@ static void merry_allocator_update_pg32(MerryAllocBlock *details)
 {
     if (details->parent_page->entry_non_free == NULL)
     {
-        // the head is empty
         details->next = details;
         details->prev = details;
         details->parent_page->entry_non_free = details;
@@ -503,23 +460,15 @@ static mptr_t merry_allocator_pg32_add_block()
             merry_allocator_update_pg32(new_block); // update
             return (mbptr_t)new_block + _MERRY_ALLOC_BLOCK_SIZE_;
         }
-        // go to the next page
         temp = temp->next_page;
     }
-    // since we are here than it would mean that we don't have any page that can fulfill the request
-    // we need to allocate a new page
     MerryAllocPage *new_page = merry_allocator_get_page();
     if (new_page == NULL)
     {
-        // we cannot to anything anymore
         return RET_NULL;
     }
-    // we now can do something
-    // first we make this new page the head
     new_page->next_page = allocator.pg_misc;
     allocator.pg_misc = new_page;
-    // we now allocate a new block
-    // since this is a new page it is empty
     new_block = (MerryAllocBlock *)new_page->_start_address;
     new_block->parent_page = new_page;
     new_block->_block_size = 32;
@@ -531,22 +480,14 @@ static mptr_t merry_allocator_pg32_add_block()
 
 static MerryAllocBlock *merry_allocator_find_free_pg32()
 {
-    // size is aligned
-    // we will need one function per page to traverse
     MerryAllocPage *temp = allocator.pg_32;
-    // temp will certainly not be NULL
     while (temp != NULL)
     {
-        // we will traverse all the free blocks in this page
         if (temp->entry_free != NULL)
         {
-            // if the free list is not empty
             MerryAllocBlock *_temp = temp->entry_free;
             while (_temp != NULL)
             {
-                // we won't split or merge for the sake of speed
-                // This allocator will leave a large memory footprint but since the VM will be the only one using it
-                // we can modify and upgrade this as we go
                 if (_temp->_block_size == 32)
                 {
                     return _temp;
@@ -561,15 +502,9 @@ static MerryAllocBlock *merry_allocator_find_free_pg32()
 
 static mptr_t merry_allocator_alloc_pg32()
 {
-    // size is aligned
-    // we will traverse the free list and see if we find any free blocks
-    // if we have multiple misc pages, we will traverse each page and look for a free block
-    // if we can't find one then we will allocate a new one
     MerryAllocBlock *free_block = merry_allocator_find_free_pg32();
     if (free_block != RET_NULL)
     {
-        // we found a fitting, free block
-        // we now just have to update the linked list
         if (free_block->next == free_block)
         {
             free_block->parent_page->entry_free = NULL; // the free list is now empty
@@ -582,8 +517,6 @@ static mptr_t merry_allocator_alloc_pg32()
         merry_allocator_update_pg32(free_block);                         // update the linked list
         return (mptr_t)((mbptr_t)free_block + _MERRY_ALLOC_BLOCK_SIZE_); // return the allocated block
     }
-    // if we are here then that means we found no free block
-    // we have to allocate a new one then
     mptr_t temp = merry_allocator_pg32_add_block(); // try getting new block
     return temp == RET_NULL ? RET_NULL : temp;
 }
@@ -592,7 +525,6 @@ static void merry_allocator_update_pg64(MerryAllocBlock *details)
 {
     if (details->parent_page->entry_non_free == NULL)
     {
-        // the head is empty
         details->next = details;
         details->prev = details;
         details->parent_page->entry_non_free = details;
@@ -606,7 +538,6 @@ static void merry_allocator_update_pg64(MerryAllocBlock *details)
 
 static mptr_t merry_allocator_pg64_add_block()
 {
-    // size is aligned
     MerryAllocPage *temp = allocator.pg_64;
     msize_t _alloc_size = (64 + _MERRY_ALLOC_BLOCK_SIZE_);
     MerryAllocBlock *new_block;
@@ -631,23 +562,15 @@ static mptr_t merry_allocator_pg64_add_block()
             merry_allocator_update_pg64(new_block); // update
             return (mbptr_t)new_block + _MERRY_ALLOC_BLOCK_SIZE_;
         }
-        // go to the next page
         temp = temp->next_page;
     }
-    // since we are here than it would mean that we don't have any page that can fulfill the request
-    // we need to allocate a new page
     MerryAllocPage *new_page = merry_allocator_get_page();
     if (new_page == NULL)
     {
-        // we cannot to anything anymore
         return RET_NULL;
     }
-    // we now can do something
-    // first we make this new page the head
     new_page->next_page = allocator.pg_misc;
     allocator.pg_misc = new_page;
-    // we now allocate a new block
-    // since this is a new page it is empty
     new_block = (MerryAllocBlock *)new_page->_start_address;
     new_block->parent_page = new_page;
     new_block->_block_size = 64;
@@ -659,22 +582,15 @@ static mptr_t merry_allocator_pg64_add_block()
 
 static MerryAllocBlock *merry_allocator_find_free_pg64()
 {
-    // size is aligned
-    // we will need one function per page to traverse
     MerryAllocPage *temp = allocator.pg_64;
-    // temp will certainly not be NULL
     while (temp != NULL)
     {
-        // we will traverse all the free blocks in this page
         if (temp->entry_free != NULL)
         {
             // if the free list is not empty
             MerryAllocBlock *_temp = temp->entry_free;
             while (_temp != NULL)
             {
-                // we won't split or merge for the sake of speed
-                // This allocator will leave a large memory footprint but since the VM will be the only one using it
-                // we can modify and upgrade this as we go
                 if (_temp->_block_size == 64)
                 {
                     return _temp;
@@ -689,15 +605,9 @@ static MerryAllocBlock *merry_allocator_find_free_pg64()
 
 static mptr_t merry_allocator_alloc_pg64()
 {
-    // size is aligned
-    // we will traverse the free list and see if we find any free blocks
-    // if we have multiple misc pages, we will traverse each page and look for a free block
-    // if we can't find one then we will allocate a new one
     MerryAllocBlock *free_block = merry_allocator_find_free_pg64();
     if (free_block != RET_NULL)
     {
-        // we found a fitting, free block
-        // we now just have to update the linked list
         if (free_block->next == free_block)
         {
             free_block->parent_page->entry_free = NULL; // the free list is now empty
@@ -710,8 +620,6 @@ static mptr_t merry_allocator_alloc_pg64()
         merry_allocator_update_pg64(free_block);                         // update the linked list
         return (mptr_t)((mbptr_t)free_block + _MERRY_ALLOC_BLOCK_SIZE_); // return the allocated block
     }
-    // if we are here then that means we found no free block
-    // we have to allocate a new one then
     mptr_t temp = merry_allocator_pg64_add_block(); // try getting new block
     return temp == RET_NULL ? RET_NULL : temp;
 }
@@ -898,4 +806,32 @@ void merry_free(mptr_t _ptr)
         return;
     MerryAllocBlock *block = (MerryAllocBlock *)((mbptr_t)_ptr - _MERRY_ALLOC_BLOCK_SIZE_);
     merry_alloc_free_memory(block);
+}
+
+mptr_t merry_realloc(mptr_t _ptr, msize_t _new_size)
+{
+    // reallocation is relatively harder to do
+    // While the allocator is not designed to do large and tough allocations and tasks, we have to make it do reallocations
+    // For this the simplest method i can think of is:
+    // Find a new memory block fitting the description.
+    // Copy the contents from old memory.
+    // Free the old memory.
+    // Since the allocator cannot handle requests for more than a few kilobytes, this should be the ideal choice as copying this much memory shouldn't be a problem.
+    if (surelyF(_ptr == NULL))
+        return RET_NULL;
+    // get the block
+    MerryAllocBlock *block = (MerryAllocBlock *)((mbptr_t)_ptr - _MERRY_ALLOC_BLOCK_SIZE_);
+    // now we need to allocate a new block
+    mptr_t new_block = merry_malloc(_new_size);
+    if (new_block == NULL)
+        return RET_NULL; // we failed
+                         // if we didn't fail, copy the old contents and free the block
+    if (memcpy(new_block, (const mptr_t)_ptr, block->_block_size) != new_block)
+    {
+        return RET_NULL; // we failed again
+    }
+    // we succeeded!
+    // new_block should contain the data
+    merry_alloc_free_memory(block); // directly free the memory
+    return new_block;               // YAY!
 }
