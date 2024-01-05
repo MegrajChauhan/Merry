@@ -653,7 +653,7 @@ static mptr_t merry_allocator_pg64_add_block()
     new_block->_block_size = 64;
     new_page->_remaining_page -= _alloc_size;
     new_page->_used_size += _alloc_size;
-    merry_allocator_update_64(new_block); // update
+    merry_allocator_update_pg64(new_block); // update
     return (mbptr_t)new_block + _MERRY_ALLOC_BLOCK_SIZE_;
 }
 
@@ -846,9 +846,50 @@ end:
     return new_block;
 }
 
-static void merry_alloc_free_misc(MerryAllocBlock *block)
+static void merry_alloc_free_memory(MerryAllocBlock *block)
 {
-    
+    // to free allocated memory
+    // the block itself holds the information about the parent page
+    MerryAllocPage *parent_page = block->parent_page;
+    // we just have to update the parent page's free list
+    if (parent_page->entry_non_free == block)
+    {
+        // if block is the head
+        if (block->next == block)
+        {
+            // if there was only one allocated block
+            parent_page->entry_non_free = NULL; // no more allocated blocks
+        }
+        else
+        {
+            block->next->prev = block->prev;
+            block->prev->next = block->next;
+            parent_page->entry_non_free = block->next; // update the head
+        }
+    }
+    else
+    {
+        // the block is not the head
+        block->next->prev = block->prev;
+        block->prev->next = block->next;
+    }
+    // now update the free list
+    if (parent_page->entry_free == NULL)
+    {
+        // if the page has no free block
+        block->next = block;
+        block->prev = block;
+        parent_page->entry_free = block;
+    }
+    else
+    {
+        MerryAllocBlock *old_tail = parent_page->entry_free->prev;
+        old_tail->next->prev = block;
+        old_tail->next = block;
+        block->next = parent_page->entry_free;
+        block->prev = old_tail;
+    }
+    // that is all
 }
 
 void merry_free(mptr_t _ptr)
@@ -856,4 +897,5 @@ void merry_free(mptr_t _ptr)
     if (surelyF(_ptr == NULL))
         return;
     MerryAllocBlock *block = (MerryAllocBlock *)((mbptr_t)_ptr - _MERRY_ALLOC_BLOCK_SIZE_);
+    merry_alloc_free_memory(block);
 }

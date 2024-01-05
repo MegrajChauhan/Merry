@@ -8,7 +8,7 @@ MerryMutex *merry_mutex_init()
 #if defined(_MERRY_THREADS_POSIX_)
     if (pthread_mutex_init(&mutex->mutex, NULL) != 0)
     {
-        free(mutex);
+        merry_free(mutex);
         return RET_NULL;
     }
 #endif
@@ -23,7 +23,7 @@ MerryCond *merry_cond_init()
 #if defined(_MERRY_THREADS_POSIX_)
     if (pthread_cond_init(&cond->cond, NULL) != 0)
     {
-        free(cond);
+        merry_free(cond);
         return RET_NULL;
     }
 #endif
@@ -46,7 +46,7 @@ void merry_mutex_destroy(MerryMutex *mutex)
 #if defined(_MERRY_THREADS_POSIX_)
     pthread_mutex_destroy(&mutex->mutex);
 #endif
-    free(mutex); // free the mutex
+    merry_free(mutex); // merry_free the mutex
 }
 
 void merry_cond_destroy(MerryCond *cond)
@@ -56,14 +56,14 @@ void merry_cond_destroy(MerryCond *cond)
 #if defined(_MERRY_THREADS_POSIX_)
     pthread_cond_destroy(&cond->cond);
 #endif
-    free(cond); // free the mutex
+    merry_free(cond); // merry_free the mutex
 }
 
 void merry_thread_destroy(MerryThread *thread)
 {
     if (surelyF(thread == NULL))
         return;
-    free(thread);
+    merry_free(thread);
 }
 
 void merry_mutex_lock(MerryMutex *mutex)

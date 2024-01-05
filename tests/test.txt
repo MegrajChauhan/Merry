@@ -1,0 +1,540 @@
+A TEST FROM MERRY. TEST OF MERRY ALLOCATOR AND THREADING.
+void print_details()
+{
+    printf("Allocator:\n");
+    printf("\tPG8:%p\n\tPG16:%p\n\tPG32:%p\n\tPG64:%p\n\tPGMISC:%p\n", allocator.pg_8, allocator.pg_16, allocator.pg_32, allocator.pg_64, allocator.pg_misc);
+    // pg8 details
+    printf("PG8:\n");
+    printf("\tSTART ADDRESS:%p\n\tSIZE REM:%lu\n\tUSED:%lu\n\tIS MAPPED:%lu\n\tENTRY FREE:%p\n\tENTRY NONFREE:%p\n", allocator.pg_8->_start_address, allocator.pg_8->_remaining_page, allocator.pg_8->_used_size, allocator.pg_8->_is_mapped, allocator.pg_8->entry_free, allocator.pg_8->entry_non_free);
+    printf("Pg8 PAGE DETAILS:\n");
+    MerryAllocPage *temp = allocator.pg_8;
+    int i = 0;
+    while (temp != NULL)
+    {
+        printf("PAGE %d\n", i);
+        i++;
+        printf("\tSTART ADDRESS: %p\n", temp->_start_address);
+        printf("\tNEXT PAGE:%p\n", temp->next_page);
+        printf("\tFREE LIST: %s\n", temp->entry_free == NULL ? "EMPTY" : "NON EMPTY");
+        if (temp->entry_free != NULL)
+        {
+            MerryAllocBlock *block = temp->entry_free->next;
+            int j = 0;
+            printf("BLOCK %d\n", j);
+            printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n\t", temp->entry_free->_block_size, temp->entry_free->parent_page, temp->entry_free->next, temp->entry_free->prev);
+            j++;
+            while (block != temp->entry_free)
+            {
+                printf("BLOCK %d\n", j);
+                printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n", block->_block_size, block->parent_page, block->next, block->prev);
+                block = block->next;
+                j++;
+            }
+        }
+        printf("\tALLOC LIST: %s\n", temp->entry_non_free == NULL ? "EMPTY" : "NON EMPTY");
+        if (temp->entry_non_free != NULL)
+        {
+            MerryAllocBlock *block = temp->entry_non_free->next;
+            int j = 0;
+            printf("BLOCK %d\n", j);
+            printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n\t", temp->entry_non_free->_block_size, temp->entry_non_free->parent_page, temp->entry_non_free->next, temp->entry_non_free->prev);
+            j++;
+            while (block != temp->entry_non_free)
+            {
+                printf("BLOCK %d\n", j);
+                printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n", block->_block_size, block->parent_page, block->next, block->prev);
+                block = block->next;
+                j++;
+            }
+        }
+        temp = temp->next_page;
+        i++;
+    }
+    printf("PG16:\n");
+    printf("\tSTART ADDRESS:%p\n\tSIZE REM:%lu\n\tUSED:%lu\n\tIS MAPPED:%lu\n\tENTRY FREE:%p\n\tENTRY NONFREE:%p\n", allocator.pg_16->_start_address, allocator.pg_16->_remaining_page, allocator.pg_16->_used_size, allocator.pg_16->_is_mapped, allocator.pg_16->entry_free, allocator.pg_16->entry_non_free);
+    printf("Pg16 PAGE DETAILS:\n");
+    temp = allocator.pg_16; // Modified here
+    i = 0;
+    while (temp != NULL)
+    {
+        printf("PAGE %d\n", i);
+        i++;
+        printf("\tSTART ADDRESS: %p\n", temp->_start_address);
+        printf("\tNEXT PAGE:%p\n", temp->next_page);
+        printf("\tFREE LIST: %s\n", temp->entry_free == NULL ? "EMPTY" : "NON EMPTY");
+        if (temp->entry_free != NULL)
+        {
+            MerryAllocBlock *block = temp->entry_free->next;
+            int j = 0;
+            printf("BLOCK %d\n", j);
+            printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n\t", temp->entry_free->_block_size, temp->entry_free->parent_page, temp->entry_free->next, temp->entry_free->prev);
+            j++;
+            while (block != temp->entry_free)
+            {
+                printf("BLOCK %d\n", j);
+                printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n", block->_block_size, block->parent_page, block->next, block->prev);
+                block = block->next;
+                j++;
+            }
+        }
+        printf("\tALLOC LIST: %s\n", temp->entry_non_free == NULL ? "EMPTY" : "NON EMPTY");
+        if (temp->entry_non_free != NULL)
+        {
+            MerryAllocBlock *block = temp->entry_non_free->next;
+            int j = 0;
+            printf("BLOCK %d\n", j);
+            printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n\t", temp->entry_non_free->_block_size, temp->entry_non_free->parent_page, temp->entry_non_free->next, temp->entry_non_free->prev);
+            j++;
+            while (block != temp->entry_non_free)
+            {
+                printf("BLOCK %d\n", j);
+                printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n", block->_block_size, block->parent_page, block->next, block->prev);
+                block = block->next;
+                j++;
+            }
+        }
+        temp = temp->next_page;
+    }
+
+    printf("PG32:\n");
+    printf("\tSTART ADDRESS:%p\n\tSIZE REM:%lu\n\tUSED:%lu\n\tIS MAPPED:%lu\n\tENTRY FREE:%p\n\tENTRY NONFREE:%p\n", allocator.pg_32->_start_address, allocator.pg_32->_remaining_page, allocator.pg_32->_used_size, allocator.pg_32->_is_mapped, allocator.pg_32->entry_free, allocator.pg_32->entry_non_free);
+    printf("Pg32 PAGE DETAILS:\n");
+    temp = allocator.pg_32; // Modified here
+    i = 0;
+    while (temp != NULL)
+    {
+        printf("PAGE %d\n", i);
+        i++;
+        printf("\tSTART ADDRESS: %p\n", temp->_start_address);
+        printf("\tNEXT PAGE:%p\n", temp->next_page);
+        printf("\tFREE LIST: %s\n", temp->entry_free == NULL ? "EMPTY" : "NON EMPTY");
+        if (temp->entry_free != NULL)
+        {
+            MerryAllocBlock *block = temp->entry_free->next;
+            int j = 0;
+            printf("BLOCK %d\n", j);
+            printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n", temp->entry_free->_block_size, temp->entry_free->parent_page, temp->entry_free->next, temp->entry_free->prev);
+            j++;
+            while (block != temp->entry_free)
+            {
+                printf("BLOCK %d\n", j);
+                printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n", block->_block_size, block->parent_page, block->next, block->prev);
+                block = block->next;
+                j++;
+            }
+        }
+        printf("\tALLOC LIST: %s\n", temp->entry_non_free == NULL ? "EMPTY" : "NON EMPTY");
+        if (temp->entry_non_free != NULL)
+        {
+            MerryAllocBlock *block = temp->entry_non_free->next;
+            int j = 0;
+            printf("BLOCK %d\n", j);
+            printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n", temp->entry_non_free->_block_size, temp->entry_non_free->parent_page, temp->entry_non_free->next, temp->entry_non_free->prev);
+            j++;
+            while (block != temp->entry_non_free)
+            {
+                printf("BLOCK %d\n", j);
+                printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n", block->_block_size, block->parent_page, block->next, block->prev);
+                block = block->next;
+                j++;
+            }
+        }
+        temp = temp->next_page;
+    }
+
+    printf("PG64:\n");
+    printf("\tSTART ADDRESS:%p\n\tSIZE REM:%lu\n\tUSED:%lu\n\tIS MAPPED:%lu\n\tENTRY FREE:%p\n\tENTRY NONFREE:%p\n", allocator.pg_64->_start_address, allocator.pg_64->_remaining_page, allocator.pg_64->_used_size, allocator.pg_64->_is_mapped, allocator.pg_64->entry_free, allocator.pg_64->entry_non_free);
+    printf("Pg64 PAGE DETAILS:\n");
+    temp = allocator.pg_64; // Modified here
+    i = 0;
+    while (temp != NULL)
+    {
+        printf("PAGE %d\n", i);
+        i++;
+        printf("\tSTART ADDRESS: %p\n", temp->_start_address);
+        printf("\tNEXT PAGE:%p\n", temp->next_page);
+        printf("\tFREE LIST: %s\n", temp->entry_free == NULL ? "EMPTY" : "NON EMPTY");
+        if (temp->entry_free != NULL)
+        {
+            MerryAllocBlock *block = temp->entry_free->next;
+            int j = 0;
+            printf("BLOCK %d\n", j);
+            printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n", temp->entry_free->_block_size, temp->entry_free->parent_page, temp->entry_free->next, temp->entry_free->prev);
+            j++;
+            while (block != temp->entry_free)
+            {
+                printf("BLOCK %d\n", j);
+                printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n", block->_block_size, block->parent_page, block->next, block->prev);
+                block = block->next;
+                j++;
+            }
+        }
+        printf("\tALLOC LIST: %s\n", temp->entry_non_free == NULL ? "EMPTY" : "NON EMPTY");
+        if (temp->entry_non_free != NULL)
+        {
+            MerryAllocBlock *block = temp->entry_non_free->next;
+            int j = 0;
+            printf("BLOCK %d\n", j);
+            printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n", temp->entry_non_free->_block_size, temp->entry_non_free->parent_page, temp->entry_non_free->next, temp->entry_non_free->prev);
+            j++;
+            while (block != temp->entry_non_free)
+            {
+                printf("BLOCK %d\n", j);
+                printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n", block->_block_size, block->parent_page, block->next, block->prev);
+                block = block->next;
+                j++;
+            }
+        }
+        temp = temp->next_page;
+    }
+
+    printf("PGMISC:\n");
+    printf("\tSTART ADDRESS:%p\n\tSIZE REM:%lu\n\tUSED:%lu\n\tIS MAPPED:%lu\n\tENTRY FREE:%p\n\tENTRY NONFREE:%p\n", allocator.pg_misc->_start_address, allocator.pg_misc->_remaining_page, allocator.pg_misc->_used_size, allocator.pg_misc->_is_mapped, allocator.pg_misc->entry_free, allocator.pg_misc->entry_non_free);
+    printf("PgMisc PAGE DETAILS:\n");
+    temp = allocator.pg_misc; // Modified here
+    i = 0;
+    while (temp != NULL)
+    {
+        printf("PAGE %d\n", i);
+        i++;
+        printf("\tSTART ADDRESS: %p\n", temp->_start_address);
+        printf("\tNEXT PAGE:%p\n", temp->next_page);
+        printf("\tFREE LIST: %s\n", temp->entry_free == NULL ? "EMPTY" : "NON EMPTY");
+        if (temp->entry_free != NULL)
+        {
+            MerryAllocBlock *block = temp->entry_free->next;
+            int j = 0;
+            printf("BLOCK %d\n", j);
+            printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n", temp->entry_free->_block_size, temp->entry_free->parent_page, temp->entry_free->next, temp->entry_free->prev);
+            j++;
+            while (block != temp->entry_free)
+            {
+                printf("BLOCK %d\n", j);
+                printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n", block->_block_size, block->parent_page, block->next, block->prev);
+                block = block->next;
+                j++;
+            }
+        }
+        printf("\tALLOC LIST: %s\n", temp->entry_non_free == NULL ? "EMPTY" : "NON EMPTY");
+        if (temp->entry_non_free != NULL)
+        {
+            MerryAllocBlock *block = temp->entry_non_free->next;
+            int j = 0;
+            printf("BLOCK %d\n", j);
+            printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n", temp->entry_non_free->_block_size, temp->entry_non_free->parent_page, temp->entry_non_free->next, temp->entry_non_free->prev);
+            j++;
+            while (block != temp->entry_non_free)
+            {
+                printf("BLOCK %d\n", j);
+                printf("\tBLOCK SIZE: %zu\n\tPARENT PAGE:%p\n\tNEXT:%p\n\tPREV:%p\n", block->_block_size, block->parent_page, block->next, block->prev);
+                block = block->next;
+                j++;
+            }
+        }
+        temp = temp->next_page;
+    }
+}
+
+Hello World from Merry!
+Allocator:
+	PG8:0x1d5a000
+	PG16:0x1d5b030
+	PG32:0x1d5c060
+	PG64:0x1d5d090
+	PGMISC:0x1d5e0c0
+PG8:
+	START ADDRESS:0x1d5a030
+	SIZE REM:4096
+	USED:0
+	IS MAPPED:0
+	ENTRY FREE:(nil)
+	ENTRY NONFREE:(nil)
+Pg8 PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5a030
+	NEXT PAGE:(nil)
+	FREE LIST: EMPTY
+	ALLOC LIST: EMPTY
+PG16:
+	START ADDRESS:0x1d5b060
+	SIZE REM:4096
+	USED:0
+	IS MAPPED:0
+	ENTRY FREE:(nil)
+	ENTRY NONFREE:(nil)
+Pg16 PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5b060
+	NEXT PAGE:(nil)
+	FREE LIST: EMPTY
+	ALLOC LIST: EMPTY
+PG32:
+	START ADDRESS:0x1d5c090
+	SIZE REM:4096
+	USED:0
+	IS MAPPED:0
+	ENTRY FREE:(nil)
+	ENTRY NONFREE:(nil)
+Pg32 PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5c090
+	NEXT PAGE:(nil)
+	FREE LIST: EMPTY
+	ALLOC LIST: EMPTY
+PG64:
+	START ADDRESS:0x1d5d0c0
+	SIZE REM:4096
+	USED:0
+	IS MAPPED:0
+	ENTRY FREE:(nil)
+	ENTRY NONFREE:(nil)
+Pg64 PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5d0c0
+	NEXT PAGE:(nil)
+	FREE LIST: EMPTY
+	ALLOC LIST: EMPTY
+PGMISC:
+	START ADDRESS:0x1d5e0f0
+	SIZE REM:4096
+	USED:0
+	IS MAPPED:0
+	ENTRY FREE:(nil)
+	ENTRY NONFREE:(nil)
+PgMisc PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5e0f0
+	NEXT PAGE:(nil)
+	FREE LIST: EMPTY
+	ALLOC LIST: EMPTY
+	
+Allocator:
+	PG8:0x1d5a000
+	PG16:0x1d5b030
+	PG32:0x1d5c060
+	PG64:0x1d5d090
+	PGMISC:0x1d5e0c0
+PG8:
+	START ADDRESS:0x1d5a030
+	SIZE REM:4056
+	USED:40
+	IS MAPPED:0
+	ENTRY FREE:(nil)
+	ENTRY NONFREE:0x1d5a030
+Pg8 PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5a030
+	NEXT PAGE:(nil)
+	FREE LIST: EMPTY
+	ALLOC LIST: NON EMPTY
+BLOCK 0
+	BLOCK SIZE: 8
+	PARENT PAGE:0x1d5a000
+	NEXT:0x1d5a030
+	PREV:0x1d5a030
+	PG16:
+	START ADDRESS:0x1d5b060
+	SIZE REM:4096
+	USED:0
+	IS MAPPED:0
+	ENTRY FREE:(nil)
+	ENTRY NONFREE:(nil)
+Pg16 PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5b060
+	NEXT PAGE:(nil)
+	FREE LIST: EMPTY
+	ALLOC LIST: EMPTY
+PG32:
+	START ADDRESS:0x1d5c090
+	SIZE REM:4096
+	USED:0
+	IS MAPPED:0
+	ENTRY FREE:(nil)
+	ENTRY NONFREE:(nil)
+Pg32 PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5c090
+	NEXT PAGE:(nil)
+	FREE LIST: EMPTY
+	ALLOC LIST: EMPTY
+PG64:
+	START ADDRESS:0x1d5d0c0
+	SIZE REM:4096
+	USED:0
+	IS MAPPED:0
+	ENTRY FREE:(nil)
+	ENTRY NONFREE:(nil)
+Pg64 PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5d0c0
+	NEXT PAGE:(nil)
+	FREE LIST: EMPTY
+	ALLOC LIST: EMPTY
+PGMISC:
+	START ADDRESS:0x1d5e0f0
+	SIZE REM:4096
+	USED:0
+	IS MAPPED:0
+	ENTRY FREE:(nil)
+	ENTRY NONFREE:(nil)
+PgMisc PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5e0f0
+	NEXT PAGE:(nil)
+	FREE LIST: EMPTY
+	ALLOC LIST: EMPTY
+
+Allocator:
+	PG8:0x1d5a000
+	PG16:0x1d5b030
+	PG32:0x1d5c060
+	PG64:0x1d5d090
+	PGMISC:0x1d5e0c0
+PG8:
+	START ADDRESS:0x1d5a030
+	SIZE REM:4056
+	USED:40
+	IS MAPPED:0
+	ENTRY FREE:(nil)
+	ENTRY NONFREE:0x1d5a030
+Pg8 PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5a030
+	NEXT PAGE:(nil)
+	FREE LIST: EMPTY
+	ALLOC LIST: NON EMPTY
+BLOCK 0
+	BLOCK SIZE: 8
+	PARENT PAGE:0x1d5a000
+	NEXT:0x1d5a030
+	PREV:0x1d5a030
+	PG16:
+	START ADDRESS:0x1d5b060
+	SIZE REM:4096
+	USED:0
+	IS MAPPED:0
+	ENTRY FREE:(nil)
+	ENTRY NONFREE:(nil)
+Pg16 PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5b060
+	NEXT PAGE:(nil)
+	FREE LIST: EMPTY
+	ALLOC LIST: EMPTY
+PG32:
+	START ADDRESS:0x1d5c090
+	SIZE REM:4096
+	USED:0
+	IS MAPPED:0
+	ENTRY FREE:(nil)
+	ENTRY NONFREE:(nil)
+Pg32 PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5c090
+	NEXT PAGE:(nil)
+	FREE LIST: EMPTY
+	ALLOC LIST: EMPTY
+PG64:
+	START ADDRESS:0x1d5d0c0
+	SIZE REM:4096
+	USED:0
+	IS MAPPED:0
+	ENTRY FREE:(nil)
+	ENTRY NONFREE:(nil)
+Pg64 PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5d0c0
+	NEXT PAGE:(nil)
+	FREE LIST: EMPTY
+	ALLOC LIST: EMPTY
+PGMISC:
+	START ADDRESS:0x1d5e0f0
+	SIZE REM:4096
+	USED:0
+	IS MAPPED:0
+	ENTRY FREE:(nil)
+	ENTRY NONFREE:(nil)
+PgMisc PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5e0f0
+	NEXT PAGE:(nil)
+	FREE LIST: EMPTY
+	ALLOC LIST: EMPTY
+
+Allocator:
+	PG8:0x1d5a000
+	PG16:0x1d5b030
+	PG32:0x1d5c060
+	PG64:0x1d5d090
+	PGMISC:0x1d5e0c0
+PG8:
+	START ADDRESS:0x1d5a030
+	SIZE REM:4056
+	USED:40
+	IS MAPPED:0
+	ENTRY FREE:0x1d5a030
+	ENTRY NONFREE:(nil)
+Pg8 PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5a030
+	NEXT PAGE:(nil)
+	FREE LIST: NON EMPTY
+BLOCK 0
+	BLOCK SIZE: 8
+	PARENT PAGE:0x1d5a000
+	NEXT:0x1d5a030
+	PREV:0x1d5a030
+		ALLOC LIST: EMPTY
+PG16:
+	START ADDRESS:0x1d5b060
+	SIZE REM:4096
+	USED:0
+	IS MAPPED:0
+	ENTRY FREE:(nil)
+	ENTRY NONFREE:(nil)
+Pg16 PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5b060
+	NEXT PAGE:(nil)
+	FREE LIST: EMPTY
+	ALLOC LIST: EMPTY
+PG32:
+	START ADDRESS:0x1d5c090
+	SIZE REM:4096
+	USED:0
+	IS MAPPED:0
+	ENTRY FREE:(nil)
+	ENTRY NONFREE:(nil)
+Pg32 PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5c090
+	NEXT PAGE:(nil)
+	FREE LIST: EMPTY
+	ALLOC LIST: EMPTY
+PG64:
+	START ADDRESS:0x1d5d0c0
+	SIZE REM:4096
+	USED:0
+	IS MAPPED:0
+	ENTRY FREE:(nil)
+	ENTRY NONFREE:(nil)
+Pg64 PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5d0c0
+	NEXT PAGE:(nil)
+	FREE LIST: EMPTY
+	ALLOC LIST: EMPTY
+PGMISC:
+	START ADDRESS:0x1d5e0f0
+	SIZE REM:4096
+	USED:0
+	IS MAPPED:0
+	ENTRY FREE:(nil)
+	ENTRY NONFREE:(nil)
+PgMisc PAGE DETAILS:
+PAGE 0
+	START ADDRESS: 0x1d5e0f0
+	NEXT PAGE:(nil)
+	FREE LIST: EMPTY
+	ALLOC LIST: EMPTY

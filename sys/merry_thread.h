@@ -25,10 +25,8 @@
 #ifndef _MERRY_THREADSABS_
 #define _MERRY_THREADSABS_
 
-#include <stdlib.h> // this module is allowed to use malloc
 #include "../utils/merry_config.h"
 #include "../utils/merry_types.h"
-#include "../merry/lib/include/merry_memory_allocator.h"
 
 typedef struct MerryMutex MerryMutex;
 typedef struct MerryCond MerryCond;
@@ -40,6 +38,8 @@ typedef struct MerryThread MerryThread;
 #endif
 
 _MERRY_DEFINE_FUNC_PTR_(void *, ThreadExecFunc, void *)
+
+#include "../merry/lib/include/merry_memory_allocator.h"
 
 // initialize mutex lock
 _MERRY_NO_DISCARD_ MerryMutex *merry_mutex_init();

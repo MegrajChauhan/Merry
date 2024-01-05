@@ -1,3 +1,3 @@
-sys/src/merry_thread.c
 merry/lib/src/merry_memory_allocator.c
+sys/src/merry_thread.c
 merry/merry.c
