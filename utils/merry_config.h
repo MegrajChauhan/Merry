@@ -103,4 +103,7 @@
 #define _MERRY_LONG_ unsigned long long
 #endif
 
+#define _MERRY_INTERNAL_ static // for a variable or a function that is localized to a module only
+#define _MERRY_LOCAL_ static // any static variable inside a function 
+
 #endif

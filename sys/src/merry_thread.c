@@ -102,6 +102,15 @@ void merry_cond_signal(MerryCond *cond)
 #endif
 }
 
+void merry_cond_broadcast(MerryCond *cond)
+{
+    if (surelyF(cond == NULL))
+        return;
+#if defined(_MERRY_THREADS_POSIX_)
+    pthread_cond_broadcast(&cond->cond);
+#endif
+}
+
 mret_t merry_create_detached_thread(MerryThread *thread, ThreadExecFunc func, void *arg)
 {
     if (surelyF(thread == NULL || func == NULL))

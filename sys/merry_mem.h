@@ -47,7 +47,7 @@
 #define _MERRY_MEM_BRK_SUPPORT_ 1                     // meddling with the program's break point is supported
 #define _MERRY_MEM_GET_CURRENT_BRK_POINT_ sbrk(0)     // get the current break point
 #define _MERRY_MEM_INCREASE_BRK_POINT_(len) sbrk(len) // increase the program's break point by len bytes
-#define _MERRY_MEM_BRK_ERROR_ RET_NULL
+#define _MERRY_MEM_BRK_ERROR_ (void*)-1
 
 #endif
 

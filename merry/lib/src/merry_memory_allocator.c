@@ -1,7 +1,7 @@
 #include "../include/merry_memory_allocator.h"
 
 // specifically init the lock for the allocator
-static mret_t merry_alloc_init_lock()
+_MERRY_INTERNAL_ mret_t merry_alloc_init_lock()
 {
 #if defined(_MERRY_THREADS_POSIX_)
     if (pthread_mutex_init(&allocator.lock.mutex, NULL) != 0)
@@ -12,14 +12,14 @@ static mret_t merry_alloc_init_lock()
     return RET_SUCCESS;
 }
 
-static void merry_alloc_destroy_lock()
+_MERRY_INTERNAL_ void merry_alloc_destroy_lock()
 {
 #if defined(_MERRY_THREADS_POSIX_)
     pthread_mutex_destroy(&allocator.lock.mutex);
 #endif
 }
 
-static MerryAllocPage *merry_allocator_get_page()
+_MERRY_INTERNAL_ MerryAllocPage *merry_allocator_get_page()
 {
     // try to get a alloc page worth of memory from the OS and return it
     mptr_t _new_page;
@@ -62,7 +62,7 @@ static MerryAllocPage *merry_allocator_get_page()
     return page; // we allocated a new page
 }
 
-static void merry_allocator_update_misc(MerryAllocBlock *details)
+_MERRY_INTERNAL_ void merry_allocator_update_misc(MerryAllocBlock *details)
 {
     // we update the allocated list
     // if the non free list is empty, add a new head
@@ -80,7 +80,7 @@ static void merry_allocator_update_misc(MerryAllocBlock *details)
     details->prev = old_tail;
 }
 
-static mptr_t merry_allocator_misc_add_block(msize_t size)
+_MERRY_INTERNAL_ mptr_t merry_allocator_misc_add_block(msize_t size)
 {
     // size is aligned
     // we will first traverse the page list and see which page can fit the request
@@ -143,7 +143,7 @@ static mptr_t merry_allocator_misc_add_block(msize_t size)
     return (mbptr_t)new_block + _MERRY_ALLOC_BLOCK_SIZE_;
 }
 
-static MerryAllocBlock *merry_allocator_find_free_misc(msize_t size)
+_MERRY_INTERNAL_ MerryAllocBlock *merry_allocator_find_free_misc(msize_t size)
 {
     // size is aligned
     // we will need one function per page to traverse
@@ -173,7 +173,7 @@ static MerryAllocBlock *merry_allocator_find_free_misc(msize_t size)
     return RET_NULL; // we found none that filled the description
 }
 
-static mptr_t merry_allocator_alloc_misc(msize_t size)
+_MERRY_INTERNAL_ mptr_t merry_allocator_alloc_misc(msize_t size)
 {
     // size is aligned
     // we will traverse the free list and see if we find any free blocks
@@ -210,7 +210,7 @@ static mptr_t merry_allocator_alloc_misc(msize_t size)
 //                                                                                   //
 ///////////////////////////////////////////////////////////////////////////////////////
 
-static void merry_allocator_update_pg8(MerryAllocBlock *details)
+_MERRY_INTERNAL_ void merry_allocator_update_pg8(MerryAllocBlock *details)
 {
     if (details->parent_page->entry_non_free == NULL)
     {
@@ -226,7 +226,7 @@ static void merry_allocator_update_pg8(MerryAllocBlock *details)
     details->prev = old_tail;
 }
 
-static mptr_t merry_allocator_pg8_add_block()
+_MERRY_INTERNAL_ mptr_t merry_allocator_pg8_add_block()
 {
     // size is aligned
     MerryAllocPage *temp = allocator.pg_8;
@@ -271,7 +271,7 @@ static mptr_t merry_allocator_pg8_add_block()
     return (mbptr_t)new_block + _MERRY_ALLOC_BLOCK_SIZE_;
 }
 
-static MerryAllocBlock *merry_allocator_find_free_pg8()
+_MERRY_INTERNAL_ MerryAllocBlock *merry_allocator_find_free_pg8()
 {
     MerryAllocPage *temp = allocator.pg_8;
     while (temp != NULL)
@@ -293,7 +293,7 @@ static MerryAllocBlock *merry_allocator_find_free_pg8()
     return RET_NULL; // we found none that filled the description
 }
 
-static mptr_t merry_allocator_alloc_pg8()
+_MERRY_INTERNAL_ mptr_t merry_allocator_alloc_pg8()
 {
     MerryAllocBlock *free_block = merry_allocator_find_free_pg8();
     if (free_block != RET_NULL)
@@ -314,7 +314,7 @@ static mptr_t merry_allocator_alloc_pg8()
     return temp == RET_NULL ? RET_NULL : temp;
 }
 
-static void merry_allocator_update_pg16(MerryAllocBlock *details)
+_MERRY_INTERNAL_ void merry_allocator_update_pg16(MerryAllocBlock *details)
 {
     if (details->parent_page->entry_non_free == NULL)
     {
@@ -330,7 +330,7 @@ static void merry_allocator_update_pg16(MerryAllocBlock *details)
     details->prev = old_tail;
 }
 
-static mptr_t merry_allocator_pg16_add_block()
+_MERRY_INTERNAL_ mptr_t merry_allocator_pg16_add_block()
 {
     // size is aligned
     MerryAllocPage *temp = allocator.pg_16;
@@ -375,7 +375,7 @@ static mptr_t merry_allocator_pg16_add_block()
     return (mbptr_t)new_block + _MERRY_ALLOC_BLOCK_SIZE_;
 }
 
-static MerryAllocBlock *merry_allocator_find_free_pg16()
+_MERRY_INTERNAL_ MerryAllocBlock *merry_allocator_find_free_pg16()
 {
     MerryAllocPage *temp = allocator.pg_16;
     while (temp != NULL)
@@ -397,7 +397,7 @@ static MerryAllocBlock *merry_allocator_find_free_pg16()
     return RET_NULL; // we found none that filled the description
 }
 
-static mptr_t merry_allocator_alloc_pg16()
+_MERRY_INTERNAL_ mptr_t merry_allocator_alloc_pg16()
 {
     MerryAllocBlock *free_block = merry_allocator_find_free_pg16();
     if (free_block != RET_NULL)
@@ -418,7 +418,7 @@ static mptr_t merry_allocator_alloc_pg16()
     return temp == RET_NULL ? RET_NULL : temp;
 }
 
-static void merry_allocator_update_pg32(MerryAllocBlock *details)
+_MERRY_INTERNAL_ void merry_allocator_update_pg32(MerryAllocBlock *details)
 {
     if (details->parent_page->entry_non_free == NULL)
     {
@@ -433,7 +433,7 @@ static void merry_allocator_update_pg32(MerryAllocBlock *details)
     details->prev = old_tail;
 }
 
-static mptr_t merry_allocator_pg32_add_block()
+_MERRY_INTERNAL_ mptr_t merry_allocator_pg32_add_block()
 {
     // size is aligned
     MerryAllocPage *temp = allocator.pg_32;
@@ -478,7 +478,7 @@ static mptr_t merry_allocator_pg32_add_block()
     return (mbptr_t)new_block + _MERRY_ALLOC_BLOCK_SIZE_;
 }
 
-static MerryAllocBlock *merry_allocator_find_free_pg32()
+_MERRY_INTERNAL_ MerryAllocBlock *merry_allocator_find_free_pg32()
 {
     MerryAllocPage *temp = allocator.pg_32;
     while (temp != NULL)
@@ -500,7 +500,7 @@ static MerryAllocBlock *merry_allocator_find_free_pg32()
     return RET_NULL; // we found none that filled the description
 }
 
-static mptr_t merry_allocator_alloc_pg32()
+_MERRY_INTERNAL_ mptr_t merry_allocator_alloc_pg32()
 {
     MerryAllocBlock *free_block = merry_allocator_find_free_pg32();
     if (free_block != RET_NULL)
@@ -521,7 +521,7 @@ static mptr_t merry_allocator_alloc_pg32()
     return temp == RET_NULL ? RET_NULL : temp;
 }
 
-static void merry_allocator_update_pg64(MerryAllocBlock *details)
+_MERRY_INTERNAL_ void merry_allocator_update_pg64(MerryAllocBlock *details)
 {
     if (details->parent_page->entry_non_free == NULL)
     {
@@ -536,7 +536,7 @@ static void merry_allocator_update_pg64(MerryAllocBlock *details)
     details->prev = old_tail;
 }
 
-static mptr_t merry_allocator_pg64_add_block()
+_MERRY_INTERNAL_ mptr_t merry_allocator_pg64_add_block()
 {
     MerryAllocPage *temp = allocator.pg_64;
     msize_t _alloc_size = (64 + _MERRY_ALLOC_BLOCK_SIZE_);
@@ -580,7 +580,7 @@ static mptr_t merry_allocator_pg64_add_block()
     return (mbptr_t)new_block + _MERRY_ALLOC_BLOCK_SIZE_;
 }
 
-static MerryAllocBlock *merry_allocator_find_free_pg64()
+_MERRY_INTERNAL_ MerryAllocBlock *merry_allocator_find_free_pg64()
 {
     MerryAllocPage *temp = allocator.pg_64;
     while (temp != NULL)
@@ -603,7 +603,7 @@ static MerryAllocBlock *merry_allocator_find_free_pg64()
     return RET_NULL; // we found none that filled the description
 }
 
-static mptr_t merry_allocator_alloc_pg64()
+_MERRY_INTERNAL_ mptr_t merry_allocator_alloc_pg64()
 {
     MerryAllocBlock *free_block = merry_allocator_find_free_pg64();
     if (free_block != RET_NULL)
@@ -754,7 +754,7 @@ end:
     return new_block;
 }
 
-static void merry_alloc_free_memory(MerryAllocBlock *block)
+_MERRY_INTERNAL_ void merry_alloc_free_memory(MerryAllocBlock *block)
 {
     // to free allocated memory
     // the block itself holds the information about the parent page

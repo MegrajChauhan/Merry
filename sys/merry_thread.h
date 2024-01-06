@@ -62,6 +62,8 @@ void merry_mutex_unlock(MerryMutex *mutex);
 void merry_cond_wait(MerryCond *cond, MerryMutex *lock);
 // condition signal
 void merry_cond_signal(MerryCond *cond);
+// broadcast signal
+void merry_cond_broadcast(MerryCond *cond);
 // create detached thread
 mret_t merry_create_detached_thread(MerryThread *thread, ThreadExecFunc func, void *arg);
 // create thread with no atrributes

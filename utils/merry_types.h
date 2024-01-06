@@ -35,8 +35,8 @@
 // for function returns
 #define RET_SUCCESS mtrue
 #define RET_FAILURE mfalse
-#define RET_AMBIGIOUS 2     // extra return to be used for any third sort of return
-#define RET_NULL (void *)-1 // used by functions
+#define RET_AMBIGIOUS 2    // extra return to be used for any third sort of return
+#define RET_NULL (void *)0 // used by functions
 
 typedef unsigned char mbool_t; // bool
 
