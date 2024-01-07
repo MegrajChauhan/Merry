@@ -38,5 +38,7 @@
 // the memory follows the same endianness as the host system
 #define _MERRY_MEMORY_BYTE_ORDER_ _MERRY_BYTE_ORDER_
 #define _MERRY_MEMORY_IS_ACCESS_ERROR_(offset) ((offset + 7) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_)
+#define _MERRY_STACKMEM_BYTE_LEN_ _MERRY_MEMORY_ADDRESSES_PER_PAGE_
+#define _MERRY_STACKMEM_SIZE_ 131072 // this is the number of qwords and not the bytes[equals 1MB]
 
 #endif

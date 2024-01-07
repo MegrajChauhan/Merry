@@ -30,6 +30,7 @@
 #include "../lib/include/merry_memory_allocator.h"
 #include "../../sys/merry_thread.h"
 #include "merry_internals.h"
+#include "../../sys/merry_mem.h" // for allocating a page for the stack that the core manages
 #include "merry_memory.h"
 #include "../includes/merry_errors.h"
 
@@ -38,7 +39,7 @@ typedef struct MerryCore MerryCore;
 typedef struct MerryFlagRegister MerryFlagRegister;
 
 /*
- This behaviour is very different in different based on different architectures, endianness and the whim of the compiler as well.
+ The behaviour of Unions is very different based on different architectures, endianness and the whim of the compiler as well.
  This could have been very safe, fast and useful as well as saved a ton of time but unfortunately, it is not that predictable.
 */
 // union MerryRegister
@@ -90,7 +91,6 @@ struct MerryCore
     // they also need some private variables unique to only them
     MerryCond *cond;        // the core's private condition variable
     MerryMutex *lock;       // the core's private mutex lock
-    MerryCond *shared_cond; // a shared condition variable that can be used to unblock every core waiting on it
     // the core's memory
     MerryMemory *data_mem; // the data memory
     MerryMemory *inst_mem; // the instruction memory
@@ -104,5 +104,10 @@ struct MerryCore
     mbool_t should_wait;  // tell the core to wait until signaled
     mbool_t stop_running; // tell the core to stop executing and shut down
 };
+
+// initialize a new core
+MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, msize_t id);
+
+void merry_core_destroy(MerryCore *core);
 
 #endif
