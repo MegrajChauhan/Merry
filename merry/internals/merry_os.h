@@ -48,6 +48,11 @@ struct Merry
     mbool_t stop;           // tell the manager to stop the VM and exit
 };
 
+
+//this is just the abstraction for basic read with no modifications[Not atomic] 
+#define merry_manager_mem_read_inst(os, address, store_in) merry_memory_read(os->inst_mem, address, store_in)
+#define merry_manager_mem_read_data(os, address, store_in) merry_memory_read(os->data_mem, address, store_in)
+
 /*
  The Manager assigns core ids to every core it manages which then helps in identifying the cores.
  The potential use for shared_cond is that when performing atomic operations, we can block other vcores and unblock them at the same time as well.
