@@ -70,7 +70,7 @@ struct MerryMemPage
 {
     mbptr_t address_space; // the actual memory of the page
     // MerryMemPageDetails details; // the page details
-    MerryMutex *lock; // Many different pages can be accessed simultaneously
+    // MerryMutex *lock; // Many different pages can be accessed simultaneously
     // MerryCond *cond;
 };
 
@@ -101,5 +101,12 @@ void merry_memory_free(MerryMemory *memory);
 mret_t merry_memory_read(MerryMemory *memory, maddress_t address, mqptr_t _store_in);
 
 mret_t merry_memory_write(MerryMemory *memory, maddress_t address, mqword_t _to_write);
+
+/*
+// here number of qs means how many qwords to read
+// this will be specially helpful during operations where single instruction operates on multiple data
+// mret_t merry_memory_read_chunk(MerryMemory *memory, maddress_t address, mqptr_t _store_in, msize_t _num_of_qs);
+mret_t merry_memory_write_chunk(MerryMemory *memory, maddress_t address, mqptr_t _to_write, msize_t _num_of_qs_to_write);
+*/
 
 #endif

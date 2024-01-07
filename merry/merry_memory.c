@@ -15,12 +15,12 @@ _MERRY_INTERNAL_ MerryMemPage *merry_mem_allocate_new_mempage()
         merry_free(new_page);
         return RET_NULL; // we failed
     }
-    if ((new_page->lock = merry_mutex_init()) == RET_NULL)
-    {
-        _MERRY_MEMORY_PGALLOC_UNMAP_PAGE_(new_page->address_space);
-        merry_free(new_page);
-        return RET_NULL;
-    }
+    // if ((new_page->lock = merry_mutex_init()) == RET_NULL)
+    // {
+    //     _MERRY_MEMORY_PGALLOC_UNMAP_PAGE_(new_page->address_space);
+    //     merry_free(new_page);
+    //     return RET_NULL;
+    // }
     // everything went successfully
     return new_page;
 }
@@ -30,10 +30,10 @@ _MERRY_INTERNAL_ void merry_mem_free_mempage(MerryMemPage *page)
 {
     if (surelyF(page == NULL))
         return;
-    if (page->lock != NULL)
-    {
-        merry_mutex_destroy(page->lock);
-    }
+    // if (page->lock != NULL)
+    // {
+    //     merry_mutex_destroy(page->lock);
+    // }
     if (surelyT(page->address_space != NULL))
     {
         _MERRY_MEMORY_PGALLOC_UNMAP_PAGE_(page->address_space);
