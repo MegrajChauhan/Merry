@@ -89,8 +89,8 @@ struct MerryCore
 {
     // firstly every core shares some variables with other cores
     // they also need some private variables unique to only them
-    MerryCond *cond;        // the core's private condition variable
-    MerryMutex *lock;       // the core's private mutex lock
+    MerryCond *cond;  // the core's private condition variable
+    MerryMutex *lock; // the core's private mutex lock
     // the core's memory
     MerryMemory *data_mem; // the data memory
     MerryMemory *inst_mem; // the instruction memory
@@ -103,6 +103,11 @@ struct MerryCore
     // some important flags
     mbool_t should_wait;  // tell the core to wait until signaled
     mbool_t stop_running; // tell the core to stop executing and shut down
+    // to get maximum performance, we want to use everything we can
+    // When a core is executing instructions and it is certain that the values and pages it accesses are not accessed by
+    // other cores, it can set this flag and access memory pages without mutex locks which is faster.
+    // If this flag is set but other cores access this core's pages and values then it is not known what behaviour might happen
+    mbool_t _is_private;
 };
 
 // initialize a new core
