@@ -47,7 +47,7 @@ MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, msize_t
     }
     new_core->should_wait = mtrue;   // should initially wait until said to run
     new_core->stop_running = mfalse; // this is set to false because as soon as the core is instructed to start/continue execution, it shouldn't stop and start immediately
-    new_core->_is_private = mfalse; // set to false by default
+    new_core->_is_private = mfalse;  // set to false by default
     // we have done everything now
     return new_core;
 }

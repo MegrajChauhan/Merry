@@ -46,15 +46,15 @@ typedef struct Merry Merry;
 
 struct Merry
 {
-    MerryCore **cores;      // the vcores
-    MerryMemPage *inst_mem; // the instruction memory that every vcore shares
-    MerryMemPage *data_mem; // the data memory that every vcore shares
-    MerryMutex *_lock;      // the Manager's lock
-    MerryMutex *_mem_lock;  // lock for memory read/write
-    MerryCond *_cond;       // the Manager's cond
-    // MerryCond *shared_cond; // this condition is shared among all cores
-    msize_t core_count; // the number of vcores
-    mbool_t stop;       // tell the manager to stop the VM and exit
+  MerryCore **cores;      // the vcores
+  MerryMemPage *inst_mem; // the instruction memory that every vcore shares
+  MerryMemPage *data_mem; // the data memory that every vcore shares
+  MerryMutex *_lock;      // the Manager's lock
+  // MerryMutex *_mem_lock;  // lock for memory read/write
+  MerryCond *_cond; // the Manager's cond
+  // MerryCond *shared_cond; // this condition is shared among all cores
+  msize_t core_count; // the number of vcores
+  mbool_t stop;       // tell the manager to stop the VM and exit
 };
 
 #define merry_manager_mem_read_inst(os, address, store_in) merry_memory_read(os->inst_mem, address, store_in)
@@ -71,6 +71,12 @@ struct Merry
  So unfortunately, we will stop doing that and instead provide another way to block other vcores.
 */
 
-mret_t merry_os_mem_read_data(Merry *os, maddress_t address, mqptr_t store_in);
+// this only initializes an instance of Merry while leaving inst_mem, data_mem uninitialized which is valid as we need to know the input and how many
+// pages to start with 
+Merry *merry_os_init(mcstr_t _inp_file);
+
+mret_t merry_os_mem_read_data(Merry *os, maddress_t address, mqptr_t store_in, msize_t core_id);
+
+mret_t merry_os_mem_write_data(Merry *os, maddress_t address, mqword_t to_store, msize_t core_id);
 
 #endif
