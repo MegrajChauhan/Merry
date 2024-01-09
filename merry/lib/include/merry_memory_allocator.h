@@ -90,6 +90,9 @@ struct MerryAllocator
 #define _MERRY_ALLOC_MAP_PAGE_ _MERRY_MEM_GET_PAGE_(_MERRY_ALLOC_PAGE_LEN_ + _MERRY_ALLOCPG_SIZE_, _MERRY_PROT_DEFAULT_, _MERRY_FLAG_DEFAULT_)
 #define _MERRY_ALLOC_UNMAP_PAGE_(address) _MERRY_MEM_GIVE_PAGE_(address, _MERRY_ALLOC_PAGE_LEN_ + _MERRY_ALLOCPG_SIZE_)
 
+#define _MERRY_LALLOC_MAP_PAGE_(size) _MERRY_MEM_GET_PAGE_(size, _MERRY_PROT_DEFAULT_, _MERRY_FLAG_DEFAULT_)
+#define _MERRY_LALLOC_UNMAP_PAGE_(addr, size) _MERRY_MEM_GIVE_PAGE_(addr, size)
+
 /*
  If a request comes for 8 bytes and we have no 8 byte block free for allocation, we will not merge blocks of other pages or split their blocks.
  Instead we will simply allocate another block that will be able to fulfill other 8 bytes request.
@@ -107,5 +110,16 @@ mptr_t merry_malloc(msize_t size);
 mptr_t merry_realloc(mptr_t _ptr, msize_t _new_size);
 
 void merry_free(mptr_t _ptr);
+
+/*
+ The simple job of this function is to map some memory from the OS and return that back.
+ The mapped memory is not registered by the allocator
+ It doesn't have any allocations and expects the requester to free the mapped memory later on once the need is over.
+ The memory mapped is supposed to be temporary.
+ It is the caller's job to see if the allocator can fulfill the request before using this
+*/
+mptr_t merry_lalloc(msize_t size);
+
+void merry_lfree(mptr_t page, msize_t size);
 
 #endif

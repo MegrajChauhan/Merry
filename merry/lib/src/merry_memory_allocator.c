@@ -835,3 +835,17 @@ mptr_t merry_realloc(mptr_t _ptr, msize_t _new_size)
     merry_alloc_free_memory(block); // directly free the memory
     return new_block;               // YAY!
 }
+
+mptr_t merry_lalloc(msize_t size)
+{
+    // we simply get a memory page of size bytes and then be done with it
+    // we can do alignment checks and align the pages that we ask from the OS for faster accesses but we are dumb so we won't
+    mptr_t lalloced = _MERRY_LALLOC_MAP_PAGE_(size); // we don't align size since this is a temporary mapping and doesn't need alignment
+    return lalloced == _MERRY_RET_GET_ERROR_ ? RET_NULL : lalloced;
+}
+
+void merry_lfree(mptr_t page, msize_t size)
+{
+    // we are assuming that page is a valid pointer and unmap will not throw any error
+    _MERRY_LALLOC_UNMAP_PAGE_(page, size);
+}

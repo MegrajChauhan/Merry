@@ -70,9 +70,10 @@ typedef struct MerryInpFile MerryInpFile;
 
 struct MerryInpFile
 {
-    mcstr_t _file_name; // the input file's name
-    msize_t curr_line;  // the current line being read
-    FILE *f;            // the opened file
+    mcstr_t _file_name;    // the input file's name
+    mstr_t _file_contents; // the file's contents
+    mstr_t iter;           // the file's iterator
+    FILE *f;               // the opened file
     // the metadata representation
     unsigned int _inp_fmt; // the input bytes format
     msize_t dlen;          // data bytes len
