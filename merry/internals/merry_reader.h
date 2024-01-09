@@ -31,6 +31,7 @@
 #include <string.h> // for conversion from strings to numbers
 
 #define _READ_ERROR_(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
+#define _READ_DIRERROR_(message) fprintf(stderr, message)
 #define _FMT_HEX_ 0
 #define _FMT_BIN_ 1
 
@@ -51,6 +52,18 @@ Here are all of the metadata available
 .ibstart [pos] and .ibend [pos]: Specifies the starting bytes position of the instruction bytes and the ending byte position. Starts from 0.
 .dbstart [pos] and .dbend [pos]: Specifies the same as above but for data bytes.
 Note: The position of data bytes and instruction bytes must not overlap.
+
+An example file would be[Keep in mind that changes are made all the time]:
+[
+    .fmt_<hex or bin>
+    .dlen 12 NOTE: data can be of any length even 1 byte. The reader appends other 7 bytes to the back and makes it 8 bytes
+    .ilen 16 NOTE: instruction len is and always must be a multiple of 8 or else it is an error
+    OTHER ATTRIBUTES
+]
+THE DATA AND INSTRUCTIONS
+
+NOTE: In the file the instructions and data must be written in big endian format. Any byte appended to make bytes a multiple of 8 are appended to the end.
+This will result in data being large. More attributes may be added to change these settings.
 */
 
 typedef struct MerryInpFile MerryInpFile;
@@ -72,5 +85,7 @@ struct MerryInpFile
     mqptr_t _data;         // the read data
     mqptr_t _instructions; // the read instructions
 };
+
+MerryInpFile *merry_read_file(mcstr_t _file_name);
 
 #endif
