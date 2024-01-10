@@ -82,6 +82,7 @@ struct MerryInpFile
 {
     mcstr_t _file_name;    // the input file's name
     mstr_t _file_contents; // the file's contents
+    msize_t file_len;
     mstr_t iter;           // the file's iterator
     FILE *f;               // the opened file
     // the metadata representation
@@ -98,5 +99,7 @@ struct MerryInpFile
 };
 
 MerryInpFile *merry_read_file(mcstr_t _file_name);
+
+void merry_destory_reader(MerryInpFile *inp);
 
 #endif

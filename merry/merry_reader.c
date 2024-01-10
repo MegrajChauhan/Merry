@@ -37,6 +37,7 @@ _MERRY_INTERNAL_ mret_t merry_read_file_contents(MerryInpFile *inp)
         _READ_DIRERROR_("Read Error: The input file is empty. Expected to start with '['.\n");
         return RET_FAILURE;
     }
+    inp->file_len = file_len;
     inp->_file_contents = (mstr_t)merry_lalloc(file_len);
     if (inp->_file_contents == RET_NULL)
     {
@@ -161,7 +162,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_attributes(MerryInpFile *inp)
             else
             {
                 // we shall get what the attribute is
-                mstr_t temp = inp->iter; // save the current state
+                mstr_t temp = inp->iter; // save the current pos
                 msize_t len = merry_reader_get_attribute_len(inp);
                 char attribute[len];
                 if (strncpy(attribute, temp, len) != attribute)
@@ -222,13 +223,6 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_attributes(MerryInpFile *inp)
                             // but if we have a newline before we read the number then it is an error
                             // We do not care about if data length is 0
                             inp->dlen = merry_reader_read_attr_num(inp); // get the number
-                            if (inp->dlen == 0)
-                            {
-                                // Since there is supposed to be no data bytes, dbstart and dbend are both 0
-                                dbend_provided = dbstart_provided = mtrue;
-                                inp->dbend = 0;
-                                inp->dbstart = 0;
-                            }
                         }
                     }
                     else if (strcmp(attribute, "ilen") == 0)
@@ -243,18 +237,63 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_attributes(MerryInpFile *inp)
                         {
                             ilen_provided = mtrue;
                             inp->ilen = merry_reader_read_attr_num(inp); // get the number
-                            // ilen must be a multiple of 8 and not zero
-                            if (inp->ilen == 0)
-                            {
-                                // Since there is supposed to be no data bytes, dbstart and dbend are both 0
-                                _READ_DIRERROR_("Read Error: The ilen attribute provides that there are no instructions which is not allowed.\n");
-                                error_encountered = mtrue;
-                            }
-                            else if (inp->ilen % 8 != 0)
-                            {
-                                _READ_DIRERROR_("Read Error: The number of instruction bytes is incomplete as indicated by ilen.\n");
-                                error_encountered = mtrue;
-                            }
+                        }
+                    }
+                    else if (strcmp(attribute, "ibstart") == 0)
+                    {
+                        // after reading the attributes, we will see if the values in ibstart and ibend are valid or not along with dbstart and dbend
+                        if (ibstart_provided == mtrue)
+                        {
+                            read_double_attr_provided("'instruction byte start position'");
+                            error_encountered = mtrue;
+                        }
+                        else
+                        {
+                            ibstart_provided = mtrue;
+                            inp->ibstart = merry_reader_read_attr_num(inp);
+                            // this can be anything but after the read is complete, the ibstart and ibend must be valid, difference must be a multiple of 8
+                        }
+                    }
+                    else if (strcmp(attribute, "ibend") == 0)
+                    {
+                        // after reading the attributes, we will see if the values in ibstart and ibend are valid or not along with dbstart and dbend
+                        if (ibend_provided == mtrue)
+                        {
+                            read_double_attr_provided("'instruction byte end position'");
+                            error_encountered = mtrue;
+                        }
+                        else
+                        {
+                            ibstart_provided = mtrue;
+                            inp->ibend = merry_reader_read_attr_num(inp);
+                        }
+                    }
+                    else if (strcmp(attribute, "dbstart") == 0)
+                    {
+                        // after reading the attributes, we will see if the values in ibstart and ibend are valid or not along with dbstart and dbend
+                        if (dbstart_provided == mtrue)
+                        {
+                            read_double_attr_provided("'data byte start position'");
+                            error_encountered = mtrue;
+                        }
+                        else
+                        {
+                            dbstart_provided = mtrue;
+                            inp->dbstart = merry_reader_read_attr_num(inp);
+                        }
+                    }
+                    else if (strcmp(attribute, "dbend") == 0)
+                    {
+                        // after reading the attributes, we will see if the values in ibstart and ibend are valid or not along with dbstart and dbend
+                        if (dbend_provided == mtrue)
+                        {
+                            read_double_attr_provided("'data byte end position'");
+                            error_encountered = mtrue;
+                        }
+                        else
+                        {
+                            dbend_provided = mtrue;
+                            inp->dbend = merry_reader_read_attr_num(inp);
                         }
                     }
                 }
@@ -271,6 +310,89 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_attributes(MerryInpFile *inp)
             return RET_FAILURE;
         }
     }
+    // now that we have parsed all that we could, all that is left is to finalize these results.
+    if (error_encountered == mtrue)
+    {
+        // if we encountered error
+        return RET_FAILURE;
+    }
+    if (end_reached == mfalse)
+    {
+        _READ_DIRERROR_("Read Error: Syntax Error: The attribute section was not closed. Expected ']' before EOF.");
+        return RET_FAILURE;
+    }
+    // check if we were provided with fmt
+    if (fmt_provided == mfalse)
+    {
+        _READ_DIRERROR_("Read Error: File format is not specified.");
+        return RET_FAILURE;
+    }
+    if (dlen_provided == mfalse)
+    {
+        _READ_DIRERROR_("Read Error: Data length is not provided.");
+        return RET_FAILURE;
+    }
+    if (ilen_provided == mfalse)
+    {
+        _READ_DIRERROR_("Read Error: Instruction length is not provided.");
+        return RET_FAILURE;
+    }
+    if (ibstart_provided == mfalse || ibend_provided == mfalse)
+    {
+        _READ_DIRERROR_("Read Error: Instruction byte start position not clear.");
+        return RET_FAILURE;
+    }
+    // the above are a must
+    if (inp->ilen == 0)
+    {
+        // Since there is supposed to be no data bytes, dbstart and dbend are both 0
+        _READ_DIRERROR_("Read Error: The ilen attribute provides that there are no instructions which is not allowed.\n");
+        return RET_FAILURE;
+    }
+    else if (inp->ilen % 8 != 0)
+    {
+        _READ_DIRERROR_("Read Error: The number of instruction bytes is incomplete as indicated by ilen.\n");
+        return RET_FAILURE;
+    }
+    if (inp->dlen != 0)
+    {
+        // if we have none zero then the data byte positions must be provided
+        if (dbstart_provided == mfalse || dbend_provided == mfalse)
+        {
+            _READ_DIRERROR_("Read Error: Data bytes position not clear.");
+            return RET_FAILURE;
+        }
+        // we can check if the positions provided are valid or not as well
+        if (inp->dbstart == inp->dbend || inp->dbend < inp->dbstart)
+        {
+            _READ_DIRERROR_("Read Error: The provided data byte positions are ambigious.");
+            return RET_FAILURE;
+        }
+        // check if they overlap with the ibytes
+        if ((inp->dbstart >= inp->ibstart && inp->dbend <= inp->ibend) || (inp->dbstart <= inp->ibstart && inp->dbend >= inp->ibend) || (inp->dbstart <= inp->ibstart && inp->dbend <= inp->ibend) || (inp->dbstart >= inp->ibstart && inp->dbend >= inp->ibend))
+        {
+            _READ_DIRERROR_("Read Error: The instruction bytes and the data bytes overlap.");
+            return RET_FAILURE;
+        }
+    }
+    // since the overlapping is checked above in case we have data bytes available, we won't have to worry about it here.
+    if (inp->ibstart == inp->ibend || inp->ibend < inp->ibstart)
+    {
+        _READ_DIRERROR_("Read Error: The provided instruction byte positions are ambigious.");
+        return RET_FAILURE;
+    }
+    msize_t temp = inp->ibend - inp->ibstart;
+    if ((temp / 8) != (inp->ilen / 8))
+    {
+        _READ_DIRERROR_("Read Error: The provided instruction length doesn't match with what was observed.");
+        return RET_FAILURE;
+    }
+    if (temp % 8 != 0)
+    {
+        _READ_DIRERROR_("Read Error: The provided instruction bytes are not aligned.");
+        return RET_FAILURE;
+    }
+    return RET_SUCCESS;
 }
 
 MerryInpFile *merry_read_file(mcstr_t _file_name)
@@ -292,7 +414,7 @@ MerryInpFile *merry_read_file(mcstr_t _file_name)
     if (inp->f == NULL)
     {
         // something went wrong
-        _READ_ERROR_("Read Error: The provided input file name %s is either a directory or doesn't exists.\n", _file_name);
+        _READ_ERROR_("Read Error: The provided input file name %s is either a directory or doesn't exist.\n", _file_name);
         merry_free(inp);
         return RET_NULL;
     }
@@ -309,7 +431,55 @@ MerryInpFile *merry_read_file(mcstr_t _file_name)
         merry_free(inp);
         return RET_NULL;
     }
+    // parse the attributes
+    if (merry_reader_parse_attributes(inp) == RET_FAILURE)
+    {
+        merry_destory_reader(inp);
+        return RET_NULL;
+    }
+    // Now we read the bytes first and convert them into numbers that we can actually use in the VM
+    // CONTINUE FROM HERE
+    merry_lfree(inp->_file_contents, inp->file_len);
     fclose(inp->f);
+}
+
+void merry_destory_reader(MerryInpFile *inp)
+{
+    if (surelyF(inp == NULL))
+        return;
+    if (surelyT(inp->f != NULL))
+    {
+        fclose(inp->f);
+    }
+    if (surelyT(inp->_data != NULL))
+    {
+        if (inp->dlen < _MERRY_ALLOC_PAGE_LEN_)
+        {
+            // most probably allocated
+            merry_free(inp->_data);
+        }
+        else
+        {
+            merry_lfree(inp->_data, merry_align_size(inp->dlen));
+        }
+    }
+    if (surelyT(inp->_instructions != NULL))
+    {
+        if (inp->ilen < _MERRY_ALLOC_PAGE_LEN_)
+        {
+            // most probably allocated
+            merry_free(inp->_instructions);
+        }
+        else
+        {
+            merry_lfree(inp->_instructions, inp->ilen);
+        }
+    }
+    if (surelyT(inp->_file_contents != NULL))
+    {
+        merry_lfree(inp->_file_contents, inp->file_len);
+    }
+    merry_free(inp);
 }
 
 // switch (*inp->iter)
