@@ -35,6 +35,15 @@
 #define _FMT_HEX_ 0
 #define _FMT_BIN_ 1
 
+// many of these prints are useless and the unnecessary ones will be removed
+#define read_unexpected_eof() _READ_DIRERROR_("Read Error: Unexpected EOF when an attribute was expected.\n")
+#define read_unexpected_eof_when(attribute) _READ_ERROR_("Read Error: Unexpected EOF when attribute '%s' was expected.\n", attribute)
+#define read_expected_got(expected_attr, got) _READ_ERROR_("Read Error: Unexpected '%s' when attribute '%s' was expected.\n", got, expected_attr)
+#define read_expected(expected_attr) _READ_ERROR_("Read Error: Exptected attribute '%s' but got something else instead.\n", expected_attr)
+#define read_double_attr_provided(attr_prov) _READ_ERROR_("Read Error: The attribute %s was provided multiple times.\n", attr_prov)
+#define read_internal_error() _READ_DIRERROR_("Read Internal Error: Unable to read attribute.\n")
+// #define read_msg(message, ...) fprintf(stderr, "Read Error: %s.\n", message, __VA_ARGS__)
+
 // the main purpose here is to read the binary input file and then convert it into something the VM can understand
 // The extension for the input file is ".min" for "merry binary/bin"
 // the structure of the file is given as
