@@ -28,7 +28,8 @@
 #include "../../utils/merry_types.h"
 #include "../lib/include/merry_memory_allocator.h"
 #include <stdio.h>  // for FILE
-#include <string.h> // for conversion from strings to numbers
+#include <string.h> // for string manipulation
+#include <stdlib.h> // for conversion from strings to numbers
 
 #define _READ_ERROR_(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
 #define _READ_DIRERROR_(message) fprintf(stderr, message)
@@ -41,8 +42,8 @@
 #define read_expected_got(expected_attr, got) _READ_ERROR_("Read Error: Unexpected '%s' when attribute '%s' was expected.\n", got, expected_attr)
 #define read_expected(expected_attr) _READ_ERROR_("Read Error: Exptected attribute '%s' but got something else instead.\n", expected_attr)
 #define read_double_attr_provided(attr_prov) _READ_ERROR_("Read Error: The attribute %s was provided multiple times.\n", attr_prov)
-#define read_internal_error() _READ_DIRERROR_("Read Internal Error: Unable to read attribute.\n")
-// #define read_msg(message, ...) fprintf(stderr, "Read Error: %s.\n", message, __VA_ARGS__)
+#define read_internal_error() _READ_DIRERROR_("Read Internal Error: Unable to read attributes and properties.\n")
+#define read_msg(message, ...) fprintf(stderr, message, __VA_ARGS__)
 
 // the main purpose here is to read the binary input file and then convert it into something the VM can understand
 // The extension for the input file is ".min" for "merry binary/bin"

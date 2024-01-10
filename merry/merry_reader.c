@@ -57,7 +57,7 @@ _MERRY_INTERNAL_ msize_t merry_reader_get_attribute_len(MerryInpFile *inp)
 {
     // from the current iterator's position, get an attribute
     msize_t i = 0;
-    while (((*inp->iter >= 'a') && (*inp->iter <= 'z')) && *inp->iter != '\0')
+    while (((*inp->iter >= 'a') && (*inp->iter <= 'z')))
     {
         i++;
         inp->iter++;
@@ -67,34 +67,54 @@ _MERRY_INTERNAL_ msize_t merry_reader_get_attribute_len(MerryInpFile *inp)
 
 _MERRY_INTERNAL_ msize_t merry_reader_read_attr_num(MerryInpFile *inp)
 {
-    // after reading the attribute, iter must pointer after the attribute
+    // after reading the attribute, iter must point after the attribute
     // check if we hit the EOF already
     // 0 here indicates error
-    msize_t ret = 0;
     if (*inp->iter == '\0')
         return 0; // return error
     // we have to skip all and every space characters
     if (*inp->iter == ' ')
     {
         // until we have no more, we skip
-        while (*inp->iter == ' ' && *inp->iter != '\0')
+        while (*inp->iter == ' ')
         {
             inp->iter++;
         }
-        // after skipping all the whitespaces, check if we stopped before a newline character or reached the end of file
-        if (*inp->iter == '\n' || *inp->iter == '\0')
-            return 0;
-        if (*inp->iter >= '0' && *inp->iter <= '9')
+    }
+    // after skipping all the whitespaces, check if we stopped before a newline character or reached the end of file
+    if (*inp->iter == '\n' || *inp->iter == '\0')
+        return 0;
+    if (*inp->iter >= '0' && *inp->iter <= '9')
+    {
+        // we have what we need
+        mstr_t temp = inp->iter; // save this for now
+        msize_t i = 0;
+        while (((*inp->iter >= 'a') && (*inp->iter <= 'z')))
         {
-            // we have what we need
+            i++;
+            inp->iter++;
+        }
+        // we now have the length of the numbers to read
+        char nums[i];
+        if (strncpy(nums, temp, i) != nums)
+        {
+            read_internal_error();
+            return 0;
         }
         else
         {
-            // unexpected character
-            // read_msg("Unexpected character when expected the attribute numbers");
-            // CONTINUE FROM HERE
+            // we now have the number in string form
+            // since we have read only the valid numbers, this function below will not fail
+            return strtoull(nums, &nums, 10);
         }
     }
+    else
+    {
+        // unexpected character
+        read_msg("Read Error: Unexpected character '%c' when expected the attribute numbers.", *inp->iter);
+        return 0;
+    }
+    return 0;
 }
 
 _MERRY_INTERNAL_ mret_t merry_reader_parse_attributes(MerryInpFile *inp)
@@ -108,7 +128,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_attributes(MerryInpFile *inp)
     }
     inp->iter++;
     mbool_t fmt_provided = mfalse, dlen_provided = mfalse, ilen_provided = mfalse;
-    mbool_t ibstart_provided = mfalse, ibend_provided = mfalse, dbstart = mfalse, dbend = mfalse;
+    mbool_t ibstart_provided = mfalse, ibend_provided = mfalse, dbstart_provided = mfalse, dbend_provided = mfalse;
     mbool_t error_encountered = mfalse;
     mbool_t end_reached = mfalse;
     while (*inp->iter != ']' && *inp->iter != '\0' && error_encountered == mfalse)
@@ -200,7 +220,41 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_attributes(MerryInpFile *inp)
                             // now we need to read the numbers after this
                             // since we just read the attribute, we expect a space or any arbitary number of spaces followed by the number
                             // but if we have a newline before we read the number then it is an error
-                            // iter points to the new
+                            // We do not care about if data length is 0
+                            inp->dlen = merry_reader_read_attr_num(inp); // get the number
+                            if (inp->dlen == 0)
+                            {
+                                // Since there is supposed to be no data bytes, dbstart and dbend are both 0
+                                dbend_provided = dbstart_provided = mtrue;
+                                inp->dbend = 0;
+                                inp->dbstart = 0;
+                            }
+                        }
+                    }
+                    else if (strcmp(attribute, "ilen") == 0)
+                    {
+                        // the same as dlen
+                        if (ilen_provided == mtrue)
+                        {
+                            read_double_attr_provided("'instruction length'");
+                            error_encountered = mtrue;
+                        }
+                        else
+                        {
+                            ilen_provided = mtrue;
+                            inp->ilen = merry_reader_read_attr_num(inp); // get the number
+                            // ilen must be a multiple of 8 and not zero
+                            if (inp->ilen == 0)
+                            {
+                                // Since there is supposed to be no data bytes, dbstart and dbend are both 0
+                                _READ_DIRERROR_("Read Error: The ilen attribute provides that there are no instructions which is not allowed.\n");
+                                error_encountered = mtrue;
+                            }
+                            else if (inp->ilen % 8 != 0)
+                            {
+                                _READ_DIRERROR_("Read Error: The number of instruction bytes is incomplete as indicated by ilen.\n");
+                                error_encountered = mtrue;
+                            }
                         }
                     }
                 }
