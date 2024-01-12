@@ -1,0 +1,10 @@
+[
+  .fmt_hex
+  .dlen 0
+  .ilen 8
+  .ibstart 0
+  .ibend 7
+  .dbstart 0
+  .dbend 0
+]
+ab cd ef 01 23 45 67 89

@@ -46,35 +46,7 @@
 #define read_msg(message, ...) fprintf(stderr, message, __VA_ARGS__)
 
 // the main purpose here is to read the binary input file and then convert it into something the VM can understand
-// The extension for the input file is ".min" for "merry binary/bin"
-// the structure of the file is given as
-/*
-All lines starting with a '.' is some metadata given to the reader.
-These metadata must be given at the beginning of the file.
-We need to know if the file is in hex or binary format
-This is the very first line expected in the input file
-.fmt_hex or .fmt_bin
-only hexadecimal and binary format is allowed.
-Some of these metadata is a must or else unexpected things might happen
-Here are all of the metadata available
-.dlen [len] and .ilen [len] : Specifies the length of the data section and ilen in bytes. The reader will expect to read len number of bytes as specified.
-                              If not specified then no data or instruction is read.
-.ibstart [pos] and .ibend [pos]: Specifies the starting bytes position of the instruction bytes and the ending byte position. Starts from 0.
-.dbstart [pos] and .dbend [pos]: Specifies the same as above but for data bytes.
-Note: The position of data bytes and instruction bytes must not overlap.
-
-An example file would be[Keep in mind that changes are made all the time]:
-[
-    .fmt_<hex or bin>
-    .dlen 12 NOTE: data can be of any length even 1 byte. The reader appends other 7 bytes to the back and makes it 8 bytes
-    .ilen 16 NOTE: instruction len is and always must be a multiple of 8 or else it is an error
-    OTHER ATTRIBUTES
-]
-THE DATA AND INSTRUCTIONS
-
-NOTE: In the file the instructions and data must be written in big endian format. Any byte appended to make bytes a multiple of 8 are appended to the end.
-This will result in data being large. More attributes may be added to change these settings.
-*/
+// The extension for the input file is ".mbin" for "merry binary/bin"
 
 typedef struct MerryInpFile MerryInpFile;
 

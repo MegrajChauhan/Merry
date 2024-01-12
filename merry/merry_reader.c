@@ -44,7 +44,7 @@ _MERRY_INTERNAL_ mret_t merry_read_file_contents(MerryInpFile *inp)
         _READ_DIRERROR_("Read Internal Error: Failed to read the input file.\n");
         return RET_FAILURE;
     }
-    if (surelyF(fread(inp->_file_contents, 1, file_len, inp->f) != 0))
+    if (surelyF(fread(inp->_file_contents, 1, file_len, inp->f) != file_len))
     {
         merry_lfree(inp->_file_contents, file_len);
         _READ_DIRERROR_("Read Internal Error: Failed to read the input file.\n");
@@ -58,7 +58,7 @@ _MERRY_INTERNAL_ msize_t merry_reader_get_attribute_len(MerryInpFile *inp)
 {
     // from the current iterator's position, get an attribute
     msize_t i = 0;
-    while (((*inp->iter >= 'a') && (*inp->iter <= 'z')))
+    while (((*inp->iter >= 'a') && (*inp->iter <= 'z')) || *inp->iter == '_')
     {
         i++;
         inp->iter++;
@@ -90,13 +90,14 @@ _MERRY_INTERNAL_ msize_t merry_reader_read_attr_num(MerryInpFile *inp)
         // we have what we need
         mstr_t temp = inp->iter; // save this for now
         msize_t i = 0;
-        while (((*inp->iter >= 'a') && (*inp->iter <= 'z')))
+        while (((*inp->iter >= '0') && (*inp->iter <= '9')))
         {
             i++;
             inp->iter++;
         }
         // we now have the length of the numbers to read
-        char nums[i];
+        char nums[i + 1];
+        nums[i] = 0;
         if (strncpy(nums, temp, i) != nums)
         {
             read_internal_error();
@@ -132,7 +133,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_attributes(MerryInpFile *inp)
     mbool_t ibstart_provided = mfalse, ibend_provided = mfalse, dbstart_provided = mfalse, dbend_provided = mfalse;
     mbool_t error_encountered = mfalse;
     mbool_t end_reached = mfalse;
-    while (*inp->iter != ']' && *inp->iter != '\0' && error_encountered == mfalse)
+    while (*inp->iter != '\0' && error_encountered == mfalse && end_reached == mfalse)
     {
         // until we reach ']' we read and see if we
         // since the order of these attributes doesn't matter, we can continue parsing them
@@ -164,7 +165,8 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_attributes(MerryInpFile *inp)
                 // we shall get what the attribute is
                 mstr_t temp = inp->iter; // save the current pos
                 msize_t len = merry_reader_get_attribute_len(inp);
-                char attribute[len];
+                char attribute[len + 1];
+                attribute[len] = '\0'; // the strncpy function is not terminating attribute with a 0 which is causing these weird characters to be printed beyond attribute's memory
                 if (strncpy(attribute, temp, len) != attribute)
                 {
                     read_internal_error();
@@ -264,7 +266,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_attributes(MerryInpFile *inp)
                         }
                         else
                         {
-                            ibstart_provided = mtrue;
+                            ibend_provided = mtrue;
                             inp->ibend = merry_reader_read_attr_num(inp);
                         }
                     }
@@ -296,12 +298,18 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_attributes(MerryInpFile *inp)
                             inp->dbend = merry_reader_read_attr_num(inp);
                         }
                     }
+                    else
+                    {
+                        _READ_ERROR_("Read Error: The attribute '%s' is not a valid attribute.\n", attribute);
+                        error_encountered = mtrue;
+                    }
                 }
             }
         }
         else if (x == ']')
         {
             end_reached = mtrue;
+            inp->iter++; // go beyond
         }
         else
         {
@@ -318,28 +326,28 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_attributes(MerryInpFile *inp)
     }
     if (end_reached == mfalse)
     {
-        _READ_DIRERROR_("Read Error: Syntax Error: The attribute section was not closed. Expected ']' before EOF.");
+        _READ_DIRERROR_("Read Error: Syntax Error: The attribute section was not closed. Expected ']' before EOF.\n");
         return RET_FAILURE;
     }
     // check if we were provided with fmt
     if (fmt_provided == mfalse)
     {
-        _READ_DIRERROR_("Read Error: File format is not specified.");
+        _READ_DIRERROR_("Read Error: File format is not specified.\n");
         return RET_FAILURE;
     }
     if (dlen_provided == mfalse)
     {
-        _READ_DIRERROR_("Read Error: Data length is not provided.");
+        _READ_DIRERROR_("Read Error: Data length is not provided.\n");
         return RET_FAILURE;
     }
     if (ilen_provided == mfalse)
     {
-        _READ_DIRERROR_("Read Error: Instruction length is not provided.");
+        _READ_DIRERROR_("Read Error: Instruction length is not provided.\n");
         return RET_FAILURE;
     }
     if (ibstart_provided == mfalse || ibend_provided == mfalse)
     {
-        _READ_DIRERROR_("Read Error: Instruction byte start position not clear.");
+        _READ_DIRERROR_("Read Error: Instruction byte start position not clear.\n");
         return RET_FAILURE;
     }
     // the above are a must
@@ -349,7 +357,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_attributes(MerryInpFile *inp)
         _READ_DIRERROR_("Read Error: The ilen attribute provides that there are no instructions which is not allowed.\n");
         return RET_FAILURE;
     }
-    else if (inp->ilen % 8 != 0)
+    if ((inp->ilen % 8) != 0)
     {
         _READ_DIRERROR_("Read Error: The number of instruction bytes is incomplete as indicated by ilen.\n");
         return RET_FAILURE;
@@ -359,38 +367,439 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_attributes(MerryInpFile *inp)
         // if we have none zero then the data byte positions must be provided
         if (dbstart_provided == mfalse || dbend_provided == mfalse)
         {
-            _READ_DIRERROR_("Read Error: Data bytes position not clear.");
+            _READ_DIRERROR_("Read Error: Data bytes position not clear.\n");
             return RET_FAILURE;
         }
         // we can check if the positions provided are valid or not as well
         if (inp->dbstart == inp->dbend || inp->dbend < inp->dbstart)
         {
-            _READ_DIRERROR_("Read Error: The provided data byte positions are ambigious.");
+            _READ_DIRERROR_("Read Error: The provided data byte positions are ambigious.\n");
             return RET_FAILURE;
         }
         // check if they overlap with the ibytes
-        if ((inp->dbstart >= inp->ibstart && inp->dbend <= inp->ibend) || (inp->dbstart <= inp->ibstart && inp->dbend >= inp->ibend) || (inp->dbstart <= inp->ibstart && inp->dbend <= inp->ibend) || (inp->dbstart >= inp->ibstart && inp->dbend >= inp->ibend))
+        if ((inp->dbstart >= inp->ibstart && inp->dbend <= inp->ibend) || (inp->dbstart <= inp->ibstart && inp->dbend >= inp->ibend) || (inp->dbstart <= inp->ibstart && (inp->ibstart >= inp->dbend && inp->dbend <= inp->ibend)) || ((inp->dbstart >= inp->ibstart && inp->dbstart <= inp->ibend) && inp->dbend >= inp->ibend))
         {
-            _READ_DIRERROR_("Read Error: The instruction bytes and the data bytes overlap.");
+            _READ_DIRERROR_("Read Error: The instruction bytes and the data bytes overlap.\n");
             return RET_FAILURE;
         }
+    }
+    else
+    {
+        // no matter what the file contains
+        inp->dbend = 0;
+        inp->dbstart = 0;
     }
     // since the overlapping is checked above in case we have data bytes available, we won't have to worry about it here.
     if (inp->ibstart == inp->ibend || inp->ibend < inp->ibstart)
     {
-        _READ_DIRERROR_("Read Error: The provided instruction byte positions are ambigious.");
+        _READ_DIRERROR_("Read Error: The provided instruction byte positions are ambigious.\n");
         return RET_FAILURE;
     }
-    msize_t temp = inp->ibend - inp->ibstart;
-    if ((temp / 8) != (inp->ilen / 8))
+    msize_t temp = (inp->ibend + 1) - inp->ibstart;
+    // we increment temp here because, there is one more byte than this suggests
+    // if ibstart is 0 and ibend is 15, it represents 16 bytes but temp would be 15 so, increment it by 1
+    if (((temp) / 8) != (inp->ilen / 8))
     {
-        _READ_DIRERROR_("Read Error: The provided instruction length doesn't match with what was observed.");
+        _READ_DIRERROR_("Read Error: The provided instruction length doesn't match with what was observed.\n");
         return RET_FAILURE;
     }
-    if (temp % 8 != 0)
+    if ((temp) % 8 != 0)
     {
-        _READ_DIRERROR_("Read Error: The provided instruction bytes are not aligned.");
+        _READ_DIRERROR_("Read Error: The provided instruction bytes are not aligned.\n");
         return RET_FAILURE;
+    }
+    if (inp->ibstart != 0 && inp->dbstart != 0 && ((temp + ((inp->dbend + 1) - inp->dbstart)) != (inp->dlen + inp->ilen)))
+    {
+        _READ_DIRERROR_("Read Error: It seems neither data nor instruction bytes cover all the bytes.\n");
+        return RET_FAILURE;
+    }
+    return RET_SUCCESS;
+}
+
+_MERRY_INTERNAL_ mret_t merry_reader_readd_binary(MerryInpFile *inp)
+{
+    char one_num[65];
+    one_num[64] = 0;
+    msize_t read_numbers = 0;
+    mbool_t error = mfalse;
+    msize_t expect = merry_align_size(inp->dlen) / 8;
+    while (*inp->iter != '\0' && error == mfalse && read_numbers != expect)
+    {
+        register char x = *inp->iter;
+        if (x == ' ' || x == '\n' || x == '\t')
+        {
+            // skip all the nonsense
+            while (x == ' ' || x == '\n' || x == '\t')
+            {
+                inp->iter++;
+                x = *inp->iter;
+            }
+        }
+        if (*inp->iter == '0' || *inp->iter == '1')
+        {
+            // we have to read the binary numbers now
+            msize_t i = 0, j = 0;
+            for (i = 0; i < 8; i++)
+            {
+                if (*inp->iter == '\0')
+                    break;
+                for (j = 0; j < 8; j++)
+                {
+                    if (*inp->iter == '\0')
+                        break; // we have no more to read
+                    if (*inp->iter == '0' || *inp->iter == '1')
+                    {
+                        one_num[i * 8 + j] = *inp->iter;
+                        inp->iter++;
+                    }
+                    else
+                    {
+                        _READ_DIRERROR_("Read Error: Expected '1' or '0' but got something unexpected.\n");
+                        error = mtrue;
+                        break;
+                    }
+                }
+                // any number of space or newlines, tabs can follow this
+                x = *inp->iter;
+                if (x == ' ' || x == '\n' || x == '\t')
+                {
+                    while (x == ' ' || x == '\n' || x == '\t')
+                    {
+                        inp->iter++;
+                        x = *inp->iter;
+                    }
+                }
+                if (error == mtrue)
+                    break;
+            }
+            if (error == mfalse)
+            {
+                // if no error
+                // we may have to append 0's at the end
+                if (i != 8 || j != 8)
+                {
+                    // we have to append zeros at the end
+                    for (i = i * 8 + j; i < 65; i++)
+                    {
+                        one_num[i] = '0'; // append with zeros
+                    }
+                }
+                // now convert
+                inp->_data[read_numbers] = strtoull(one_num, &one_num, 2);
+                printf("READ DATA: %X\n", inp->_data[read_numbers]);
+                read_numbers++;
+            }
+        }
+        else
+        {
+            read_msg("Read Error: Expected '1' or '0' but got '%c' instead.\n", *inp->iter);
+            error = mtrue;
+        }
+    }
+    return error == mtrue || expect != read_numbers ? RET_FAILURE : RET_SUCCESS;
+}
+
+_MERRY_INTERNAL_ mret_t merry_reader_readd_hexa(MerryInpFile *inp)
+{
+    char one_num[17];
+    one_num[16] = 0;
+    msize_t read_numbers = 0;
+    mbool_t error = mfalse;
+    msize_t expect = merry_align_size(inp->dlen) / 8;
+    while (*inp->iter != '\0' && error == mfalse && read_numbers != expect)
+    {
+        register char x = *inp->iter;
+        if (x == ' ' || x == '\n' || x == '\t')
+        {
+            // skip all the nonsense
+            while (x == ' ' || x == '\n' || x == '\t')
+            {
+                inp->iter++;
+                x = *inp->iter;
+            }
+        }
+        if ((*inp->iter >= '0' && *inp->iter <= '9') || (*inp->iter >= 'a' && *inp->iter <= 'f'))
+        {
+            // we have to read the binary numbers now
+            msize_t i = 0, j = 0;
+            for (i = 0; i < 8; i++)
+            {
+                for (j = 0; j < 2; j++)
+                {
+                    if (*inp->iter == '\0')
+                        break; // we have no more to read
+                    if ((*inp->iter >= '0' && *inp->iter <= '9') || (*inp->iter >= 'a' && *inp->iter <= 'f'))
+                    {
+                        one_num[i * 8 + j] = *inp->iter;
+                        inp->iter++;
+                    }
+                    else
+                    {
+                        _READ_DIRERROR_("Read Error: Expected '0 - 9' or 'a - f' but got something unexpected.\n");
+                        error = mtrue;
+                        break;
+                    }
+                }
+                // any number of space or newlines, tabs can follow this
+                x = *inp->iter;
+                if (x == ' ' || x == '\n' || x == '\t')
+                {
+                    while (x == ' ' || x == '\n' || x == '\t')
+                    {
+                        inp->iter++;
+                        x = *inp->iter;
+                    }
+                }
+                if (error == mtrue)
+                    break;
+            }
+            if (error == mfalse)
+            {
+                // if no error
+                // we may have to append 0's at the end
+                if (i != 8 || j != 2)
+                {
+                    // we have to append zeros at the end
+                    for (i = i * 8 + j; i < 17; i++)
+                    {
+                        one_num[i] = '0'; // append with zeros
+                    }
+                }
+                // now convert
+                inp->_data[read_numbers] = strtoull(one_num, &one_num, 16);
+                printf("READ DATA: %X\n", inp->_data[read_numbers]);
+                read_numbers++;
+            }
+        }
+        else
+        {
+            read_msg("Read Error: Expected '1' or '0' but got '%c' instead.\n", *inp->iter);
+            error = mtrue;
+        }
+    }
+    return error == mtrue || expect != read_numbers ? RET_FAILURE : RET_SUCCESS;
+}
+
+/*REDUNDANCY CODE TRIGGER WARNING*/
+_MERRY_INTERNAL_ mret_t merry_reader_readi_binary(MerryInpFile *inp)
+{
+    char one_num[65];
+    one_num[64] = 0;
+    msize_t read_numbers = 0;
+    mbool_t error = mfalse;
+    msize_t expect = inp->ilen / 8;
+    while (*inp->iter != '\0' && error == mfalse && read_numbers != expect)
+    {
+        register char x = *inp->iter;
+        if (x == ' ' || x == '\n' || x == '\t')
+        {
+            // skip all the nonsense
+            while (x == ' ' || x == '\n' || x == '\t')
+            {
+                inp->iter++;
+                x = *inp->iter;
+            }
+        }
+        if (*inp->iter == '0' || *inp->iter == '1')
+        {
+            // we have to read the binary numbers now
+            msize_t i = 0, j = 0;
+            for (i = 0; i < 8; i++)
+            {
+                if (*inp->iter == '\0')
+                    break;
+                for (j = 0; j < 8; j++)
+                {
+                    if (*inp->iter == '\0')
+                        break; // we have no more to read
+                    if (*inp->iter == '0' || *inp->iter == '1')
+                    {
+                        one_num[i * 8 + j] = *inp->iter;
+                        inp->iter++;
+                    }
+                    else
+                    {
+                        _READ_DIRERROR_("Read Error: Expected '1' or '0' but got something unexpected.\n");
+                        error = mtrue;
+                        break;
+                    }
+                }
+                // any number of space or newlines, tabs can follow this
+                if (error == mtrue)
+                    break;
+                x = *inp->iter;
+                if (x == ' ' || x == '\n' || x == '\t')
+                {
+                    while (x == ' ' || x == '\n' || x == '\t')
+                    {
+                        inp->iter++;
+                        x = *inp->iter;
+                    }
+                }
+            }
+            if (error == mfalse)
+            {
+                // if no error
+                // convert
+                inp->_instructions[read_numbers] = strtoull(one_num, &one_num, 2);
+                printf("READ INST: %X\n", inp->_instructions[read_numbers]);
+                read_numbers++;
+            }
+        }
+        else
+        {
+            read_msg("Read Error: Expected '1' or '0' but got '%c' instead.\n", *inp->iter);
+            error = mtrue;
+        }
+    }
+    return error == mtrue || expect != read_numbers ? RET_FAILURE : RET_SUCCESS;
+}
+
+_MERRY_INTERNAL_ mret_t merry_reader_readi_hexa(MerryInpFile *inp)
+{
+    char one_num[17];
+    one_num[16] = 0;
+    msize_t read_numbers = 0;
+    mbool_t error = mfalse;
+    msize_t expect = (inp->ilen) / 8;
+    while (*inp->iter != '\0' && error == mfalse && read_numbers != expect)
+    {
+        register char x = *inp->iter;
+        if (x == ' ' || x == '\n' || x == '\t')
+        {
+            // skip all the nonsense
+            while (x == ' ' || x == '\n' || x == '\t')
+            {
+                inp->iter++;
+                x = *inp->iter;
+            }
+        }
+        if ((*inp->iter >= '0' && *inp->iter <= '9') || (*inp->iter >= 'a' && *inp->iter <= 'f'))
+        {
+            // we have to read the binary numbers now
+            msize_t i = 0, j = 0;
+            for (i = 0; i < 8; i++)
+            {
+                if (*inp->iter == '\0')
+                    break;
+                for (j = 0; j < 2; j++)
+                {
+                    if (*inp->iter == '\0')
+                        break; // we have no more to read
+                    if ((*inp->iter >= '0' && *inp->iter <= '9') || (*inp->iter >= 'a' && *inp->iter <= 'f'))
+                    {
+                        one_num[i * 8 + j] = *inp->iter;
+                        inp->iter++;
+                    }
+                    else
+                    {
+                        _READ_DIRERROR_("Read Error: Expected '0 - 9' or 'a - f' but got something unexpected.\n");
+                        error = mtrue;
+                        break;
+                    }
+                }
+                // any number of space or newlines, tabs can follow this
+                if (error == mtrue)
+                    break;
+                x = *inp->iter;
+                if (x == ' ' || x == '\n' || x == '\t')
+                {
+                    while (x == ' ' || x == '\n' || x == '\t')
+                    {
+                        inp->iter++;
+                        x = *inp->iter;
+                    }
+                }
+            }
+            if (error == mfalse)
+            {
+                // if no error
+                inp->_instructions[read_numbers] = strtoull(one_num, &one_num, 16);
+                printf("READ INST: %X\n", inp->_instructions[read_numbers]);
+                read_numbers++;
+            }
+        }
+        else
+        {
+            read_msg("Read Error: Expected '1' or '0' but got '%c' instead.\n", *inp->iter);
+            error = mtrue;
+        }
+    }
+    return error == mtrue || expect != read_numbers ? RET_FAILURE : RET_SUCCESS;
+}
+
+_MERRY_INTERNAL_ mret_t merry_reader_read_data_bytes(MerryInpFile *inp)
+{
+    // read all of the data bytes
+    // we don't have to check if data length is zero or not
+    // since this function was called then it means that from the byte that iter is pointing to, the data bytes start
+    return inp->_inp_fmt == _FMT_BIN_ ? merry_reader_readd_binary(inp) : merry_reader_readd_hexa(inp);
+}
+
+_MERRY_INTERNAL_ mret_t merry_reader_read_inst_bytes(MerryInpFile *inp)
+{
+    // things like: if ilen is a multiple of 8, the distance between ibstart and ibend is also a multiple of 8 etc are all taken care of
+    return inp->_inp_fmt == _FMT_BIN_ ? merry_reader_readi_binary(inp) : merry_reader_readi_hexa(inp);
+}
+
+// internal helper: Reads the bytes after reading the attributes
+_MERRY_INTERNAL_ mret_t merry_reader_read_bytes(MerryInpFile *inp)
+{
+    // the iter currently points past the ']' which is the attribute terminator
+    // check if we do not have any bytes to read
+    // Yes the bytes can follow ']' immediately
+    if (*inp->iter == '\0')
+    {
+        // an error
+        _READ_DIRERROR_("Read Error: Exptected to read a byte after attributes but unexpected EOF.\n");
+        return RET_FAILURE;
+    }
+    // we will now read all and every byte
+    // since we know how many bytes there are going to be, we can just initialize the arrays just like that
+    if (inp->dlen == 0)
+    {
+        // we have no data
+        inp->_data == NULL;
+    }
+    else
+    {
+        if (inp->dlen < _MERRY_ALLOC_PAGE_LEN_)
+            inp->_data = (mqptr_t)merry_malloc(merry_align_size(inp->dlen));
+        else
+            inp->_data = (mqptr_t)merry_lalloc(merry_align_size(inp->dlen));
+        if (inp->_data == NULL)
+            return RET_FAILURE;
+    }
+    // ilen is a multiple of 8 and we do not care about alignment here
+    if (inp->ilen < _MERRY_ALLOC_PAGE_LEN_)
+        inp->_instructions = (mqptr_t)merry_malloc(inp->ilen);
+    else
+        inp->_instructions = (mqptr_t)merry_lalloc(inp->ilen);
+    if (inp->_instructions == NULL)
+        return RET_FAILURE; // we failed
+    if (inp->dlen == 0)
+    {
+        // everything is the instruction bytes
+        if (merry_reader_read_inst_bytes(inp) != RET_SUCCESS)
+            return RET_FAILURE;
+    }
+    else if (inp->dbstart == 0)
+    {
+        // the data bytes come first
+        if (merry_reader_read_data_bytes(inp) != RET_SUCCESS)
+            return RET_FAILURE;
+        // then the inst bytes
+        if (merry_reader_read_inst_bytes(inp) != RET_SUCCESS)
+            return RET_FAILURE;
+    }
+    else
+    {
+        // the inst bytes come first
+        if (merry_reader_read_inst_bytes(inp) != RET_SUCCESS)
+            return RET_FAILURE;
+        // then data bytes
+        if (merry_reader_read_data_bytes(inp) != RET_SUCCESS)
+            return RET_FAILURE;
     }
     return RET_SUCCESS;
 }
@@ -438,9 +847,12 @@ MerryInpFile *merry_read_file(mcstr_t _file_name)
         return RET_NULL;
     }
     // Now we read the bytes first and convert them into numbers that we can actually use in the VM
-    // CONTINUE FROM HERE
-    merry_lfree(inp->_file_contents, inp->file_len);
-    fclose(inp->f);
+    if (merry_reader_read_bytes(inp) != RET_SUCCESS)
+    {
+        merry_destory_reader(inp);
+        return RET_NULL;
+    }
+    return inp;
 }
 
 void merry_destory_reader(MerryInpFile *inp)
@@ -481,78 +893,3 @@ void merry_destory_reader(MerryInpFile *inp)
     }
     merry_free(inp);
 }
-
-// switch (*inp->iter)
-// {
-// case 'f':
-// {
-//     // the file format is being specified
-//     if (fmt_provided == mtrue)
-//     {
-//         read_double_attr_provided("format");
-//         error_encountered = mtrue;
-//         break; // we are done
-//     }
-//     inp->iter++;
-
-//     if (*inp->iter == '\0')
-//     {
-//         // we again got something unexpected
-//         read_unexpected_eof_when("fmt_bin or fmt_hex");
-//         error_encountered = mtrue;
-//     }
-//     else
-//     {
-//         char fmt[6];
-//         for (msize_t i = 0; i < 6; i++)
-//         {
-//             fmt[i] = *inp->iter;
-//             inp->iter++;
-//             if (*inp->iter == '\0')
-//             {
-//                 read_unexpected_eof_when("fmt_bin or fmt_hex");
-//                 error_encountered = mtrue;
-//                 break;
-//             }
-//         }
-//         if (strcmp(fmt, "mt_bin") == 0)
-//         {
-//             fmt_provided = mtrue;
-//             inp->_inp_fmt = _FMT_BIN_;
-//         }
-//         else if (strcmp(fmt, "mt_hex") == 0)
-//         {
-//             fmt_provided = mtrue;
-//             inp->_inp_fmt = _FMT_HEX_;
-//         }
-//         else
-//         {
-//             read_expected("'fmt_bin' or 'fmt_hex'");
-//             error_encountered = mtrue;
-//         }
-//     }
-//     break;
-// }
-// case 'i':
-// {
-//     // this is most probably related to instruction related attribute
-//     inp->iter++;
-//     if (*inp->iter == '\0')
-//     {
-//         read_unexpected_eof();
-//         error_encountered = mtrue;
-//     }
-//     else
-//     {
-//         if (*inp->iter == 'l')
-//         {
-//             // this is providing the ilen attribute
-//             // we expect the ilen attribute here followed by any number of spaces and a number before a newline
-//         }
-//         else if (*inp->iter == 'b')
-//         {
-//             // we are getting the bytes attribute
-//         }
-//     }
-// }
-// }
