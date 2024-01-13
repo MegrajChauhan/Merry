@@ -31,18 +31,13 @@ MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, msize_t
     new_core->registers = (mqptr_t)merry_malloc(sizeof(mqword_t) * REGR_COUNT);
     if (new_core->registers == RET_NULL)
     {
-        merry_cond_destroy(new_core->cond);
-        merry_mutex_destroy(new_core->lock);
-        merry_free(new_core);
+        merry_core_destroy(new_core);
         return RET_NULL;
     }
     new_core->stack_mem = (mqptr_t)_MERRY_MEM_GET_PAGE_(_MERRY_STACKMEM_BYTE_LEN_, _MERRY_PROT_DEFAULT_, _MERRY_FLAG_DEFAULT_);
     if (new_core->stack_mem == RET_NULL)
     {
-        merry_free(new_core->registers);
-        merry_cond_destroy(new_core->cond);
-        merry_mutex_destroy(new_core->lock);
-        merry_free(new_core);
+        merry_core_destroy(new_core);
         return RET_NULL;
     }
     new_core->should_wait = mtrue;   // should initially wait until said to run

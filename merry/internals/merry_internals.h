@@ -31,6 +31,7 @@
 
 // Configurations for memory
 #define _MERRY_MEMORY_ADDRESSES_PER_PAGE_ 1048576                   // the number of addresses per page[Equal to 1MB]
+#define _MERRY_MEMORY_QS_PER_PAGE_ 131072
 #define _MERRY_MEMORY_GET_PAGE_OFFSET_(address) (address & 0xFFFFF) // get the offset from the address
 #define _MERRY_MEMORY_GET_PAGE_(address) (address >> 20)            // get the page number from the address
 // we currently have no limit set to how many pages Merry can have at max but lets leave it to the OS

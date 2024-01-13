@@ -23,7 +23,6 @@ _MERRY_INTERNAL_ MerryAllocPage *merry_allocator_get_page()
 {
     // try to get a alloc page worth of memory from the OS and return it
     mptr_t _new_page;
-    mbool_t _is_mapped = mfalse;
 #if defined(_MERRY_MEM_BRK_SUPPORT_)
     // we have support for memory break support
     // we will first try to make this request

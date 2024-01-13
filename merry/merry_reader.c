@@ -130,7 +130,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_attributes(MerryInpFile *inp)
     }
     inp->iter++;
     mbool_t fmt_provided = mfalse, dlen_provided = mfalse, ilen_provided = mfalse;
-    mbool_t ibstart_provided = mfalse, ibend_provided = mfalse, dbstart_provided = mfalse, dbend_provided = mfalse;
+    mbool_t sec_start_provided = mfalse;
     mbool_t error_encountered = mfalse;
     mbool_t end_reached = mfalse;
     while (*inp->iter != '\0' && error_encountered == mfalse && end_reached == mfalse)
@@ -241,61 +241,31 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_attributes(MerryInpFile *inp)
                             inp->ilen = merry_reader_read_attr_num(inp); // get the number
                         }
                     }
-                    else if (strcmp(attribute, "ibstart") == 0)
+                    else if (strcmp(attribute, "start_data") == 0)
                     {
                         // after reading the attributes, we will see if the values in ibstart and ibend are valid or not along with dbstart and dbend
-                        if (ibstart_provided == mtrue)
+                        if (sec_start_provided == mtrue)
                         {
-                            read_double_attr_provided("'instruction byte start position'");
+                            read_double_attr_provided("'starting section'");
                             error_encountered = mtrue;
                         }
                         else
                         {
-                            ibstart_provided = mtrue;
-                            inp->ibstart = merry_reader_read_attr_num(inp);
-                            // this can be anything but after the read is complete, the ibstart and ibend must be valid, difference must be a multiple of 8
+                            sec_start_provided = mtrue;
+                            inp->_sec_start = _SEC_START_DATA_;
                         }
                     }
-                    else if (strcmp(attribute, "ibend") == 0)
+                    else if (strcmp(attribute, "start_inst") == 0)
                     {
-                        // after reading the attributes, we will see if the values in ibstart and ibend are valid or not along with dbstart and dbend
-                        if (ibend_provided == mtrue)
+                        if (sec_start_provided == mtrue)
                         {
-                            read_double_attr_provided("'instruction byte end position'");
+                            read_double_attr_provided("'starting section'");
                             error_encountered = mtrue;
                         }
                         else
                         {
-                            ibend_provided = mtrue;
-                            inp->ibend = merry_reader_read_attr_num(inp);
-                        }
-                    }
-                    else if (strcmp(attribute, "dbstart") == 0)
-                    {
-                        // after reading the attributes, we will see if the values in ibstart and ibend are valid or not along with dbstart and dbend
-                        if (dbstart_provided == mtrue)
-                        {
-                            read_double_attr_provided("'data byte start position'");
-                            error_encountered = mtrue;
-                        }
-                        else
-                        {
-                            dbstart_provided = mtrue;
-                            inp->dbstart = merry_reader_read_attr_num(inp);
-                        }
-                    }
-                    else if (strcmp(attribute, "dbend") == 0)
-                    {
-                        // after reading the attributes, we will see if the values in ibstart and ibend are valid or not along with dbstart and dbend
-                        if (dbend_provided == mtrue)
-                        {
-                            read_double_attr_provided("'data byte end position'");
-                            error_encountered = mtrue;
-                        }
-                        else
-                        {
-                            dbend_provided = mtrue;
-                            inp->dbend = merry_reader_read_attr_num(inp);
+                            sec_start_provided = mtrue;
+                            inp->_sec_start = _SEC_START_INST_;
                         }
                     }
                     else
@@ -319,11 +289,9 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_attributes(MerryInpFile *inp)
         }
     }
     // now that we have parsed all that we could, all that is left is to finalize these results.
+    // if we encountered error
     if (error_encountered == mtrue)
-    {
-        // if we encountered error
         return RET_FAILURE;
-    }
     if (end_reached == mfalse)
     {
         _READ_DIRERROR_("Read Error: Syntax Error: The attribute section was not closed. Expected ']' before EOF.\n");
@@ -345,11 +313,12 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_attributes(MerryInpFile *inp)
         _READ_DIRERROR_("Read Error: Instruction length is not provided.\n");
         return RET_FAILURE;
     }
-    if (ibstart_provided == mfalse || ibend_provided == mfalse)
+    if (sec_start_provided == mfalse)
     {
-        _READ_DIRERROR_("Read Error: Instruction byte start position not clear.\n");
+        _READ_DIRERROR_("Read Error: Starting section not provided.\n");
         return RET_FAILURE;
     }
+    ///////////////////////////
     // the above are a must
     if (inp->ilen == 0)
     {
@@ -362,56 +331,71 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_attributes(MerryInpFile *inp)
         _READ_DIRERROR_("Read Error: The number of instruction bytes is incomplete as indicated by ilen.\n");
         return RET_FAILURE;
     }
-    if (inp->dlen != 0)
+    if (inp->dlen == 0 && sec_start_provided == mtrue && inp->_sec_start == _SEC_START_DATA_)
     {
         // if we have none zero then the data byte positions must be provided
-        if (dbstart_provided == mfalse || dbend_provided == mfalse)
-        {
-            _READ_DIRERROR_("Read Error: Data bytes position not clear.\n");
-            return RET_FAILURE;
-        }
-        // we can check if the positions provided are valid or not as well
-        if (inp->dbstart == inp->dbend || inp->dbend < inp->dbstart)
-        {
-            _READ_DIRERROR_("Read Error: The provided data byte positions are ambigious.\n");
-            return RET_FAILURE;
-        }
-        // check if they overlap with the ibytes
-        if ((inp->dbstart >= inp->ibstart && inp->dbend <= inp->ibend) || (inp->dbstart <= inp->ibstart && inp->dbend >= inp->ibend) || (inp->dbstart <= inp->ibstart && (inp->ibstart >= inp->dbend && inp->dbend <= inp->ibend)) || ((inp->dbstart >= inp->ibstart && inp->dbstart <= inp->ibend) && inp->dbend >= inp->ibend))
-        {
-            _READ_DIRERROR_("Read Error: The instruction bytes and the data bytes overlap.\n");
-            return RET_FAILURE;
-        }
+        _READ_DIRERROR_("Read Error: Specified that data length is 0 but then provided that data section comes first.\n");
+        return RET_FAILURE;
     }
+
+    return RET_SUCCESS;
+}
+
+_MERRY_INTERNAL_ void merry_reader_unalloc_pages(MerryInpFile *inp)
+{
+    // if we fail while allocating, unmap all
+    for (msize_t i = 0; i < inp->dpage_count; i++)
+    {
+        if ((inp->_data[i]) != _MERRY_RET_GET_ERROR_)
+            _MERRY_MEMORY_PGALLOC_UNMAP_PAGE_(inp->_data[i]);
+    }
+    // for instructions
+    for (msize_t i = 0; i < inp->ipage_count; i++)
+    {
+        if (inp->_instructions[i] != _MERRY_RET_GET_ERROR_)
+            _MERRY_MEMORY_PGALLOC_UNMAP_PAGE_(inp->_instructions[i]);
+    }
+}
+
+_MERRY_INTERNAL_ mret_t merry_reader_alloc_pages(MerryInpFile *inp)
+{
+    // after parsing the input file, we need to map the memory pages and prepare for reading
+    // In the future, the input files, if get too large, we have to implement some optimizations for them
+    // for example, the reader can read the file in the background and fill the memory as the VM is executing simultaneously
+    msize_t aligned = merry_align_size(inp->dlen);
+    inp->dpage_count = aligned / _MERRY_MEMORY_ADDRESSES_PER_PAGE_ + (aligned % _MERRY_MEMORY_ADDRESSES_PER_PAGE_ > 0 ? 1 : 0);
+    inp->ipage_count = inp->ilen / _MERRY_MEMORY_ADDRESSES_PER_PAGE_ + (inp->ilen % _MERRY_MEMORY_ADDRESSES_PER_PAGE_ > 0 ? 1 : 0);
+    // even if dpage_count is 0, we sill need to map one page
+    if (inp->dpage_count == 0)
+        inp->dpage_count++;
+    if (inp->dpage_count < (_MERRY_ALLOC_PAGE_LEN_ / 8))
+        inp->_data = (mqptr_t *)merry_malloc(sizeof(mqptr_t *) * inp->dpage_count);
     else
+        inp->_data = (mqptr_t *)merry_lalloc(sizeof(mqptr_t *) * inp->dpage_count);
+    if (inp->ipage_count < (_MERRY_ALLOC_PAGE_LEN_ / 8))
+        inp->_instructions = (mqptr_t *)merry_malloc(sizeof(mqptr_t *) * inp->ipage_count);
+    else
+        inp->_instructions = (mqptr_t *)merry_lalloc(sizeof(mqptr_t *) * inp->ipage_count);
+    if (inp->_data == NULL || inp->_instructions == NULL)
+        return RET_FAILURE; // we failed
+    // now we map the memory for both the instruction page and data page
+    for (msize_t i = 0; i < inp->dpage_count; i++)
     {
-        // no matter what the file contains
-        inp->dbend = 0;
-        inp->dbstart = 0;
+        if ((inp->_data[i] = _MERRY_MEMORY_PGALLOC_MAP_PAGE_) == _MERRY_RET_GET_ERROR_)
+        {
+            inp->dpage_count = i;
+            merry_reader_unalloc_pages(inp);
+            return RET_FAILURE;
+        }
     }
-    // since the overlapping is checked above in case we have data bytes available, we won't have to worry about it here.
-    if (inp->ibstart == inp->ibend || inp->ibend < inp->ibstart)
+    // for instructions
+    for (msize_t i = 0; i < inp->ipage_count; i++)
     {
-        _READ_DIRERROR_("Read Error: The provided instruction byte positions are ambigious.\n");
-        return RET_FAILURE;
-    }
-    msize_t temp = (inp->ibend + 1) - inp->ibstart;
-    // we increment temp here because, there is one more byte than this suggests
-    // if ibstart is 0 and ibend is 15, it represents 16 bytes but temp would be 15 so, increment it by 1
-    if (((temp) / 8) != (inp->ilen / 8))
-    {
-        _READ_DIRERROR_("Read Error: The provided instruction length doesn't match with what was observed.\n");
-        return RET_FAILURE;
-    }
-    if ((temp) % 8 != 0)
-    {
-        _READ_DIRERROR_("Read Error: The provided instruction bytes are not aligned.\n");
-        return RET_FAILURE;
-    }
-    if (inp->ibstart != 0 && inp->dbstart != 0 && ((temp + ((inp->dbend + 1) - inp->dbstart)) != (inp->dlen + inp->ilen)))
-    {
-        _READ_DIRERROR_("Read Error: It seems neither data nor instruction bytes cover all the bytes.\n");
-        return RET_FAILURE;
+        {
+            inp->ipage_count = i;
+            merry_reader_unalloc_pages(inp);
+            return RET_FAILURE;
+        }
     }
     return RET_SUCCESS;
 }
@@ -420,11 +404,14 @@ _MERRY_INTERNAL_ mret_t merry_reader_readd_binary(MerryInpFile *inp)
 {
     char one_num[65];
     one_num[64] = 0;
+    mstr_t ptr = &one_num;
     msize_t read_numbers = 0;
     mbool_t error = mfalse;
     msize_t expect = merry_align_size(inp->dlen) / 8;
+    msize_t current_page = 0;
     while (*inp->iter != '\0' && error == mfalse && read_numbers != expect)
     {
+        ptr = &one_num;
         register char x = *inp->iter;
         if (x == ' ' || x == '\n' || x == '\t')
         {
@@ -449,7 +436,8 @@ _MERRY_INTERNAL_ mret_t merry_reader_readd_binary(MerryInpFile *inp)
                         break; // we have no more to read
                     if (*inp->iter == '0' || *inp->iter == '1')
                     {
-                        one_num[i * 8 + j] = *inp->iter;
+                        *ptr = *inp->iter;
+                        ptr++;
                         inp->iter++;
                     }
                     else
@@ -476,18 +464,22 @@ _MERRY_INTERNAL_ mret_t merry_reader_readd_binary(MerryInpFile *inp)
             {
                 // if no error
                 // we may have to append 0's at the end
-                if (i != 8 || j != 8)
+                if (ptr != &one_num[64])
                 {
                     // we have to append zeros at the end
-                    for (i = i * 8 + j; i < 65; i++)
+                    for (; ptr != &one_num[64]; ptr++)
                     {
-                        one_num[i] = '0'; // append with zeros
+                        *ptr = '0'; // append with zeros
                     }
                 }
                 // now convert
-                inp->_data[read_numbers] = strtoull(one_num, &one_num, 2);
-                printf("READ DATA: %X\n", inp->_data[read_numbers]);
+                inp->_data[current_page][read_numbers] = strtoull(one_num, &one_num, 2);
                 read_numbers++;
+                if (read_numbers == _MERRY_MEMORY_QS_PER_PAGE_)
+                {
+                    read_numbers = 0;
+                    current_page++;
+                }
             }
         }
         else
@@ -502,12 +494,15 @@ _MERRY_INTERNAL_ mret_t merry_reader_readd_binary(MerryInpFile *inp)
 _MERRY_INTERNAL_ mret_t merry_reader_readd_hexa(MerryInpFile *inp)
 {
     char one_num[17];
+    mstr_t ptr = &one_num;
     one_num[16] = 0;
     msize_t read_numbers = 0;
     mbool_t error = mfalse;
     msize_t expect = merry_align_size(inp->dlen) / 8;
+    msize_t current_page = 0;
     while (*inp->iter != '\0' && error == mfalse && read_numbers != expect)
     {
+        ptr = &one_num;
         register char x = *inp->iter;
         if (x == ' ' || x == '\n' || x == '\t')
         {
@@ -524,13 +519,16 @@ _MERRY_INTERNAL_ mret_t merry_reader_readd_hexa(MerryInpFile *inp)
             msize_t i = 0, j = 0;
             for (i = 0; i < 8; i++)
             {
+                if (*inp->iter == '\0')
+                    break;
                 for (j = 0; j < 2; j++)
                 {
                     if (*inp->iter == '\0')
-                        break; // we have no more to read
+                        break;
                     if ((*inp->iter >= '0' && *inp->iter <= '9') || (*inp->iter >= 'a' && *inp->iter <= 'f'))
                     {
-                        one_num[i * 8 + j] = *inp->iter;
+                        *ptr = *inp->iter;
+                        ptr++;
                         inp->iter++;
                     }
                     else
@@ -557,18 +555,22 @@ _MERRY_INTERNAL_ mret_t merry_reader_readd_hexa(MerryInpFile *inp)
             {
                 // if no error
                 // we may have to append 0's at the end
-                if (i != 8 || j != 2)
+                if (ptr != &one_num[16])
                 {
                     // we have to append zeros at the end
-                    for (i = i * 8 + j; i < 17; i++)
+                    for (; ptr != &one_num[16]; ptr++)
                     {
-                        one_num[i] = '0'; // append with zeros
+                        *ptr = '0'; // append with zeros
                     }
                 }
                 // now convert
-                inp->_data[read_numbers] = strtoull(one_num, &one_num, 16);
-                printf("READ DATA: %X\n", inp->_data[read_numbers]);
+                inp->_data[current_page][read_numbers] = strtoull(one_num, &one_num, 2);
                 read_numbers++;
+                if (read_numbers == _MERRY_MEMORY_QS_PER_PAGE_)
+                {
+                    read_numbers = 0;
+                    current_page++;
+                }
             }
         }
         else
@@ -588,6 +590,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_readi_binary(MerryInpFile *inp)
     msize_t read_numbers = 0;
     mbool_t error = mfalse;
     msize_t expect = inp->ilen / 8;
+    msize_t current_page = 0;
     while (*inp->iter != '\0' && error == mfalse && read_numbers != expect)
     {
         register char x = *inp->iter;
@@ -641,9 +644,13 @@ _MERRY_INTERNAL_ mret_t merry_reader_readi_binary(MerryInpFile *inp)
             {
                 // if no error
                 // convert
-                inp->_instructions[read_numbers] = strtoull(one_num, &one_num, 2);
-                printf("READ INST: %X\n", inp->_instructions[read_numbers]);
+                inp->_instructions[current_page][read_numbers] = strtoull(one_num, &one_num, 2);
                 read_numbers++;
+                if (read_numbers == _MERRY_MEMORY_QS_PER_PAGE_)
+                {
+                    read_numbers = 0;
+                    current_page++;
+                }
             }
         }
         else
@@ -662,6 +669,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_readi_hexa(MerryInpFile *inp)
     msize_t read_numbers = 0;
     mbool_t error = mfalse;
     msize_t expect = (inp->ilen) / 8;
+    msize_t current_page = 0;
     while (*inp->iter != '\0' && error == mfalse && read_numbers != expect)
     {
         register char x = *inp->iter;
@@ -688,7 +696,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_readi_hexa(MerryInpFile *inp)
                         break; // we have no more to read
                     if ((*inp->iter >= '0' && *inp->iter <= '9') || (*inp->iter >= 'a' && *inp->iter <= 'f'))
                     {
-                        one_num[i * 8 + j] = *inp->iter;
+                        one_num[i * 2 + j] = *inp->iter;
                         inp->iter++;
                     }
                     else
@@ -714,9 +722,13 @@ _MERRY_INTERNAL_ mret_t merry_reader_readi_hexa(MerryInpFile *inp)
             if (error == mfalse)
             {
                 // if no error
-                inp->_instructions[read_numbers] = strtoull(one_num, &one_num, 16);
-                printf("READ INST: %X\n", inp->_instructions[read_numbers]);
+                inp->_instructions[current_page][read_numbers] = strtoull(one_num, &one_num, 2);
                 read_numbers++;
+                if (read_numbers == _MERRY_MEMORY_QS_PER_PAGE_)
+                {
+                    read_numbers = 0;
+                    current_page++;
+                }
             }
         }
         else
@@ -742,7 +754,6 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_inst_bytes(MerryInpFile *inp)
     return inp->_inp_fmt == _FMT_BIN_ ? merry_reader_readi_binary(inp) : merry_reader_readi_hexa(inp);
 }
 
-// internal helper: Reads the bytes after reading the attributes
 _MERRY_INTERNAL_ mret_t merry_reader_read_bytes(MerryInpFile *inp)
 {
     // the iter currently points past the ']' which is the attribute terminator
@@ -755,35 +766,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_bytes(MerryInpFile *inp)
         return RET_FAILURE;
     }
     // we will now read all and every byte
-    // since we know how many bytes there are going to be, we can just initialize the arrays just like that
-    if (inp->dlen == 0)
-    {
-        // we have no data
-        inp->_data == NULL;
-    }
-    else
-    {
-        if (inp->dlen < _MERRY_ALLOC_PAGE_LEN_)
-            inp->_data = (mqptr_t)merry_malloc(merry_align_size(inp->dlen));
-        else
-            inp->_data = (mqptr_t)merry_lalloc(merry_align_size(inp->dlen));
-        if (inp->_data == NULL)
-            return RET_FAILURE;
-    }
-    // ilen is a multiple of 8 and we do not care about alignment here
-    if (inp->ilen < _MERRY_ALLOC_PAGE_LEN_)
-        inp->_instructions = (mqptr_t)merry_malloc(inp->ilen);
-    else
-        inp->_instructions = (mqptr_t)merry_lalloc(inp->ilen);
-    if (inp->_instructions == NULL)
-        return RET_FAILURE; // we failed
-    if (inp->dlen == 0)
-    {
-        // everything is the instruction bytes
-        if (merry_reader_read_inst_bytes(inp) != RET_SUCCESS)
-            return RET_FAILURE;
-    }
-    else if (inp->dbstart == 0)
+    if (inp->_sec_start == _SEC_START_DATA_)
     {
         // the data bytes come first
         if (merry_reader_read_data_bytes(inp) != RET_SUCCESS)
@@ -829,11 +812,7 @@ MerryInpFile *merry_read_file(mcstr_t _file_name)
     }
     // initialize these to zero
     inp->ilen = 0;
-    inp->ibstart = 0;
-    inp->ibend = 0;
     inp->dlen = 0;
-    inp->dbstart = 0;
-    inp->dbend = 0;
     if (merry_read_file_contents(inp) == RET_FAILURE)
     {
         fclose(inp->f);
@@ -842,17 +821,25 @@ MerryInpFile *merry_read_file(mcstr_t _file_name)
     }
     // parse the attributes
     if (merry_reader_parse_attributes(inp) == RET_FAILURE)
-    {
-        merry_destory_reader(inp);
-        return RET_NULL;
-    }
+        goto failure;
     // Now we read the bytes first and convert them into numbers that we can actually use in the VM
-    if (merry_reader_read_bytes(inp) != RET_SUCCESS)
+    if (merry_reader_alloc_pages(inp) != RET_SUCCESS)
+        goto failure;
+    // if (merry_reader_read_bytes(inp) != RET_SUCCESS)
+    // {
+    //     merry_destory_reader(inp);
+    //     return RET_NULL;
+    // }
+    if (*inp->iter != '\0')
     {
-        merry_destory_reader(inp);
-        return RET_NULL;
+        // if we have not reached the end yet
+        _READ_DIRERROR_("Read Error: Expected EOF at the end but it seems like we have more bytes.\n");
+        goto failure;
     }
     return inp;
+failure:
+    merry_destory_reader(inp); // we failed
+    return RET_NULL;
 }
 
 void merry_destory_reader(MerryInpFile *inp)
@@ -865,26 +852,27 @@ void merry_destory_reader(MerryInpFile *inp)
     }
     if (surelyT(inp->_data != NULL))
     {
-        if (inp->dlen < _MERRY_ALLOC_PAGE_LEN_)
+        // we will not unmap any pages that _data holds on to but we free it
+        if (inp->dpage_count < (_MERRY_ALLOC_PAGE_LEN_ / 8))
         {
             // most probably allocated
             merry_free(inp->_data);
         }
         else
         {
-            merry_lfree(inp->_data, merry_align_size(inp->dlen));
+            merry_lfree(inp->_data, inp->dpage_count * 8);
         }
     }
     if (surelyT(inp->_instructions != NULL))
     {
-        if (inp->ilen < _MERRY_ALLOC_PAGE_LEN_)
+        if (inp->ipage_count < (_MERRY_ALLOC_PAGE_LEN_ / 8))
         {
             // most probably allocated
             merry_free(inp->_instructions);
         }
         else
         {
-            merry_lfree(inp->_instructions, inp->ilen);
+            merry_lfree(inp->_instructions, inp->ipage_count * 8);
         }
     }
     if (surelyT(inp->_file_contents != NULL))

@@ -41,20 +41,22 @@
 #include "../includes/merry_errors.h"
 #include "merry_memory.h"
 #include "merry_core.h"
+#include "merry_reader.h"
 
 typedef struct Merry Merry;
 
 struct Merry
 {
   MerryCore **cores;      // the vcores
-  MerryMemPage *inst_mem; // the instruction memory that every vcore shares
-  MerryMemPage *data_mem; // the data memory that every vcore shares
+  MerryMemory *inst_mem; // the instruction memory that every vcore shares
+  MerryMemory *data_mem; // the data memory that every vcore shares
   MerryMutex *_lock;      // the Manager's lock
   // MerryMutex *_mem_lock;  // lock for memory read/write
   MerryCond *_cond; // the Manager's cond
   // MerryCond *shared_cond; // this condition is shared among all cores
   msize_t core_count; // the number of vcores
   mbool_t stop;       // tell the manager to stop the VM and exit
+  msize_t ret;
 };
 
 #define merry_manager_mem_read_inst(os, address, store_in) merry_memory_read(os->inst_mem, address, store_in)
@@ -74,6 +76,11 @@ struct Merry
 // this only initializes an instance of Merry while leaving inst_mem, data_mem uninitialized which is valid as we need to know the input and how many
 // pages to start with 
 Merry *merry_os_init(mcstr_t _inp_file);
+
+mptr_t merry_os_start_vm(mptr_t os);
+
+// destroy the OS
+void merry_os_destroy(Merry *os);
 
 mret_t merry_os_mem_read_data(Merry *os, maddress_t address, mqptr_t store_in, msize_t core_id);
 

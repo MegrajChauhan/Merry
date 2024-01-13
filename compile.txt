@@ -1,3 +1,7 @@
 merry/lib/src/merry_memory_allocator.c
 sys/src/merry_thread.c
+merry/merry_memory.c
+merry/merry_reader.c
+merry/merry_core.c
+merry/merry_os.c
 merry/merry.c

@@ -22,11 +22,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifndef _MERRY_READER_
-#define _MERRY_READER_
-
 #include "../../utils/merry_types.h"
 #include "../lib/include/merry_memory_allocator.h"
+#include "merry_memory.h"
 #include <stdio.h>  // for FILE
 #include <string.h> // for string manipulation
 #include <stdlib.h> // for conversion from strings to numbers
@@ -35,7 +33,9 @@
 #define _READ_DIRERROR_(message) fprintf(stderr, message)
 #define _FMT_HEX_ 0
 #define _FMT_BIN_ 1
-
+#define _SEC_START_DATA_ 0
+#define _SEC_START_INST_ 1
+ 
 // many of these prints are useless and the unnecessary ones will be removed
 #define read_unexpected_eof() _READ_DIRERROR_("Read Error: Unexpected EOF when an attribute was expected.\n")
 #define read_unexpected_eof_when(attribute) _READ_ERROR_("Read Error: Unexpected EOF when attribute '%s' was expected.\n", attribute)
@@ -55,23 +55,20 @@ struct MerryInpFile
     mcstr_t _file_name;    // the input file's name
     mstr_t _file_contents; // the file's contents
     msize_t file_len;
-    mstr_t iter;           // the file's iterator
-    FILE *f;               // the opened file
+    mstr_t iter; // the file's iterator
+    FILE *f;     // the opened file
     // the metadata representation
     unsigned int _inp_fmt; // the input bytes format
+    unsigned int _sec_start; // the section that starts first
     msize_t dlen;          // data bytes len
     msize_t ilen;          // the instruction bytes len
-    msize_t ibstart;       // the instruction bytes starting position
-    msize_t ibend;         // instruction bytes ending position
-    msize_t dbstart;       // data byte starting position
-    msize_t dbend;         // data byte ending position
     // the file results
-    mqptr_t _data;         // the read data
-    mqptr_t _instructions; // the read instructions
+    msize_t ipage_count;
+    msize_t dpage_count;
+    mqptr_t *_data;         // the read data
+    mqptr_t *_instructions; // the read instructions
 };
 
 MerryInpFile *merry_read_file(mcstr_t _file_name);
 
 void merry_destory_reader(MerryInpFile *inp);
-
-#endif

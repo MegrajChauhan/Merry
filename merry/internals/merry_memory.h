@@ -90,6 +90,14 @@ struct MerryAddress
 
 MerryMemory *merry_memory_init(msize_t num_of_pages);
 
+// instead of allocating new pages, we use already mapped pages
+// After mapping, the reader can return the mapped pages while continuing to read in the background
+// this was the memory can serve the cores while it is getting populated
+// this has its own challanges such as what if there is error in the input file at the end?
+// The memory would be serving the data and instructions that were valid but it turns out that the input was wrong to begin with
+// Or what if the initial part of the input file needs the last part to even start working?
+MerryMemory *merry_memory_init_provided(mqptr_t *mapped_pages, msize_t num_of_pages);
+
 void merry_memory_free(MerryMemory *memory);
 
 /*
@@ -107,6 +115,9 @@ mret_t merry_memory_write(MerryMemory *memory, maddress_t address, mqword_t _to_
 mret_t merry_memory_read_lock(MerryMemory *memory, maddress_t address, mqptr_t _store_in);
 
 mret_t merry_memory_write_lock(MerryMemory *memory, maddress_t address, mqword_t _to_write);
+
+// The below functions are called when right after the input file has been read in order to fill the memory to prepare for execution
+// mret_t merry_memory_load(MerryMemory *memory, mqptr_t to_load, msize_t num_of_qs);
 
 /*
 // here number of qs means how many qwords to read

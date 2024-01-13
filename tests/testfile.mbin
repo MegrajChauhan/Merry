@@ -1,10 +1,11 @@
 [
   .fmt_hex
-  .dlen 0
+  .dlen 4
   .ilen 8
   .ibstart 0
   .ibend 7
-  .dbstart 0
-  .dbend 0
+  .dbstart 8
+  .dbend 12
 ]
-ab cd ef 01 23 45 67 89
+abcdef01 2345 6789 12
+3456 00 10

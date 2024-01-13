@@ -1,7 +1,4 @@
-#include "../utils/merry_config.h"
-#include "../utils/merry_types.h"
-#include "../sys/merry_thread.h"
-#include "lib/include/merry_memory_allocator.h"
+#include "internals/merry_os.h"
 #include <stdio.h>
 
 // a thread func
@@ -46,4 +43,5 @@
 
 int main()
 {
+    printf("Hello world from merry!\n");
 }
