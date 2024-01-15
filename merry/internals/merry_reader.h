@@ -31,8 +31,8 @@
 
 #define _READ_ERROR_(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
 #define _READ_DIRERROR_(message) fprintf(stderr, message)
-#define _INP_FILE_ORDERING_LITTLE_ 0
-#define _INP_FILE_ORDERING_BIG_ 1
+#define _INP_FILE_ORDERING_LITTLE_ _MERRY_LITTLE_ENDIAN_
+#define _INP_FILE_ORDERING_BIG_ _MERRY_BIG_ENDIAN_
 
 #define _READER_HEADER_LEN_ 24
 // #define _READER_GET_SIGNATURE_(header) (header >> 40)
@@ -62,7 +62,6 @@ struct MerryInpFile
     FILE *f;          // the opened file
     // the metadata representation
     msize_t byte_order;
-    msize_t sdt_offset;
     msize_t dlen; // data bytes len
     msize_t ilen; // the instruction bytes len
     // the file results

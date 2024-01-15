@@ -26,8 +26,8 @@
 #ifndef _MERRY_CONFIGS_
 #define _MERRY_CONFIGS_
 
-#define _MERRY_LITTLE_ENDIAN_ 0x01
-#define _MERRY_BIG_ENDIAN_ 0x02
+#define _MERRY_LITTLE_ENDIAN_ 0x00
+#define _MERRY_BIG_ENDIAN_ 0x01
 
 /*
  * Check for the endianness of the system. We can use this to our advantage for making the VM faster.
