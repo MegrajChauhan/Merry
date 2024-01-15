@@ -48,6 +48,35 @@
 
 #define read_internal_error(msg) _READ_ERROR_("Read Internal Error: %s.\n", msg)
 #define read_msg(message, ...) fprintf(stderr, message, __VA_ARGS__)
+// num is an array of unsigned characters here
+#define reader_invert_byte_order(nums, i) (                            \
+    (                                                                  \
+        (                                                              \
+            (                                                          \
+                (                                                      \
+                    (                                                  \
+                        (                                              \
+                            (                                          \
+                                (                                      \
+                                    (                                  \
+                                        (                              \
+                                            (                          \
+                                                (                      \
+                                                    (                  \
+                                                        num[i] << 8) & \
+                                                    nums[i + 1])       \
+                                                << 8) &                \
+                                            nums[i + 2])               \
+                                        << 8) &                        \
+                                    nums[i + 3])                       \
+                                << 8) &                                \
+                            nums[i + 4])                               \
+                        << 8) &                                        \
+                    nums[i + 5])                                       \
+                << 8) &                                                \
+            nums[i + 6])                                               \
+        << 8) &                                                        \
+    nums[i + 7])
 
 // the main purpose here is to read the binary input file and then convert it into something the VM can understand
 // The extension for the input file is ".mbin" for "merry binary/bin"
