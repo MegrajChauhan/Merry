@@ -37,3 +37,17 @@ This will result in data being large. More attributes may be added to change the
       As you can see, in hex format, the bytes can be grouped in any length as long as it is a multiple of 2.
       If there are numbers that are not paired, like '8 99 01', here the 8 would produce an error.
       The same applies for binary except the minimum length for the group is 8 and the whole group must be at least a multiple of 8
+
+#######################################################################################################################################################
+#######################################################################################################################################################
+UPDATE
+#######################################################################################################################################################
+#######################################################################################################################################################
+Now the input file will be in pure binary. Here are what we need from the binary:
+1. The ordering of the bytes in the file[The ordering of the host system is preferred for faster reading]
+2. The details of the data section and the instruction section.
+
+These are the only things we need currently.
+The first 8 bytes in the file must contain this information:
+--> In Little Endian system, this is what the file would look like: 4d 49 4e 00 00 00 00 00
+--> In Big Endian systems, this is what the file would look like:   00 00 00 00 00 4d 49 4e
