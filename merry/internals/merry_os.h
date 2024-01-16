@@ -60,7 +60,8 @@ struct Merry
   msize_t ret;
 };
 
-#define merry_manager_mem_read_inst(os, address, store_in) merry_memory_read(os->inst_mem, address, store_in)
+// directly used by cores
+#define merry_manager_mem_read_inst(inst_mem, address, store_in) merry_memory_read(inst_mem, address, store_in)
 #define merry_manager_mem_read_data(os, address, store_in) merry_memory_read_lock(os->data_mem, address, store_in)
 #define merry_manager_mem_write_data(os, address, _value_to_write) merry_memory_write_lock(os->data_mem, address, _value_to_write)
 
@@ -86,5 +87,8 @@ void merry_os_destroy(Merry *os);
 mret_t merry_os_mem_read_data(Merry *os, maddress_t address, mqptr_t store_in, msize_t core_id);
 
 mret_t merry_os_mem_write_data(Merry *os, maddress_t address, mqword_t to_store, msize_t core_id);
+
+// print the suitable error message and exit the VM
+void merry_os_handle_error(Merry *os, MerryError error);
 
 #endif

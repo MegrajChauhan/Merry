@@ -50,7 +50,7 @@ Merry *merry_os_init(mcstr_t _inp_file)
     os->cores = (MerryCore **)merry_malloc(sizeof(MerryCore *));
     if (os->cores == RET_NULL)
         goto failure;
-    os->cores[0] = merry_core_init(os->inst_mem, os->data_mem, os->core_count);
+    os->cores[0] = merry_core_init(os->inst_mem, os->data_mem, os, os->core_count);
     if (os->cores[0] == RET_NULL)
         goto failure;
     os->stop = mfalse;
@@ -164,8 +164,13 @@ _MERRY_INTERNAL_ void merry_os_stop_core(Merry *os, msize_t core_id)
     os->cores[core_id]->stop_running = mtrue;   // tell it to stop
     merry_mutex_unlock(os->cores[core_id]->lock);
     merry_mutex_unlock(os->_lock);
-    // by this point it must have stopped
-    merry_thread_destroy(os->core_threads[core_id]);
+    if (os->core_count == 0)
+    {
+        // if count is 0 and we stopped the one already running
+        os->stop = mtrue;
+        os->ret = os->cores[core_id]->registers[Ma];
+        merry_cond_signal(os->_cond);
+    }
 }
 
 _MERRY_ALWAYS_INLINE mret_t merry_os_boot_core(Merry *os, msize_t core_id, maddress_t start_addr)
@@ -173,8 +178,11 @@ _MERRY_ALWAYS_INLINE mret_t merry_os_boot_core(Merry *os, msize_t core_id, maddr
     // this function's job is to boot up the core_id core and prepare it for execution
     os->cores[core_id]->pc = start_addr; // point to the starting address of the core
     // now start the core thread
-    if ((os->core_threads[core_id] = merry_thread_init()) == RET_NULL)
-        return RET_FAILURE;
+    if (os->core_threads[core_id] == NULL)
+    {
+        if ((os->core_threads[core_id] = merry_thread_init()) == RET_NULL)
+            return RET_FAILURE;
+    }
     if (merry_create_detached_thread(os->core_threads[core_id], &merry_runCore, os->cores[core_id]) == RET_FAILURE)
         return RET_FAILURE;
     return RET_SUCCESS;
@@ -185,7 +193,7 @@ mptr_t merry_os_start_vm(mptr_t os)
     // this will start the OS
     Merry *master = (Merry *)os;
     if (merry_os_boot_core(master, 0, 0) != RET_SUCCESS)
-        return NULL;
+        return (mptr_t)RET_FAILURE;
     // now core 0 is running
     merry_mutex_lock(master->_lock);
     if (master->stop == mfalse)
@@ -196,6 +204,30 @@ mptr_t merry_os_start_vm(mptr_t os)
     merry_mutex_unlock(master->_lock);
     // the master is only signaled to wake up when the VM needs to stop otherwise it remains asleep
     // perform cleanups
+    // stop all cores
     merry_os_stop_cores(master);
-    return (mptr_t)master->ret;
+    return (mptr_t)master->ret; // freeing the OS is the Main's Job
+}
+
+void merry_os_handle_error(Merry *os, MerryError error)
+{
+    // since error was encountered
+    // firstly stop all the cores
+    merry_os_stop_cores(os);
+    // now that nothing is using the OS we can proceed
+    os->ret = RET_FAILURE;
+    switch (error)
+    {
+    case MERRY_MEM_ACCESS_ERROR:
+        // this error generally implies that while reading from the provided address, the bytes were in different pages
+        fprintf(stderr, "Access Fault: Memory access fault. Invalid addressing[Address maybe misaligned]\n");
+        break;
+    case MERRY_MEM_INVALID_ACCESS:
+        // this implies that the access is being requested for address that doesn't really exist
+        fprintf(stderr, "Memory Fault: Address is out of range. Cannot access beyond the memory.\n");
+        break;
+    default:
+        break;
+    }
+    merry_cond_signal(os->_cond); // signal the OS
 }
