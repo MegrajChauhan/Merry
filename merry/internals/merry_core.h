@@ -101,7 +101,7 @@ struct MerryCore
     mqword_t sp, bp, pc, ir; // four registers that is inaccessible to anything and are changeable indirectly
     mqword_t core_id;        // this register holds the id provided to it which is unique
     // some important flags
-    mbool_t should_wait;  // tell the core to wait until signaled[MAY NOT BE NEEDED]
+    // mbool_t should_wait;  // tell the core to wait until signaled[MAY NOT BE NEEDED]
     mbool_t stop_running; // tell the core to stop executing and shut down
     // to get maximum performance, we want to use everything we can
     // When a core is executing instructions and it is certain that the values and pages it accesses are not accessed by
@@ -114,5 +114,7 @@ struct MerryCore
 MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, msize_t id);
 
 void merry_core_destroy(MerryCore *core);
+
+mptr_t merry_runCore(mptr_t core);
 
 #endif

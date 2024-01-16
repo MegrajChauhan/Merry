@@ -47,10 +47,11 @@ typedef struct Merry Merry;
 
 struct Merry
 {
-  MerryCore **cores;      // the vcores
-  MerryMemory *inst_mem; // the instruction memory that every vcore shares
-  MerryMemory *data_mem; // the data memory that every vcore shares
-  MerryMutex *_lock;      // the Manager's lock
+  MerryCore **cores;          // the vcores
+  MerryThread **core_threads; // the vcore's threads
+  MerryMemory *inst_mem;      // the instruction memory that every vcore shares
+  MerryMemory *data_mem;      // the data memory that every vcore shares
+  MerryMutex *_lock;          // the Manager's lock
   // MerryMutex *_mem_lock;  // lock for memory read/write
   MerryCond *_cond; // the Manager's cond
   // MerryCond *shared_cond; // this condition is shared among all cores
@@ -74,7 +75,7 @@ struct Merry
 */
 
 // this only initializes an instance of Merry while leaving inst_mem, data_mem uninitialized which is valid as we need to know the input and how many
-// pages to start with 
+// pages to start with
 Merry *merry_os_init(mcstr_t _inp_file);
 
 mptr_t merry_os_start_vm(mptr_t os);
