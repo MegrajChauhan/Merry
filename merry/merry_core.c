@@ -97,20 +97,18 @@ mptr_t merry_runCore(mptr_t core)
         {
             // failed to read
             merry_os_handle_error(c->os, c->inst_mem->error);
+            break;
             // in the next cycle, this core will have stopped
         }
-        else
-        {
-            switch (_MERRY_CORE_GET_OPCODE_(c->ir))
-            {
-            case OP_NOP:
-                break;
-            case OP_HALT: // halt instruction, will make this core stop executing at all
-               c->stop_running = mtrue;
-               break;
-            }
-        }
         merry_mutex_unlock(c->lock);
+        switch (_MERRY_CORE_GET_OPCODE_(c->ir))
+        {
+        case OP_NOP:
+            break;
+        case OP_HALT: // halt instruction, will make this core stop executing at all
+            c->stop_running = mtrue;
+            break;
+        }
     }
     return RET_NULL; // return nothing
 }
