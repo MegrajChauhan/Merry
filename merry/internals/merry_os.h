@@ -42,6 +42,7 @@
 #include "merry_memory.h"
 #include "merry_core.h"
 #include "merry_reader.h"
+#include "merry_request_queue.h"
 
 typedef struct Merry Merry;
 

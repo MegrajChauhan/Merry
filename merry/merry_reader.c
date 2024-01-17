@@ -125,7 +125,7 @@ _MERRY_INTERNAL_ msize_t merry_get_file_len(FILE *f)
 
 _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
 {
-    // This will parse the first 8 bytes to collect important information and validate it as well
+    // This will parse the first 24 bytes to collect important information and validate it as well
     mbyte_t header[24]; // 24 bytes
     // now we read the header
     if (fread(header, 1, _READER_HEADER_LEN_, inp->f) != _READER_HEADER_LEN_)
@@ -138,7 +138,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
     if (header[0] != 0x4d || header[1] != 0x49 || header[2] != 0x4e)
     {
         // we have an error here
-        read_msg("Read Error: The input file '%s' doesn't have the signature identifying bytes.\n", inp->_file_name);
+        read_msg("Read Error: The input file '%s' doesn't have the signature identifying bytes: Expected \"4d494e\".\n", inp->_file_name);
         return RET_FAILURE;
     }
     // // the file has the signature bytes

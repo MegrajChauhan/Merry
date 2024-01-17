@@ -24,6 +24,8 @@
  */
 // This is the worst memory allocator anyone can write but for now at least it works.
 
+/*We need to scale up and improve this garbage for an allocator*/
+
 #ifndef _MERRY_MEMORY_ALLOCATOR_
 #define _MERRY_MEMORY_ALLOCATOR_
 
