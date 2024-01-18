@@ -1,6 +1,6 @@
 #include "internals/merry_core.h"
 
-MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, Merry *os, msize_t id)
+MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, msize_t id)
 {
     // allocate a new core
     MerryCore *new_core = (MerryCore *)malloc(sizeof(MerryCore));
@@ -77,7 +77,6 @@ void merry_core_destroy(MerryCore *core)
     }
     core->data_mem = NULL;
     core->inst_mem = NULL;
-    core->os = NULL;
     free(core);
 }
 
@@ -90,25 +89,25 @@ mptr_t merry_runCore(mptr_t core)
     // While this would be better it comes with a lot of complexity and overheads and still providing a lot of awesome perks
     while (mtrue)
     {
-        merry_mutex_lock(c->lock);
-        if (c->stop_running == mtrue)
-            break;
-        if ((merry_manager_mem_read_inst(c->inst_mem, c->pc, &c->ir)) == RET_FAILURE)
-        {
-            // // failed to read
-            // merry_os_handle_error(c->os, c->inst_mem->error);
-            // break;
-            // in the next cycle, this core will have stopped
-        }
-        merry_mutex_unlock(c->lock);
-        switch (_MERRY_CORE_GET_OPCODE_(c->ir))
-        {
-        case OP_NOP:
-            break;
-        case OP_HALT: // halt instruction, will make this core stop executing at all
-            c->stop_running = mtrue;
-            break;
-        }
+        // merry_mutex_lock(c->lock);
+        // if (c->stop_running == mtrue)
+        //     break;
+        // if ((merry_manager_mem_read_inst(c->inst_mem, c->pc, &c->ir)) == RET_FAILURE)
+        // {
+        //     // // failed to read
+        //     // merry_os_handle_error(c->os, c->inst_mem->error);
+        //     // break;
+        //     // in the next cycle, this core will have stopped
+        // }
+        // merry_mutex_unlock(c->lock);
+        // switch (_MERRY_CORE_GET_OPCODE_(c->ir))
+        // {
+        // case OP_NOP:
+        //     break;
+        // case OP_HALT: // halt instruction, will make this core stop executing at all
+        //     c->stop_running = mtrue;
+        //     break;
+        // }
     }
     return RET_NULL; // return nothing
 }

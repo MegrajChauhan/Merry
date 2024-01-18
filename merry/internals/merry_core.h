@@ -33,7 +33,8 @@
 #include "../../sys/merry_mem.h" // for allocating a page for the stack that the core manages
 #include "merry_memory.h"
 #include "../includes/merry_errors.h"
-#include "merry_opcodes.h"
+// #include "merry_opcodes.h"
+#include "merry_request_hdlr.h"
 #include <stdlib.h>
 
 typedef struct MerryCore MerryCore;
@@ -96,7 +97,7 @@ struct MerryCore
     // the core's memory
     MerryMemory *data_mem; // the data memory
     MerryMemory *inst_mem; // the instruction memory
-    Merry *os;
+    // Merry *os;
     // Each address of the stack stores 8 bytes which implies each push or pop pushes and pops 8 bytes
     // there are no need for alignments
     mqptr_t stack_mem;       // the private stack of the core
@@ -119,7 +120,7 @@ struct MerryCore
 #define _MERRY_CORE_GET_OPCODE_(inst) (inst >> 55) 
 
 // initialize a new core
-MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, Merry *os, msize_t id);
+MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, msize_t id);
 
 void merry_core_destroy(MerryCore *core);
 

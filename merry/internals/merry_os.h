@@ -67,6 +67,13 @@ struct Merry
 #define merry_manager_mem_read_data(os, address, store_in) merry_memory_read_lock(os->data_mem, address, store_in)
 #define merry_manager_mem_write_data(os, address, _value_to_write) merry_memory_write_lock(os->data_mem, address, _value_to_write)
 
+#define _MERRY_REQUEST_QUEUE_LEN_ 10 // for now
+
+#define _MERRY_REQUEST_CORE_MEMORY_ERROR_(request_id) (request_id > 0 && request_id <= 100)
+#define _MERRY_REQUEST_INTERNAL_MODULE_ERROR_(request_id) (request_id >= 101 && request_id <= 200)
+
+#define merry_mem_error(msg) fprintf(stderr, "Memory Error: %s.\n", msg)
+#define merry_internal_module_error(msg) fprintf(stderr, "Internal Error; %s.\n", msg)
 /*
  The Manager assigns core ids to every core it manages which then helps in identifying the cores.
 */
@@ -86,5 +93,7 @@ mret_t merry_os_mem_write_data(Merry *os, maddress_t address, mqword_t to_store,
 
 // print the suitable error message and exit the VM
 void merry_os_handle_error(Merry *os, MerryError error);
+
+void merry_os_handle_internal_module_error(Merry *os, merrot_t error_num);
 
 #endif

@@ -1,5 +1,5 @@
 /*
- * Request handler implementation of the Merry VM
+ * Instruction representation of the Merry VM
  * MIT License
  *
  * Copyright (c) 2024 MegrajChauhan
@@ -22,40 +22,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifndef _MERRY_REQUEST_HDLR_
-#define _MERRY_REQUEST_HDLR_
+#ifndef _MERRY_INST_
+#define _MERRY_INST_
 
-#include "../../utils/merry_types.h"
-// #include "../lib/include/merry_memory_allocator.h" <LEGACY>
-#include "../../sys/merry_thread.h"
-#include "merry_request_queue.h"
-#include <stdlib.h>
+#include "../../../utils/merry_config.h"
+#include "../../../utils/merry_types.h"
 
-typedef struct MerryRequestHdlr MerryRequestHdlr;
+typedef struct MerryInstruction MerryInstruction;
 
-struct MerryRequestHdlr
-{
-    MerryRequestQueue *queue; // the request queue
-    MerryMutex *lock;         // only one thread can pop and push
-    MerryCond *host_cond;     // the OS's condition variable
-};
-
-// the request handler doesn't belong to even the OS just like Reader
-static MerryRequestHdlr req_hdlr;
-
-mret_t merry_requestHdlr_init(msize_t queue_len, MerryCond *cond);
-
-mret_t merry_requestHdlr_push_request(msize_t req_id, msize_t id, MerryCond *req_cond);
-
-// exclusive for the OS
-mbool_t merry_requestHdlr_pop_request(MerryOSRequest *request);
-
-// exclusive for cores to inform the OS of errors quickly
-void merry_requestHdlr_panic(merrot_t error);
-
-// Make all cores that were waiting to continue with error
-void merry_requestHdlr_kill_requests();
-
-void merry_requestHdlr_destroy();
+struct MerryInstruction
+{};
 
 #endif

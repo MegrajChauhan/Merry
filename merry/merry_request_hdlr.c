@@ -19,7 +19,7 @@ mret_t merry_requestHdlr_init(msize_t queue_len, MerryCond *cond)
 
 mret_t merry_requestHdlr_push_request(msize_t req_id, msize_t id, MerryCond *req_cond)
 {
-    mret_t success = RET_SUCCESS;
+    mret_t success = RET_SUCCESS; // just to tell the core to stop furthur execution
     merry_mutex_lock(req_hdlr.lock);
     if (merry_push_request(req_hdlr.queue, req_cond, req_id, id) == mfalse)
     {
@@ -39,6 +39,27 @@ mret_t merry_requestHdlr_push_request(msize_t req_id, msize_t id, MerryCond *req
     }
     merry_mutex_unlock(req_hdlr.lock);
     return success;
+}
+
+void merry_requestHdlr_kill_requests()
+{
+    merry_mutex_lock(req_hdlr.lock);
+    MerryOSRequest request;
+    for (msize_t i = 0; i < req_hdlr.queue->data_count; i++)
+    {
+        merry_pop_request(req_hdlr.queue, &request);
+        merry_cond_signal(request._wait_lock); // wake up the waiting core
+    }
+    merry_mutex_unlock(req_hdlr.lock);
+}
+
+void merry_requestHdlr_panic(merrot_t error)
+{
+    merry_mutex_lock(req_hdlr.lock);
+    merry_panic_push(req_hdlr.queue, _REQ_PANIC_REQOVERFLOW); // panic push
+    if (req_hdlr.queue->data_count == 1)
+        merry_cond_signal(req_hdlr.host_cond); // wake up the OS if sleeping
+    merry_mutex_unlock(req_hdlr.lock);
 }
 
 mbool_t merry_requestHdlr_pop_request(MerryOSRequest *request)
