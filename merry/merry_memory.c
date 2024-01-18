@@ -3,7 +3,7 @@
 // helper function: Allocate a new memory page and return it
 _MERRY_INTERNAL_ MerryMemPage *merry_mem_allocate_new_mempage()
 {
-    MerryMemPage *new_page = (MerryMemPage *)merry_malloc(sizeof(MerryMemPage));
+    MerryMemPage *new_page = (MerryMemPage *)malloc(sizeof(MerryMemPage));
     if (new_page == RET_NULL)
     {
         // failed allocation
@@ -12,14 +12,14 @@ _MERRY_INTERNAL_ MerryMemPage *merry_mem_allocate_new_mempage()
     // try allocating the address space
     if ((new_page->address_space = _MERRY_MEMORY_PGALLOC_MAP_PAGE_) == NULL)
     {
-        merry_free(new_page);
+        free(new_page);
         return RET_NULL; // we failed
     }
     // initialize the page's lock
     if ((new_page->lock = merry_mutex_init()) == RET_NULL)
     {
         _MERRY_MEMORY_PGALLOC_UNMAP_PAGE_(new_page->address_space);
-        merry_free(new_page);
+        free(new_page);
         return RET_NULL;
     }
     // everything went successfully
@@ -28,7 +28,7 @@ _MERRY_INTERNAL_ MerryMemPage *merry_mem_allocate_new_mempage()
 
 _MERRY_INTERNAL_ MerryMemPage *merry_mem_allocate_new_mempage_provided(mqptr_t page)
 {
-    MerryMemPage *new_page = (MerryMemPage *)merry_malloc(sizeof(MerryMemPage));
+    MerryMemPage *new_page = (MerryMemPage *)malloc(sizeof(MerryMemPage));
     if (new_page == RET_NULL)
     {
         // failed allocation
@@ -40,7 +40,7 @@ _MERRY_INTERNAL_ MerryMemPage *merry_mem_allocate_new_mempage_provided(mqptr_t p
     if ((new_page->lock = merry_mutex_init()) == RET_NULL)
     {
         _MERRY_MEMORY_PGALLOC_UNMAP_PAGE_(new_page->address_space);
-        merry_free(new_page);
+        free(new_page);
         return RET_NULL;
     }
     // everything went successfully
@@ -60,13 +60,13 @@ _MERRY_INTERNAL_ void merry_mem_free_mempage(MerryMemPage *page)
     {
         _MERRY_MEMORY_PGALLOC_UNMAP_PAGE_(page->address_space);
     }
-    merry_free(page); // that is all
+    free(page); // that is all
 }
 
 // exposed function: initialize memory with num_of_pages pages
 MerryMemory *merry_memory_init(msize_t num_of_pages)
 {
-    MerryMemory *memory = (MerryMemory *)merry_malloc(sizeof(MerryMemory));
+    MerryMemory *memory = (MerryMemory *)malloc(sizeof(MerryMemory));
     if (memory == RET_NULL)
     {
         // we failed
@@ -74,11 +74,11 @@ MerryMemory *merry_memory_init(msize_t num_of_pages)
     }
     memory->error = MERRY_ERROR_NONE;
     memory->number_of_pages = 0;
-    memory->pages = (MerryMemPage **)merry_malloc(sizeof(MerryMemPage *) * num_of_pages);
+    memory->pages = (MerryMemPage **)malloc(sizeof(MerryMemPage *) * num_of_pages);
     if (memory->pages == RET_NULL)
     {
         // failed
-        merry_free(memory);
+        free(memory);
         return RET_NULL;
     }
     // now we need to initialize every single page
@@ -100,7 +100,7 @@ MerryMemory *merry_memory_init_provided(mqptr_t *mapped_pages, msize_t num_of_pa
 {
     // just perform the regular allocation but don't map new pages
     // instead use the already mapped ones
-    MerryMemory *memory = (MerryMemory *)merry_malloc(sizeof(MerryMemory));
+    MerryMemory *memory = (MerryMemory *)malloc(sizeof(MerryMemory));
     if (memory == RET_NULL)
     {
         // we failed
@@ -108,14 +108,11 @@ MerryMemory *merry_memory_init_provided(mqptr_t *mapped_pages, msize_t num_of_pa
     }
     memory->error = MERRY_ERROR_NONE;
     memory->number_of_pages = 0;
-    if (num_of_pages < _MERRY_ALLOC_PAGE_LEN_ / 8)
-        memory->pages = (MerryMemPage **)merry_malloc(sizeof(MerryMemPage *) * num_of_pages);
-    else
-        memory->pages = (MerryMemPage **)merry_lalloc(sizeof(MerryMemPage *) * num_of_pages);
+    memory->pages = (MerryMemPage **)malloc(sizeof(MerryMemPage *) * num_of_pages);
     if (memory->pages == RET_NULL)
     {
         // failed
-        merry_free(memory);
+        free(memory);
         return RET_NULL;
     }
     // now we need to initialize every single page
@@ -143,12 +140,9 @@ void merry_memory_free(MerryMemory *memory)
         {
             merry_mem_free_mempage(memory->pages[i]);
         }
-        if (memory->number_of_pages < _MERRY_ALLOC_PAGE_LEN_ / 8)
-            merry_free(memory->pages);
-        else
-            merry_lfree(memory->pages, memory->number_of_pages * 8);
+        free(memory->pages);
     }
-    merry_free(memory);
+    free(memory);
 }
 
 mret_t merry_memory_read(MerryMemory *memory, maddress_t address, mqptr_t _store_in)

@@ -3,7 +3,7 @@
 MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, Merry *os, msize_t id)
 {
     // allocate a new core
-    MerryCore *new_core = (MerryCore *)merry_malloc(sizeof(MerryCore));
+    MerryCore *new_core = (MerryCore *)malloc(sizeof(MerryCore));
     // check if the core has been initialized
     if (new_core == RET_NULL)
         return RET_NULL;
@@ -18,17 +18,17 @@ MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, Merry *
     new_core->cond = merry_cond_init();
     if (new_core->cond == RET_NULL)
     {
-        merry_free(new_core);
+        free(new_core);
         return RET_NULL;
     }
     new_core->lock = merry_mutex_init();
     if (new_core->lock == RET_NULL)
     {
         merry_cond_destroy(new_core->cond);
-        merry_free(new_core);
+        free(new_core);
         return RET_NULL;
     }
-    new_core->registers = (mqptr_t)merry_malloc(sizeof(mqword_t) * REGR_COUNT);
+    new_core->registers = (mqptr_t)malloc(sizeof(mqword_t) * REGR_COUNT);
     if (new_core->registers == RET_NULL)
     {
         merry_core_destroy(new_core);
@@ -61,7 +61,7 @@ void merry_core_destroy(MerryCore *core)
     }
     if (surelyT(core->registers != NULL))
     {
-        merry_free(core->registers);
+        free(core->registers);
     }
     if (surelyT(core->stack_mem != NULL))
     {
@@ -78,7 +78,7 @@ void merry_core_destroy(MerryCore *core)
     core->data_mem = NULL;
     core->inst_mem = NULL;
     core->os = NULL;
-    merry_free(core);
+    free(core);
 }
 
 mptr_t merry_runCore(mptr_t core)
@@ -95,9 +95,9 @@ mptr_t merry_runCore(mptr_t core)
             break;
         if ((merry_manager_mem_read_inst(c->inst_mem, c->pc, &c->ir)) == RET_FAILURE)
         {
-            // failed to read
-            merry_os_handle_error(c->os, c->inst_mem->error);
-            break;
+            // // failed to read
+            // merry_os_handle_error(c->os, c->inst_mem->error);
+            // break;
             // in the next cycle, this core will have stopped
         }
         merry_mutex_unlock(c->lock);

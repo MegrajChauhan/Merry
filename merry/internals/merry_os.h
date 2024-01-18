@@ -36,13 +36,14 @@
 // This module is the backbone of the VM and controls everything
 #include "../../utils/merry_config.h"
 #include "../../utils/merry_types.h"
-#include "../lib/include/merry_memory_allocator.h"
+// #include "../lib/include/merry_memory_allocator.h" <LEGACY>
 #include "../../sys/merry_thread.h"
 #include "../includes/merry_errors.h"
 #include "merry_memory.h"
 #include "merry_core.h"
 #include "merry_reader.h"
-#include "merry_request_queue.h"
+#include "merry_request.h"
+#include "merry_request_hdlr.h"
 
 typedef struct Merry Merry;
 
@@ -68,12 +69,6 @@ struct Merry
 
 /*
  The Manager assigns core ids to every core it manages which then helps in identifying the cores.
- The potential use for shared_cond is that when performing atomic operations, we can block other vcores and unblock them at the same time as well.
- We may also use the shared_cond for things where we have to temporarily stop all the vcores.
- When a specific core needs to be stopped, we can use the core's private condition variable.
- This unfortunately has one issue, since we have the private and shared condition variables, we will need extra flags and logic for each fetch-decode-execute
- cycle to determine which condition variable to use which will hamper the efficiency in the long run.
- So unfortunately, we will stop doing that and instead provide another way to block other vcores.
 */
 
 // this only initializes an instance of Merry while leaving inst_mem, data_mem uninitialized which is valid as we need to know the input and how many

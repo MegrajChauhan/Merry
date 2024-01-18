@@ -22,20 +22,29 @@ void merry_request_queue_destroy(MerryRequestQueue *queue){
     // that is all
 }
 
-_MERRY_ALWAYS_INLINE mbool_t merry_is_queue_full(MerryRequestQueue *queue)
+mbool_t merry_push_request(MerryRequestQueue *queue, MerryCond *_req_cond, msize_t req_num, msize_t id)
 {
-    return _MERRY_IS_QUEUE_FULL_(queue) ? mtrue : mfalse;
-}
-
-mret_t merry_push_request(MerryRequestQueue *queue, MerryCond *_req_cond, msize_t req_num, msize_t id)
-{
-    if (merry_is_queue_full(queue) == mtrue)
-    {
-        // the queue is full and so we gotta have to deny this request
-        // we do not other way of handling this
-        // this situation should not occur but it could still happen
-        return RET_FAILURE;
-    }
+    mbool_t ret = mtrue;
     // create a new request
     MerryOSRequest new_req = {req_num, _req_cond, id};
+    _MERRY_QUEUE_PUSH_(queue, new_req, ret)
+    return ret; // should be mfalse only when the queue is full
+}
+
+mbool_t merry_pop_request(MerryRequestQueue *queue, MerryOSRequest *dest)
+{
+    mbool_t ret = mtrue;
+    _MERRY_QUEUE_POP_(queue, *dest, ret)
+    return ret; // should be mfalse only when the queue is empty
+}
+
+void merry_destroy_request_queue(MerryRequestQueue *queue)
+{
+    _MERRY_DESTROY_QUEUE_(queue)
+}
+
+void merry_panic_push(MerryRequestQueue *queue, merrot_t error)
+{
+    MerryOSRequest req = {error, NULL, 0};
+    _MERRY_QUEUE_PANIC_PUSH_(queue, req)
 }

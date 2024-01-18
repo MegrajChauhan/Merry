@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 #include "../../utils/merry_types.h"
-#include "../lib/include/merry_memory_allocator.h"
+// #include "../lib/include/merry_memory_allocator.h" <LEGACY>
 #include "merry_memory.h"
 #include <stdio.h>  // for FILE
 #include <string.h> // for string manipulation

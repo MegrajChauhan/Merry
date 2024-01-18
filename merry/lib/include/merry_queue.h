@@ -4,7 +4,8 @@
 #include "../../../utils/merry_types.h"
 #include "../../../utils/merry_config.h"
 #include "../../../utils/merry_utils.h"
-#include "merry_memory_allocator.h"
+// #include "merry_memory_allocator.h" <LEGACY>
+#include <stdlib.h>
 
 #define _MERRY_CREATE_QUEUE_NODE_(type, name) \
     struct name                               \
@@ -31,7 +32,7 @@
 #define _MERRY_QUEUE_INIT_(queue_name, qptr)                   \
     do                                                         \
     {                                                          \
-        qptr = (queue_name *)merry_malloc(sizeof(queue_name)); \
+        qptr = (queue_name *)malloc(sizeof(queue_name)); \
     } while (0);
 // checking if the pointer was initialized is the caller's job
 
@@ -39,7 +40,7 @@
     do                                                                                             \
     {                                                                                              \
         qptr->node_count = (create_node_count);                                                    \
-        qptr->head = (node_name *)merry_malloc(sizeof(node_name));                                 \
+        qptr->head = (node_name *)malloc(sizeof(node_name));                                 \
         if (qptr->head == NULL)                                                                    \
         {                                                                                          \
             ret = mfalse;                                                                          \
@@ -48,13 +49,13 @@
         node_name *current = (qptr)->head;                                                         \
         for (msize_t i = 0; i < (create_node_count); i++)                                          \
         {                                                                                          \
-            current->value = (typeof(current->value))merry_malloc(sizeof(typeof(current->value))); \
+            current->value = (typeof(current->value))malloc(sizeof(typeof(current->value))); \
             if (current->value == NULL)                                                            \
             {                                                                                      \
                 (ret) = mfalse;                                                                    \
                 break;                                                                             \
             }                                                                                      \
-            current->next = (node_name *)merry_malloc(sizeof(node_name));                          \
+            current->next = (node_name *)malloc(sizeof(node_name));                          \
             if (current->next == NULL)                                                             \
             {                                                                                      \
                 (ret) = mfalse;                                                                    \
@@ -114,15 +115,22 @@
             if (current != NULL)                         \
             {                                            \
                 if (current->value != NULL)              \
-                    merry_free(current->value);          \
-                merry_free(current);                     \
+                    free(current->value);          \
+                free(current);                     \
             }                                            \
             current = next;                              \
         }                                                \
         (qptr)->head = NULL;                             \
         (qptr)->tail = NULL;                             \
         (qptr)->node_count = 0;                          \
-        merry_free(qptr);                                \
+        free(qptr);                                \
+    } while (0);
+
+// Emergency add to first
+#define _MERRY_QUEUE_PANIC_PUSH_(qptr, val)                   \
+    do                                                          \
+    { /*This is a emergency push and so it takes top priority*/ \
+        *(qptr->head->value) = val;                           \
     } while (0);
 
 #endif

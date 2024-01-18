@@ -38,8 +38,9 @@
 #include "merry_internals.h"
 #include "../../sys/merry_mem.h"
 #include "../../sys/merry_thread.h" // memory needs to be thread safe
-#include "../lib/include/merry_memory_allocator.h"
+// #include "../lib/include/merry_memory_allocator.h" <LEGACY>
 #include "../includes/merry_errors.h"
+#include <stdlib.h>
 
 #define _MERRY_MEMORY_PGALLOC_MAP_PAGE_ _MERRY_MEM_GET_PAGE_(_MERRY_MEMORY_ADDRESSES_PER_PAGE_, _MERRY_PROT_DEFAULT_, _MERRY_FLAG_DEFAULT_)
 #define _MERRY_MEMORY_PGALLOC_UNMAP_PAGE_(address) _MERRY_MEM_GIVE_PAGE_(address, _MERRY_MEMORY_ADDRESSES_PER_PAGE_)

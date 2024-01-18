@@ -39,7 +39,8 @@ typedef struct MerryThread MerryThread;
 
 _MERRY_DEFINE_FUNC_PTR_(void *, ThreadExecFunc, void *)
 
-#include "../merry/lib/include/merry_memory_allocator.h"
+// #include "../merry/lib/include/merry_memory_allocator.h" <Legacy>
+#include <stdlib.h>
 
 // initialize mutex lock
 _MERRY_NO_DISCARD_ MerryMutex *merry_mutex_init();

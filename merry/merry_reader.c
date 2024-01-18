@@ -27,14 +27,8 @@ _MERRY_INTERNAL_ mret_t merry_reader_alloc_pages(MerryInpFile *inp)
     // even if dpage_count is 0, we sill need to map one page
     if (inp->dpage_count == 0)
         inp->dpage_count++;
-    if (inp->dpage_count < (_MERRY_ALLOC_PAGE_LEN_ / 8))
-        inp->_data = (mqptr_t *)merry_malloc(sizeof(mqptr_t *) * inp->dpage_count);
-    else
-        inp->_data = (mqptr_t *)merry_lalloc(sizeof(mqptr_t *) * inp->dpage_count);
-    if (inp->ipage_count < (_MERRY_ALLOC_PAGE_LEN_ / 8))
-        inp->_instructions = (mqptr_t *)merry_malloc(sizeof(mqptr_t *) * inp->ipage_count);
-    else
-        inp->_instructions = (mqptr_t *)merry_lalloc(sizeof(mqptr_t *) * inp->ipage_count);
+    inp->_data = (mqptr_t *)malloc(sizeof(mqptr_t *) * inp->dpage_count);
+    inp->_instructions = (mqptr_t *)malloc(sizeof(mqptr_t *) * inp->ipage_count);
     if (inp->_data == NULL || inp->_instructions == NULL)
         return RET_FAILURE; // we failed
     // now we map the memory for both the instruction page and data page
@@ -70,29 +64,13 @@ void merry_destory_reader(MerryInpFile *inp)
     if (surelyT(inp->_data != NULL))
     {
         // we will not unmap any pages that _data holds on to but we free it
-        if (inp->dpage_count < (_MERRY_ALLOC_PAGE_LEN_ / 8))
-        {
-            // most probably allocated
-            merry_free(inp->_data);
-        }
-        else
-        {
-            merry_lfree(inp->_data, inp->dpage_count * 8);
-        }
+        free(inp->_data);
     }
     if (surelyT(inp->_instructions != NULL))
     {
-        if (inp->ipage_count < (_MERRY_ALLOC_PAGE_LEN_ / 8))
-        {
-            // most probably allocated
-            merry_free(inp->_instructions);
-        }
-        else
-        {
-            merry_lfree(inp->_instructions, inp->ipage_count * 8);
-        }
+        free(inp->_instructions);
     }
-    merry_free(inp);
+    free(inp);
 }
 
 _MERRY_INTERNAL_ mbool_t merry_check_file_extension(mcstr_t _file_name)
@@ -442,7 +420,7 @@ MerryInpFile *merry_read_file(mcstr_t _file_name)
     // check if the file has proper extension
     if (merry_check_file_extension(_file_name) == mfalse)
         return RET_NULL; // the file has invalid extension
-    MerryInpFile *inp = (MerryInpFile *)merry_malloc(sizeof(MerryInpFile));
+    MerryInpFile *inp = (MerryInpFile *)malloc(sizeof(MerryInpFile));
     if (inp == RET_NULL)
     {
         // this was a failure
@@ -457,7 +435,7 @@ MerryInpFile *merry_read_file(mcstr_t _file_name)
     {
         // something went wrong
         _READ_ERROR_("Read Error: The provided input file name %s is either a directory or doesn't exist.\n", _file_name);
-        merry_free(inp);
+        free(inp);
         return RET_NULL;
     }
     // get the length of the file

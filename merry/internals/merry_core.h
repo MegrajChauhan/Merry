@@ -27,13 +27,14 @@
 
 #include "../../utils/merry_config.h"
 #include "../../utils/merry_types.h"
-#include "../lib/include/merry_memory_allocator.h"
+// #include "../lib/include/merry_memory_allocator.h" <LEGACY>
 #include "../../sys/merry_thread.h"
 #include "merry_internals.h"
 #include "../../sys/merry_mem.h" // for allocating a page for the stack that the core manages
 #include "merry_memory.h"
 #include "../includes/merry_errors.h"
 #include "merry_opcodes.h"
+#include <stdlib.h>
 
 typedef struct MerryCore MerryCore;
 // typedef union MerryRegister MerryRegister;

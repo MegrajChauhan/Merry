@@ -20,3 +20,9 @@ It doesn't handle memory properly, doesn't utilize memory properly, wastes a lot
 But apart from these issues, the allocator doesn't handle requests for sizes that is larger than its page size. That is because it is not coded to handle that 
 case. But it is for better. The only thing in the VM that would request more memory than the "page" size is the memory for memory page allocations.
 But this will be handled by the memory itself.
+
+Allocator is now a Legacy module. This module served its purpose as an allocator. The main motive for writing an allocator was to get rid of a problem that I faced while working on Aspire VM.
+Aspire is another one of my VM that was discontinued because Malloc was not working as intended. The situation became so worse whilst trying to fix the error that it was irrepairable and thus discontinued.
+For now malloc should work and provide memory for the VM without fail. If, in future, if the VM demands more than malloc can provide we can implement a way better allocator than the legacy one.
+To be honest, the legacy allocator is the worst and yet the most memory efficient design I have made so far. Memory efficient in the sense that it breaks memory down to the needed size and limits fragmentation[mostly].
+On the other hand, the size of metadata made it not "memory efficient". It was extremely slow, full of bugs, loopholes and bloat.

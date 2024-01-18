@@ -2,15 +2,17 @@
 
 Merry *merry_os_init(mcstr_t _inp_file)
 {
+    // firstly initialize the request handler
+    // merry_requestHdlr_init();
     // initialize the os
-    Merry *os = (Merry *)merry_malloc(sizeof(Merry));
+    Merry *os = (Merry *)malloc(sizeof(Merry));
     if (os == RET_NULL)
         return RET_NULL; // we failed
     // just 1 core
-    // os->cores = (Merry **)merry_malloc(sizeof(Merry *));
+    // os->cores = (Merry **)malloc(sizeof(Merry *));
     if (os->cores == RET_NULL)
     {
-        merry_free(os);
+        free(os);
         return RET_NULL;
     }
     // we need memory to be initialized
@@ -18,14 +20,14 @@ Merry *merry_os_init(mcstr_t _inp_file)
     if (input == RET_NULL)
     {
         // the input file was not read and we failed
-        merry_free(os);
+        free(os);
         return RET_NULL;
     }
     // initialize the memory
     if ((os->data_mem = merry_memory_init_provided(input->_data, input->dpage_count)) == RET_NULL)
     {
         // grand failure
-        merry_free(os);
+        free(os);
         merry_destory_reader(input);
         return RET_NULL;
     }
@@ -47,14 +49,14 @@ Merry *merry_os_init(mcstr_t _inp_file)
     // don't forget to destory the reader
     merry_destory_reader(input);
     os->core_count = 0; // we will start with one core
-    os->cores = (MerryCore **)merry_malloc(sizeof(MerryCore *));
+    os->cores = (MerryCore **)malloc(sizeof(MerryCore *));
     if (os->cores == RET_NULL)
         goto failure;
     os->cores[0] = merry_core_init(os->inst_mem, os->data_mem, os, os->core_count);
     if (os->cores[0] == RET_NULL)
         goto failure;
     os->stop = mfalse;
-    os->core_threads = (MerryThread **)merry_malloc(sizeof(MerryThread *)); // just 1 for now
+    os->core_threads = (MerryThread **)malloc(sizeof(MerryThread *)); // just 1 for now
     if (os->core_threads == RET_NULL)
         goto failure;
     return os; // we did everything correctly
@@ -87,7 +89,7 @@ void merry_os_destroy(Merry *os)
             if (surelyT(os->cores[i] != NULL))
                 merry_core_destroy(os->cores[i]);
         }
-        merry_free(os->cores);
+        free(os->cores);
     }
     if (surelyT(os->core_threads != NULL))
     {
@@ -96,9 +98,10 @@ void merry_os_destroy(Merry *os)
             if (surelyT(os->core_threads[i] != NULL))
                 merry_thread_destroy(os->core_threads[i]);
         }
-        merry_free(os->core_threads);
+        free(os->core_threads);
     }
-    merry_free(os);
+    merry_requestHdlr_destroy();
+    free(os);
 }
 
 mret_t merry_os_mem_read_data(Merry *os, maddress_t address, mqptr_t store_in, msize_t core_id)
@@ -134,44 +137,44 @@ mret_t merry_os_mem_write_data(Merry *os, maddress_t address, mqword_t to_store,
     return RET_FAILURE;
 }
 
-// helper: stops all of the cores
-_MERRY_INTERNAL_ void merry_os_stop_cores(Merry *os)
-{
-    merry_mutex_lock(os->_lock);
-    if (os->core_count == 0)
-    {
-        // we have just 1 core
-        merry_mutex_lock(os->cores[0]->lock); // stop the core first
-        os->cores[0]->stop_running = mtrue;   // tell it to stop
-        merry_mutex_unlock(os->cores[0]->lock);
-    }
-    else
-    {
-        for (msize_t i = 0; i <= os->core_count; i++)
-        {
-            merry_mutex_lock(os->cores[i]->lock); // stop the core first
-            os->cores[i]->stop_running = mtrue;   // tell it to stop
-            merry_mutex_unlock(os->cores[i]->lock);
-        }
-    }
-    merry_mutex_unlock(os->_lock);
-}
+// // helper: stops all of the cores
+// _MERRY_INTERNAL_ void merry_os_stop_cores(Merry *os)
+// {
+//     merry_mutex_lock(os->_lock);
+//     if (os->core_count == 0)
+//     {
+//         // we have just 1 core
+//         merry_mutex_lock(os->cores[0]->lock); // stop the core first
+//         os->cores[0]->stop_running = mtrue;   // tell it to stop
+//         merry_mutex_unlock(os->cores[0]->lock);
+//     }
+//     else
+//     {
+//         for (msize_t i = 0; i <= os->core_count; i++)
+//         {
+//             merry_mutex_lock(os->cores[i]->lock); // stop the core first
+//             os->cores[i]->stop_running = mtrue;   // tell it to stop
+//             merry_mutex_unlock(os->cores[i]->lock);
+//         }
+//     }
+//     merry_mutex_unlock(os->_lock);
+// }
 
-_MERRY_INTERNAL_ void merry_os_stop_core(Merry *os, msize_t core_id)
-{
-    merry_mutex_lock(os->_lock);
-    merry_mutex_lock(os->cores[core_id]->lock); // stop the core first
-    os->cores[core_id]->stop_running = mtrue;   // tell it to stop
-    merry_mutex_unlock(os->cores[core_id]->lock);
-    merry_mutex_unlock(os->_lock);
-    if (os->core_count == 0)
-    {
-        // if count is 0 and we stopped the one already running
-        os->stop = mtrue;
-        os->ret = os->cores[core_id]->registers[Ma];
-        merry_cond_signal(os->_cond);
-    }
-}
+// _MERRY_INTERNAL_ void merry_os_stop_core(Merry *os, msize_t core_id)
+// {
+//     merry_mutex_lock(os->_lock);
+//     merry_mutex_lock(os->cores[core_id]->lock); // stop the core first
+//     os->cores[core_id]->stop_running = mtrue;   // tell it to stop
+//     merry_mutex_unlock(os->cores[core_id]->lock);
+//     merry_mutex_unlock(os->_lock);
+//     if (os->core_count == 0)
+//     {
+//         // if count is 0 and we stopped the one already running
+//         os->stop = mtrue;
+//         os->ret = os->cores[core_id]->registers[Ma];
+//         merry_cond_signal(os->_cond);
+//     }
+// }
 
 _MERRY_ALWAYS_INLINE mret_t merry_os_boot_core(Merry *os, msize_t core_id, maddress_t start_addr)
 {
@@ -188,24 +191,14 @@ _MERRY_ALWAYS_INLINE mret_t merry_os_boot_core(Merry *os, msize_t core_id, maddr
     return RET_SUCCESS;
 }
 
+/*From here the OS gets requests from the request handler and fulfills the request*/
 mptr_t merry_os_start_vm(mptr_t os)
 {
     // this will start the OS
     Merry *master = (Merry *)os;
     if (merry_os_boot_core(master, 0, 0) != RET_SUCCESS)
         return (mptr_t)RET_FAILURE;
-    // now core 0 is running
-    merry_mutex_lock(master->_lock);
-    if (master->stop == mfalse)
-    {
-        // we should wait until we are told to continue working
-        merry_cond_wait(master->_cond, master->_lock);
-    }
-    merry_mutex_unlock(master->_lock);
-    // the master is only signaled to wake up when the VM needs to stop otherwise it remains asleep
-    // perform cleanups
-    // stop all cores
-    merry_os_stop_cores(master);
+    /*Logic for request handling*/
     return (mptr_t)master->ret; // freeing the OS is the Main's Job
 }
 

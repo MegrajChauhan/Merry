@@ -2,13 +2,13 @@
 
 MerryMutex *merry_mutex_init()
 {
-    MerryMutex *mutex = (MerryMutex *)merry_malloc(sizeof(MerryMutex));
+    MerryMutex *mutex = (MerryMutex *)malloc(sizeof(MerryMutex));
     if (mutex == NULL)
         return RET_NULL; // failure to allocate
 #if defined(_MERRY_THREADS_POSIX_)
     if (pthread_mutex_init(&mutex->mutex, NULL) != 0)
     {
-        merry_free(mutex);
+        free(mutex);
         return RET_NULL;
     }
 #endif
@@ -17,13 +17,13 @@ MerryMutex *merry_mutex_init()
 
 MerryCond *merry_cond_init()
 {
-    MerryCond *cond = (MerryCond *)merry_malloc(sizeof(MerryCond));
+    MerryCond *cond = (MerryCond *)malloc(sizeof(MerryCond));
     if (cond == NULL)
         return RET_NULL; // failure to allocate
 #if defined(_MERRY_THREADS_POSIX_)
     if (pthread_cond_init(&cond->cond, NULL) != 0)
     {
-        merry_free(cond);
+        free(cond);
         return RET_NULL;
     }
 #endif
@@ -32,7 +32,7 @@ MerryCond *merry_cond_init()
 
 MerryThread *merry_thread_init()
 {
-    MerryThread *thread = (MerryThread *)merry_malloc(sizeof(MerryThread));
+    MerryThread *thread = (MerryThread *)malloc(sizeof(MerryThread));
     if (thread == NULL)
         return RET_NULL;
     // we are simply initializing a MerryThread
@@ -46,7 +46,7 @@ void merry_mutex_destroy(MerryMutex *mutex)
 #if defined(_MERRY_THREADS_POSIX_)
     pthread_mutex_destroy(&mutex->mutex);
 #endif
-    merry_free(mutex); // merry_free the mutex
+    free(mutex); // free the mutex
 }
 
 void merry_cond_destroy(MerryCond *cond)
@@ -56,14 +56,14 @@ void merry_cond_destroy(MerryCond *cond)
 #if defined(_MERRY_THREADS_POSIX_)
     pthread_cond_destroy(&cond->cond);
 #endif
-    merry_free(cond); // merry_free the mutex
+    free(cond); // free the mutex
 }
 
 void merry_thread_destroy(MerryThread *thread)
 {
     if (surelyF(thread == NULL))
         return;
-    merry_free(thread);
+    free(thread);
 }
 
 void merry_mutex_lock(MerryMutex *mutex)

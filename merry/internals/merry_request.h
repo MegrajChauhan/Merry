@@ -22,4 +22,11 @@ struct MerryOSRequest
     msize_t id;             // the core's id
 };
 
+enum
+{
+    _REQ_PANIC_REQOVERFLOW, /*Error: The request handler has overflown. Maybe the program is delibirately trying to cause this*/
+};
+
+typedef msize_t merrot_t;
+
 #endif
