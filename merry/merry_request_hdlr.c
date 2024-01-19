@@ -24,7 +24,7 @@ mret_t merry_requestHdlr_push_request(msize_t req_id, msize_t id, MerryCond *req
     if (merry_push_request(req_hdlr.queue, req_cond, req_id, id) == mfalse)
     {
         // failure
-        merry_panic_push(req_hdlr.queue, _REQ_PANIC_REQOVERFLOW); // panic
+        merry_panic_push(req_hdlr.queue, _PANIC_REQBUFFEROVERFLOW); // panic
         if (req_hdlr.queue->data_count == 1)
             merry_cond_signal(req_hdlr.host_cond); // wake up the OS
         success = RET_FAILURE;
@@ -56,7 +56,7 @@ void merry_requestHdlr_kill_requests()
 void merry_requestHdlr_panic(merrot_t error)
 {
     merry_mutex_lock(req_hdlr.lock);
-    merry_panic_push(req_hdlr.queue, _REQ_PANIC_REQOVERFLOW); // panic push
+    merry_panic_push(req_hdlr.queue, _PANIC_REQBUFFEROVERFLOW); // panic push
     if (req_hdlr.queue->data_count == 1)
         merry_cond_signal(req_hdlr.host_cond); // wake up the OS if sleeping
     merry_mutex_unlock(req_hdlr.lock);

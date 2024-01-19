@@ -234,17 +234,17 @@ mptr_t merry_os_start_vm(mptr_t os)
             // we have a request to fulfill
             switch (current_req.request_number)
             {
-                switch (_MERRY_REQUEST_CORE_MEMORY_ERROR_(current_req.request_number))
-                {
-                default:
-                    merry_os_handle_error(master, current_req.request_number); // this will handle all errors
-                    merry_os_prepare_for_exit(master);                         // now since this is an error, we can't continue
-                    break;                                                     // on next loop we will be out of the loop
-                }
-                switch (_MERRY_REQUEST_INTERNAL_MODULE_ERROR_(current_req.request_number))
+                switch (_MERRY_REQUEST_INTERNAL_ERROR_(current_req.request_number))
                 {
                 default:
                     merry_os_handle_internal_module_error(master, current_req.request_number);
+                    merry_os_prepare_for_exit(master);                         // now since this is an error, we can't continue
+                    break;                                                     // on next loop we will be out of the loop
+                }
+                switch (_MERRY_REQUEST_PROGRAM_ERROR_(current_req.request_number))
+                {
+                default:
+                    merry_os_handle_error(master, current_req.request_number); // this will handle all errors
                     merry_os_prepare_for_exit(master);
                     break; // on next loop we will be out of this loop
                 }
@@ -256,7 +256,7 @@ mptr_t merry_os_start_vm(mptr_t os)
     return (mptr_t)master->ret; // freeing the OS is the Main's Job
 }
 
-void merry_os_handle_error(Merry *os, MerryError error)
+void merry_os_handle_error(Merry *os, merrot_t error)
 {
     // this sets the return value for us
     os->ret = RET_FAILURE;
@@ -280,7 +280,7 @@ void merry_os_handle_internal_module_error(Merry *os, merrot_t error_num)
     os->ret = RET_FAILURE;
     switch (error_num)
     {
-    case _REQ_PANIC_REQOVERFLOW:
+    case _PANIC_REQBUFFEROVERFLOW:
         // either the program is deliberately trying to do this or the number is cores is just too much and requests to fast
         merry_internal_module_error("The request buffer hit maximum capacity. Cannot fulfill requests");
         break;

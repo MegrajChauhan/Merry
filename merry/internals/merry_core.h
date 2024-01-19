@@ -33,8 +33,8 @@
 #include "../../sys/merry_mem.h" // for allocating a page for the stack that the core manages
 #include "merry_memory.h"
 #include "../includes/merry_errors.h"
-// #include "merry_opcodes.h"
 #include "merry_request_hdlr.h"
+#include "decoder/merry_decode.h"
 #include <stdlib.h>
 
 typedef struct MerryCore MerryCore;
@@ -51,15 +51,26 @@ typedef struct MerryFlagRegister MerryFlagRegister;
 //     unsigned int _lhalf;
 // };
 
+#define flags_res(x, size) unsigned long x : size
+
 struct MerryFlagRegister
 {
-    unsigned long zero : 1;
-    unsigned long equal : 1;
-    unsigned long greater : 1;
-    unsigned long overflow : 1; // CARRY flag for signed arithmetic
-    unsigned long carry : 1;    // CARRY flag for unsigned arithmetic
-    unsigned long negative : 1;
-    unsigned long res : 58; // reserved
+#if defined(_MERRY_HOST_CPU_AMD_)
+    // This defines the flags structure for the AMD64 processors
+    unsigned long carry : 1;     /*0th bit is the CF in AMD64 EFlags*/
+    flags_res(r1, 1);            /*1 bit reserved here*/
+    unsigned long parity : 1;    /*2th bit is the PF*/
+    flags_res(r2, 1);            /*1 bit reserved here*/
+    unsigned long aux_carry : 1; /*4th bit Aux Carry flag[NOT REALLY NEEDED AS BCD INSTRUCTIONS ARE NOT SUPPORTED]*/
+    flags_res(r3, 1);            /*1 bit reserved here*/
+    unsigned long zero : 1;      /*6th bit ZF*/
+    unsigned long negative : 1;  /*7th bit SF or NG*/
+    flags_res(r4, 2);            /*2 bit reserved here*/
+    unsigned long overflow : 1;  /*10th bit is the OF*/
+    unsigned long direction : 1; /*11th bit is the DF[NOT REALLY USEFUL YET BUT MAYBE WHEN IMPLEMENTING STRING RELATED INSTRUCTIONS]*/
+    flags_res(rem_32, 20);
+    flags_res(top_32, 32);
+#endif
 };
 
 enum
@@ -112,12 +123,13 @@ struct MerryCore
     // other cores, it can set this flag and access memory pages without mutex locks which is faster.
     // If this flag is set but other cores access this core's pages and values then it is not known what behaviour might happen
     mbool_t _is_private;
+    MerryDecoder *decoder; // the core's decoder
 };
 
 #include "merry_os.h"
 
 // opcode is actually 9 bits long
-#define _MERRY_CORE_GET_OPCODE_(inst) (inst >> 55) 
+#define _MERRY_CORE_GET_OPCODE_(inst) (inst >> 55)
 
 // initialize a new core
 MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, msize_t id);

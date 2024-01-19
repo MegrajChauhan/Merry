@@ -1,5 +1,5 @@
 /*
- * The opcode definition of the Merry VM
+ * Instruction decoder of the Merry VM
  * MIT License
  *
  * Copyright (c) 2024 MegrajChauhan
@@ -22,17 +22,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifndef _MERRY_OPCODES_
-#define _MERRY_OPCODES_
+#ifndef _MERRY_DECODE_
+#define _MERRY_DECODE_
 
-enum
+#include "merry_opcodes.h"
+#include "merry_inst.h"
+#include <stdlib.h>
+#include "../merry_os.h"
+
+typedef struct MerryDecoder MerryDecoder;
+
+struct MerryDecoder
 {
-    OP_NOP,  // no operation instruction
-    OP_HALT, // halt instruction
 };
-
-typedef unsigned int mopcode_t; /*Opcode*/
-// operands are basically numbers which represent different things based on the instruction
-typedef unsigned long long moperand_t;
 
 #endif

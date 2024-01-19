@@ -27,10 +27,22 @@
 
 #include "../../../utils/merry_config.h"
 #include "../../../utils/merry_types.h"
+#include "merry_opcodes.h"
+#include "../merry_os.h"
 
 typedef struct MerryInstruction MerryInstruction;
 
+// A function that executes the instruction should take a MerryInstruction *, MerryCore *
+// Any error generated during this execution will be reported by the executing function itself
+_MERRY_DEFINE_FUNC_PTR_(void, minstexec_t, MerryInstruction *, MerryCore *)
+
 struct MerryInstruction
-{};
+{
+    mopcode_t opcode; // the instruction's opcode
+    // based on the instruction, it may have many operands, but at most it can have only 2 operands
+    moperand_t op1;        // the first operand
+    moperand_t op2;        // the second operand
+    minstexec_t exec_func; // the function that executes this specific instruction
+};
 
 #endif

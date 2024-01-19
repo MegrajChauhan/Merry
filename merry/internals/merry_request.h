@@ -49,9 +49,10 @@ struct MerryOSRequest
 enum
 {
     // these error value ranges will change with time
-    /*From 0 - 100 is for the error core and memory representation.*/
-    /*101 - 200 for internal module errors*/
-    _REQ_PANIC_REQOVERFLOW = 100, /*Error: The request handler has overflown. Maybe the program is delibirately trying to cause this*/
+    /*From 0 - 50 is for the error that the internal modules generate.*/
+    /*51 - 150 for any program generated errors*/
+    // any remaining for actual requests
+    _REQ_REQNONE = 151,
 };
 
 typedef msize_t merrot_t;

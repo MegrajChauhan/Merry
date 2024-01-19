@@ -69,8 +69,8 @@ struct Merry
 
 #define _MERRY_REQUEST_QUEUE_LEN_ 10 // for now
 
-#define _MERRY_REQUEST_CORE_MEMORY_ERROR_(request_id) (request_id > 0 && request_id <= 100)
-#define _MERRY_REQUEST_INTERNAL_MODULE_ERROR_(request_id) (request_id >= 101 && request_id <= 200)
+#define _MERRY_REQUEST_INTERNAL_ERROR_(request_id) (request_id > 0 && request_id <= 50)
+#define _MERRY_REQUEST_PROGRAM_ERROR_(request_id) (request_id >= 51 && request_id <= 150)
 
 #define merry_mem_error(msg) fprintf(stderr, "Memory Error: %s.\n", msg)
 #define merry_internal_module_error(msg) fprintf(stderr, "Internal Error; %s.\n", msg)
@@ -92,7 +92,7 @@ mret_t merry_os_mem_read_data(Merry *os, maddress_t address, mqptr_t store_in, m
 mret_t merry_os_mem_write_data(Merry *os, maddress_t address, mqword_t to_store, msize_t core_id);
 
 // print the suitable error message and exit the VM
-void merry_os_handle_error(Merry *os, MerryError error);
+void merry_os_handle_error(Merry *os, merrot_t error);
 
 void merry_os_handle_internal_module_error(Merry *os, merrot_t error_num);
 
