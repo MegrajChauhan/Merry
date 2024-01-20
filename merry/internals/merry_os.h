@@ -34,16 +34,7 @@
 */
 
 // This module is the backbone of the VM and controls everything
-#include "../../utils/merry_config.h"
-#include "../../utils/merry_types.h"
-// #include "../lib/include/merry_memory_allocator.h" <LEGACY>
-#include "../../sys/merry_thread.h"
-#include "../includes/merry_errors.h"
-#include "merry_memory.h"
-#include "merry_core.h"
-#include "merry_reader.h"
-#include "merry_request.h"
-#include "merry_request_hdlr.h"
+#include "merry_include.h"
 
 typedef struct Merry Merry;
 
