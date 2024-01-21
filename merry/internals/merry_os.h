@@ -53,10 +53,6 @@ struct Merry
   msize_t ret;
 };
 
-// directly used by cores
-#define merry_manager_mem_read_inst(inst_mem, address, store_in) merry_memory_read(inst_mem, address, store_in)
-#define merry_manager_mem_read_data(os, address, store_in) merry_memory_read_lock(os->data_mem, address, store_in)
-#define merry_manager_mem_write_data(os, address, _value_to_write) merry_memory_write_lock(os->data_mem, address, _value_to_write)
 
 #define _MERRY_REQUEST_QUEUE_LEN_ 10 // for now
 
@@ -71,20 +67,28 @@ struct Merry
 
 // this only initializes an instance of Merry while leaving inst_mem, data_mem uninitialized which is valid as we need to know the input and how many
 // pages to start with
-Merry *merry_os_init(mcstr_t _inp_file);
 
-mptr_t merry_os_start_vm(mptr_t os);
+static Merry os;
+
+// directly used by cores
+#define merry_manager_mem_read_inst(inst_mem, address, store_in) merry_memory_read(inst_mem, address, store_in)
+#define merry_manager_mem_read_data(address, store_in) merry_memory_read_lock(os.data_mem, address, store_in)
+#define merry_manager_mem_write_data(address, _value_to_write) merry_memory_write_lock(os.data_mem, address, _value_to_write)
+
+mret_t merry_os_init(mcstr_t _inp_file);
+
+mptr_t merry_os_start_vm(mptr_t some_arg);
 
 // destroy the OS
-void merry_os_destroy(Merry *os);
+void merry_os_destroy();
 
-mret_t merry_os_mem_read_data(Merry *os, maddress_t address, mqptr_t store_in, msize_t core_id);
+mret_t merry_os_mem_read_data(maddress_t address, mqptr_t store_in, msize_t core_id);
 
-mret_t merry_os_mem_write_data(Merry *os, maddress_t address, mqword_t to_store, msize_t core_id);
+mret_t merry_os_mem_write_data(maddress_t address, mqword_t to_store, msize_t core_id);
 
 // print the suitable error message and exit the VM
-void merry_os_handle_error(Merry *os, merrot_t error);
+void merry_os_handle_error(merrot_t error);
 
-void merry_os_handle_internal_module_error(Merry *os, merrot_t error_num);
+void merry_os_handle_internal_module_error(merrot_t error_num);
 
 #endif

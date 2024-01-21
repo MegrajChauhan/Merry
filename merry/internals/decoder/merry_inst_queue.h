@@ -25,30 +25,25 @@
 #ifndef _MERRY_INST_QUEUE_
 #define _MERRY_INST_QUEUE_
 
-// #include "../merry_include.h"
-// #include "merry_inst.h"
-// #include <stdlib.h>
+#include "../merry_include.h"
+#include "merry_inst.h"
+#include <stdlib.h>
 
-// // define the instruction queue
-// typedef struct MerryInstQueue MerryInstQueue;
-// typedef struct MerryInstQueueNode MerryInstQueueNode;
+// define the instruction queue
+typedef struct MerryInstQueue MerryInstQueue;
+typedef struct MerryInstQueueNode MerryInstQueueNode;
 
-// _MERRY_CREATE_QUEUE_NODE_(MerryInstruction, MerryInstQueueNode)
-// _MERRY_CREATE_QUEUE_(MerryInstQueue, MerryInstQueueNode)
+_MERRY_CREATE_QUEUE_NODE_NOPTR_(MerryInstruction, MerryInstQueueNode)
+_MERRY_CREATE_QUEUE_NOPTR_(MerryInstQueue, MerryInstQueueNode)
 
-// MerryInstQueue *merry_inst_queue_init(msize_t queue_len);
+MerryInstQueue *merry_inst_queue_init(msize_t queue_len);
 
-// mret_t merry_requestHdlr_push_request(msize_t req_id, msize_t id, MerryCond *req_cond);
+mret_t merry_inst_queue_push_instruction(MerryInstQueue *queue, MerryInstruction inst);
 
-// // exclusive for the OS
-// mbool_t merry_requestHdlr_pop_request(MerryOSRequest *request);
+mret_t merry_inst_queue_pop_instruction(MerryInstQueue *queue, MerryInstruction *inst);
 
-// // exclusive for cores to inform the OS of errors quickly
-// void merry_requestHdlr_panic(merrot_t error);
+void merry_inst_queue_destroy(MerryInstQueue *queue);
 
-// // Make all cores that were waiting to continue with error
-// void merry_requestHdlr_kill_requests();
-
-// void merry_requestHdlr_destroy();
+// Further feature addition maybe in the future
 
 #endif

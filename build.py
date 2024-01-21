@@ -1,6 +1,10 @@
 #
 # Our build system: Sorry! I don't know Cmake or make or Ninja or anything like that
 #
+
+# This is my own version of a build system
+# I do not know how to use Cmake or make or Ninja or anything like that and hence i had to use this
+# If you know how to write a build file in anything, you can do that. The order in which the source files should be compiled is in "compile.txt"
 import os
 import sys
 

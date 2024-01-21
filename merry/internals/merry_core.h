@@ -103,10 +103,10 @@ struct MerryCore
     // Merry *os;
     // Each address of the stack stores 8 bytes which implies each push or pop pushes and pops 8 bytes
     // there are no need for alignments
-    mqptr_t stack_mem;       // the private stack of the core
-    mqptr_t registers;       // the core's registers
-    mqword_t sp, bp, pc, ir; // four registers that is inaccessible to anything and are changeable indirectly
-    mqword_t core_id;        // this register holds the id provided to it which is unique
+    mqptr_t stack_mem;   // the private stack of the core
+    mqptr_t registers;   // the core's registers
+    mqword_t sp, bp, pc; // four registers that is inaccessible to anything and are changeable indirectly
+    mqword_t core_id;    // this register holds the id provided to it which is unique
     // some important flags
     // mbool_t should_wait;  // tell the core to wait until signaled[MAY NOT BE NEEDED]
     mbool_t stop_running; // tell the core to stop executing and shut down
@@ -116,6 +116,7 @@ struct MerryCore
     // If this flag is set but other cores access this core's pages and values then it is not known what behaviour might happen
     mbool_t _is_private;
     MerryDecoder *decoder; // the core's decoder
+    MerryInstruction ir;   // the current instruction
 };
 
 #include "merry_os.h"

@@ -25,22 +25,29 @@
 #ifndef _MERRY_DECODE_
 #define _MERRY_DECODE_
 
-// #include "../merry_include.h"
-// #include "merry_opcodes.h"
-// #include "merry_inst.h"
-// #include <stdlib.h>
+#include "../merry_include.h"
+#include "merry_opcodes.h"
+#include "merry_inst.h"
+#include "merry_inst_queue.h"
+#include <stdlib.h>
 
-// typedef struct MerryDecoder MerryDecoder;
+#define _MERRY_INST_BUFFER_LEN_ 10
 
-// struct MerryDecoder
-// {
-//     MerryCore *core;     // the host core
-//     MerryMutex *lock;    // the decoder's lock
-//     mbool_t should_stop; // stop decoding
-// };
+typedef struct MerryDecoder MerryDecoder;
 
-// MerryDecoder *merry_init_decoder();
+struct MerryDecoder
+{
+    MerryCore *core;       // the host core
+    MerryMutex *lock;      // the decoder's lock
+    MerryCond *cond;       // the decoder's condition variable
+    mbool_t should_stop;   // stop decoding
+    MerryInstQueue *queue; // the instruction queue
+};
 
-// void merry_destroy_decoder(MerryDecoder *decoder);
+MerryDecoder *merry_init_decoder(MerryCore *host);
+
+void merry_decoder_get_inst(MerryDecoder *decoder);
+
+void merry_destroy_decoder(MerryDecoder *decoder);
 
 #endif

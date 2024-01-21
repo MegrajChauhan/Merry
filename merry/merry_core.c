@@ -8,7 +8,6 @@ MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, msize_t
     if (new_core == RET_NULL)
         return RET_NULL;
     new_core->bp = 0; // initialize these registers to 0
-    new_core->ir = 0;
     new_core->pc = 0;
     new_core->sp = 0;
     new_core->core_id = id;
