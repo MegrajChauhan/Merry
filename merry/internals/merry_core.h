@@ -115,8 +115,9 @@ struct MerryCore
     // other cores, it can set this flag and access memory pages without mutex locks which is faster.
     // If this flag is set but other cores access this core's pages and values then it is not known what behaviour might happen
     mbool_t _is_private;
-    MerryDecoder *decoder; // the core's decoder
-    MerryInstruction ir;   // the current instruction
+    MerryDecoder *decoder;       // the core's decoder
+    MerryThread *decoder_thread; // the decoder's thread
+    MerryInstruction ir;         // the current instruction
 };
 
 #include "merry_os.h"

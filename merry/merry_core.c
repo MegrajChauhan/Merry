@@ -29,21 +29,23 @@ MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, msize_t
     }
     new_core->registers = (mqptr_t)malloc(sizeof(mqword_t) * REGR_COUNT);
     if (new_core->registers == RET_NULL)
-    {
-        merry_core_destroy(new_core);
-        return RET_NULL;
-    }
+        goto failure;
     new_core->stack_mem = (mqptr_t)_MERRY_MEM_GET_PAGE_(_MERRY_STACKMEM_BYTE_LEN_, _MERRY_PROT_DEFAULT_, _MERRY_FLAG_DEFAULT_);
     if (new_core->stack_mem == RET_NULL)
-    {
-        merry_core_destroy(new_core);
-        return RET_NULL;
-    }
+        goto failure;
     // new_core->should_wait = mtrue;   // should initially wait until said to run
     new_core->stop_running = mfalse; // this is set to false because as soon as the core is instructed to start/continue execution, it shouldn't stop and start immediately
     new_core->_is_private = mfalse;  // set to false by default
+    new_core->decoder = merry_init_decoder(new_core);
+    if (new_core->decoder == RET_NULL)
+        goto failure;
+    if ((new_core->decoder_thread = merry_thread_init()) == RET_NULL)
+        goto failure;
     // we have done everything now
     return new_core;
+failure:
+    merry_core_destroy(new_core);
+    return RET_NULL;
 }
 
 void merry_core_destroy(MerryCore *core)
@@ -74,6 +76,14 @@ void merry_core_destroy(MerryCore *core)
             // This may sound like a joke considering how absurd, unstructured, redundand, unsafe the code so far has been
         }
     }
+    if (surelyT(core->decoder != NULL))
+    {
+        merry_destroy_decoder(core->decoder);
+    }
+    if (surelyT(core->decoder_thread != NULL))
+    {
+        merry_thread_destroy(core->decoder_thread);
+    }
     core->data_mem = NULL;
     core->inst_mem = NULL;
     free(core);
@@ -84,29 +94,30 @@ mptr_t merry_runCore(mptr_t core)
     MerryCore *c = (MerryCore *)core;
     // the core is now in action
     // it's internal's are all initialized and it is ready to go
-    // it would be better to implement a decoder that runs in the background and prefetch and decode the instructions
-    // While this would be better it comes with a lot of complexity and overheads and still providing a lot of awesome perks
+    // start the decoder
+    if (merry_create_detached_thread(c->decoder_thread, &merry_decode, c->decoder) == RET_FAILURE)
+    {
+        // failed to start the decoder
+        merry_requestHdlr_panic(_PANIC_DECODER_NOT_STARTING); // decoder is not starting
+        return RET_NULL;
+    }
     while (mtrue)
     {
-        // merry_mutex_lock(c->lock);
-        // if (c->stop_running == mtrue)
-        //     break;
-        // if ((merry_manager_mem_read_inst(c->inst_mem, c->pc, &c->ir)) == RET_FAILURE)
-        // {
-        //     // // failed to read
-        //     // merry_os_handle_error(c->os, c->inst_mem->error);
-        //     // break;
-        //     // in the next cycle, this core will have stopped
-        // }
-        // merry_mutex_unlock(c->lock);
-        // switch (_MERRY_CORE_GET_OPCODE_(c->ir))
-        // {
-        // case OP_NOP:
-        //     break;
-        // case OP_HALT: // halt instruction, will make this core stop executing at all
-        //     c->stop_running = mtrue;
-        //     break;
-        // }
+        merry_mutex_lock(c->lock);
+        if (c->stop_running == mtrue)
+        {
+            // we have to also tell the decoder to stop
+            // if the decoder was behind this error, then it should have already stopped
+            merry_mutex_lock(c->decoder->lock);
+            c->decoder->should_stop = mtrue;
+            merry_mutex_unlock(c->decoder->lock);
+            break;
+        }
+        merry_mutex_unlock(c->lock);
+        // The only job of the core is:
+        // pop one instruction
+        // execute it
+        // if there was an error in executing the instruction, it is 
     }
     return RET_NULL; // return nothing
 }

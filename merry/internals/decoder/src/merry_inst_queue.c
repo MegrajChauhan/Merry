@@ -16,8 +16,10 @@ MerryInstQueue *merry_inst_queue_init(msize_t queue_len)
     return queue;
 }
 
-void merry_inst_queue_destroy(MerryInstQueue *queue){
-    _MERRY_DESTROY_QUEUE_NOPTR_(queue)}
+void merry_inst_queue_destroy(MerryInstQueue *queue)
+{
+    _MERRY_DESTROY_QUEUE_NOPTR_(queue)
+}
 
 mret_t merry_inst_queue_push_instruction(MerryInstQueue *queue, MerryInstruction inst)
 {

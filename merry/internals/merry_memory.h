@@ -80,7 +80,7 @@ struct MerryMemory
     // we make pages as pointer to a pointer because copying a list of pointers during reallocation is faster than copying all of the data about every page
     MerryMemPage **pages;    // the pages
     msize_t number_of_pages; // the number of pages
-    MerryError error;        // any error that the Memory encounters
+    merrot_t error;        // any error that the Memory encounters
 };
 
 struct MerryAddress

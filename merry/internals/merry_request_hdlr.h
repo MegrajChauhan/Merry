@@ -35,6 +35,7 @@ struct MerryRequestHdlr
     MerryRequestQueue *queue; // the request queue
     MerryMutex *lock;         // only one thread can pop and push
     MerryCond *host_cond;     // the OS's condition variable
+    mbool_t handle_more;      // a flag to see if the handler should accept more request
 };
 
 // the request handler doesn't belong to even the OS just like Reader

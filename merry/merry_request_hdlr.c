@@ -14,6 +14,7 @@ mret_t merry_requestHdlr_init(msize_t queue_len, MerryCond *cond)
         return RET_FAILURE;
     }
     req_hdlr.host_cond = cond;
+    req_hdlr.handle_more = mtrue;
     return RET_SUCCESS;
 }
 
@@ -21,6 +22,8 @@ mret_t merry_requestHdlr_push_request(msize_t req_id, msize_t id, MerryCond *req
 {
     mret_t success = RET_SUCCESS; // just to tell the core to stop furthur execution
     merry_mutex_lock(req_hdlr.lock);
+    if (req_hdlr.handle_more == mfalse)
+        goto here; // don't accept more
     if (merry_push_request(req_hdlr.queue, req_cond, req_id, id) == mfalse)
     {
         // failure
@@ -37,6 +40,8 @@ mret_t merry_requestHdlr_push_request(msize_t req_id, msize_t id, MerryCond *req
             merry_cond_signal(req_hdlr.host_cond); // wake up the OS
         merry_cond_wait(req_cond, req_hdlr.lock);  // the return value from the request should be in the requesting core's Registers
     }
+    goto here;
+here:
     merry_mutex_unlock(req_hdlr.lock);
     return success;
 }
@@ -56,9 +61,14 @@ void merry_requestHdlr_kill_requests()
 void merry_requestHdlr_panic(merrot_t error)
 {
     merry_mutex_lock(req_hdlr.lock);
-    merry_panic_push(req_hdlr.queue, _PANIC_REQBUFFEROVERFLOW); // panic push
+    if (req_hdlr.handle_more == mfalse)
+        goto here;                           // we are already panicking
+    merry_panic_push(req_hdlr.queue, error); // panic push
     if (req_hdlr.queue->data_count == 1)
         merry_cond_signal(req_hdlr.host_cond); // wake up the OS if sleeping
+    req_hdlr.handle_more = mfalse;             // don't accept any more requests
+    goto here;
+here:
     merry_mutex_unlock(req_hdlr.lock);
 }
 
@@ -67,8 +77,13 @@ mbool_t merry_requestHdlr_pop_request(MerryOSRequest *request)
     // even the OS can't do anything while some core is pushing
     merry_mutex_lock(req_hdlr.lock);
     // in this case, failure would mean empty queue which ultimately tells the OS to go to sleep until a new request arrives
-    return merry_pop_request(req_hdlr.queue, request);
+    if (req_hdlr.handle_more == mfalse)
+        goto here; // we shouldn't provide for any request now since we are in a state of panic
+    mret_t ret = merry_pop_request(req_hdlr.queue, request);
+    goto here;
+here:
     merry_mutex_unlock(req_hdlr.lock);
+    return ret;
 }
 
 void merry_requestHdlr_destroy()

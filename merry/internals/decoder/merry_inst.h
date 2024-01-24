@@ -32,7 +32,7 @@ typedef struct MerryInstruction MerryInstruction;
 
 // A function that executes the instruction should take a MerryInstruction *, MerryCore *
 // Any error generated during this execution will be reported by the executing function itself
-_MERRY_DEFINE_FUNC_PTR_(void, minstexec_t, MerryInstruction *, MerryCore *)
+_MERRY_DEFINE_FUNC_PTR_(void, minstexec_t, MerryCore *)
 
 struct MerryInstruction
 {

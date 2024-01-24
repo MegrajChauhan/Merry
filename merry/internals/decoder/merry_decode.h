@@ -37,11 +37,12 @@ typedef struct MerryDecoder MerryDecoder;
 
 struct MerryDecoder
 {
-    MerryCore *core;       // the host core
-    MerryMutex *lock;      // the decoder's lock
-    MerryCond *cond;       // the decoder's condition variable
-    mbool_t should_stop;   // stop decoding
-    MerryInstQueue *queue; // the instruction queue
+    MerryCore *core;        // the host core
+    MerryMutex *lock;       // the decoder's lock
+    MerryMutex *queue_lock; // the queue's lock
+    MerryCond *cond;        // the decoder's condition variable
+    mbool_t should_stop;    // stop decoding
+    MerryInstQueue *queue;  // the instruction queue
 };
 
 MerryDecoder *merry_init_decoder(MerryCore *host);
@@ -49,5 +50,8 @@ MerryDecoder *merry_init_decoder(MerryCore *host);
 void merry_decoder_get_inst(MerryDecoder *decoder);
 
 void merry_destroy_decoder(MerryDecoder *decoder);
+
+// Run the decoder
+mptr_t merry_decode(mptr_t d);
 
 #endif
