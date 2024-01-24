@@ -61,6 +61,8 @@ struct Merry
 
 #define merry_mem_error(msg) fprintf(stderr, "Memory Error: %s.\n", msg)
 #define merry_internal_module_error(msg) fprintf(stderr, "Internal Error; %s.\n", msg)
+
+#define merry_error(msg, ...) fprintf(stderr, "Error: %s.\n", msg, __VA_ARGS__)
 /*
  The Manager assigns core ids to every core it manages which then helps in identifying the cores.
 */

@@ -117,7 +117,9 @@ mptr_t merry_runCore(mptr_t core)
         // The only job of the core is:
         // pop one instruction
         // execute it
-        // if there was an error in executing the instruction, it is 
+        // if there was an error in executing the instruction, the function that executes the instruction will
+        // perfrom the task of registering the error and making the core exit while also stopping the decoder
+        
     }
     return RET_NULL; // return nothing
 }

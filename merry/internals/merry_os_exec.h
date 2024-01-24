@@ -1,5 +1,5 @@
 /*
- * Instruction decoder of the Merry VM
+ * Definition for functions that perform some request of the Merry VM
  * MIT License
  *
  * Copyright (c) 2024 MegrajChauhan
@@ -22,37 +22,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifndef _MERRY_DECODE_
-#define _MERRY_DECODE_
+#ifndef _MERRY_OS_EXEC_
+#define _MERRY_OS_EXEC_
 
-#include "../merry_include.h"
-#include "merry_opcodes.h"
-#include "merry_inst.h"
-#include "merry_inst_queue.h"
-#include <stdlib.h>
+#include "merry_os.h"
 
-#define _MERRY_INST_BUFFER_LEN_ 10
+// an function that executes a requests needs to tell the OS if the request was successfully executed
 
-typedef struct MerryDecoder MerryDecoder;
+#define _os_exec_(reqname) mret_t merry_os_execute_request_##reqname(MerryOSRequest *request)
 
-struct MerryDecoder
-{
-    MerryCore *core;        // the host core
-    MerryMutex *lock;       // the decoder's lock
-    MerryMutex *queue_lock; // the queue's lock
-    MerryCond *cond;        // the decoder's condition variable
-    mbool_t should_stop;    // stop decoding
-    mbool_t provide;        // provide more instruction or not?
-    MerryInstQueue *queue;  // the instruction queue
-};
-
-MerryDecoder *merry_init_decoder(MerryCore *host);
-
-void merry_decoder_get_inst(MerryDecoder *decoder);
-
-void merry_destroy_decoder(MerryDecoder *decoder);
-
-// Run the decoder
-mptr_t merry_decode(mptr_t d);
+// handle the halt request
+_os_exec_(halt); 
 
 #endif

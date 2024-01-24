@@ -25,6 +25,16 @@
 #ifndef _MERRY_OPCODES_
 #define _MERRY_OPCODES_
 
+/*
+ The structure of an instruction:
+ We need opcodes and operands. For operands that are 64 bit long, they should be right after the instruction in memory.
+ Opcodes are 9 bits long, for now atleast.
+ This provides us with 512 possible instructions. If we need to expand then we can do so in the future.
+ For now, 9 bits is enough.
+ This leaves us with 55 bits that can be used for the operands.
+ Since we have a lot of possible opcodes, we will not make use of any flags and instead use different variants for the same instruction
+*/
+
 enum
 {
     OP_NOP,  // no operation instruction
@@ -34,5 +44,7 @@ enum
 typedef unsigned int mopcode_t; /*Opcode*/
 // operands are basically numbers which represent different things based on the instruction
 typedef unsigned long long moperand_t;
+
+#define merry_get_opcode(inst) (inst >> 55)
 
 #endif

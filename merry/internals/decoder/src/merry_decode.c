@@ -32,6 +32,7 @@ MerryDecoder *merry_init_decoder(MerryCore *host)
         return RET_NULL;
     }
     decoder->should_stop = mfalse;
+    decoder->provide = mtrue;
     return decoder; // success
 }
 
@@ -81,9 +82,21 @@ mptr_t merry_decode(mptr_t d)
         if (merry_manager_mem_read_inst(core->inst_mem, core->pc, &current) == RET_FAILURE)
         {
             // we failed
-            merry_requestHdlr_panic(core->inst_mem->error); 
+            merry_requestHdlr_panic(core->inst_mem->error);
+            /// TODO: Replace all of these types of statements with atomic operations instead.
+            merry_mutex_lock(core->lock);
+            core->stop_running = mtrue; // stop further execution
+            merry_mutex_unlock(core->lock);
             break; // stay out of it
         }
-        // we have the instruction and break it down to plump
+        // we have the instruction and we need to break it down to plump
+        // Take the opcode first
+        switch (merry_get_opcode(current))
+        {
+        case OP_NOP:  // we don't care about NOP instructions
+        case OP_HALT: // Simply stop the core
+           current_inst.opcode = OP_HALT;
+           
+        }
     }
 }

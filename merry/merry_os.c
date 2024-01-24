@@ -203,13 +203,13 @@ mptr_t merry_os_start_vm(mptr_t some_arg)
         return (mptr_t)RET_FAILURE;
     // Core 0 is now up and running
     // The OS should be reasy to handle requests
+    MerryOSRequest current_req;
     while (os.stop == mfalse)
     {
         // their is no need to lock the OS now so maybe we won't need the Mutex locks
         // We can implement the OS to be capable of handling various services at once
         // for eg: It could provide input service for one core while providing output service for another core simultaneoulsy
         // This would utilize the OS's full potential and the time wasted by core's waiting would be eliminated
-        MerryOSRequest current_req;
         if (merry_requestHdlr_pop_request(&current_req) == mfalse)
         {
             // we have no requests to fulfill and so we goto sleep and wait for the request handler to wake us up
@@ -235,7 +235,15 @@ mptr_t merry_os_start_vm(mptr_t some_arg)
                     break; // on next loop we will be out of this loop
                 }
             default:
-                break; // we cannot just exit because there was an invalid request number or can we?
+                // it is most likely an actual request
+                switch (current_req.request_number)
+                {
+                case _REQ_REQHALT: // halting request
+                default:
+                    /// NOTE: this will come in handy when we implement some built-in syscalls and the program provides invalid syscalls
+                    merry_error("Unknown request code: '%llu' is not a valid request code", current_req.request_number);
+                    break;
+                }
             }
         }
     }
@@ -257,6 +265,7 @@ void merry_os_handle_error(merrot_t error)
         merry_mem_error("Request to access memory that doesn't exist. Invalid address");
         break;
     default:
+        merry_error("Unknown error code: '%llu' is not a valid error code", error);
         break;
     }
 }

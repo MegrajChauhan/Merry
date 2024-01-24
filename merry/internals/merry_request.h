@@ -52,7 +52,7 @@ enum
     /*From 0 - 50 is for the error that the internal modules generate.*/
     /*51 - 150 for any program generated errors*/
     // any remaining for actual requests
-    _REQ_REQNONE = 151,
+    _REQ_REQHALT = 151, /*Halt request: Halt the core that is making the request. Also check if any other cores are online, if not stop execution.*/
 };
 
 typedef msize_t merrot_t;
