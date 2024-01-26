@@ -22,12 +22,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#include "../../utils/merry_types.h"
+
+#ifndef _MERRY_READER_
+#define _MERRY_READER_
+
 // #include "../lib/include/merry_memory_allocator.h" <LEGACY>
 #include "merry_memory.h"
 #include <stdio.h>  // for FILE
 #include <string.h> // for string manipulation
 #include <stdlib.h> // for conversion from strings to numbers
+
+typedef struct MerryInpFile MerryInpFile;
 
 #define _READ_ERROR_(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
 #define _READ_DIRERROR_(message) fprintf(stderr, message)
@@ -81,7 +86,6 @@
 // the main purpose here is to read the binary input file and then convert it into something the VM can understand
 // The extension for the input file is ".mbin" for "merry binary/bin"
 
-typedef struct MerryInpFile MerryInpFile;
 
 struct MerryInpFile
 {
@@ -103,3 +107,5 @@ struct MerryInpFile
 MerryInpFile *merry_read_file(mcstr_t _file_name);
 
 void merry_destory_reader(MerryInpFile *inp);
+
+#endif

@@ -108,6 +108,7 @@ mptr_t merry_runCore(mptr_t core)
         {
             // we have to also tell the decoder to stop
             // if the decoder was behind this error, then it should have already stopped
+            merry_cond_signal(c->decoder->cond); // in case the decoder was sleeping
             merry_mutex_lock(c->decoder->lock);
             c->decoder->should_stop = mtrue;
             merry_mutex_unlock(c->decoder->lock);
@@ -119,7 +120,8 @@ mptr_t merry_runCore(mptr_t core)
         // execute it
         // if there was an error in executing the instruction, the function that executes the instruction will
         // perfrom the task of registering the error and making the core exit while also stopping the decoder
-        
+        merry_decoder_get_inst(c->decoder);
+        c->ir.exec_func(c);   
     }
     return RET_NULL; // return nothing
 }

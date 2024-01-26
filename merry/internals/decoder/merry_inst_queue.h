@@ -25,13 +25,12 @@
 #ifndef _MERRY_INST_QUEUE_
 #define _MERRY_INST_QUEUE_
 
-#include "../merry_include.h"
-#include "merry_inst.h"
-#include <stdlib.h>
-
-// define the instruction queue
 typedef struct MerryInstQueue MerryInstQueue;
 typedef struct MerryInstQueueNode MerryInstQueueNode;
+
+#include "../../lib/include/merry_queue.h"
+#include "merry_inst.h"
+#include <stdlib.h>
 
 _MERRY_CREATE_QUEUE_NODE_NOPTR_(MerryInstruction, MerryInstQueueNode)
 _MERRY_CREATE_QUEUE_NOPTR_(MerryInstQueue, MerryInstQueueNode)
@@ -45,5 +44,4 @@ mret_t merry_inst_queue_pop_instruction(MerryInstQueue *queue, MerryInstruction 
 void merry_inst_queue_destroy(MerryInstQueue *queue);
 
 // Further feature addition maybe in the future
-
 #endif

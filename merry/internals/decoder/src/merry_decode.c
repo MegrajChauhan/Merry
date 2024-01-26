@@ -45,7 +45,7 @@ void merry_destroy_decoder(MerryDecoder *decoder)
     free(decoder);
 }
 
-// core's use this to get the next instruction
+// cores use this to get the next instruction
 void merry_decoder_get_inst(MerryDecoder *decoder)
 {
     // get an instruction from the Instruction queue and assign it to the core's IR register
@@ -61,6 +61,25 @@ void merry_decoder_get_inst(MerryDecoder *decoder)
     {
         // if we got an instruction then see if the decoder had been waiting because the queue was full
         merry_cond_signal(decoder->cond); // this should work
+    }
+    merry_mutex_unlock(decoder->queue_lock);
+}
+
+_MERRY_INTERNAL_ void merry_decoder_push_inst(MerryDecoder *decoder, MerryInstruction *inst)
+{
+    merry_mutex_lock(decoder->queue_lock);
+    if (merry_inst_queue_push_instruction(decoder->queue, *inst) == RET_FAILURE)
+    {
+        // the queue is full so wait until another instruction is popped
+        merry_cond_wait(decoder->cond, decoder->queue_lock);
+        // since we have been waiting for the signal
+        merry_inst_queue_push_instruction(decoder->queue, *inst); // this should work unless the core has awakened us to exit
+    }
+    else
+    {
+        // we succeeded and so if the core had been waiting, wake it up
+        if (decoder->queue->data_count == 1)
+            merry_cond_signal(decoder->core->cond);
     }
     merry_mutex_unlock(decoder->queue_lock);
 }
@@ -95,8 +114,11 @@ mptr_t merry_decode(mptr_t d)
         {
         case OP_NOP:  // we don't care about NOP instructions
         case OP_HALT: // Simply stop the core
-           current_inst.opcode = OP_HALT;
-           
+            current_inst.opcode = OP_HALT;
+            current_inst.exec_func = &merry_execute_halt;
+            break; // halt has been broken down
         }
+        merry_decoder_push_inst(decoder, &current_inst);
+        core->pc += 8;
     }
 }

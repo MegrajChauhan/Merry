@@ -65,4 +65,6 @@ typedef char *mstr_t;
 typedef const char *mcstr_t;
 typedef void *mptr_t;
 
+typedef msize_t merrot_t;
+
 #endif

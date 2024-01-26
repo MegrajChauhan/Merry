@@ -25,7 +25,8 @@
 #ifndef _MERRY_EXEC_
 #define _MERRY_EXEC_
 
-#include "merry_inst.h"
+#include "../../../utils/merry_logger.h"
+#include "../merry_core.h"
 
 // The function structure
 #define _exec_(name) void merry_execute_##name(MerryCore *core)

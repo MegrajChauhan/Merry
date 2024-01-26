@@ -14,7 +14,7 @@
 #include "merry_request_queue.h"
 #include "merry_request_hdlr.h"
 #include "merry_core.h"
-#include "merry_os.h"
 #include "../includes/merry_errors.h"
+#include "merry_os.h"
 
 #endif

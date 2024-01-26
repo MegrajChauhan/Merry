@@ -4,9 +4,8 @@ mret_t merry_os_init(mcstr_t _inp_file)
 {
     // initialize the os
     // just 1 core
-    if (os.cores == RET_NULL)
-        return RET_FAILURE;
-    // we need memory to be initialized
+    // logger should be initialized before
+    _log_(_OS_, "Initialization", "Intiializing the Manager");
     MerryInpFile *input = merry_read_file(_inp_file);
     if (input == RET_NULL)
     {
@@ -14,9 +13,11 @@ mret_t merry_os_init(mcstr_t _inp_file)
         return RET_NULL;
     }
     // initialize the memory
+    _log_(_OS_, "Intialization", "Intializing Data Memory");
     if ((os.data_mem = merry_memory_init_provided(input->_data, input->dpage_count)) == RET_NULL)
     {
         // grand failure
+        _log_(_OS_, "Initialization Failure", "Failed to intiialize manager[Data Mem]");
         merry_destory_reader(input);
         return RET_NULL;
     }
@@ -25,12 +26,14 @@ mret_t merry_os_init(mcstr_t _inp_file)
     // the reader doesn't concern itself with the OS and so it can run independently
     // all it has to do is map the necessary pages and return us a pointer
     // This way it can continue to read in the background and the VM can also continue without any problems
+    _log_(_OS_, "Intialization", "Intializing Instruction Memory");
     if ((os.inst_mem = merry_memory_init_provided(input->_instructions, input->ipage_count)) == RET_NULL)
     {
-        merry_memory_free(os.data_mem);
+        _log_(_OS_, "Initialization Failure", "Failed to intiialize manager[Instruction Mem]");
         goto inp_failure;
     }
     // time for locks and mutexes
+    _log_(_OS_, "Initialization", "Intializing necessary fields");
     if ((os._cond = merry_cond_init()) == RET_NULL)
         goto inp_failure;
     if ((os._lock = merry_mutex_init()) == RET_NULL)
@@ -52,9 +55,11 @@ mret_t merry_os_init(mcstr_t _inp_file)
         goto failure;
     return RET_SUCCESS; // we did everything correctly
 failure:
+    _log_(_OS_, "Intialization Failure", "Failed to intialize the manager");
     merry_os_destroy();
     return RET_FAILURE;
 inp_failure:
+    _log_(_OS_, "Intialization Failure", "Failed to intialize the manager");
     merry_os_destroy();
     merry_destory_reader(input);
     return RET_FAILURE;
@@ -63,6 +68,7 @@ inp_failure:
 void merry_os_destroy()
 {
     // free all the cores, memory, os and then exit
+    _log_(_OS_, "Destroying", "Destroying the manager");
     if (surelyT(os.data_mem != NULL))
         merry_memory_free(os.data_mem);
     if (surelyT(os.inst_mem != NULL))
@@ -89,6 +95,7 @@ void merry_os_destroy()
         }
         free(os.core_threads);
     }
+    merry_close_logger();
     merry_requestHdlr_destroy();
 }
 
@@ -169,6 +176,7 @@ _MERRY_ALWAYS_INLINE mret_t merry_os_boot_core(msize_t core_id, maddress_t start
     // this function's job is to boot up the core_id core and prepare it for execution
     os.cores[core_id]->pc = start_addr; // point to the starting address of the core
     // now start the core thread
+    _llog_(_OS_, "Booting", "Booting core %d", core_id);
     if (os.core_threads[core_id] == NULL)
     {
         if ((os.core_threads[core_id] = merry_thread_init()) == RET_NULL)
@@ -176,6 +184,7 @@ _MERRY_ALWAYS_INLINE mret_t merry_os_boot_core(msize_t core_id, maddress_t start
     }
     if (merry_create_detached_thread(os.core_threads[core_id], &merry_runCore, os.cores[core_id]) == RET_FAILURE)
         return RET_FAILURE;
+    _llog_(_OS_, "Booting", "Booting core %d succeeded", core_id);
     return RET_SUCCESS;
 }
 
@@ -183,6 +192,7 @@ _MERRY_INTERNAL_ void merry_os_prepare_for_exit()
 {
     // prepare for termination
     // firstly tell all cores to shut down
+    _log_(_OS_, "Exiting", "Preparing for exit");
     for (msize_t i = 0; i < os.core_count; i++)
     {
         merry_mutex_lock(os.cores[i]->lock);
@@ -199,20 +209,22 @@ _MERRY_INTERNAL_ void merry_os_prepare_for_exit()
 mptr_t merry_os_start_vm(mptr_t some_arg)
 {
     // this will start the OS
+    _log_(_OS_, "Starting Manager", "Manager thread running");
     if (merry_os_boot_core(0, 0) != RET_SUCCESS)
         return (mptr_t)RET_FAILURE;
     // Core 0 is now up and running
-    // The OS should be reasy to handle requests
+    // The OS should be ready to handle requests
     MerryOSRequest current_req;
     while (os.stop == mfalse)
     {
-        // their is no need to lock the OS now so maybe we won't need the Mutex locks
+        // there is no need to lock the OS now so maybe we won't need the Mutex locks
         // We can implement the OS to be capable of handling various services at once
         // for eg: It could provide input service for one core while providing output service for another core simultaneoulsy
         // This would utilize the OS's full potential and the time wasted by core's waiting would be eliminated
         if (merry_requestHdlr_pop_request(&current_req) == mfalse)
         {
             // we have no requests to fulfill and so we goto sleep and wait for the request handler to wake us up
+            _log_(_OS_, "Waiting", "Manager waiting for requests");
             merry_cond_wait(os._cond, os._lock);
         }
         else
@@ -223,6 +235,7 @@ mptr_t merry_os_start_vm(mptr_t some_arg)
                 switch (_MERRY_REQUEST_INTERNAL_ERROR_(current_req.request_number))
                 {
                 default:
+                   _llog_(_OS_, "Error", "Internal Error Detected: Error code %d", current_req.request_number);
                     merry_os_handle_internal_module_error(current_req.request_number);
                     merry_os_prepare_for_exit(); // now since this is an error, we can't continue
                     break;                       // on next loop we will be out of the loop
@@ -230,6 +243,7 @@ mptr_t merry_os_start_vm(mptr_t some_arg)
                 switch (_MERRY_REQUEST_PROGRAM_ERROR_(current_req.request_number))
                 {
                 default:
+                    _llog_(_OS_, "Error", "Program generated error: Error code %d", current_req.request_number);
                     merry_os_handle_error(current_req.request_number); // this will handle all errors
                     merry_os_prepare_for_exit();
                     break; // on next loop we will be out of this loop
@@ -238,7 +252,9 @@ mptr_t merry_os_start_vm(mptr_t some_arg)
                 // it is most likely an actual request
                 switch (current_req.request_number)
                 {
-                case _REQ_REQHALT: // halting request
+                case _REQ_REQHALT:                               // halting request
+                    merry_os_execute_request_halt(&current_req); // this shouldn't generate any errors
+                    break;
                 default:
                     /// NOTE: this will come in handy when we implement some built-in syscalls and the program provides invalid syscalls
                     merry_error("Unknown request code: '%llu' is not a valid request code", current_req.request_number);

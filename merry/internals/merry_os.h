@@ -34,7 +34,11 @@
 */
 
 // This module is the backbone of the VM and controls everything
-#include "merry_include.h"
+
+#include "merry_reader.h"
+#include "merry_request_hdlr.h"
+#include "merry_os_exec.h"
+#include "merry_core.h"
 
 typedef struct Merry Merry;
 
@@ -52,7 +56,6 @@ struct Merry
   mbool_t stop;       // tell the manager to stop the VM and exit
   msize_t ret;
 };
-
 
 #define _MERRY_REQUEST_QUEUE_LEN_ 10 // for now
 

@@ -22,9 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifndef _MERRY_QUEUE_
-#define _MERRY_QUEUE_
-
+#pragma once
 #include "../../../utils/merry_types.h"
 #include "../../../utils/merry_config.h"
 #include "../../../utils/merry_utils.h"
@@ -264,5 +262,3 @@
     { /*This is a emergency push and so it takes top priority*/ \
         (qptr->head->value) = val;                              \
     } while (0);
-
-#endif

@@ -25,15 +25,15 @@
 #ifndef _MERRY_DECODE_
 #define _MERRY_DECODE_
 
-#include "../merry_include.h"
+typedef struct MerryDecoder MerryDecoder;
+
 #include "merry_opcodes.h"
-#include "merry_inst.h"
+#include "merry_exec.h"
 #include "merry_inst_queue.h"
+#include "../../../utils/merry_logger.h"
 #include <stdlib.h>
 
 #define _MERRY_INST_BUFFER_LEN_ 10
-
-typedef struct MerryDecoder MerryDecoder;
 
 struct MerryDecoder
 {

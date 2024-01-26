@@ -25,7 +25,9 @@
 #ifndef _MERRY_REQUEST_HDLR_
 #define _MERRY_REQUEST_HDLR_
 
-#include "merry_include.h"
+#include "merry_request_queue.h"
+#include "../includes/merry_errors.h"
+#include "../../utils/merry_logger.h"
 #include <stdlib.h>
 
 typedef struct MerryRequestHdlr MerryRequestHdlr;

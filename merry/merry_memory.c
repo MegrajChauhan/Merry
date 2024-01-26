@@ -23,6 +23,7 @@ _MERRY_INTERNAL_ MerryMemPage *merry_mem_allocate_new_mempage()
         return RET_NULL;
     }
     // everything went successfully
+    _log_(_MEM_, "Page Allocation", "New page successfully added");
     return new_page;
 }
 
@@ -44,6 +45,7 @@ _MERRY_INTERNAL_ MerryMemPage *merry_mem_allocate_new_mempage_provided(mqptr_t p
         return RET_NULL;
     }
     // everything went successfully
+    _log_(_MEM_, "Page Allocation", "Allocating memory provided");
     return new_page;
 }
 

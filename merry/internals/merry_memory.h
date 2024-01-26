@@ -35,12 +35,21 @@
 /*
  The memory is going to be an array of bytes. It will follow the page model while using the endianness of the host to make things faster.
 */
+
+
 #include "merry_internals.h"
 #include "../../sys/merry_mem.h"
 #include "../../sys/merry_thread.h" // memory needs to be thread safe
 // #include "../lib/include/merry_memory_allocator.h" <LEGACY>
 #include "../includes/merry_errors.h"
+#include "../../utils/merry_logger.h"
 #include <stdlib.h>
+
+// declarations
+// typedef struct MerryMemPageDetails MerryMemPageDetails; // the details about a memory page
+typedef struct MerryMemPage MerryMemPage; // the memory page
+typedef struct MerryMemory MerryMemory;   // the memory that manages these pages
+typedef struct MerryAddress MerryAddress; // an internal struct
 
 #define _MERRY_MEMORY_PGALLOC_MAP_PAGE_ _MERRY_MEM_GET_PAGE_(_MERRY_MEMORY_ADDRESSES_PER_PAGE_, _MERRY_PROT_DEFAULT_, _MERRY_FLAG_DEFAULT_)
 #define _MERRY_MEMORY_PGALLOC_UNMAP_PAGE_(address) _MERRY_MEM_GIVE_PAGE_(address, _MERRY_MEMORY_ADDRESSES_PER_PAGE_)
@@ -49,12 +58,6 @@
     {                                                                                                           \
         .page = addr / _MERRY_MEMORY_ADDRESSES_PER_PAGE_, .offset = address % _MERRY_MEMORY_ADDRESSES_PER_PAGE_ \
     }
-
-// declarations
-// typedef struct MerryMemPageDetails MerryMemPageDetails; // the details about a memory page
-typedef struct MerryMemPage MerryMemPage; // the memory page
-typedef struct MerryMemory MerryMemory;   // the memory that manages these pages
-typedef struct MerryAddress MerryAddress; // an internal struct
 
 // struct MerryMemPageDetails
 // {
@@ -80,7 +83,7 @@ struct MerryMemory
     // we make pages as pointer to a pointer because copying a list of pointers during reallocation is faster than copying all of the data about every page
     MerryMemPage **pages;    // the pages
     msize_t number_of_pages; // the number of pages
-    merrot_t error;        // any error that the Memory encounters
+    merrot_t error;          // any error that the Memory encounters
 };
 
 struct MerryAddress

@@ -28,12 +28,12 @@
 #include "../lib/include/merry_queue.h"
 #include "merry_request.h"
 
+typedef struct MerryRequestNode MerryRequestNode;
+typedef struct MerryRequestQueue MerryRequestQueue;
+
 _MERRY_CREATE_QUEUE_NODE_(MerryOSRequest, MerryRequestNode)
 
 _MERRY_CREATE_QUEUE_(MerryRequestQueue, MerryRequestNode)
-
-typedef struct MerryRequestNode MerryRequestNode;
-typedef struct MerryRequestQueue MerryRequestQueue;
 
 MerryRequestQueue *merry_request_queue_init(msize_t number_of_requests);
 

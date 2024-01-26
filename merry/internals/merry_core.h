@@ -25,9 +25,9 @@
 #ifndef _MERRY_CORE_
 #define _MERRY_CORE_
 
-#include "merry_include.h"
-#include "decoder/merry_decode.h"
 #include <stdlib.h>
+#include "decoder/merry_decode.h"
+#include "merry_os.h"
 
 typedef struct MerryCore MerryCore;
 // typedef union MerryRegister MerryRegister;
@@ -91,6 +91,7 @@ enum
     REGR_COUNT,
 };
 
+
 struct MerryCore
 {
     // firstly every core shares some variables with other cores
@@ -119,8 +120,6 @@ struct MerryCore
     MerryThread *decoder_thread; // the decoder's thread
     MerryInstruction ir;         // the current instruction
 };
-
-#include "merry_os.h"
 
 // opcode is actually 9 bits long
 #define _MERRY_CORE_GET_OPCODE_(inst) (inst >> 55)

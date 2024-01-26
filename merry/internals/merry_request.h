@@ -25,13 +25,13 @@
 #ifndef _MERRY_REQUEST_
 #define _MERRY_REQUEST_
 
+// Define a request that the OS handles
+
 #include "../../utils/merry_config.h"
 #include "../../utils/merry_types.h"
 #include "../../sys/merry_thread.h"
 
-// Define a request that the OS handles
 typedef struct MerryOSRequest MerryOSRequest;
-
 /*
  Each service that the OS provides has a Number and this request struct holds that number.
  When a core posts a request, it will have to stop execution totally and wait for it's request to be fulfilled.
@@ -54,7 +54,5 @@ enum
     // any remaining for actual requests
     _REQ_REQHALT = 151, /*Halt request: Halt the core that is making the request. Also check if any other cores are online, if not stop execution.*/
 };
-
-typedef msize_t merrot_t;
 
 #endif

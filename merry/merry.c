@@ -43,5 +43,27 @@
 
 int main()
 {
-    printf("Hello world from merry!\n");
+    merry_init_logger();
+    if (merry_os_init("inp.mbin") == RET_FAILURE)
+        return 0;
+    MerryThread *osthread = merry_thread_init();
+    if (osthread == NULL)
+    {
+        fprintf(stderr, "Failed to intialize VM.\n");
+        goto failure;
+    }
+    if (merry_create_thread(osthread, &merry_os_start_vm, NULL) == RET_FAILURE)
+    {
+        fprintf(stderr, "Failed to start VM.\n");
+        merry_thread_destroy(osthread);
+        goto failure;
+    }
+    merry_close_logger();
+    merry_thread_destroy(osthread);
+    merry_os_destroy();
+    return 0;
+failure:
+    merry_close_logger();
+    merry_os_destroy();
+    return -1;
 }

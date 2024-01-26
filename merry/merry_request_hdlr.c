@@ -77,9 +77,10 @@ mbool_t merry_requestHdlr_pop_request(MerryOSRequest *request)
     // even the OS can't do anything while some core is pushing
     merry_mutex_lock(req_hdlr.lock);
     // in this case, failure would mean empty queue which ultimately tells the OS to go to sleep until a new request arrives
+    mret_t ret = mfalse;
     if (req_hdlr.handle_more == mfalse)
-        goto here; // we shouldn't provide for any request now since we are in a state of panic
-    mret_t ret = merry_pop_request(req_hdlr.queue, request);
+        goto here; // we shouldn't provide for any request now since we are in a state of panic[The OS should never call this function once a state of panic is entered]
+    ret = merry_pop_request(req_hdlr.queue, request);
     goto here;
 here:
     merry_mutex_unlock(req_hdlr.lock);

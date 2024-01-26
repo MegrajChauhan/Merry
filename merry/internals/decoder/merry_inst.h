@@ -25,14 +25,13 @@
 #ifndef _MERRY_INST_
 #define _MERRY_INST_
 
-#include "../merry_include.h"
-#include "merry_opcodes.h"
-
 typedef struct MerryInstruction MerryInstruction;
 
+#include "merry_opcodes.h"
+
 // A function that executes the instruction should take a MerryInstruction *, MerryCore *
-// Any error generated during this execution will be reported by the executing function itself
-_MERRY_DEFINE_FUNC_PTR_(void, minstexec_t, MerryCore *)
+// Any error generated during this  will be reported by the executing function itself
+_MERRY_DEFINE_FUNC_PTR_(void, minstexec_t, struct MerryCore *)
 
 struct MerryInstruction
 {
