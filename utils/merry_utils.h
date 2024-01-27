@@ -8,4 +8,8 @@
 #define _MERRY_CONCAT_(x, y) _glued(x, y)
 #define _MERRY_TOGGLE_(x) _toggle(x) // toggle a boolean value
 
+#define _MERRY_ALIGN_MAGIC_NUM_ 0xFFFFFFFFFFFFFFF8
+
+#define merry_align_size(size) (size + 7) & _MERRY_ALIGN_MAGIC_NUM_
+
 #endif

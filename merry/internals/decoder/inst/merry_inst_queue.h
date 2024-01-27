@@ -1,5 +1,5 @@
 /*
- * Instruction representation of the Merry VM
+ * The instruction queue of the Merry VM
  * MIT License
  *
  * Copyright (c) 2024 MegrajChauhan
@@ -22,15 +22,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifndef _MERRY_INST_
-#define _MERRY_INST_
+#ifndef _MERRY_INST_QUEUE_
+#define _MERRY_INST_QUEUE_
 
+#include <stdlib.h>
+#include "../../../lib/include/merry_queue.h"
+#include "../merry_opcodes.h"
+
+typedef struct MerryInstQueue MerryInstQueue;
+typedef struct MerryInstQueueNode MerryInstQueueNode;
 typedef struct MerryInstruction MerryInstruction;
-
-#include "merry_opcodes.h"
 
 // A function that executes the instruction should take a MerryInstruction *, MerryCore *
 // Any error generated during this  will be reported by the executing function itself
+
+struct MerryCore;
+
 _MERRY_DEFINE_FUNC_PTR_(void, minstexec_t, struct MerryCore *)
 
 struct MerryInstruction
@@ -42,4 +49,18 @@ struct MerryInstruction
     minstexec_t exec_func; // the function that executes this specific instruction
 };
 
+#include "../../merry_core.h"
+
+_MERRY_CREATE_QUEUE_NODE_NOPTR_(MerryInstruction, MerryInstQueueNode)
+_MERRY_CREATE_QUEUE_NOPTR_(MerryInstQueue, MerryInstQueueNode)
+
+MerryInstQueue *merry_inst_queue_init(msize_t queue_len);
+
+mret_t merry_inst_queue_push_instruction(MerryInstQueue *queue, MerryInstruction inst);
+
+mret_t merry_inst_queue_pop_instruction(MerryInstQueue *queue, MerryInstruction *inst);
+
+void merry_inst_queue_destroy(MerryInstQueue *queue);
+
+// Further feature addition maybe in the future
 #endif

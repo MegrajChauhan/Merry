@@ -1,4 +1,4 @@
-#include "../merry_exec.h"
+#include "../inst/merry_exec.h"
 
 // definitions
 

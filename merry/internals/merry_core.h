@@ -26,12 +26,17 @@
 #define _MERRY_CORE_
 
 #include <stdlib.h>
-#include "decoder/merry_decode.h"
-#include "merry_os.h"
+#include "merry_memory.h"
 
 typedef struct MerryCore MerryCore;
 // typedef union MerryRegister MerryRegister;
 typedef struct MerryFlagRegister MerryFlagRegister;
+
+// #include "merry_exec.h"
+
+#include "decoder/inst/merry_exec.h"
+#include "decoder/inst/merry_inst_queue.h"
+#include "decoder/merry_decode.h"
 
 /*
  The behaviour of Unions is very different based on different architectures, endianness and the whim of the compiler as well.

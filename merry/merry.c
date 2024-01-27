@@ -44,7 +44,7 @@
 int main()
 {
     merry_init_logger();
-    if (merry_os_init("inp.mbin") == RET_FAILURE)
+    if (merry_os_init("inpFile.mbin") == RET_FAILURE)
         return 0;
     MerryThread *osthread = merry_thread_init();
     if (osthread == NULL)

@@ -1,5 +1,5 @@
 /*
- * The instruction queue of the Merry VM
+ * Definition for the functions that execute instructions of the Merry VM
  * MIT License
  *
  * Copyright (c) 2024 MegrajChauhan
@@ -22,26 +22,17 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifndef _MERRY_INST_QUEUE_
-#define _MERRY_INST_QUEUE_
+#ifndef _MERRY_EXEC_
+#define _MERRY_EXEC_
 
-typedef struct MerryInstQueue MerryInstQueue;
-typedef struct MerryInstQueueNode MerryInstQueueNode;
+#include "../../../../utils/merry_logger.h"
+#include "../../merry_request.h"
+#include "../../merry_core.h"
 
-#include "../../lib/include/merry_queue.h"
-#include "merry_inst.h"
-#include <stdlib.h>
+// The function structure
+#define _exec_(name) void merry_execute_##name(MerryCore *core)
 
-_MERRY_CREATE_QUEUE_NODE_NOPTR_(MerryInstruction, MerryInstQueueNode)
-_MERRY_CREATE_QUEUE_NOPTR_(MerryInstQueue, MerryInstQueueNode)
+// execute the halt instruction
+_exec_(halt);
 
-MerryInstQueue *merry_inst_queue_init(msize_t queue_len);
-
-mret_t merry_inst_queue_push_instruction(MerryInstQueue *queue, MerryInstruction inst);
-
-mret_t merry_inst_queue_pop_instruction(MerryInstQueue *queue, MerryInstruction *inst);
-
-void merry_inst_queue_destroy(MerryInstQueue *queue);
-
-// Further feature addition maybe in the future
 #endif

@@ -1,4 +1,4 @@
-#include "../merry_inst_queue.h"
+#include "../inst/merry_inst_queue.h"
 
 MerryInstQueue *merry_inst_queue_init(msize_t queue_len)
 {

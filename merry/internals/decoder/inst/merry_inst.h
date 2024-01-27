@@ -1,5 +1,5 @@
 /*
- * Definition for the functions that execute instructions of the Merry VM
+ * Instruction representation of the Merry VM
  * MIT License
  *
  * Copyright (c) 2024 MegrajChauhan
@@ -22,16 +22,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifndef _MERRY_EXEC_
-#define _MERRY_EXEC_
+#ifndef _MERRY_INST_
+#define _MERRY_INST_
 
-#include "../../../utils/merry_logger.h"
-#include "../merry_core.h"
+#include "../merry_opcodes.h"
+#include "../../merry_core.h"
 
-// The function structure
-#define _exec_(name) void merry_execute_##name(MerryCore *core)
+typedef struct MerryInstruction MerryInstruction;
 
-// execute the halt instruction
-_exec_(halt);
+// A function that executes the instruction should take a MerryInstruction *, MerryCore *
+// Any error generated during this  will be reported by the executing function itself
+_MERRY_DEFINE_FUNC_PTR_(void, minstexec_t, MerryCore *)
+
+struct MerryInstruction
+{
+    mopcode_t opcode; // the instruction's opcode
+    // based on the instruction, it may have many operands, but at most it can have only 2 operands
+    moperand_t op1;        // the first operand
+    moperand_t op2;        // the second operand
+    minstexec_t exec_func; // the function that executes this specific instruction
+};
 
 #endif

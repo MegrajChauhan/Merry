@@ -44,6 +44,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_alloc_pages(MerryInpFile *inp)
     // for instructions
     for (msize_t i = 0; i < inp->ipage_count; i++)
     {
+        if ((inp->_instructions[i] = _MERRY_MEMORY_PGALLOC_MAP_PAGE_) == _MERRY_RET_GET_ERROR_)
         {
             inp->ipage_count = i;
             merry_reader_unalloc_pages(inp);
@@ -134,19 +135,19 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
                                                      (
                                                          (
                                                              (
-                                                                 header[8] << 8) &
+                                                                 header[8] << 8) |
                                                              header[9])
-                                                         << 8) &
+                                                         << 8) |
                                                      header[10])
-                                                 << 8) &
+                                                 << 8) |
                                              header[11])
-                                         << 8) &
+                                         << 8) |
                                      header[12])
-                                 << 8) &
+                                 << 8) |
                              header[13])
-                         << 8) &
+                         << 8) |
                      header[14])
-                 << 8) &
+                 << 8) |
                 header[15];
     // get the data len
     inp->dlen = ((
@@ -160,18 +161,18 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
                                                  (
                                                      (
                                                          (
-                                                             (header[16] << 8) & header[17])
-                                                         << 8) &
+                                                             (header[16] << 8) | header[17])
+                                                         << 8) |
                                                      header[18])
-                                                 << 8) &
+                                                 << 8) |
                                              header[19])
-                                         << 8) &
+                                         << 8) |
                                      header[20])
-                                 << 8) &
+                                 << 8) |
                              header[21])
-                         << 8) &
+                         << 8) |
                      header[22])
-                 << 8) &
+                 << 8) |
                 header[23];
     // now check if dlen and ilen are within the limits
     if (inp->file_len < (inp->dlen + inp->ilen))

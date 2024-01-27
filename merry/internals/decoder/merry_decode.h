@@ -27,10 +27,11 @@
 
 typedef struct MerryDecoder MerryDecoder;
 
-#include "merry_opcodes.h"
-#include "merry_exec.h"
-#include "merry_inst_queue.h"
 #include "../../../utils/merry_logger.h"
+#include "merry_opcodes.h"
+#include "inst/merry_inst_queue.h"
+#include "inst/merry_exec.h"
+#include "../merry_os.h"
 #include <stdlib.h>
 
 #define _MERRY_INST_BUFFER_LEN_ 10

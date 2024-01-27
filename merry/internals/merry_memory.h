@@ -36,7 +36,6 @@
  The memory is going to be an array of bytes. It will follow the page model while using the endianness of the host to make things faster.
 */
 
-
 #include "merry_internals.h"
 #include "../../sys/merry_mem.h"
 #include "../../sys/merry_thread.h" // memory needs to be thread safe

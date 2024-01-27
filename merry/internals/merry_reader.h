@@ -27,6 +27,7 @@
 #define _MERRY_READER_
 
 // #include "../lib/include/merry_memory_allocator.h" <LEGACY>
+#include "../../utils/merry_utils.h"
 #include "merry_memory.h"
 #include <stdio.h>  // for FILE
 #include <string.h> // for string manipulation
