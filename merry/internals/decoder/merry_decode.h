@@ -22,23 +22,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifndef _MERRY_DECODE_
-#define _MERRY_DECODE_
-
-typedef struct MerryDecoder MerryDecoder;
+#ifndef _MERRY_DECODER_
+#define _MERRY_DECODER_
 
 #include "../../../utils/merry_logger.h"
-#include "merry_opcodes.h"
-#include "inst/merry_inst_queue.h"
-#include "inst/merry_exec.h"
-#include "../merry_os.h"
+#include "../../../utils/merry_types.h"
+#include "merry_inst_queue.h"
+#include "merry_exec.h"
+#include "../merry_request_hdlr.h"
 #include <stdlib.h>
 
 #define _MERRY_INST_BUFFER_LEN_ 10
 
+struct MerryCore;
+
+typedef struct MerryDecoder MerryDecoder;
+
 struct MerryDecoder
 {
-    MerryCore *core;        // the host core
+    struct MerryCore *core; // the host core
     MerryMutex *lock;       // the decoder's lock
     MerryMutex *queue_lock; // the queue's lock
     MerryCond *cond;        // the decoder's condition variable
@@ -47,7 +49,7 @@ struct MerryDecoder
     MerryInstQueue *queue;  // the instruction queue
 };
 
-MerryDecoder *merry_init_decoder(MerryCore *host);
+MerryDecoder *merry_init_decoder(struct MerryCore *host);
 
 void merry_decoder_get_inst(MerryDecoder *decoder);
 

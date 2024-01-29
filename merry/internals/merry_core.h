@@ -33,9 +33,6 @@ typedef struct MerryCore MerryCore;
 typedef struct MerryFlagRegister MerryFlagRegister;
 
 // #include "merry_exec.h"
-
-#include "decoder/inst/merry_exec.h"
-#include "decoder/inst/merry_inst_queue.h"
 #include "decoder/merry_decode.h"
 
 /*
@@ -106,6 +103,8 @@ struct MerryCore
     // the core's memory
     MerryMemory *data_mem; // the data memory
     MerryMemory *inst_mem; // the instruction memory
+    MerryDecoder *decoder;       // the core's decoder
+    MerryThread *decoder_thread; // the decoder's thread
     // Merry *os;
     // Each address of the stack stores 8 bytes which implies each push or pop pushes and pops 8 bytes
     // there are no need for alignments
@@ -121,9 +120,7 @@ struct MerryCore
     // other cores, it can set this flag and access memory pages without mutex locks which is faster.
     // If this flag is set but other cores access this core's pages and values then it is not known what behaviour might happen
     mbool_t _is_private;
-    MerryDecoder *decoder;       // the core's decoder
-    MerryThread *decoder_thread; // the decoder's thread
-    MerryInstruction ir;         // the current instruction
+    MerryInstruction* ir;         // the current instruction
 };
 
 // opcode is actually 9 bits long

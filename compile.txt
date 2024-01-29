@@ -1,3 +1,4 @@
+merry/merry_logger.c
 sys/src/merry_thread.c
 merry/merry_memory.c
 merry/merry_reader.c

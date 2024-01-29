@@ -3,6 +3,7 @@
 MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, msize_t id)
 {
     // allocate a new core
+    _llog_(_CORE_, "Intialization", "Intializing core with ID %lu", id);
     MerryCore *new_core = (MerryCore *)malloc(sizeof(MerryCore));
     // check if the core has been initialized
     if (new_core == RET_NULL)
@@ -44,12 +45,14 @@ MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, msize_t
     // we have done everything now
     return new_core;
 failure:
+    _log_(_CORE_, "FAILURE", "Core intialization failed");
     merry_core_destroy(new_core);
     return RET_NULL;
 }
 
 void merry_core_destroy(MerryCore *core)
 {
+    _llog_(_CORE_, "DESTROYING", "Destroying core with ID %lu", core->core_id);
     if (surelyF(core == NULL))
         return;
     if (surelyT(core->cond != NULL))
@@ -92,6 +95,7 @@ void merry_core_destroy(MerryCore *core)
 mptr_t merry_runCore(mptr_t core)
 {
     MerryCore *c = (MerryCore *)core;
+    _llog_(_CORE_, "RUNNING", "Core ID %lu is now running", c->core_id);
     // the core is now in action
     // it's internal's are all initialized and it is ready to go
     // start the decoder
@@ -101,6 +105,7 @@ mptr_t merry_runCore(mptr_t core)
         merry_requestHdlr_panic(_PANIC_DECODER_NOT_STARTING); // decoder is not starting
         return RET_NULL;
     }
+    _llog_(_CORE_, "ENTERY", "Core ID %lu entering FDE cycle", c->core_id);
     while (mtrue)
     {
         merry_mutex_lock(c->lock);
@@ -108,6 +113,7 @@ mptr_t merry_runCore(mptr_t core)
         {
             // we have to also tell the decoder to stop
             // if the decoder was behind this error, then it should have already stopped
+            _llog_(_CORE_, "STOPPING", "Core ID %lu stopping now", c->core_id);
             merry_cond_signal(c->decoder->cond); // in case the decoder was sleeping
             merry_mutex_lock(c->decoder->lock);
             c->decoder->should_stop = mtrue;
@@ -121,7 +127,10 @@ mptr_t merry_runCore(mptr_t core)
         // if there was an error in executing the instruction, the function that executes the instruction will
         // perfrom the task of registering the error and making the core exit while also stopping the decoder
         merry_decoder_get_inst(c->decoder);
-        c->ir.exec_func(c);   
+        _llog_(_CORE_, "EXECUTION", "Core ID %lu executing INST: %lu", c->ir->opcode);
+        c->ir->exec_func(c);
+        _llog_(_CORE_, "EXECUTED", "Core ID %lu executed INST: %lu", c->ir->opcode);
     }
+    _llog_(_CORE_, "TERMINATING", "Core ID %lu terminating execution", c->core_id);
     return RET_NULL; // return nothing
 }

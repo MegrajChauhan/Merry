@@ -35,9 +35,9 @@
 
 // This module is the backbone of the VM and controls everything
 
+#include "../../utils/merry_config.h"
 #include "merry_reader.h"
 #include "merry_request_hdlr.h"
-#include "merry_os_exec.h"
 #include "merry_core.h"
 
 typedef struct Merry Merry;
@@ -57,10 +57,13 @@ struct Merry
   msize_t ret;
 };
 
+#include "merry_os_exec.h"
+
 #define _MERRY_REQUEST_QUEUE_LEN_ 10 // for now
 
 #define _MERRY_REQUEST_INTERNAL_ERROR_(request_id) (request_id >= 0 && request_id <= 50)
 #define _MERRY_REQUEST_PROGRAM_ERROR_(request_id) (request_id >= 51 && request_id <= 150)
+#define _MERRY_REQUEST_VALID_(req_id) (req_id >= 151)
 
 #define merry_mem_error(msg) fprintf(stderr, "Memory Error: %s.\n", msg)
 #define merry_internal_module_error(msg) fprintf(stderr, "Internal Error; %s.\n", msg)
@@ -71,17 +74,20 @@ struct Merry
 */
 
 // this only initializes an instance of Merry while leaving inst_mem, data_mem uninitialized which is valid as we need to know the input and how many
-// pages to start with
+// pages to start with 
 
 static Merry os;
 
+// _MERRY_ALWAYS_INLINE void get(Merry **g)
+// {
+//   *g = &os;
+// }
 // directly used by cores
 #define merry_manager_mem_read_inst(inst_mem, address, store_in) merry_memory_read(inst_mem, address, store_in)
 #define merry_manager_mem_read_data(address, store_in) merry_memory_read_lock(os.data_mem, address, store_in)
 #define merry_manager_mem_write_data(address, _value_to_write) merry_memory_write_lock(os.data_mem, address, _value_to_write)
 
 mret_t merry_os_init(mcstr_t _inp_file);
-
 mptr_t merry_os_start_vm(mptr_t some_arg);
 
 // destroy the OS

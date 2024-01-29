@@ -12,7 +12,7 @@ int main()
         header[i] = 0;
     fwrite(header, 1, 24, f);
     unsigned char inst[16] = {};
-    inst[8] = 0x01;
+    inst[15] = 0x01;
     fwrite(inst, 1, 16, f);
     fclose(f);
 }

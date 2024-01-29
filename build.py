@@ -9,14 +9,16 @@ import os
 import sys
 
 def print_usage():
-    print("python build.py <Destination Directory> <Output Name>")
+    print("python build.py <Destination Directory> <Output Name> <Extra flags>")
     print("The path to the files to be compiled should be in compile.txt in the order in which it needs to be compiled")
 
 def main():
-    if len(sys.argv) != 3:
+    if len(sys.argv) < 3:
         print_usage()
         sys.exit(1)
-
+    avai = False
+    if len(sys.argv) == 4:
+        avai = True
     destination_directory = sys.argv[1].rstrip("/")
     output_file_name = sys.argv[2]
     if not os.path.exists(destination_directory):
@@ -35,7 +37,7 @@ def main():
         else:
             print(f"Warning: File not found - {file_path}")
     destination = os.path.join(destination_directory, output_file_name)
-    compile_command = f"gcc -Wall -Wextra {final_file} -o {destination}"
+    compile_command = f"gcc -Wall -Wextra {sys.argv[3] if avai == True else " "} {final_file} -o {destination}"
     print("Compiling the source files...")
     print(f"Command run: '{compile_command}'")
     print("\nCOMPILER MESSAGES IF ANY:")

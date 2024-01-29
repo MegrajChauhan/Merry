@@ -95,7 +95,6 @@ void merry_os_destroy()
         }
         free(os.core_threads);
     }
-    merry_close_logger();
     merry_requestHdlr_destroy();
 }
 
@@ -210,11 +209,14 @@ mptr_t merry_os_start_vm(mptr_t some_arg)
 {
     // this will start the OS
     _log_(_OS_, "Starting Manager", "Manager thread running");
+    // Merry *x = &os; // temp
+    _log_(_OS_, "STARTING CORE 0", "Attempting to start core 0");
     if (merry_os_boot_core(0, 0) != RET_SUCCESS)
         return (mptr_t)RET_FAILURE;
     // Core 0 is now up and running
     // The OS should be ready to handle requests
     MerryOSRequest current_req;
+    _log_(_OS_, "STARTING EXECUTION", "Manager is entering the request handling loop");
     while (os.stop == mfalse)
     {
         // there is no need to lock the OS now so maybe we won't need the Mutex locks
@@ -230,39 +232,43 @@ mptr_t merry_os_start_vm(mptr_t some_arg)
         else
         {
             // we have a request to fulfill
-            switch (current_req.request_number)
+            if (_MERRY_REQUEST_INTERNAL_ERROR_(current_req.request_number))
             {
-                switch (_MERRY_REQUEST_INTERNAL_ERROR_(current_req.request_number))
+                _llog_(_OS_, "Error", "Internal Error Detected: Error code %d", current_req.request_number);
+                merry_os_handle_internal_module_error(current_req.request_number);
+                merry_os_prepare_for_exit(); // now since this is an error, we can't continue
+            }
+            else if (_MERRY_REQUEST_PROGRAM_ERROR_(current_req.request_number))
+            {
+                _llog_(_OS_, "Error", "Program generated error: Error code %d", current_req.request_number);
+                merry_os_handle_error(current_req.request_number); // this will handle all errors
+                merry_os_prepare_for_exit();
+            }
+            else
+            {
+                switch (_MERRY_REQUEST_VALID_(current_req.request_number))
                 {
                 default:
-                   _llog_(_OS_, "Error", "Internal Error Detected: Error code %d", current_req.request_number);
-                    merry_os_handle_internal_module_error(current_req.request_number);
-                    merry_os_prepare_for_exit(); // now since this is an error, we can't continue
-                    break;                       // on next loop we will be out of the loop
-                }
-                switch (_MERRY_REQUEST_PROGRAM_ERROR_(current_req.request_number))
-                {
-                default:
-                    _llog_(_OS_, "Error", "Program generated error: Error code %d", current_req.request_number);
-                    merry_os_handle_error(current_req.request_number); // this will handle all errors
-                    merry_os_prepare_for_exit();
-                    break; // on next loop we will be out of this loop
-                }
-            default:
-                // it is most likely an actual request
-                switch (current_req.request_number)
-                {
-                case _REQ_REQHALT:                               // halting request
-                    merry_os_execute_request_halt(&current_req); // this shouldn't generate any errors
-                    break;
-                default:
-                    /// NOTE: this will come in handy when we implement some built-in syscalls and the program provides invalid syscalls
-                    merry_error("Unknown request code: '%llu' is not a valid request code", current_req.request_number);
-                    break;
+                    // it is most likely an actual request
+                    switch (current_req.request_number)
+                    {
+                    case _REQ_REQHALT: // halting request
+                        _llog_(_OS_, "REQ", "Halt request received from core ID %lu", current_req.id);
+                        merry_os_execute_request_halt(&os, &current_req); // this shouldn't generate any errors
+                        break;
+                    default:
+                        /// NOTE: this will come in handy when we implement some built-in syscalls and the program provides invalid syscalls
+                        merry_error("Unknown request code: '%llu' is not a valid request code", current_req.request_number);
+                        break;
+                    }
                 }
             }
+            // after the fulfillment of the request, wake up the core
+            _llog_(_OS_, "REQ_FULFILLED", "Core ID %lu request %lu fulfilled, Waking up", current_req.id, current_req.request_number);
+            merry_cond_signal(current_req._wait_lock);
         }
     }
+    _llog_(_OS_, "EXIT", "Manager terminating with exit code %ld", os.ret);
     return (mptr_t)os.ret; // freeing the OS is the Main's Job
 }
 

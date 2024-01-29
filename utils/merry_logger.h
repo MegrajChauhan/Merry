@@ -2,47 +2,29 @@
 #define _MERRY_LOGGER_
 
 #include <stdio.h>
+#include <stdarg.h>
 #include "../sys/merry_thread.h"
 
-// #define _MERRY_LOGGER_ENABLED_
+#define _MERRY_LOGGER_ENABLED_
 
 #if defined(_MERRY_LOGGER_ENABLED_)
-static FILE *f = NULL;
-static MerryMutex *lock = NULL;
+struct MerryLogger
+{
+    FILE *f;
+    MerryMutex *lock;
+};
+
+static struct MerryLogger logger;
 
 // we expect that the fopen and mutex init doesn't fail
-#define merry_logger_init()             \
-    do                                  \
-    {                                   \
-        f = fopen("merryLog.txt", "w"); \
-        lock = merry_mutex_init();      \
-    } while (0);
+void merry_logger_init();
 
-#define merry_logger_close()       \
-    do                             \
-    {                              \
-        fclose(f);                 \
-        merry_mutex_destroy(lock); \
-    } while (0);
+void merry_logger_close();
 
 // The logging format is: [Device][Additional Information]: Details
-#define merry_log(_device_, _info_, _details_)                      \
-    do                                                              \
-    {                                                               \
-        merry_mutex_lock(lock);                                     \
-        fprintf(f, "[%s][%s]: %s.\n", _device_, _info_, _details_); \
-        merry_mutex_unlock(lock);                                   \
-    } while (0);
+void merry_log(mstr_t _device_, mstr_t _info_, mstr_t _details_);
 
-#define merry_llog(_device_, _info_, _msg_, ...)   \
-    do                                             \
-    {                                              \
-        merry_mutex_lock(lock);                    \
-        fprintf(f, "[%s][%s]:", _device_, _info_); \
-        fprintf(f, _msg_, __VA_ARGS__);            \
-        putc((int)'\n', f);                        \
-        merry_mutex_unlock(lock);                  \
-    } while (0);
+void merry_llog(mstr_t _device_, mstr_t _info_, mstr_t _msg_, ...);
 
 #else
 

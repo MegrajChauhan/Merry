@@ -1,4 +1,4 @@
-#include "../inst/merry_inst_queue.h"
+#include "../merry_inst_queue.h"
 
 MerryInstQueue *merry_inst_queue_init(msize_t queue_len)
 {
@@ -21,16 +21,16 @@ void merry_inst_queue_destroy(MerryInstQueue *queue)
     _MERRY_DESTROY_QUEUE_NOPTR_(queue)
 }
 
-mret_t merry_inst_queue_push_instruction(MerryInstQueue *queue, MerryInstruction inst)
+mbool_t merry_inst_queue_push_instruction(MerryInstQueue *queue, MerryInstruction inst)
 {
     mbool_t ret = mtrue;
     _MERRY_QUEUE_PUSH_NOPTR_(queue, inst, ret)
     return ret;
 }
 
-mret_t merry_inst_queue_pop_instruction(MerryInstQueue *queue, MerryInstruction *inst)
+mbool_t merry_inst_queue_pop_instruction(MerryInstQueue *queue, MerryInstruction *inst)
 {
     mbool_t ret = mtrue;
-    _MERRY_QUEUE_POP_NOPTR_(queue, *inst, ret)
+    _MERRY_QUEUE_POP_NOPTR_(queue, inst, ret)
     return ret;
 }

@@ -1,3 +1,5 @@
+// #define _MERRY_LOGGER_ENABLED_
+
 #include "internals/merry_os.h"
 #include <stdio.h>
 
@@ -46,6 +48,8 @@ int main()
     merry_init_logger();
     if (merry_os_init("inpFile.mbin") == RET_FAILURE)
         return 0;
+    // Merry *temp; // temporary
+    // get(&temp);
     MerryThread *osthread = merry_thread_init();
     if (osthread == NULL)
     {
@@ -59,6 +63,7 @@ int main()
         goto failure;
     }
     merry_close_logger();
+    merry_thread_join(osthread, NULL); // I am an idiot
     merry_thread_destroy(osthread);
     merry_os_destroy();
     return 0;
