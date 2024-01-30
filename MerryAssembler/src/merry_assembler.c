@@ -20,23 +20,23 @@ int main()
     inst[12] = 0;
     inst[13] = 0;
     inst[14] = 0x00; // dest = Ma
-    inst[15] = 0x02;
+    inst[15] = 0x01;
     inst[16] = 0;
     inst[17] = 0;
     inst[18] = 0;
     inst[19] = 0;
     inst[20] = 0;
-    inst[21] = 0;    // source = Ma
-    inst[22] = 0x01; // dest = Mb
-    inst[23] = 0x03; // add two registers
+    inst[21] = 0x01;    // source = Ma
+    inst[22] = 0x80; // dest = Mb
+    inst[23] = 0x01; // add two registers
     inst[24] = 0x00;
     inst[25] = 0x00;
     inst[26] = 0x00;
     inst[27] = 0x00;
     inst[28] = 0x00;
     inst[29] = 0x00;
-    inst[30] = 0x00;
-    inst[31] = 0x01; // halt
+    inst[30] = 0x80;
+    inst[31] = 0x00; // halt
     fwrite(inst, 1, 32, f);
     fclose(f);
 }

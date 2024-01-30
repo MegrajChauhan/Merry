@@ -42,14 +42,34 @@ enum
 
     /*Firstly: The basic arithmetic instructions*/
     // The arithmetic instructions have two variants: One with IMM/DEST and another with SRC/DEST
-    OP_ADD_IMM, /*02 [dest index: 1 byte] [remaining bytes for immediate]*/
-    OP_ADD_REG, /*03 [dest index: 1 byte] [src index: 1 byte] [Unused other bytes]*/
+    OP_ADD_IMM,
+    OP_ADD_REG,
+    OP_SUB_IMM,
+    OP_SUB_REG,
+    OP_MUL_IMM,
+    OP_MUL_REG,
+    OP_DIV_IMM,
+    OP_DIV_REG,
+
+    // The signed versions of the above instructions
+    OP_IADD_IMM,
+    OP_IADD_REG,
+    OP_ISUB_IMM,
+    OP_ISUB_REG,
+    OP_IMUL_IMM,
+    OP_IMUL_REG,
+    OP_IDIV_IMM,
+    OP_IDIV_REG,
+
+    // as for floating point numbers
+    // Merry currently assumes that the bits of the operands are in IEEE format and that the processor also uses IEEE format for execution
+
 };
 
 typedef unsigned int mopcode_t; /*Opcode*/
 // operands are basically numbers which represent different things based on the instruction
 typedef unsigned long long moperand_t;
 
-#define merry_get_opcode(inst) (inst >> 56)
+#define merry_get_opcode(inst) (inst >> 55)
 
 #endif

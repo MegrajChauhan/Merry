@@ -133,15 +133,86 @@ mptr_t merry_decode(mptr_t d)
                 current_inst.exec_func = &merry_execute_halt;
                 temp = mtrue; // for now
                 break;        // halt has been broken down
+            // Please ignore all of the redundant code
             case OP_ADD_IMM:
-                current_inst.op1 = (current >> 48) & 15;       // get the destination register
-                current_inst.op2 = (current) & 0xFFFFFFFFFFFF; // get the immediate value
+                current_inst.op1 = (current >> 40) & 15;   // get the destination register
+                current_inst.op2 = (current) & 0xFFFFFFFF; // get the immediate value
                 current_inst.exec_func = &merry_execute_add_imm;
                 break;
             case OP_ADD_REG:
-                current_inst.op1 = (current >> 48) & 15; // get the destination register which is also an operand
+                current_inst.op1 = (current >> 44) & 15; // get the destination register which is also an operand
                 current_inst.op2 = (current >> 40) & 15; // get the source register
                 current_inst.exec_func = &merry_execute_add_reg;
+                break;
+            case OP_SUB_IMM:
+                current_inst.op1 = (current >> 40) & 15;   // get the destination register
+                current_inst.op2 = (current) & 0xFFFFFFFF; // get the immediate value
+                current_inst.exec_func = &merry_execute_sub_imm;
+                break;
+            case OP_SUB_REG:
+                current_inst.op1 = (current >> 44) & 15; // get the destination register which is also an operand
+                current_inst.op2 = (current >> 40) & 15; // get the source register
+                current_inst.exec_func = &merry_execute_sub_reg;
+                break;
+            case OP_MUL_IMM:
+                current_inst.op1 = (current >> 40) & 15;   // get the destination register
+                current_inst.op2 = (current) & 0xFFFFFFFF; // get the immediate value
+                current_inst.exec_func = &merry_execute_mul_imm;
+                break;
+            case OP_MUL_REG:
+                current_inst.op1 = (current >> 44) & 15; // get the destination register which is also an operand
+                current_inst.op2 = (current >> 40) & 15; // get the source register
+                current_inst.exec_func = &merry_execute_mul_reg;
+                break;
+            case OP_DIV_IMM:
+                current_inst.op1 = (current >> 40) & 15;   // get the destination register
+                current_inst.op2 = (current) & 0xFFFFFFFF; // get the immediate value
+                current_inst.exec_func = &merry_execute_div_imm;
+                break;
+            case OP_DIV_REG:
+                current_inst.op1 = (current >> 44) & 15; // get the destination register which is also an operand
+                current_inst.op2 = (current >> 40) & 15; // get the source register
+                current_inst.exec_func = &merry_execute_div_reg;
+                break;
+            case OP_IADD_IMM:
+                current_inst.op1 = (current >> 40) & 15;   // get the destination register
+                current_inst.op2 = (current) & 0xFFFFFFFF; // get the immediate value
+                current_inst.exec_func = &merry_execute_iadd_imm;
+                break;
+            case OP_IADD_REG:
+                current_inst.op1 = (current >> 44) & 15; // get the destination register which is also an operand
+                current_inst.op2 = (current >> 40) & 15; // get the source register
+                current_inst.exec_func = &merry_execute_iadd_reg;
+                break;
+            case OP_ISUB_IMM:
+                current_inst.op1 = (current >> 40) & 15;   // get the destination register
+                current_inst.op2 = (current) & 0xFFFFFFFF; // get the immediate value
+                current_inst.exec_func = &merry_execute_isub_imm;
+                break;
+            case OP_ISUB_REG:
+                current_inst.op1 = (current >> 44) & 15; // get the destination register which is also an operand
+                current_inst.op2 = (current >> 40) & 15; // get the source register
+                current_inst.exec_func = &merry_execute_isub_reg;
+                break;
+            case OP_IMUL_IMM:
+                current_inst.op1 = (current >> 40) & 15;   // get the destination register
+                current_inst.op2 = (current) & 0xFFFFFFFF; // get the immediate value
+                current_inst.exec_func = &merry_execute_imul_imm;
+                break;
+            case OP_IMUL_REG:
+                current_inst.op1 = (current >> 44) & 15; // get the destination register which is also an operand
+                current_inst.op2 = (current >> 40) & 15; // get the source register
+                current_inst.exec_func = &merry_execute_imul_reg;
+                break;
+            case OP_IDIV_IMM:
+                current_inst.op1 = (current >> 40) & 15;   // get the destination register
+                current_inst.op2 = (current) & 0xFFFFFFFF; // get the immediate value
+                current_inst.exec_func = &merry_execute_idiv_imm;
+                break;
+            case OP_IDIV_REG:
+                current_inst.op1 = (current >> 44) & 15; // get the destination register which is also an operand
+                current_inst.op2 = (current >> 40) & 15; // get the source register
+                current_inst.exec_func = &merry_execute_idiv_reg;
                 break;
             }
             merry_decoder_push_inst(decoder, &current_inst);
