@@ -39,6 +39,11 @@ enum
 {
     OP_NOP,  // no operation instruction
     OP_HALT, // halt instruction
+
+    /*Firstly: The basic arithmetic instructions*/
+    // The arithmetic instructions have two variants: One with IMM/DEST and another with SRC/DEST
+    OP_ADD_IMM, /*02 [dest index: 1 byte] [remaining bytes for immediate]*/
+    OP_ADD_REG, /*03 [dest index: 1 byte] [src index: 1 byte] [Unused other bytes]*/
 };
 
 typedef unsigned int mopcode_t; /*Opcode*/

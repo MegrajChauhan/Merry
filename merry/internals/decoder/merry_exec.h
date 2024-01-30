@@ -3,6 +3,7 @@
 
 #include "../../../utils/merry_logger.h"
 #include "../merry_request.h"
+#include "../imp/merry_arithmetic.h"
 
 struct MerryCore;
 
@@ -11,5 +12,9 @@ struct MerryCore;
 
 // execute the halt instruction
 _exec_(halt);
+
+// arithmetic instructions
+_exec_(add_imm);
+_exec_(add_reg);
 
 #endif

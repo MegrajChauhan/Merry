@@ -1,3 +1,4 @@
+merry/internals/imp/arithmetic.S
 merry/merry_logger.c
 sys/src/merry_thread.c
 merry/merry_memory.c

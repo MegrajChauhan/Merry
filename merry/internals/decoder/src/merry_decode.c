@@ -55,9 +55,7 @@ void merry_decoder_get_inst(MerryDecoder *decoder)
     // get an instruction from the Instruction queue and assign it to the core's IR register
     _llog_(_DECODER_, "INST_REQ", "Core ID %lu requesting instruction", decoder->core->core_id);
     merry_mutex_lock(decoder->queue_lock);
-    mbool_t x = merry_inst_queue_pop_instruction(decoder->queue, &decoder->core->ir);
-    printf("%lu\n", x);
-    if ((x) != mtrue)
+    if ((merry_inst_queue_pop_instruction(decoder->queue, &decoder->core->ir)) != mtrue)
     {
         // the buffer is empty so we should wait for the buffer to be filled
         _llog_(_DECODER_, "INST_QEMPTY", "Inst queue is empty; Core ID %lu is sleeping", decoder->core->core_id);
@@ -130,14 +128,25 @@ mptr_t merry_decode(mptr_t d)
             switch (merry_get_opcode(current))
             {
             case OP_NOP: // we don't care about NOP instructions
-                break;
-            case OP_HALT:                      // Simply stop the core
-                current_inst.opcode = OP_HALT; /*The halt instruction should be where we should stop furthur decoding but we still have to consider for branching and branch predictions as well */
+                goto _next_;
+            case OP_HALT: // Simply stop the core
                 current_inst.exec_func = &merry_execute_halt;
                 temp = mtrue; // for now
-                merry_decoder_push_inst(decoder, &current_inst);
-                break; // halt has been broken down
+                break;        // halt has been broken down
+            case OP_ADD_IMM:
+                current_inst.op1 = (current >> 48) & 15;       // get the destination register
+                current_inst.op2 = (current) & 0xFFFFFFFFFFFF; // get the immediate value
+                current_inst.exec_func = &merry_execute_add_imm;
+                break;
+            case OP_ADD_REG:
+                current_inst.op1 = (current >> 48) & 15; // get the destination register which is also an operand
+                current_inst.op2 = (current >> 40) & 15; // get the source register
+                current_inst.exec_func = &merry_execute_add_reg;
+                break;
             }
+            merry_decoder_push_inst(decoder, &current_inst);
+            goto _next_;
+        _next_:
             core->pc += 8;
         }
     }

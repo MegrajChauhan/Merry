@@ -1,5 +1,13 @@
 #include "internals/merry_core.h"
 
+_MERRY_INTERNAL_ void merry_core_zero_out_reg(MerryCore *core)
+{
+    for (msize_t i = 0; i < REGR_COUNT; i++)
+    {
+        core->registers[i] = 0;
+    }
+}
+
 MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, msize_t id)
 {
     // allocate a new core
@@ -31,6 +39,7 @@ MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, msize_t
     new_core->registers = (mqptr_t)malloc(sizeof(mqword_t) * REGR_COUNT);
     if (new_core->registers == RET_NULL)
         goto failure;
+    merry_core_zero_out_reg(new_core);
     new_core->stack_mem = (mqptr_t)_MERRY_MEM_GET_PAGE_(_MERRY_STACKMEM_BYTE_LEN_, _MERRY_PROT_DEFAULT_, _MERRY_FLAG_DEFAULT_);
     if (new_core->stack_mem == RET_NULL)
         goto failure;
