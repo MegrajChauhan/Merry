@@ -16,9 +16,9 @@ void merry_log(mstr_t _device_, mstr_t _info_, mstr_t _details_)
 
 void merry_llog(mstr_t _device_, mstr_t _info_, mstr_t _msg_, ...)
 {
+    merry_mutex_lock(logger.lock);
     va_list list;
     va_start(list, _msg_);
-    merry_mutex_lock(logger.lock);
     fprintf(logger.f, "[%s][%s]:", _device_, _info_);
     vfprintf(logger.f, _msg_,  list);
     putc((int)'\n', logger.f);

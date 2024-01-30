@@ -55,7 +55,7 @@ void merry_decoder_get_inst(MerryDecoder *decoder)
     // get an instruction from the Instruction queue and assign it to the core's IR register
     _llog_(_DECODER_, "INST_REQ", "Core ID %lu requesting instruction", decoder->core->core_id);
     merry_mutex_lock(decoder->queue_lock);
-    mbool_t x = merry_inst_queue_pop_instruction(decoder->queue, decoder->core->ir);
+    mbool_t x = merry_inst_queue_pop_instruction(decoder->queue, &decoder->core->ir);
     printf("%lu\n", x);
     if ((x) != mtrue)
     {
@@ -64,10 +64,8 @@ void merry_decoder_get_inst(MerryDecoder *decoder)
         merry_cond_wait(decoder->core->cond, decoder->queue_lock);
         // when we are awakened again, we should get another instruction and this time it should work
         _llog_(_DECODER_, "INST_NEMPTY", "Inst queue populated; Core ID %lu waking up", decoder->core->core_id);
-        printf("Getting inst: Waking up\n");
-        merry_inst_queue_pop_instruction(decoder->queue, decoder->core->ir);
+        merry_inst_queue_pop_instruction(decoder->queue, &decoder->core->ir);
     }
-    printf("Getting inst: Got %lu\n", decoder->core->ir->opcode);
     // if we got an instruction then see if the decoder had been waiting because the queue was full
     merry_cond_signal(decoder->cond); // this should work
     merry_mutex_unlock(decoder->queue_lock);
@@ -141,7 +139,6 @@ mptr_t merry_decode(mptr_t d)
                 break; // halt has been broken down
             }
             core->pc += 8;
-            printf("%lu\n", core->pc);
         }
     }
 }

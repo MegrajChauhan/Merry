@@ -5,7 +5,7 @@
 #include <stdarg.h>
 #include "../sys/merry_thread.h"
 
-#define _MERRY_LOGGER_ENABLED_
+// #define _MERRY_LOGGER_ENABLED_
 
 #if defined(_MERRY_LOGGER_ENABLED_)
 struct MerryLogger

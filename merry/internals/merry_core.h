@@ -120,7 +120,7 @@ struct MerryCore
     // other cores, it can set this flag and access memory pages without mutex locks which is faster.
     // If this flag is set but other cores access this core's pages and values then it is not known what behaviour might happen
     mbool_t _is_private;
-    MerryInstruction* ir;         // the current instruction
+    MerryInstruction ir;         // the current instruction
 };
 
 // opcode is actually 9 bits long

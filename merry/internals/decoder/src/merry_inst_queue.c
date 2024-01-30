@@ -31,6 +31,6 @@ mbool_t merry_inst_queue_push_instruction(MerryInstQueue *queue, MerryInstructio
 mbool_t merry_inst_queue_pop_instruction(MerryInstQueue *queue, MerryInstruction *inst)
 {
     mbool_t ret = mtrue;
-    _MERRY_QUEUE_POP_NOPTR_(queue, inst, ret)
+    _MERRY_QUEUE_POP_NOPTR_(queue, *inst, ret)
     return ret;
 }

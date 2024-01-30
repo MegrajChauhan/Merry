@@ -227,7 +227,7 @@
             ret = mfalse;                        \
             break;                               \
         }                                        \
-        dest = &(qptr)->head->value;             \
+        dest = (qptr)->head->value;             \
         (qptr)->head = (qptr)->head->next;       \
         (qptr)->data_count--;                    \
         ret = mtrue;                             \

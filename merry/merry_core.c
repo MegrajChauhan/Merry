@@ -127,9 +127,9 @@ mptr_t merry_runCore(mptr_t core)
         // if there was an error in executing the instruction, the function that executes the instruction will
         // perfrom the task of registering the error and making the core exit while also stopping the decoder
         merry_decoder_get_inst(c->decoder);
-        _llog_(_CORE_, "EXECUTION", "Core ID %lu executing INST: %lu", c->ir->opcode);
-        c->ir->exec_func(c);
-        _llog_(_CORE_, "EXECUTED", "Core ID %lu executed INST: %lu", c->ir->opcode);
+        _llog_(_CORE_, "EXECUTION", "Core ID %lu executing INST: %lu", c->ir.opcode);
+        c->ir.exec_func(c);
+        _llog_(_CORE_, "EXECUTED", "Core ID %lu executed INST: %lu", c->ir.opcode);
     }
     _llog_(_CORE_, "TERMINATING", "Core ID %lu terminating execution", c->core_id);
     return RET_NULL; // return nothing

@@ -45,6 +45,6 @@ typedef unsigned int mopcode_t; /*Opcode*/
 // operands are basically numbers which represent different things based on the instruction
 typedef unsigned long long moperand_t;
 
-#define merry_get_opcode(inst) (inst >> 55)
+#define merry_get_opcode(inst) (inst >> 56)
 
 #endif
