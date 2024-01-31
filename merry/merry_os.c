@@ -286,6 +286,9 @@ void merry_os_handle_error(merrot_t error)
         // this implies that the access is being requested for address that doesn't really exist
         merry_mem_error("Request to access memory that doesn't exist. Invalid address");
         break;
+    case MERRY_DIV_BY_ZERO:
+        merry_general_error("Div by zero", "Attempting to divide by zero");
+        break;
     default:
         merry_error("Unknown error code: '%llu' is not a valid error code", error);
         break;

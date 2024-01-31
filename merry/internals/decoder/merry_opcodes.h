@@ -50,6 +50,8 @@ enum
     OP_MUL_REG,
     OP_DIV_IMM,
     OP_DIV_REG,
+    OP_MOD_IMM,
+    OP_MOD_REG,
 
     // The signed versions of the above instructions
     OP_IADD_IMM,
@@ -60,9 +62,35 @@ enum
     OP_IMUL_REG,
     OP_IDIV_IMM,
     OP_IDIV_REG,
+    OP_IMOD_IMM,
+    OP_IMOD_REG,
 
     // as for floating point numbers
     // Merry currently assumes that the bits of the operands are in IEEE format and that the processor also uses IEEE format for execution
+    // these instructions related to floating point numbers will be added soon enough
+    // 5 opcodes will be reserved for floating point instructions
+
+    // Now move intructions
+    OP_MOVE_IMM = 26, // move an immediate value to a destination register[This is default and accepts 32 bit values]
+    OP_MOVE_IMM_64,   // move an immediate value to a destination register[This is a variant and accepts 64 bit value that must follow the inst in the memory]
+    OP_MOVE_REG,      // move a value from one register to another
+    OP_MOVE_REG8,     // move the lowest byte of one register to another
+    OP_MOVE_REG16,    // move the lowest two bytes of one register to another
+    OP_MOVE_REG32,    // move the lowest 4 bytes of one register to another
+    OP_MOVESX_IMM8,   // move a value and sign extend it as well[only 8-bit numbers are accepted]
+    OP_MOVESX_IMM16,  // move a value and sign extend it as well[only 16-bit numbers are accepted]
+    OP_MOVESX_IMM32,  // move a value and sign extend it as well[only 32-bit numbers are accepted]
+    OP_MOVESX_REG8,   // move the lower 1 byte to another register while sign extending it
+    OP_MOVESX_REG16,  // move the lower 2 bytes to another register while sign extending it
+    OP_MOVESX_REG32,  // move the lower 4 bytes to another register while sign extending it
+    // we won't need zero extend. It can simply be aliased with simple move
+
+    // Control flow instructions
+    // the JMP instruction takes only a maximum of 40 bits from the instruction as the address
+    // either an offset is to be provided or the address can be provided as well
+    OP_JMP_OFF,  // JMP inst but the offset from current PC is provided[If the offset provided is in 2's complement then we can jump back]
+    OP_JMP_ADDR, // JMP inst but the address is directly provided
+    
 
 };
 

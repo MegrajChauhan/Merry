@@ -16,6 +16,9 @@
 .global _mul_inst_
 // mqword_t _div_inst_(mqword_t op1, mqword_t op2)
 .global _div_inst_
+// mqword_t _mod_inst_(mqword_t op1, mqword_t op2)
+.global _mod_inst_
+
 // mqword_t _iadd_inst_(mqword_t op1, mqword_t op2)
 .global _iadd_inst_
 // mqword_t _isub_inst_(mqword_t op1, mqword_t op2)
@@ -24,6 +27,8 @@
 .global _imul_inst_
 // mqword_t _idiv_inst_(mqword_t op1, mqword_t op2)
 .global _idiv_inst_
+// mqword_t _imod_inst_(mqword_t op1, mqword_t op2)
+.global _imod_inst_
 
 #if defined(_MERRY_HOST_OS_LINUX_)
 _add_inst_:
@@ -46,6 +51,11 @@ _div_inst_:
     mov rax, rdi  
     div rax, rsi  
     ret
+     
+_mod_inst_:
+    mov rax, rdi  
+    mod rax, rsi  
+    ret
 
 // same as unsigned
 _iadd_inst_:
@@ -67,12 +77,17 @@ _idiv_inst_:
     mov rax, rdi  
     idiv rax, rsi  
     ret
+     
+_imod_inst_:
+    mov rax, rdi  
+    imod rax, rsi  
+    ret
 #endif
 
 #if defined(_MERRY_HOST_CPU_AMD_)
 _update_flags_:
    pushfq          // push the flags register unto the stack
    pop rax        // pop the flags
-   mov [rdi], rax // save the values back such that we have the flags value 
+   mov [rdi], rax // save the values back such that we have the flags value
    ret
 #endif
