@@ -27,3 +27,13 @@
 10. Benchmark Merry but not now.
 11. Come up with a branch predictor\[*Sigh*\]
 12. And fix more bugs.
+
+## UPDATES: Jan 31
+1. More instructions.
+2. Added RSA as well as a stack.
+3. Some head scratching
+
+## TODO:
+1. Finish the old TODOs.
+2. Add documentation.
+3. Work on the website

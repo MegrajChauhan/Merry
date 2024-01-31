@@ -54,4 +54,8 @@ _exec_(movesx_imm8);
 _exec_(movesx_imm16);
 _exec_(movesx_imm32);
 
+// control flow instructions
+_exec_(call);
+_exec_(ret);
+
 #endif

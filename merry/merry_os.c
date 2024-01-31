@@ -289,6 +289,18 @@ void merry_os_handle_error(merrot_t error)
     case MERRY_DIV_BY_ZERO:
         merry_general_error("Div by zero", "Attempting to divide by zero");
         break;
+    case MERRY_STACK_OVERFLOW:
+        merry_general_error("Stack Overflow", "Cannot perform stack operations");
+        break;
+    case MERRY_STACK_UNDERFLOW:
+        merry_general_error("Stack Underflow", "Cannot perform stack operations");
+        break;
+    case MERRY_CALL_DEPTH_REACHED:
+        merry_general_error("RSA Depth reached", "Program reached the function call depth");
+        break;
+    case MERRY_INVALID_RETURN:
+        merry_general_error("Bad instruction", "RET instruction without a CALL instruction; Not allowed");
+        break;
     default:
         merry_error("Unknown error code: '%llu' is not a valid error code", error);
         break;

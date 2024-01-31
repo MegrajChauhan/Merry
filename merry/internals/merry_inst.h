@@ -37,7 +37,7 @@ _MERRY_DEFINE_FUNC_PTR_(void, minstexec_t, struct MerryCore *)
 
 struct MerryInstruction
 {
-    mopcode_t opcode; // the instruction's opcode
+    moperand_t flag; // specifically used by branch predictor
     // based on the instruction, it may have many operands, but at most it can have only 2 operands
     moperand_t op1;        // the first operand
     moperand_t op2;        // the second operand

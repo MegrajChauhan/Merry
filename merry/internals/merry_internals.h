@@ -22,8 +22,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifndef _MERRY_INTERNAL_
-#define _MERRY_INTERNAL_
+#ifndef _MERRY_INTERNALS_
+#define _MERRY_INTERNALS_
 
 // define the necessary configurations needed for the internal components here
 #include "../../utils/merry_config.h"

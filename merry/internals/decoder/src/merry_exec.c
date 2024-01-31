@@ -251,3 +251,34 @@ _exec_(move_reg32)
 }
 
 // we don't need zero extended version but we do need the sign extended version of MOV
+
+_exec_(call)
+{
+   // we need to save the current state of the SP and BP
+   // the parameters for the call should be already pushed
+   // the parameters can then be accessed using the sva instruction
+
+   /// NOTE: It is to be made sure that the parameters and values of other procedures should not be meddled with
+   if (_is_stack_full_(core) || _check_stack_lim_(core, 4))
+   {
+      // the stack is full and we cannot perform this call
+      // the stack must at least have 5 addresses free to be able to perform a call
+      merry_requestHdlr_panic(MERRY_STACK_OVERFLOW); // panic
+      return;
+   }
+   core->stack_mem[core->sp] = core->bp; // save the BP
+   core->bp = core->sp++;
+}
+
+_exec_(ret)
+{
+   // Restore everything to its older state
+   // also check if the stack is empty
+   if (_is_stack_empty_(core) || !_stack_has_atleast_(core, 1))
+   {
+      merry_requestHdlr_panic(MERRY_STACK_UNDERFLOW);
+      return;
+   }
+   core->bp = core->stack_mem[core->bp];     // restore the BP
+   // it is the program's job to restore SP to its desired position
+}

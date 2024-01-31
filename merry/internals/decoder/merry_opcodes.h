@@ -90,11 +90,10 @@ enum
     // either an offset is to be provided or the address can be provided as well
     OP_JMP_OFF,  // JMP inst but the offset from current PC is provided[If the offset provided is in 2's complement then we can jump back]
     OP_JMP_ADDR, // JMP inst but the address is directly provided
-    
-
+    OP_CALL,     // the call instruction
+    OP_RET,      // return from a call
 };
 
-typedef unsigned int mopcode_t; /*Opcode*/
 // operands are basically numbers which represent different things based on the instruction
 typedef unsigned long long moperand_t;
 

@@ -7,6 +7,11 @@ MerryDecoder *merry_init_decoder(MerryCore *host)
     MerryDecoder *decoder = (MerryDecoder *)malloc(sizeof(MerryDecoder));
     if (decoder == NULL)
         return RET_NULL;
+    if ((decoder->rsa = merry_init_stack(_MERRY_RSA_LEN_, mtrue, _MERRY_RSA_LIMIT_, _MERRY_RSA_GROW_PER_RESIZE_)) == RET_NULL)
+    {
+        free(decoder);
+        return RET_NULL;
+    }
     decoder->core = host;
     if ((decoder->lock = merry_mutex_init()) == NULL)
     {
@@ -46,6 +51,7 @@ void merry_destroy_decoder(MerryDecoder *decoder)
     merry_inst_queue_destroy(decoder->queue);
     merry_cond_destroy(decoder->cond);
     merry_mutex_destroy(decoder->queue_lock);
+    merry_destroy_stack(decoder->rsa);
     free(decoder);
 }
 
@@ -314,12 +320,33 @@ mptr_t merry_decode(mptr_t d)
             case OP_JMP_OFF: // we have to make the 5 bytes 8 bytes by sign extension in case it is indeed in 2's complement
                 // the offset in this case is a signed number and the 40th bit is the sign bit
                 // the decoder executes the jump instruction
-                core->pc = ((current & 0xFFFFFFFFFF) | 0xFFFFFF0000000000) - 8;
+                core->pc += ((current & 0xFFFFFFFFFF) | 0xFFFFFF0000000000) - 8;
                 goto _next_;
             case OP_JMP_ADDR:
                 core->pc = (current & 0xFFFFFFFFFF) - 8;
                 goto _next_;
-                
+            case OP_CALL:
+                // save the current return address
+                if (merry_stack_push(decoder->rsa, core->pc) == RET_FAILURE)
+                {
+                    merry_requestHdlr_panic(MERRY_CALL_DEPTH_REACHED);
+                    decoder->should_stop = mtrue;
+                    goto _next_;
+                }
+                core->pc = (current & 0xFFFFFFFFFF) - 8; // the address to the first instruction of the procedure
+                current_inst.exec_func = &merry_execute_call;
+                break;
+            case OP_RET:
+                // we just have to pop the topmost
+                if (merry_stack_pop(decoder->rsa, &core->pc) == RET_FAILURE)
+                {
+                    merry_requestHdlr_panic(MERRY_INVALID_RETURN);
+                    decoder->should_stop = mtrue;
+                    goto _next_;
+                }
+                // pc should have been restored
+                current_inst.exec_func = &merry_execute_ret;
+                break;
             }
             merry_decoder_push_inst(decoder, &current_inst);
             goto _next_;
