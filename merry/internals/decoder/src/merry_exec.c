@@ -80,7 +80,7 @@ _exec_(mod_imm)
       merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
       return; // failure
    }
-   core->registers[core->ir.op1] = (mqword_t)(_mod_inst_(core->registers[core->ir.op1], core->ir.op2));
+   core->registers[core->ir.op1] = (mqword_t)(core->registers[core->ir.op1] % core->ir.op2);
    _update_flags_(&core->flag); // the flag register should be updated
 }
 
@@ -91,7 +91,7 @@ _exec_(mod_reg)
       merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
       return;
    }
-   core->registers[core->ir.op1] = (mqword_t)(_mod_inst_(core->registers[core->ir.op1], core->registers[core->ir.op2]));
+   // core->registers[core->ir.op1] = (mqword_t)(_mod_inst_(core->registers[core->ir.op1], core->registers[core->ir.op2]));
    _update_flags_(&core->flag); // the flag register should be updated
 }
 
@@ -99,25 +99,25 @@ _exec_(iadd_imm)
 {
    // The processor will treat op1 and op2 as signed values
    // Since we will get a result that is also signed, we don't have to worry about anything
-   core->registers[core->ir.op1] = _iadd_inst_(core->registers[core->ir.op1], core->ir.op2);
+   core->registers[core->ir.op1] = _add_inst_(core->registers[core->ir.op1], core->ir.op2);
    _update_flags_(&core->flag); // the flag register should be updated
 }
 
 _exec_(iadd_reg)
 {
-   core->registers[core->ir.op1] = _iadd_inst_(core->registers[core->ir.op1], core->registers[core->ir.op2]);
+   core->registers[core->ir.op1] = _add_inst_(core->registers[core->ir.op1], core->registers[core->ir.op2]);
    _update_flags_(&core->flag); // the flag register should be updated
 }
 
 _exec_(isub_imm)
 {
-   core->registers[core->ir.op1] = _isub_inst_(core->registers[core->ir.op1], core->ir.op2);
+   core->registers[core->ir.op1] = _sub_inst_(core->registers[core->ir.op1], core->ir.op2);
    _update_flags_(&core->flag); // the flag register should be updated
 }
 
 _exec_(isub_reg)
 {
-   core->registers[core->ir.op1] = _isub_inst_(core->registers[core->ir.op1], core->registers[core->ir.op2]);
+   core->registers[core->ir.op1] = _sub_inst_(core->registers[core->ir.op1], core->registers[core->ir.op2]);
    _update_flags_(&core->flag); // the flag register should be updated
 }
 
@@ -157,12 +157,13 @@ _exec_(idiv_reg)
 
 _exec_(imod_imm)
 {
+   /// TODO: This logic doesn't work, implement my own imod
    if (core->ir.op2 == 0)
    {
       merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
       return; // failure
    }
-   core->registers[core->ir.op1] = _imod_inst_(core->registers[core->ir.op1], core->ir.op2);
+   // core->registers[core->ir.op1] = _imod_inst_(core->registers[core->ir.op1], core->ir.op2);
    _update_flags_(&core->flag); // the flag register should be updated
 }
 
@@ -173,7 +174,7 @@ _exec_(imod_reg)
       merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
       return;
    }
-   core->registers[core->ir.op1] = _imod_inst_(core->registers[core->ir.op1], core->registers[core->ir.op2]);
+   // core->registers[core->ir.op1] = _imod_inst_(core->registers[core->ir.op1], core->registers[core->ir.op2]);
    _update_flags_(&core->flag); // the flag register should be updated
 }
 
@@ -234,7 +235,7 @@ _exec_(movesx_reg8)
    core->registers[core->ir.op1] = lbyte;
 }
 
-_exec_(move_reg16)
+_exec_(movesx_reg16)
 {
    mqword_t lbyte = core->registers[core->ir.op2] & 0xFFFF;
    if (lbyte >> 15 == 1)
@@ -242,7 +243,7 @@ _exec_(move_reg16)
    core->registers[core->ir.op1] = lbyte;
 }
 
-_exec_(move_reg32)
+_exec_(movesx_reg32)
 {
    mqword_t lbyte = core->registers[core->ir.op2] & 0xFFFFFF;
    if (lbyte >> 31 == 1)

@@ -12,6 +12,7 @@ _os_exec_(halt)
         // we had only one core to begin with then stop any further execution
         os->stop = mtrue;
     }
+    printf("Halting.\n"); /// TODO: remove this
     _llog_(_OS_, "REQ_SUCCESS", "Halt request successfully fulfilled for core ID %lu", os->cores[request->id]->core_id);
     return RET_SUCCESS;                     // for mitigating compiler's warning
 }

@@ -1,3 +1,4 @@
+.intel_syntax noprefix
 // since it is the case for every architecture, we simply implement platform independent code here
 
 // mqword_t _inc_inst_(mqword_t _to_inc);
@@ -6,12 +7,12 @@
 .global _dec_inst_
 
 _inc_inst_:
-   mov rax, rdi
-   inc rax
+   movq rax, rdi
+   incq rax
    ret
 
 _dec_inst_:
-   mov rax, rdi
-   dec rax
+   movq rax, rdi
+   decq rax
    ret
    
