@@ -279,6 +279,172 @@ _exec_(ret)
       merry_requestHdlr_panic(MERRY_STACK_UNDERFLOW);
       return;
    }
-   core->bp = core->stack_mem[core->bp];     // restore the BP
+   core->bp = core->stack_mem[core->bp]; // restore the BP
    // it is the program's job to restore SP to its desired position
+}
+
+_exec_(sva)
+{
+   // op1 is the destination register and op2 is the offset value
+   // first check if the offset value is valid
+   if (core->bp < core->ir.op2)
+   {
+      merry_requestHdlr_panic(MERRY_INVALID_VARIABLE_ACCESS);
+      return;
+   }
+   // now we can put the value from the stack
+   /// NOTE: We are not popping the values and the original values cannot be changed here
+   /// NOTE: Even the value of BP can be taken but in case of svc, the value of BP can be changed which is undesirable
+   core->registers[core->ir.op1] = core->stack_mem[core->bp - core->ir.op2];
+}
+
+_exec_(svc)
+{
+   // the same as sva
+   if (core->bp < core->ir.op2)
+   {
+      merry_requestHdlr_panic(MERRY_INVALID_VARIABLE_ACCESS);
+      return;
+   }
+   core->stack_mem[core->bp - core->ir.op2] = core->registers[core->ir.op1];
+}
+
+_exec_(push_imm)
+{
+   // push the provided immediate value onto the stack
+   // it is assumed that the value is unsigned and hence zero extended
+   if (_is_stack_full_(core))
+   {
+      merry_requestHdlr_panic(MERRY_STACK_OVERFLOW);
+      return; // failure
+   }
+   core->stack_mem[core->sp++] = core->ir.op1;
+}
+
+_exec_(push_reg)
+{
+   // same as above
+   if (_is_stack_full_(core))
+   {
+      merry_requestHdlr_panic(MERRY_STACK_OVERFLOW);
+      return; // failure
+   }
+   core->stack_mem[core->sp++] = core->registers[core->ir.op1];
+}
+
+_exec_(pop)
+{
+   // the oppsite of above
+   if (_is_stack_empty_(core))
+   {
+      merry_requestHdlr_panic(MERRY_STACK_UNDERFLOW);
+      return; // failure
+   }
+   core->registers[core->ir.op1] = core->stack_mem[core->sp--];
+}
+
+_exec_(pusha)
+{
+   if (!_check_stack_lim_(core, REGR_COUNT))
+   {
+      // the stack cannot hold all the register values
+      merry_requestHdlr_panic(MERRY_STACK_OVERFLOW);
+      return;
+   }
+   for (msize_t i = 0; i < REGR_COUNT; i++)
+   {
+      // now move one by one
+      core->stack_mem[core->sp++] = core->registers[i];
+   }
+}
+
+_exec_(popa)
+{
+   if (!_stack_has_atleast_(core, REGR_COUNT))
+   {
+      // the stack doesn't have enough values
+      merry_requestHdlr_panic(MERRY_STACK_UNDERFLOW);
+      return;
+   }
+   for (msize_t i = 15; i >= 0; i--)
+   {
+      // now move one by one
+      core->registers[i] = core->stack_mem[core->sp--];
+   }
+}
+
+_exec_(and_imm)
+{
+   // very simple
+   core->registers[core->ir.op1] &= core->ir.op2;
+}
+
+_exec_(and_reg)
+{
+   core->registers[core->ir.op1] &= core->registers[core->ir.op2];
+}
+
+_exec_(or_imm)
+{
+   core->registers[core->ir.op1] |= core->ir.op2;
+}
+
+_exec_(or_reg)
+{
+   core->registers[core->ir.op1] |= core->registers[core->ir.op2];
+}
+
+_exec_(xor_imm)
+{
+   core->registers[core->ir.op1] ^= core->ir.op2;
+}
+
+_exec_(xor_reg)
+{
+   core->registers[core->ir.op1] ^= core->registers[core->ir.op2];
+}
+
+_exec_(not )
+{
+   core->registers[core->ir.op1] = ~core->registers[core->ir.op1];
+}
+
+_exec_(lshift)
+{
+   core->registers[core->ir.op1] <<= core->ir.op2;
+}
+
+_exec_(rshift)
+{
+   core->registers[core->ir.op1] >>= core->ir.op2;
+}
+
+_exec_(cmp_imm)
+{
+   _cmp_inst_(core->registers[core->ir.op1], core->ir.op2, &core->flag);
+}
+
+_exec_(cmp_reg)
+{
+   _cmp_inst_(core->registers[core->ir.op1], core->registers[core->ir.op2], &core->flag);
+}
+
+_exec_(inc)
+{
+   core->registers[core->ir.op1] = _inc_inst_(core->registers[core->ir.op1]);
+}
+
+_exec_(dec)
+{
+   core->registers[core->ir.op1] = _dec_inst_(core->registers[core->ir.op1]);
+}
+
+_exec_(lea)
+{
+   // op1 is the destination register
+   // op2 is the base
+   // Oop3 is the index
+   // flag is the scale
+   // all these values are kept in a register
+   core->registers[core->ir.op1] = core->ir.op2 + core->ir.Oop3 * core->ir.flag;
 }

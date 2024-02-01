@@ -347,6 +347,103 @@ mptr_t merry_decode(mptr_t d)
                 // pc should have been restored
                 current_inst.exec_func = &merry_execute_ret;
                 break;
+            case OP_SVA: // [SVA stands for Stack Variable Access]
+                current_inst.op1 = (current >> 40) & 15;
+                current_inst.op2 = (current) & 0xFFFF; // the offset can only be 2 bytes long
+                current_inst.exec_func = &merry_execute_sva;
+                break;
+            case OP_SVC: // [SVC stands for Stack Variable Change]
+                current_inst.op1 = (current >> 40) & 15;
+                current_inst.op2 = (current) & 0xFFFF; // the offset can only be 2 bytes long
+                current_inst.exec_func = &merry_execute_svc;
+                break;
+            case OP_PUSH_IMM:
+                current_inst.exec_func = &merry_execute_push_imm;
+                current_inst.op1 = current & 0xFFFFFFFFFFFF; // 6 bytes of immediates
+                break;
+            case OP_PUSH_REG:
+                current_inst.exec_func = &merry_execute_push_reg;
+                current_inst.op1 = current & 15; // the destination register
+                break;
+            case OP_POP:
+                current_inst.exec_func = &merry_execute_pop;
+                break;
+            case OP_PUSHA:
+                current_inst.exec_func = &merry_execute_pusha;
+                break;
+            case OP_POPA:
+                current_inst.exec_func = &merry_execute_popa;
+                break;
+            case OP_AND_IMM:
+                current_inst.exec_func = &merry_execute_and_imm;
+                current_inst.op1 = (current) & 15;
+                current_inst.op2 = merry_decoder_get_immediate(decoder);
+                break;
+            case OP_AND_REG:
+                current_inst.exec_func = &merry_execute_and_reg;
+                current_inst.op1 = (current >> 4) & 15;
+                current_inst.op2 = current & 15;
+                break;
+            case OP_OR_IMM:
+                current_inst.exec_func = &merry_execute_or_imm;
+                current_inst.op1 = (current) & 15;
+                current_inst.op2 = merry_decoder_get_immediate(decoder);
+                break;
+            case OP_OR_REG:
+                current_inst.exec_func = &merry_execute_or_imm;
+                current_inst.op1 = (current >> 4) & 15;
+                current_inst.op2 = current & 15;
+                break;
+            case OP_XOR_IMM:
+                current_inst.exec_func = &merry_execute_xor_imm;
+                current_inst.op1 = (current) & 15;
+                current_inst.op2 = merry_decoder_get_immediate(decoder);
+                break;
+            case OP_XOR_REG:
+                current_inst.exec_func = &merry_execute_xor_imm;
+                current_inst.op1 = (current >> 4) & 15;
+                current_inst.op2 = current & 15;
+                break;
+            case OP_NOT:
+                current_inst.exec_func = &merry_execute_not;
+                current_inst.op1 = current & 15;
+                break;
+            case OP_LSHIFT:
+                current_inst.exec_func = &merry_execute_lshift;
+                current_inst.op1 = (current >> 8) & 15;
+                current_inst.op2 = current & 0x40;
+                break;
+            case OP_RSHIFT:
+                current_inst.exec_func = &merry_execute_rshift;
+                current_inst.op1 = (current >> 8) & 15;
+                current_inst.op2 = current & 0x40;
+                break;
+            case OP_CMP_IMM:
+                current_inst.op1 = current & 15;
+                current_inst.op2 = merry_decoder_get_immediate(decoder);
+                current_inst.exec_func = &merry_execute_cmp_imm;
+                break;
+            case OP_CMP_REG:
+                current_inst.op1 = (current >> 4) & 15;
+                current_inst.op2 = current & 15;
+                current_inst.exec_func = &merry_execute_cmp_reg;
+                break;
+            case OP_INC:
+                current_inst.exec_func = &merry_execute_inc;
+                current_inst.op1 = current & 15;
+                break;
+            case OP_DEC:
+                current_inst.exec_func = &merry_execute_dec;
+                current_inst.op1 = current & 15;
+                break;
+            case OP_LEA:
+                // 000000000 0000000 00000000 00000000 00000000 00000000 00000000 00000000
+                current_inst.exec_func = &merry_execute_lea;
+                current_inst.op1 = (current >> 24) & 15;
+                current_inst.op2 = (current >> 16) & 15;
+                current_inst.Oop3 = (current >> 8) & 15;
+                current_inst.flag = (current) & 15;
+                break;
             }
             merry_decoder_push_inst(decoder, &current_inst);
             goto _next_;

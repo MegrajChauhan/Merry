@@ -42,4 +42,6 @@
 #define _MERRY_STACKMEM_BYTE_LEN_ _MERRY_MEMORY_ADDRESSES_PER_PAGE_
 #define _MERRY_STACKMEM_SIZE_ 131072 // this is the number of qwords and not the bytes[equals 1MB]
 
+#define _MERRY_MAX_ADDRESS_ 131071
+
 #endif

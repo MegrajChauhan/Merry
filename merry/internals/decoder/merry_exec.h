@@ -3,7 +3,7 @@
 
 #include "../../../utils/merry_logger.h"
 #include "../merry_request.h"
-#include "../imp/merry_arithmetic.h"
+#include "../imp/merry_imp.h"
 
 struct MerryCore;
 
@@ -57,5 +57,33 @@ _exec_(movesx_imm32);
 // control flow instructions
 _exec_(call);
 _exec_(ret);
+_exec_(sva);
+_exec_(svc);
+
+// stack based instructions
+_exec_(push_imm);
+_exec_(push_reg);
+_exec_(pop);
+_exec_(pusha);
+_exec_(popa);
+
+// logical instructions
+// All AND, OR, XOR and CMP take 64 bits values that should follow the instruction in memory
+_exec_(and_imm);
+_exec_(and_reg);
+_exec_(or_imm);
+_exec_(or_reg);
+_exec_(xor_imm);
+_exec_(xor_reg);
+_exec_(not );
+_exec_(lshift);
+_exec_(rshift);
+_exec_(cmp_imm);
+_exec_(cmp_reg);
+
+// some extra instructions
+_exec_(inc);
+_exec_(dec);
+_exec_(lea);
 
 #endif

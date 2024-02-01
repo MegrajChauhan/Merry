@@ -92,11 +92,151 @@ enum
     OP_JMP_ADDR, // JMP inst but the address is directly provided
     OP_CALL,     // the call instruction
     OP_RET,      // return from a call
+    OP_SVA,      // access variables on the stack
+    OP_SVC,      // change the variable's value on the stack
+
+    // conditional jmps once we have a branch predictor
+
+    // Now some stack operations
+    OP_PUSH_IMM, // the push instruction that pushes an immediate
+    OP_PUSH_REG, // push a register
+    OP_POP,      // pop a value to a register
+    OP_PUSHA,    // push all the registers {The order is from Ma through Mm5 linearly}
+    OP_POPA,     // pop to all registers in the reverse order
+
+    // logical instructions
+    OP_AND_IMM, // REG & IMM
+    OP_AND_REG, // REG & REG
+    OP_OR_IMM,  // REG | TMM
+    OP_OR_REG,  // REG | REG
+    OP_XOR_IMM, // REG ^ IMM
+    OP_XOR_REG, // REG ^ REG
+    OP_NOT,     // ~REG
+    OP_LSHIFT,  // REG << <num>
+    OP_RSHIFT,  // REG >> <num>
+    OP_CMP_IMM, // CMP REG and IMM
+    OP_CMP_REG, // CMP REG and REG
+
+    // additional arithmetic instructions
+    // These will not affect the flags register at all
+    OP_INC,
+    OP_DEC,
+
+    // data movement instructions
+    /*
+      LEA will require many operands.
+      The first operand is the base address which can be any register.
+      The second operand is the index which can also be in any register
+      The third operand is the scale which can also be in any register
+      The last is the destination register which can also be any register
+      dest = base + index * scale [Useful for arrays: Doesn't change flags]
+    */
+    OP_LEA,
+    // The move instruction doesn't allow movement from 
+    OP_LOAD, 
 };
+
+/*
+ This is what the stack looks like:
+ ADDR VALUE
+    0   00
+    1   10 <- Old BP position
+    2   ff
+    3   ad  <- "svc 2 <src>" will put whatever was in <src> to 3
+    4   ee  <- Variable[Access using "sva <dest> 1"]
+    5   01  <- BP[BP's old value is saved here and it is pointing to it]
+    6   ..  <- SP points here
+    7   ..
+    .
+    sva <dest> 1 returns the value at BP - 1 and puts it into register <dest>
+    As long as the offset is valid, the requested value is provided
+*/
 
 // operands are basically numbers which represent different things based on the instruction
 typedef unsigned long long moperand_t;
 
 #define merry_get_opcode(inst) (inst >> 55)
+
+/*
+    // conditional moves don't have the same variations like the unconditional moves
+    // conditional moves
+    ASP_MOVEZ_IMM, // move if zero flag is set
+    ASP_MOVEZ_REG, // move if zero flag is set
+
+    ASP_MOVENZ_IMM, // move if zero flag is not set
+    ASP_MOVENZ_REG, // move if zero flag is not set
+
+    ASP_MOVEE_IMM, // move if equal flag is set
+    ASP_MOVEE_REG, // move if equal flag is set
+
+    ASP_MOVENE_IMM, // move if equal flag is not set
+    ASP_MOVENE_REG, // move if equal flag is not set
+
+    ASP_MOVEG_IMM, // move if greater flag is set
+    ASP_MOVEG_REG, // move if greater flag is set
+
+    ASP_MOVES_IMM, // move if greater flag is not set
+    ASP_MOVES_REG, // move if greater flag is not set
+
+    ASP_MOVEO_IMM, // move if overflow flag is set
+    ASP_MOVEO_REG, // move if overflow flag is set
+
+    ASP_MOVENO_IMM, // move if overflow flag is not set
+    ASP_MOVENO_REG, // move if overflow flag is not set
+
+    ASP_MOVEN_IMM, // move if negative flag is set
+    ASP_MOVEN_REG, // move if negative flag is set
+
+    ASP_MOVENN_IMM, // move if negative flag is not set
+    ASP_MOVENN_REG, // move if negative flag is not set
+
+    ASP_MOVEGE_IMM, // move if greater or equal flag is set
+    ASP_MOVEGE_REG, // move if greater or equal flag is set
+
+    ASP_MOVESE_IMM, // move if greater is not set or equal flag is set
+    ASP_MOVESE_REG, // move if greater is not set or equal flag is set
+
+    ASP_MOVEC_IMM, // move if carry is set
+    ASP_MOVEC_REG, // move if carry is set
+
+    ASP_MOVENC_IMM, // move if carry is not set
+    ASP_MOVENC_REG, // move if carry is not set
+
+    ASP_EXCG8,  // exchange instruction that exchanges the values between two registers[8 bits]
+    ASP_EXCG16, // exchange instruction that exchanges the values between two registers[16 bits]
+    ASP_EXCG32, // exchange instruction that exchanges the values between two registers[32 bits]
+    ASP_EXCG,   // exchange instruction that exchanges the values between two registers[64 bits
+
+    // conditional jumps
+    ASP_JZ,  // jump if zero
+    ASP_JNZ, // jump if not zero
+    ASP_JE,  // jump if equal
+    ASP_JNE, // jump if not equal
+    ASP_JG,  // jump if greater
+    ASP_JS,  // jump if not greater
+    ASP_JO,  // jump if overflow
+    ASP_JNO, // jump if no overflow
+    ASP_JN,  // jump if negative
+    ASP_JNN, // jump if no negative
+    ASP_JGE, // jump if greater or equal
+    ASP_JSE, // jump if smaller or equal
+
+    ASP_RESET, // the reset instruction[resets all the registers except program counter, bp, sp to zero. resets flags to zero as well.]
+
+    ASP_CFLAGS, // clear the flag register
+    ASP_CLZ,    // clear the zero flag
+    ASP_CLN,    // clear the negative flag
+    ASP_CLE,    // clear the equal flag
+    ASP_CLG,    // clear the greater flag
+    ASP_CLO,    // clear the overflow flag
+    ASP_CLC,    // clear the carrt flag
+
+    // memory related instructions
+    // These instructions only interact with data memory and not with the instruction memory
+    ASP_LOAD,  // load instruction to load from memory to a given register
+    ASP_STORE, // store instruction to store to memory from a given register
+
+    ASP_INTR, // generate an interrupt
+*/
 
 #endif

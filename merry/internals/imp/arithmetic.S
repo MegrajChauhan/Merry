@@ -29,6 +29,9 @@
 .global _idiv_inst_
 // mqword_t _imod_inst_(mqword_t op1, mqword_t op2)
 .global _imod_inst_
+// void _cmp_inst_(mqword_t val1, mqword_t val2, MerryFlagRegister *reg)
+.global _cmp_inst_
+
 
 #if defined(_MERRY_HOST_OS_LINUX_)
 _add_inst_:
@@ -81,6 +84,12 @@ _idiv_inst_:
 _imod_inst_:
     mov rax, rdi  
     imod rax, rsi  
+    ret
+
+_cmp_inst_:
+    cmp rdi, rsi // since these registers contain the value
+    mov rdi, rdx // the flags register 
+    call _update_flags_
     ret
 #endif
 

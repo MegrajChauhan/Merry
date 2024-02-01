@@ -41,6 +41,7 @@ struct MerryInstruction
     // based on the instruction, it may have many operands, but at most it can have only 2 operands
     moperand_t op1;        // the first operand
     moperand_t op2;        // the second operand
+    moperand_t Oop3;       // this is an optional third operand for an instruction
     minstexec_t exec_func; // the function that executes this specific instruction
 };
 

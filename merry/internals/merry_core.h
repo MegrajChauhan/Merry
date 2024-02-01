@@ -49,7 +49,7 @@ typedef struct MerryFlagRegister MerryFlagRegister;
 #define flags_res(x, size) unsigned long x : size
 
 #define _is_stack_full_(core) (core->sp == _MERRY_MEMORY_QS_PER_PAGE_)
-#define _check_stack_lim_(core, size) ((_MERRY_MEMORY_QS_PER_PAGE_ - core->sp - 1) > size)
+#define _check_stack_lim_(core, size) ((_MERRY_MEMORY_QS_PER_PAGE_ - core->sp) > size)
 #define _is_stack_empty_(core) (core->sp == 0)
 #define _stack_has_atleast_(core, atleast) (core->sp >= atleast)
 

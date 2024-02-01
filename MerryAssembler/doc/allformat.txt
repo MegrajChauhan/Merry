@@ -1,0 +1,2 @@
+The reader from Merry defines how the final binary file should be but it doesn't define how the assembly files should be structured.
+We need the assembler to generate .

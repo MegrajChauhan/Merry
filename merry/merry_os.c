@@ -301,6 +301,9 @@ void merry_os_handle_error(merrot_t error)
     case MERRY_INVALID_RETURN:
         merry_general_error("Bad instruction", "RET instruction without a CALL instruction; Not allowed");
         break;
+    case MERRY_INVALID_VARIABLE_ACCESS:
+        merry_general_error("Invalid BP offsetting", "The requested offset goes beyond the bounds of the stack");
+        break;
     default:
         merry_error("Unknown error code: '%llu' is not a valid error code", error);
         break;
