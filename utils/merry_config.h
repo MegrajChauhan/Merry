@@ -98,9 +98,9 @@
 #define _MERRY_NO_NULL_ __attribute__((nonnull))
 
 #if __SIZEOF_LONG__ == __SIZEOF_LONG_LONG__
-#define _MERRY_LONG_ unsigned long
+#define _MERRY_LONG_ long
 #else
-#define _MERRY_LONG_ unsigned long long
+#define _MERRY_LONG_ long long
 #endif
 
 #define _MERRY_INTERNAL_ static // for a variable or a function that is localized to a module only

@@ -10,7 +10,7 @@ mret_t merry_os_init(mcstr_t _inp_file)
     if (input == RET_NULL)
     {
         // the input file was not read and we failed
-        return RET_NULL;
+        return RET_FAILURE;
     }
     // initialize the memory
     _log_(_OS_, "Intialization", "Intializing Data Memory");
@@ -19,7 +19,7 @@ mret_t merry_os_init(mcstr_t _inp_file)
         // grand failure
         _log_(_OS_, "Initialization Failure", "Failed to intiialize manager[Data Mem]");
         merry_destory_reader(input);
-        return RET_NULL;
+        return RET_FAILURE;
     }
     // perform initialization for the inst mem as well. Unlike data memory, instruction page len cannot be 0
     // based on the size of the input file, the reader should be able to independently run in the background as it reads the input file

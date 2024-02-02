@@ -80,7 +80,7 @@ _exec_(mod_imm)
       merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
       return; // failure
    }
-   core->registers[core->ir.op1] = (mqword_t)(core->registers[core->ir.op1] % core->ir.op2);
+   core->registers[core->ir.op1] = core->registers[core->ir.op1] % core->ir.op2;
    _update_flags_(&core->flag); // the flag register should be updated
 }
 
@@ -91,7 +91,7 @@ _exec_(mod_reg)
       merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
       return;
    }
-   // core->registers[core->ir.op1] = (mqword_t)(_mod_inst_(core->registers[core->ir.op1], core->registers[core->ir.op2]));
+   core->registers[core->ir.op1] = core->registers[core->ir.op1] % core->registers[core->ir.op2];
    _update_flags_(&core->flag); // the flag register should be updated
 }
 
@@ -157,13 +157,12 @@ _exec_(idiv_reg)
 
 _exec_(imod_imm)
 {
-   /// TODO: This logic doesn't work, implement my own imod
    if (core->ir.op2 == 0)
    {
       merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
       return; // failure
    }
-   // core->registers[core->ir.op1] = _imod_inst_(core->registers[core->ir.op1], core->ir.op2);
+   core->registers[core->ir.op1] = (mqword_t)((msqword_t)(core->registers[core->ir.op1]) % (msqword_t)core->ir.op2);
    _update_flags_(&core->flag); // the flag register should be updated
 }
 
@@ -174,7 +173,7 @@ _exec_(imod_reg)
       merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
       return;
    }
-   // core->registers[core->ir.op1] = _imod_inst_(core->registers[core->ir.op1], core->registers[core->ir.op2]);
+   core->registers[core->ir.op1] = (mqword_t)((msqword_t)(core->registers[core->ir.op1]) % (msqword_t)(core->registers[core->ir.op2]));
    _update_flags_(&core->flag); // the flag register should be updated
 }
 
@@ -367,7 +366,7 @@ _exec_(popa)
       merry_requestHdlr_panic(MERRY_STACK_UNDERFLOW);
       return;
    }
-   for (msize_t i = 15; i >= 0; i--)
+   for (msize_t i = 15; i != 0; i--)
    {
       // now move one by one
       core->registers[i] = core->stack_mem[core->sp--];
@@ -449,3 +448,5 @@ _exec_(lea)
    // all these values are kept in a register
    core->registers[core->ir.op1] = core->ir.op2 + core->ir.Oop3 * core->ir.flag;
 }
+
+

@@ -460,4 +460,5 @@ mptr_t merry_decode(mptr_t d)
             core->pc += 8;
         }
     }
+    return (mptr_t)RET_SUCCESS;
 }

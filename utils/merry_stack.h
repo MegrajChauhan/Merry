@@ -29,6 +29,6 @@ void merry_destroy_stack(MerryStack *stack);
 
 mret_t merry_stack_push(MerryStack *st, mqword_t _to_push);
 
-mret_t merry_stack_pop(MerryStack *st, mqptr_t *store_in);
+mret_t merry_stack_pop(MerryStack *st, mqptr_t store_in);
 
 #endif
