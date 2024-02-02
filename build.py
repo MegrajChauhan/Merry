@@ -46,7 +46,10 @@ def main():
         print(f"Compilation successful with return value of {result}")
     else:
         print(f"Compilation failed with a return value of {result}")
+        quit(result)
     
+    print("Compiling assembler (not finished!)")
+    result = os.system("g++ -ggdb -O3 -o ./build/asm ./MerryAssembler/src/*.cc -Wall -Wextra -Wswitch-enum")
 
 if __name__ == "__main__":
     main()
