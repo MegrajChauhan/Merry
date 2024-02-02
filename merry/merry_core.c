@@ -1,13 +1,5 @@
 #include "internals/merry_core.h"
 
-_MERRY_INTERNAL_ void merry_core_zero_out_reg(MerryCore *core)
-{
-    for (msize_t i = 0; i < REGR_COUNT; i++)
-    {
-        core->registers[i] = 0;
-    }
-}
-
 MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, msize_t id)
 {
     // allocate a new core

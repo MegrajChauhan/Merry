@@ -1,5 +1,6 @@
 #include "../merry_exec.h"
 #include "../../merry_core.h"
+#include "../../merry_os.h"
 
 // definitions
 
@@ -449,4 +450,110 @@ _exec_(lea)
    core->registers[core->ir.op1] = core->ir.op2 + core->ir.Oop3 * core->ir.flag;
 }
 
+_exec_(load)
+{
+   // read from the given address
+   if (merry_os_mem_read_data(core->ir.op2, &core->registers[core->ir.op1], core->core_id) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      return; // failure
+   }
+   // the value should be loaded
+}
+
+_exec_(store)
+{
+   // store to the given address from the given register
+   if (merry_os_mem_write_data(core->ir.op2, core->registers[core->ir.op1], core->core_id) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      return; // failure
+   }
+   // the value should be stored
+}
+
+_exec_(excg8)
+{
+   // just exchange the bytes and don't overwrite anything
+   register mqword_t reg1 = core->registers[core->ir.op1];
+   register mqword_t reg2 = core->registers[core->ir.op2];
+   core->registers[core->ir.op1] &= (0xFFFFFFFFFFFFFF00 | (reg2 & 0xFF));
+   core->registers[core->ir.op2] &= (0xFFFFFFFFFFFFFF00 | (reg1 & 0xFF));
+}
+
+_exec_(excg16)
+{
+   // just exchange the bytes and don't overwrite anything
+   register mqword_t reg1 = core->registers[core->ir.op1];
+   register mqword_t reg2 = core->registers[core->ir.op2];
+   core->registers[core->ir.op1] &= (0xFFFFFFFFFFFF0000 | (reg2 & 0xFFFF));
+   core->registers[core->ir.op2] &= (0xFFFFFFFFFFFF0000 | (reg1 & 0xFFFF));
+}
+
+_exec_(excg32)
+{
+   // just exchange the bytes and don't overwrite anything
+   register mqword_t reg1 = core->registers[core->ir.op1];
+   register mqword_t reg2 = core->registers[core->ir.op2];
+   core->registers[core->ir.op1] &= (0xFFFFFFFFFF000000 | (reg2 & 0xFFFFFF));
+   core->registers[core->ir.op2] &= (0xFFFFFFFFFF000000 | (reg1 & 0xFFFFFF));
+}
+
+_exec_(excg)
+{
+   // just exchange the bytes and don't overwrite anything
+   register mqword_t reg1 = core->registers[core->ir.op1];
+   register mqword_t reg2 = core->registers[core->ir.op2];
+   core->registers[core->ir.op1] = reg2;
+   core->registers[core->ir.op2] = reg1;
+}
+
+_exec_(mov8)
+{
+   // just move the bytes and don't overwrite anything
+   core->registers[core->ir.op1] &= (0xFFFFFFFFFFFFFF00 | (core->registers[core->ir.op2] & 0xFF));
+}
+
+_exec_(mov16)
+{
+   core->registers[core->ir.op1] &= (0xFFFFFFFFFFFF0000 | (core->registers[core->ir.op2] & 0xFFFF));
+}
+
+_exec_(mov32)
+{
+   core->registers[core->ir.op1] &= (0xFFFFFFFFFF000000 | (core->registers[core->ir.op2] & 0xFFFFFF));
+}
+
+_exec_(cflags)
+{
+   core->flag.carry = 0;
+   core->flag.negative = 0;
+   core->flag.overflow = 0;
+   core->flag.zero = 0;
+}
+
+_exec_(reset)
+{
+   merry_core_zero_out_reg(core);
+}
+
+_exec_(clz)
+{
+   _clear_(zero);
+}
+
+_exec_(cln)
+{
+   _clear_(negative);
+}
+
+_exec_(clc)
+{
+   _clear_(carry);
+}
+
+_exec_(clo)
+{
+   _clear_(overflow);
+}
 

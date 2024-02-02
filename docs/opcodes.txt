@@ -180,4 +180,49 @@ dec -> opcode: 0x3D: same as inc but decrements the value instead.
 lea -> opcode: 0x3E
        operands: 4 registers. one register that contains the base address, one for the index, 1 for scale and 1 for destination
        example: 0x3E 0x00 0x00 0x00 0x01 0x02 0x03 0x04 -> performs this operation: 0x01[Ab] = 0x02[Mc] + 0x03[Md] * 0x04[Me]. This is pretty useful for arrays. 
-            
+
+load -> opcode: 0x3F
+        operands: The destination register and 1 64-bit address to the data in data memory that follows the instruction in instruction memory.
+        example: 0x3F 0x00 0x00 0x00 0x00 0x00 0x00 0x05
+                 [8 byte address of the data] -> loads the value from the given address into register 0x05[Mf]
+                 Note: It is to be noted that addresses shouldn't be that big(at most 20 bits) and within the bounds as well.
+
+store -> opcode: 0x40: same as load except the value is now stored into memory rather than loaded.
+
+{
+   Memory details:
+   Both the data memory and the instruction memory are divided into pages of 1MB. The larger the program the more pages is allocated by the VM to fit it all.
+   Same applies for the data in the program, the more data it has the more pages are allocated to fit it all. Even if the program has no data a simgle page is still allocated so that if the program wants to store anything, it can.
+   The instruction memory is inaccessible to the program but the whole data memory belongs to it. Every byte is addressible in the data memory i.e address 12345 would address the 12345th byte in the first page. This allows for 1048576 addresses.
+   Now, it is recommended that the addresses are 8 bytes aligned. Here is why: Say the program is requesting the byte 102. As the VM is 64-bit, 8 bytes are read at once i.e byte 102 through 109. This is completely fine but it is not 8 byte aligned.
+   By 8 bytes aligned, I mean the address should be a multiple of 8 i.e 8, 16, 24, 32....
+   Now say the program requests to read the byte 1048574. As the VM tries to read the corresponding 8 bytes, it finds that the read exceeds the boundary of the page and thus an error is thrown.
+   For the sake of simplicity, the program can assume that the memory is linear meaning the program can think of the memory as an array of bytes rather than a group of bytes divided into different pages. So using the address 1048577 would access
+   the first byte from the second page. Though the error of the page boundary access still remains.  
+}
+
+[
+  A few aliases that I would like to set:
+  When I am Nibble Encoding, I am referring to the encoding of two registers in 1 byte i.e say 0x01 which would be 0b0000_0001 is encoding 2 registers; 0000 and 0001 namely Ma and Mb.
+  So if I say 8th byte Nibble Encoding then I am saying that the 8th byte of the instruction encodes two registers as mentioned above.
+]
+
+excg8 -> opcode: 0x41
+         operands: 8th byte Nibble Encoding
+         details: Exchanges the lowest byte(8th byte) of both the registers without overwriting the upper bytes.
+
+excg16 -> opcode: 0x42: same as excg8 but exchanges two lower bytes.
+excg32 -> opcode: 0x43: same as excg8 but exchanges four lower bytes.
+excg -> opcode: 0x44: same as excg8 but exchanges all bytes.
+
+mov8 -> opcode: 0x45: same as excg8 but instead of exchanging, it moves the lower byte from the second register to the first.
+mov16 -> opcode: 0x46: same as excg16 but instead of exchanging, it moves the lower 2 bytes from the second register to the first.
+mov32 -> opcode: 0x47: same as excg32 but instead of exchanging, it moves the lower 4 bytes from the second register to the first.
+
+cflags -> opcode: 0x48: Simply clears the flags register.
+reset -> opcode: 0x49: Resets the value of all registers to 0
+clz -> opcode: 0x4A: Resets the zero flag from the flags register  
+cln -> opcode: 0x4B: Resets the negative flag from the flags register 
+clc -> opcode: 0x4C: Resets the carry flag from the flags register 
+clo -> opcode: 0x4D: Resets the overflow flag from the flags register 
+

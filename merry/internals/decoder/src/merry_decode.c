@@ -1,5 +1,6 @@
 #include "../merry_decode.h"
 #include "../../merry_core.h"
+#include "../../merry_os.h"
 
 MerryDecoder *merry_init_decoder(MerryCore *host)
 {
@@ -100,7 +101,7 @@ _MERRY_INTERNAL_ mqword_t merry_decoder_get_immediate(MerryDecoder *decoder)
 {
     mqword_t res = 0;
     decoder->core->pc += 8;
-    if (merry_memory_read_lock(decoder->core->inst_mem, decoder->core->pc, &res) == RET_FAILURE)
+    if (merry_manager_mem_read_inst(decoder->core->inst_mem, decoder->core->pc, &res) == RET_FAILURE)
     {
         // we failed
         _llog_(_DECODER_, "DECODE_FAILED", "Decoding failed; Memory read failed", decoder->core->core_id);
@@ -132,7 +133,7 @@ mptr_t merry_decode(mptr_t d)
         merry_mutex_unlock(decoder->lock);
         // this is where we decode the instructions
         // in case of error, the decoder will awake the core if it is sleeping then it will stop from furthur execution while the core receives instruction to stop and cleans up the decoder
-        if (merry_memory_read_lock(core->inst_mem, core->pc, &current) == RET_FAILURE)
+        if (merry_manager_mem_read_inst(core->inst_mem, core->pc, &current) == RET_FAILURE)
         {
             // we failed
             _llog_(_DECODER_, "DECODE_FAILED", "Decoding failed; Memory read failed", decoder->core->core_id);
@@ -272,24 +273,24 @@ mptr_t merry_decode(mptr_t d)
                 current_inst.op2 = merry_decoder_get_immediate(decoder); // get the next immediate
                 current_inst.exec_func = &merry_execute_move_imm;
                 break;
-            case OP_MOVE_REG:                            // moves the whole 8 bytes
+            case OP_MOVE_REG:                           // moves the whole 8 bytes
                 current_inst.op1 = (current >> 4) & 15; // get the destination register which is also an operand
-                current_inst.op2 = (current) & 15; // get the source register
+                current_inst.op2 = (current) & 15;      // get the source register
                 current_inst.exec_func = &merry_execute_move_reg;
                 break;
-            case OP_MOVE_REG8:                           // moves only the lowest byte
+            case OP_MOVE_REG8:                          // moves only the lowest byte
                 current_inst.op1 = (current >> 4) & 15; // get the destination register which is also an operand
-                current_inst.op2 = (current) & 15; // get the source register
+                current_inst.op2 = (current) & 15;      // get the source register
                 current_inst.exec_func = &merry_execute_move_reg8;
                 break;
-            case OP_MOVE_REG16:                          // moves only the lowest 2 bytes
+            case OP_MOVE_REG16:                         // moves only the lowest 2 bytes
                 current_inst.op1 = (current >> 4) & 15; // get the destination register which is also an operand
-                current_inst.op2 = (current) & 15; // get the source register
+                current_inst.op2 = (current) & 15;      // get the source register
                 current_inst.exec_func = &merry_execute_move_reg16;
                 break;
-            case OP_MOVE_REG32:                          // moves only the lowest 4 byte
+            case OP_MOVE_REG32:                         // moves only the lowest 4 byte
                 current_inst.op1 = (current >> 4) & 15; // get the destination register which is also an operand
-                current_inst.op2 = (current) & 15; // get the source register
+                current_inst.op2 = (current) & 15;      // get the source register
                 current_inst.exec_func = &merry_execute_move_reg32;
                 break;
             case OP_MOVESX_IMM8:
@@ -327,7 +328,7 @@ mptr_t merry_decode(mptr_t d)
                 // the decoder executes the jump instruction
                 mqword_t off = (current & 0xFFFFFFFFFFFF);
                 if ((off >> 47) == 1)
-                   off |= 0xFFFF000000000000;
+                    off |= 0xFFFF000000000000;
                 core->pc += off - 8;
                 goto _next_;
             case OP_JMP_ADDR:
@@ -452,6 +453,69 @@ mptr_t merry_decode(mptr_t d)
                 current_inst.op2 = (current >> 16) & 15;
                 current_inst.Oop3 = (current >> 8) & 15;
                 current_inst.flag = (current) & 15;
+                break;
+            case OP_LOAD:
+                current_inst.exec_func = &merry_execute_load;
+                current_inst.op1 = (current) & 15; // the destination register
+                current_inst.op2 = merry_decoder_get_immediate(decoder);
+                break;
+            case OP_STORE:
+                current_inst.exec_func = &merry_execute_store;
+                current_inst.op1 = (current) & 15; // the destination register
+                current_inst.op2 = merry_decoder_get_immediate(decoder);
+                break;
+            case OP_EXCG8:
+                current_inst.exec_func = &merry_execute_excg8;
+                current_inst.op1 = (current >> 4) & 15;
+                current_inst.op2 = current & 15;
+                break;
+            case OP_EXCG16:
+                current_inst.exec_func = &merry_execute_excg16;
+                current_inst.op1 = (current >> 4) & 15;
+                current_inst.op2 = current & 15;
+                break;
+            case OP_EXCG32:
+                current_inst.exec_func = &merry_execute_excg32;
+                current_inst.op1 = (current >> 4) & 15;
+                current_inst.op2 = current & 15;
+                break;
+            case OP_EXCG:
+                current_inst.exec_func = &merry_execute_excg;
+                current_inst.op1 = (current >> 4) & 15;
+                current_inst.op2 = current & 15;
+                break;
+            case OP_MOV8:
+                current_inst.exec_func = &merry_execute_mov8;
+                current_inst.op1 = (current >> 4) & 15;
+                current_inst.op2 = current & 15;
+                break;
+            case OP_MOV16:
+                current_inst.exec_func = &merry_execute_mov16;
+                current_inst.op1 = (current >> 4) & 15;
+                current_inst.op2 = current & 15;
+                break;
+            case OP_MOV32:
+                current_inst.exec_func = &merry_execute_mov32;
+                current_inst.op1 = (current >> 4) & 15;
+                current_inst.op2 = current & 15;
+                break;
+            case OP_CFLAGS:
+                current_inst.exec_func = &merry_execute_cflags;
+                break;
+            case OP_RESET:
+                current_inst.exec_func = &merry_execute_reset;
+                break;
+            case OP_CLC:
+                current_inst.exec_func = &merry_execute_clc;
+                break;
+            case OP_CLZ:
+                current_inst.exec_func = &merry_execute_clz;
+                break;
+            case OP_CLN:
+                current_inst.exec_func = &merry_execute_cln;
+                break;
+            case OP_CLO:
+                current_inst.exec_func = &merry_execute_clo;
                 break;
             }
             merry_decoder_push_inst(decoder, &current_inst);

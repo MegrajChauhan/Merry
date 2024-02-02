@@ -83,7 +83,6 @@ static Merry os;
 // {
 //   *g = &os;
 // }
-// directly used by cores
 #define merry_manager_mem_read_inst(inst_mem, address, store_in) merry_memory_read(inst_mem, address, store_in)
 #define merry_manager_mem_read_data(address, store_in) merry_memory_read_lock(os.data_mem, address, store_in)
 #define merry_manager_mem_write_data(address, _value_to_write) merry_memory_write_lock(os.data_mem, address, _value_to_write)
