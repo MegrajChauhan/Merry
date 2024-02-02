@@ -1,0 +1,74 @@
+NOTE: The register indexing can be done by just 4 bits as there are only 16 registers available to the program.
+NOTE: Most instructions have variants. For eg: add_imm and add_reg which can be generalized into add. 
+
+1st byte | second byte | ...
+  00           00        00 00 00 00 00 00
+
+registers      index or how they are encoded into instructions
+   Ma                        0x00
+   Mb                        0x01
+   Mc                        0x02
+   Md                        0x03
+   Me                        0x04
+   Mf                        0x05
+   M1                        0x06
+   M2                        0x07
+   M3                        0x08
+   M4                        0x09
+   M5                        0x0A
+   Mm1                       0x0B
+   Mm2                       0x0C
+   Mm3                       0x0D
+   Mm4                       0x0E
+   Mm5                       0x0F
+
+nop -> opcode = 0x00
+       every value of the other 7 byte is ignored.
+       Does nothing
+halt -> opcode = 0x01
+        stops the core and if the core is the only one running, the VM stops
+add_imm  -> opcode: 0x02
+            operands: One register and one immediate
+            register: The lower four bits of the second byte.
+            immediate: 4 bytes immediate in the lower 4 bytes[Can be expanded into 6 bytes immediate at most]
+            example: 0x02 0x00 0x00 0x00 0xAA 0xBB 0xCC 0xDD -> add 0xAABBCCDD to whatever is in the Ma[as indicated by the lower 4 bits of the second byte].             
+add_reg  -> opcode: 0x03
+            operands: two registers
+            register 1: The upper four bits of the second byte.
+            register 2: The lower four bits of the second byte.
+            example: 0x03 0x01 0x00 0x00 0x00 0x00 0x00 0x00 -> add the contents of Mb register to Ma register[because the 2nd byte is 0x01-> 0b00000001]
+sub_imm -> opcode: 0x04
+           everything else is the same as add_imm
+sub_reg -> opcode: 0x05
+           everything else is the same as add_reg
+mul_imm -> opcode: 0x06
+           everything else is the same as add_imm
+sub_reg -> opcode: 0x07
+           everything else is the same as add_reg
+div_imm -> opcode: 0x08
+           everything else is the same as add_imm
+div_reg -> opcode: 0x09
+           everything else is the same as add_reg
+mod_imm -> opcode: 0x0A
+           everything else is the same as add_imm
+mod_reg -> opcode: 0x0B
+           everything else is the same as add_reg
+iadd_imm -> opcode: 0x0C -> everything else is the same as add_imm          
+iadd_reg -> opcode: 0x0D -> everything else is the same as add_reg
+isub_imm -> opcode: 0x0E -> everything else is the same as add_imm
+isub_reg -> opcode: 0x0F -> everything else is the same as add_reg
+imul_imm -> opcode: 0x10 -> everything else is the same as add_imm
+isub_reg -> opcode: 0x11 -> everything else is the same as add_reg
+idiv_imm -> opcode: 0x12 -> everything else is the same as add_imm
+idiv_reg -> opcode: 0x13 -> everything else is the same as add_reg
+imod_imm -> opcode: 0x14 -> everything else is the same as add_imm
+imod_reg -> opcode: 0x15 -> everything else is the same as add_reg
+
+move_imm -> opcode: 0x16
+            operands: One register and one immediate
+            register: same as add_imm
+            immediate: same as add_imm
+move_imm_64 -> opcode: 0x17
+               operands:  
+
+            
