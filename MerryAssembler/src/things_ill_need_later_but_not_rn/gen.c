@@ -12,8 +12,8 @@ int main()
         header[i] = 0;
     fwrite(header, 1, 24, f);
     unsigned char inst[16] = {};
-    inst[14] = 0b10000000;
-    inst[15] = 0x00;
+    inst[14] = 0x80; // nop
+    inst[15] = 0x00; // hlt
     fwrite(inst, 1, 16, f);
     fclose(f);
 }
