@@ -273,37 +273,37 @@ mptr_t merry_decode(mptr_t d)
                 current_inst.exec_func = &merry_execute_move_imm;
                 break;
             case OP_MOVE_REG:                            // moves the whole 8 bytes
-                current_inst.op1 = (current >> 44) & 15; // get the destination register which is also an operand
-                current_inst.op2 = (current >> 40) & 15; // get the source register
+                current_inst.op1 = (current >> 4) & 15; // get the destination register which is also an operand
+                current_inst.op2 = (current) & 15; // get the source register
                 current_inst.exec_func = &merry_execute_move_reg;
                 break;
             case OP_MOVE_REG8:                           // moves only the lowest byte
-                current_inst.op1 = (current >> 44) & 15; // get the destination register which is also an operand
-                current_inst.op2 = (current >> 40) & 15; // get the source register
+                current_inst.op1 = (current >> 4) & 15; // get the destination register which is also an operand
+                current_inst.op2 = (current) & 15; // get the source register
                 current_inst.exec_func = &merry_execute_move_reg8;
                 break;
             case OP_MOVE_REG16:                          // moves only the lowest 2 bytes
-                current_inst.op1 = (current >> 44) & 15; // get the destination register which is also an operand
-                current_inst.op2 = (current >> 40) & 15; // get the source register
+                current_inst.op1 = (current >> 4) & 15; // get the destination register which is also an operand
+                current_inst.op2 = (current) & 15; // get the source register
                 current_inst.exec_func = &merry_execute_move_reg16;
                 break;
             case OP_MOVE_REG32:                          // moves only the lowest 4 byte
-                current_inst.op1 = (current >> 44) & 15; // get the destination register which is also an operand
-                current_inst.op2 = (current >> 40) & 15; // get the source register
+                current_inst.op1 = (current >> 4) & 15; // get the destination register which is also an operand
+                current_inst.op2 = (current) & 15; // get the source register
                 current_inst.exec_func = &merry_execute_move_reg32;
                 break;
             case OP_MOVESX_IMM8:
-                current_inst.op1 = (current >> 44) & 15;
+                current_inst.op1 = (current >> 48) & 15;
                 current_inst.op2 = (current) & 0xFF;
                 current_inst.exec_func = &merry_execute_movesx_imm8;
                 break;
             case OP_MOVESX_IMM16:
-                current_inst.op1 = (current >> 44) & 15;
+                current_inst.op1 = (current >> 48) & 15;
                 current_inst.op2 = (current) & 0xFFFF;
                 current_inst.exec_func = &merry_execute_movesx_imm16;
                 break;
             case OP_MOVESX_IMM32:
-                current_inst.op1 = (current >> 44) & 15;
+                current_inst.op1 = (current >> 48) & 15;
                 current_inst.op2 = (current) & 0xFFFFFF;
                 current_inst.exec_func = &merry_execute_movesx_imm32;
                 break;
@@ -325,10 +325,13 @@ mptr_t merry_decode(mptr_t d)
             case OP_JMP_OFF: // we have to make the 5 bytes 8 bytes by sign extension in case it is indeed in 2's complement
                 // the offset in this case is a signed number and the 40th bit is the sign bit
                 // the decoder executes the jump instruction
-                core->pc += ((current & 0xFFFFFFFFFF) | 0xFFFFFF0000000000) - 8;
+                mqword_t off = (current & 0xFFFFFFFFFFFF);
+                if ((off >> 47) == 1)
+                   off |= 0xFFFF000000000000;
+                core->pc += off - 8;
                 goto _next_;
             case OP_JMP_ADDR:
-                core->pc = (current & 0xFFFFFFFFFF) - 8;
+                core->pc = merry_decoder_get_immediate(decoder) - 8;
                 goto _next_;
             case OP_CALL:
                 // save the current return address
@@ -338,7 +341,7 @@ mptr_t merry_decode(mptr_t d)
                     decoder->should_stop = mtrue;
                     goto _next_;
                 }
-                core->pc = (current & 0xFFFFFFFFFF) - 8; // the address to the first instruction of the procedure
+                core->pc = merry_decoder_get_immediate(decoder) - 8; // the address to the first instruction of the procedure
                 current_inst.exec_func = &merry_execute_call;
                 break;
             case OP_RET:
@@ -353,12 +356,12 @@ mptr_t merry_decode(mptr_t d)
                 current_inst.exec_func = &merry_execute_ret;
                 break;
             case OP_SVA: // [SVA stands for Stack Variable Access]
-                current_inst.op1 = (current >> 40) & 15;
+                current_inst.op1 = (current >> 48) & 15;
                 current_inst.op2 = (current) & 0xFFFF; // the offset can only be 2 bytes long
                 current_inst.exec_func = &merry_execute_sva;
                 break;
             case OP_SVC: // [SVC stands for Stack Variable Change]
-                current_inst.op1 = (current >> 40) & 15;
+                current_inst.op1 = (current >> 48) & 15;
                 current_inst.op2 = (current) & 0xFFFF; // the offset can only be 2 bytes long
                 current_inst.exec_func = &merry_execute_svc;
                 break;
@@ -372,6 +375,7 @@ mptr_t merry_decode(mptr_t d)
                 break;
             case OP_POP:
                 current_inst.exec_func = &merry_execute_pop;
+                current_inst.op1 = current & 15;
                 break;
             case OP_PUSHA:
                 current_inst.exec_func = &merry_execute_pusha;
