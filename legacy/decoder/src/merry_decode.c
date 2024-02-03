@@ -8,7 +8,7 @@ MerryDecoder *merry_init_decoder(MerryCore *host)
     MerryDecoder *decoder = (MerryDecoder *)malloc(sizeof(MerryDecoder));
     if (decoder == NULL)
         return RET_NULL;
-    if ((decoder->rsa = merry_init_stack(_MERRY_RSA_LEN_, mtrue, _MERRY_RSA_LIMIT_, _MERRY_RSA_GROW_PER_RESIZE_)) == RET_NULL)
+    if ((decoder->ras = merry_init_stack(_MERRY_RAS_LEN_, mtrue, _MERRY_RAS_LIMIT_, _MERRY_RAS_GROW_PER_RESIZE_)) == RET_NULL)
     {
         free(decoder);
         return RET_NULL;
@@ -41,6 +41,7 @@ MerryDecoder *merry_init_decoder(MerryCore *host)
     }
     decoder->should_stop = mfalse;
     decoder->provide = mtrue;
+    merry_predictor_init(&decoder->predictor);
     _llog_(_DECODER_, "SUCCESS", "Decoder init succeeded for core ID %lu", host->core_id);
     return decoder; // success
 }
@@ -52,7 +53,7 @@ void merry_destroy_decoder(MerryDecoder *decoder)
     merry_inst_queue_destroy(decoder->queue);
     merry_cond_destroy(decoder->cond);
     merry_mutex_destroy(decoder->queue_lock);
-    merry_destroy_stack(decoder->rsa);
+    merry_destroy_stack(decoder->ras);
     free(decoder);
 }
 
@@ -111,6 +112,20 @@ _MERRY_INTERNAL_ mqword_t merry_decoder_get_immediate(MerryDecoder *decoder)
         merry_mutex_unlock(decoder->core->lock);
     }
     return res;
+}
+
+void merry_decoder_prediction_wrong(MerryDecoder *decoder, MerryInstruction *inst)
+{
+    merry_mutex_lock(decoder->lock);
+    merry_mutex_lock(decoder->queue_lock);
+    // we need to flush this as well
+    merry_inst_queue_hazard(decoder->queue, inst);
+    decoder->core->pc = inst->_correct_pc_;      // reset to this
+    merry_prediction_wrong(&decoder->predictor); // tell the predictor to correct itself
+    // if the decoder is sleeping, wake it up
+    merry_cond_signal(decoder->cond);
+    merry_mutex_unlock(decoder->lock);
+    merry_mutex_unlock(decoder->queue_lock);
 }
 
 mptr_t merry_decode(mptr_t d)
@@ -336,7 +351,7 @@ mptr_t merry_decode(mptr_t d)
                 goto _next_;
             case OP_CALL:
                 // save the current return address
-                if (merry_stack_push(decoder->rsa, core->pc) == RET_FAILURE)
+                if (merry_stack_push(decoder->ras, core->pc) == RET_FAILURE)
                 {
                     merry_requestHdlr_panic(MERRY_CALL_DEPTH_REACHED);
                     decoder->should_stop = mtrue;
@@ -347,7 +362,7 @@ mptr_t merry_decode(mptr_t d)
                 break;
             case OP_RET:
                 // we just have to pop the topmost
-                if (merry_stack_pop(decoder->rsa, &core->pc) == RET_FAILURE)
+                if (merry_stack_pop(decoder->ras, &core->pc) == RET_FAILURE)
                 {
                     merry_requestHdlr_panic(MERRY_INVALID_RETURN);
                     decoder->should_stop = mtrue;
@@ -516,6 +531,22 @@ mptr_t merry_decode(mptr_t d)
                 break;
             case OP_CLO:
                 current_inst.exec_func = &merry_execute_clo;
+                break;
+            case OP_JNZ:
+                // the address to jmp should follow the instruction
+                maddress_t addr = merry_decoder_get_immediate(decoder);
+                current_inst.exec_func = &merry_execute_jnz;
+                current_inst._this_address_ = merry_inst_queue_get_next_tail(decoder->queue);
+                if (merry_predict_branch(&decoder->predictor, addr) == BR_TAKEN)
+                {
+                    current_inst.flag = BR_TAKEN;
+                    current_inst._correct_pc_ = core->pc + 8; // if incorrect prediction was made then this should be the correct address
+                }
+                else
+                {
+                    current_inst.flag = BR_NTAKEN;
+                    current_inst._correct_pc_ = addr;
+                }
                 break;
             }
             merry_decoder_push_inst(decoder, &current_inst);

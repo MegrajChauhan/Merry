@@ -2,6 +2,7 @@
 
 #include "internals/merry_os.h"
 #include <stdio.h>
+#include <time.h>
 
 // a thread func
 // mptr_t test_func(mptr_t val)
@@ -56,6 +57,7 @@ int main()
         fprintf(stderr, "Failed to intialize VM.\n");
         goto failure;
     }
+    clock_t start = clock();
     if (merry_create_thread(osthread, &merry_os_start_vm, NULL) == RET_FAILURE)
     {
         fprintf(stderr, "Failed to start VM.\n");
@@ -64,11 +66,23 @@ int main()
     }
     merry_close_logger();
     merry_thread_join(osthread, NULL); // I am an idiot
+    clock_t end = clock();
     merry_thread_destroy(osthread);
     merry_os_destroy();
+    printf("Time taken to run: %lfs.\n", (double)(end - start) / CLOCKS_PER_SEC);
     return 0;
 failure:
     merry_close_logger();
     merry_os_destroy();
     return -1;
 }
+
+/*
+ No optimizations:
+ 1 million loops: 0.162401s
+ 1 Billion loops: 140.932465s(Holy crap!)[2 minutes and 20 seconds! Jesus!]
+
+ Optimizations(-03):
+ 1 Million loops:
+ 1 Billion loops:
+*/

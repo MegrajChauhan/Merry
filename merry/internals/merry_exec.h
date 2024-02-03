@@ -1,9 +1,9 @@
 #ifndef _MERRY_EXEC_
 #define _MERRY_EXEC_
 
-#include "../../../utils/merry_logger.h"
-#include "../merry_request.h"
-#include "../imp/merry_imp.h"
+#include "../../utils/merry_logger.h"
+#include "merry_request.h"
+#include "imp/merry_imp.h"
 
 struct MerryCore;
 
@@ -13,6 +13,8 @@ struct MerryCore;
 #define _sign_extend8_(val) val | 0xFFFFFFFFFFFFFF00
 #define _sign_extend16_(val) val | 0xFFFFFFFFFFFF0000
 #define _sign_extend32_(val) val | 0xFFFFFFFFFF000000
+
+_exec_(nop);
 
 // execute the halt instruction
 _exec_(halt);
@@ -108,5 +110,8 @@ _exec_(clz);
 _exec_(cln);
 _exec_(clc);
 _exec_(clo);
+
+// contidional jumps
+_exec_(jnz);
 
 #endif

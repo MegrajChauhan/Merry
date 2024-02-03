@@ -1,5 +1,6 @@
 merry/internals/imp/ext.S
 merry/internals/imp/arithmetic.S
+merry/internals/imp/extra.S
 merry/merry_logger.c
 merry/merry_stack.c
 sys/src/merry_thread.c
@@ -7,9 +8,7 @@ merry/merry_memory.c
 merry/merry_reader.c
 merry/merry_request_queue.c
 merry/merry_request_hdlr.c
-merry/internals/decoder/src/merry_exec.c
-merry/internals/decoder/src/merry_inst_queue.c
-merry/internals/decoder/src/merry_decode.c
+merry/merry_exec.c
 merry/merry_core.c
 merry/merry_os_exec.c
 merry/merry_os.c

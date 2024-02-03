@@ -53,6 +53,7 @@ mret_t merry_os_init(mcstr_t _inp_file)
     os.core_threads = (MerryThread **)malloc(sizeof(MerryThread *)); // just 1 for now
     if (os.core_threads == RET_NULL)
         goto failure;
+    Merry *o = &os;
     return RET_SUCCESS; // we did everything correctly
 failure:
     _log_(_OS_, "Intialization Failure", "Failed to intialize the manager");
@@ -176,11 +177,8 @@ _MERRY_ALWAYS_INLINE mret_t merry_os_boot_core(msize_t core_id, maddress_t start
     os.cores[core_id]->pc = start_addr; // point to the starting address of the core
     // now start the core thread
     _llog_(_OS_, "Booting", "Booting core %d", core_id);
-    if (os.core_threads[core_id] == NULL)
-    {
-        if ((os.core_threads[core_id] = merry_thread_init()) == RET_NULL)
-            return RET_FAILURE;
-    }
+    if ((os.core_threads[core_id] = merry_thread_init()) == RET_NULL)
+        return RET_FAILURE;
     if (merry_create_detached_thread(os.core_threads[core_id], &merry_runCore, os.cores[core_id]) == RET_FAILURE)
         return RET_FAILURE;
     _llog_(_OS_, "Booting", "Booting core %d succeeded", core_id);

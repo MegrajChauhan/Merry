@@ -1,8 +1,10 @@
-#include "../merry_exec.h"
-#include "../../merry_core.h"
-#include "../../merry_os.h"
+#include "internals/merry_exec.h"
+#include "internals/merry_core.h"
+#include "internals/merry_os.h"
 
 // definitions
+
+_exec_(nop) {}
 
 _exec_(halt)
 {
@@ -17,6 +19,7 @@ _exec_(add_imm)
    // add immediate value to a register
    core->registers[core->ir.op1] = (mqword_t)(_add_inst_(core->registers[core->ir.op1], core->ir.op2));
    _update_flags_(&core->flag); // the flag register should be updated
+   _clear_(negative);
 }
 
 _exec_(add_reg)
@@ -24,30 +27,35 @@ _exec_(add_reg)
    // add one register to another register
    core->registers[core->ir.op1] = (mqword_t)(_add_inst_(core->registers[core->ir.op1], core->registers[core->ir.op2]));
    _update_flags_(&core->flag); // the flag register should be updated
+   _clear_(negative);
 }
 
 _exec_(sub_imm)
 {
    core->registers[core->ir.op1] = (mqword_t)(_sub_inst_(core->registers[core->ir.op1], core->ir.op2));
    _update_flags_(&core->flag); // the flag register should be updated
+   _clear_(negative);
 }
 
 _exec_(sub_reg)
 {
    core->registers[core->ir.op1] = (mqword_t)(_sub_inst_(core->registers[core->ir.op1], core->registers[core->ir.op2]));
    _update_flags_(&core->flag); // the flag register should be updated
+   _clear_(negative);
 }
 
 _exec_(mul_imm)
 {
    core->registers[core->ir.op1] = (mqword_t)(_mul_inst_(core->registers[core->ir.op1], core->ir.op2));
    _update_flags_(&core->flag); // the flag register should be updated
+   _clear_(negative);
 }
 
 _exec_(mul_reg)
 {
    core->registers[core->ir.op1] = (mqword_t)(_mul_inst_(core->registers[core->ir.op1], core->registers[core->ir.op2]));
    _update_flags_(&core->flag); // the flag register should be updated
+   _clear_(negative);
 }
 
 _exec_(div_imm)
@@ -60,6 +68,7 @@ _exec_(div_imm)
    }
    core->registers[core->ir.op1] = (mqword_t)(_div_inst_(core->registers[core->ir.op1], core->ir.op2));
    _update_flags_(&core->flag); // the flag register should be updated
+   _clear_(negative);
 }
 
 _exec_(div_reg)
@@ -71,6 +80,7 @@ _exec_(div_reg)
    }
    core->registers[core->ir.op1] = (mqword_t)(_div_inst_(core->registers[core->ir.op1], core->registers[core->ir.op2]));
    _update_flags_(&core->flag); // the flag register should be updated
+   _clear_(negative);
 }
 
 _exec_(mod_imm)
@@ -83,6 +93,7 @@ _exec_(mod_imm)
    }
    core->registers[core->ir.op1] = core->registers[core->ir.op1] % core->ir.op2;
    _update_flags_(&core->flag); // the flag register should be updated
+   _clear_(negative);
 }
 
 _exec_(mod_reg)
@@ -94,6 +105,7 @@ _exec_(mod_reg)
    }
    core->registers[core->ir.op1] = core->registers[core->ir.op1] % core->registers[core->ir.op2];
    _update_flags_(&core->flag); // the flag register should be updated
+   _clear_(negative);
 }
 
 _exec_(iadd_imm)
@@ -557,3 +569,11 @@ _exec_(clo)
    _clear_(overflow);
 }
 
+_exec_(jnz)
+{
+   if (core->flag.zero == 0)
+   {
+      // we jmp
+      core->pc = core->ir.op1 - 8;
+   }
+}

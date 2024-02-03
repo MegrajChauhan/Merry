@@ -64,3 +64,12 @@ mret_t merry_stack_pop(MerryStack *st, mqptr_t store_in)
     *store_in = st->array[st->sp];
     return RET_SUCCESS;
 }
+
+void merry_stack_popn(MerryStack *st)
+{
+    // simply pop the top value and return
+    // don't care about errors
+    if (stack_empty(st))
+        return;
+    st->sp--;
+}

@@ -28,13 +28,17 @@
 #include <stdlib.h>
 #include "merry_internals.h"
 #include "merry_memory.h"
+#include "merry_opcodes.h"
 
 typedef struct MerryCore MerryCore;
 // typedef union MerryRegister MerryRegister;
 typedef struct MerryFlagRegister MerryFlagRegister;
 
 // #include "merry_exec.h"
-#include "decoder/merry_decode.h"
+// #include "decoder/merry_decode.h"
+#include "merry_exec.h"
+#include "merry_inst.h"
+#include "../../utils/merry_stack.h"
 
 /*
  The behaviour of Unions is very different based on different architectures, endianness and the whim of the compiler as well.
@@ -52,6 +56,10 @@ typedef struct MerryFlagRegister MerryFlagRegister;
 #define _check_stack_lim_(core, size) ((_MERRY_MEMORY_QS_PER_PAGE_ - core->sp) > size)
 #define _is_stack_empty_(core) (core->sp == 0)
 #define _stack_has_atleast_(core, atleast) (core->sp >= atleast)
+
+#define _MERRY_RAS_LEN_ 30             // 30 function calls should be enough
+#define _MERRY_RAS_LIMIT_ 50           // 50 function calls at max
+#define _MERRY_RAS_GROW_PER_RESIZE_ 10 // 10 new possible function calls per resize
 
 struct MerryFlagRegister
 {
@@ -106,10 +114,8 @@ struct MerryCore
     MerryCond *cond;  // the core's private condition variable
     MerryMutex *lock; // the core's private mutex lock
     // the core's memory
-    MerryMemory *data_mem;       // the data memory
-    MerryMemory *inst_mem;       // the instruction memory
-    MerryDecoder *decoder;       // the core's decoder
-    MerryThread *decoder_thread; // the decoder's thread
+    MerryMemory *data_mem; // the data memory
+    MerryMemory *inst_mem; // the instruction memory
     // Merry *os;
     // Each address of the stack stores 8 bytes which implies each push or pop pushes and pops 8 bytes
     // there are no need for alignments
@@ -127,6 +133,7 @@ struct MerryCore
     // If this flag is set but other cores access this core's pages and values then it is not known what behaviour might happen
     mbool_t _is_private;
     MerryInstruction ir; // the current instruction
+    MerryStack *ras;     // the RAS
 };
 
 _MERRY_ALWAYS_INLINE void merry_core_zero_out_reg(MerryCore *core)

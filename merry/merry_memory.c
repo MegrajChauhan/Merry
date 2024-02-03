@@ -179,11 +179,11 @@ mret_t merry_memory_read(MerryMemory *memory, maddress_t address, mqptr_t _store
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    mqptr_t temp = &memory->pages[addr.page]->address_space[addr.offset];
+    mbptr_t temp = &memory->pages[addr.page]->address_space[addr.offset];
     // in LITTLE ENDIAN systems dereferencing temp will correctly get the next 7 bytes but in little endian format
     // in BIG ENDIAN systems dereferencing temp will correctly get the next 7 bytes and in the format that makes sense to humans
     // The VM is going to use whatever endianness the host has
-    *_store_in = *temp;
+    _mem_read_(temp, _store_in);
     return RET_SUCCESS;
 }
 

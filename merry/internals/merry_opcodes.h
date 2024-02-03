@@ -161,6 +161,9 @@ enum
     OP_CLN,    // clear the negative flag
     OP_CLC,    // clear the carry flag
     OP_CLO,    // clear the overflow flag
+    
+    // conditional jumps
+    OP_JNZ,
 };
 
 /*

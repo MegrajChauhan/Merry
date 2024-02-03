@@ -191,6 +191,11 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
         _READ_DIRERROR_("Read Error: The data length is invalid.\n");
         return RET_FAILURE;
     }
+    if (inp->ilen == 0)
+    {
+        _READ_DIRERROR_("Read Error: The input file has no instructions to read.\n");
+        return RET_FAILURE;
+    }
     return RET_SUCCESS;
 }
 
@@ -247,11 +252,18 @@ _MERRY_INTERNAL_ mret_t merry_reader_byorder_diff_i(MerryInpFile *inp)
         msize_t k = 0;
         for (msize_t j = 0; j < _MERRY_MEMORY_QS_PER_PAGE_; j++)
         {
-            inverted[j] = reader_invert_byte_order(num, k);
+            inverted[j] = num[k];
+            inverted[j] = (inverted[j] << 8) | num[k+1];
+            inverted[j] = (inverted[j] << 8) | num[k+2];
+            inverted[j] = (inverted[j] << 8) | num[k+3];
+            inverted[j] = (inverted[j] << 8) | num[k+4];
+            inverted[j] = (inverted[j] << 8) | num[k+5];
+            inverted[j] = (inverted[j] << 8) | num[k+6];
+            inverted[j] = (inverted[j] << 8) | num[k+7];
             k += 8;
         }
         // with the inverted ones, now write them to the mapped memory pages
-        if (memcpy(inp->_instructions[i], inverted, _MERRY_MEMORY_ADDRESSES_PER_PAGE_) != inp->_instructions[i])
+        if (memcpy(inp->_instructions[i], (mbptr_t)inverted, _MERRY_MEMORY_ADDRESSES_PER_PAGE_) != inp->_instructions[i])
         {
             // we failed here
             _READ_DIRERROR_("Read Error: Failed to read instructions.\n");
@@ -269,11 +281,18 @@ _MERRY_INTERNAL_ mret_t merry_reader_byorder_diff_i(MerryInpFile *inp)
         msize_t k = 0;
         for (msize_t j = 0; j < (ext / 8); j++)
         {
-            inverted[j] = reader_invert_byte_order(num, k);
+            inverted[j] = num[k];
+            inverted[j] = (inverted[j] << 8) | num[k+1];
+            inverted[j] = (inverted[j] << 8) | num[k+2];
+            inverted[j] = (inverted[j] << 8) | num[k+3];
+            inverted[j] = (inverted[j] << 8) | num[k+4];
+            inverted[j] = (inverted[j] << 8) | num[k+5];
+            inverted[j] = (inverted[j] << 8) | num[k+6];
+            inverted[j] = (inverted[j] << 8) | num[k+7];
             k += 8;
         }
         // with the inverted ones, now write them to the mapped memory pages
-        if (memcpy(inp->_instructions[count], inverted, ext) != inp->_instructions[count])
+        if (memcpy(inp->_instructions[count], (mbptr_t)inverted, ext) != inp->_instructions[count])
         {
             // we failed here
             _READ_DIRERROR_("Read Error: Failed to read instructions.\n");
@@ -329,7 +348,14 @@ _MERRY_INTERNAL_ mret_t merry_reader_byorder_diff_d(MerryInpFile *inp)
         msize_t k = 0;
         for (msize_t j = 0; j < _MERRY_MEMORY_QS_PER_PAGE_; j++)
         {
-            inverted[j] = reader_invert_byte_order(num, k);
+            inverted[j] = num[k];
+            inverted[j] = (inverted[j] << 8) | num[k+1];
+            inverted[j] = (inverted[j] << 8) | num[k+2];
+            inverted[j] = (inverted[j] << 8) | num[k+3];
+            inverted[j] = (inverted[j] << 8) | num[k+4];
+            inverted[j] = (inverted[j] << 8) | num[k+5];
+            inverted[j] = (inverted[j] << 8) | num[k+6];
+            inverted[j] = (inverted[j] << 8) | num[k+7];
             k += 8;
         }
         // with the inverted ones, now write them to the mapped memory pages
@@ -351,7 +377,14 @@ _MERRY_INTERNAL_ mret_t merry_reader_byorder_diff_d(MerryInpFile *inp)
         msize_t k = 0;
         for (msize_t j = 0; j < (ext / 8); j++)
         {
-            inverted[j] = reader_invert_byte_order(num, k);
+            inverted[j] = num[k];
+            inverted[j] = (inverted[j] << 8) | num[k+1];
+            inverted[j] = (inverted[j] << 8) | num[k+2];
+            inverted[j] = (inverted[j] << 8) | num[k+3];
+            inverted[j] = (inverted[j] << 8) | num[k+4];
+            inverted[j] = (inverted[j] << 8) | num[k+5];
+            inverted[j] = (inverted[j] << 8) | num[k+6];
+            inverted[j] = (inverted[j] << 8) | num[k+7];
             k += 8;
         }
         // with the inverted ones, now write them to the mapped memory pages

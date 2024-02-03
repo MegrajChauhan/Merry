@@ -31,12 +31,13 @@
 #include "merry_inst_queue.h"
 #include "merry_exec.h"
 #include "../merry_request_hdlr.h"
+#include "branch_predictor/merry_branch_predictor.h"
 #include <stdlib.h>
 
 #define _MERRY_INST_BUFFER_LEN_ 10
-#define _MERRY_RSA_LEN_ 30             // 30 function calls should be enough
-#define _MERRY_RSA_LIMIT_ 50           // 50 function calls at max
-#define _MERRY_RSA_GROW_PER_RESIZE_ 10 // 10 new possible function calls per resize
+#define _MERRY_RAS_LEN_ 30             // 30 function calls should be enough
+#define _MERRY_RAS_LIMIT_ 50           // 50 function calls at max
+#define _MERRY_RAS_GROW_PER_RESIZE_ 10 // 10 new possible function calls per resize
 
 struct MerryCore;
 
@@ -51,8 +52,8 @@ struct MerryDecoder
     mbool_t should_stop;      // stop decoding
     mbool_t provide;          // provide more instruction or not?
     MerryInstQueue *queue;    // the instruction queue
-    MerryStack *rsa;          // the RSA for the decoder
-    msize_t last_speculation; // how many addresses prior was a prediction made?[Useful for flushing the inst queue]
+    MerryStack *ras;          // the RAS for the decoder
+    MerryPredictor predictor; // the decoder's branch predictor
 };
 
 MerryDecoder *merry_init_decoder(struct MerryCore *host);
@@ -63,5 +64,7 @@ void merry_destroy_decoder(MerryDecoder *decoder);
 
 // Run the decoder
 mptr_t merry_decode(mptr_t d);
+
+void merry_decoder_prediction_wrong(MerryDecoder *decoder, MerryInstruction *inst);
 
 #endif
