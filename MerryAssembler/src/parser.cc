@@ -1,4 +1,5 @@
 #include "../includes/parser.hh"
+#include <algorithm>
 
 merry::front_end::Ast merry::front_end::Parser::get_ast(){
     Ast return_ast;
@@ -18,6 +19,11 @@ merry::front_end::Ast merry::front_end::Parser::get_ast(){
 std::vector<std::pair<merry::front_end::AstNodeInst, std::string>> instructions = {
     {merry::front_end::AstNodeInst(merry::front_end::AstInstType::NOP), "nop"},
     {merry::front_end::AstNodeInst(merry::front_end::AstInstType::HLT), "hlt"},
+    {merry::front_end::AstNodeInst(merry::front_end::AstInstType::ADD), "add"},
+};
+
+std::vector<std::string> insts_with_ops = {
+    "add",
 };
 
 std::variant<merry::front_end::AstNodeInst, merry::front_end::AstNodeLabel> merry::front_end::Parser::get_next_node(){
@@ -31,6 +37,20 @@ std::variant<merry::front_end::AstNodeInst, merry::front_end::AstNodeLabel> merr
     // TODO: Operands
     for(std::pair<merry::front_end::AstNodeInst, std::string> inst : instructions){
         if(inst.second == current.get_data()){
+            if(std::find(insts_with_ops.begin(), insts_with_ops.end(), inst.second) == insts_with_ops.end()){
+                return inst.first;
+            }
+            current = _lexer.next_token();
+            inst.first.add_operand(current.get_data());
+            if(_lexer.peek().get_type() == TokenType::COMMA){
+                _lexer.next_token(); // Skip comma
+                current = _lexer.next_token();
+                std::string data = current.get_data();
+                if(_lexer.peek().get_type() == TokenType::TT_EOF){
+                    data.pop_back();
+                }
+                inst.first.add_operand(data);
+            }
             return inst.first;
         }
     }

@@ -35,7 +35,8 @@ merry::front_end::Token merry::front_end::Lexer::next_token(){
         return Token(TokenType::TT_EOF, "\0", loc);
     switch (_c)
     {
-        case ':': {
+        case ':':
+        case ',': {
             char pref = _c;
             advance();
             std::string value;

@@ -1,2 +1,5 @@
 main:
+    nop
     hlt
+    add Ma, Mb
+    add Ma, 69

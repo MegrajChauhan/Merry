@@ -9,6 +9,7 @@ namespace front_end{
         NUMBER,
         ID,
         COLON=':',
+        COMMA=',',
         INVALID,
     };
     class Token{
