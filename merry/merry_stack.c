@@ -56,7 +56,7 @@ mret_t merry_stack_push(MerryStack *st, mqword_t _to_push)
     return RET_SUCCESS;
 }
 
-mret_t merry_stack_pop(MerryStack *st, mqptr_t *store_in)
+mret_t merry_stack_pop(MerryStack *st, mqptr_t store_in)
 {
     if (stack_empty(st))
         return RET_FAILURE; // the stack is empty

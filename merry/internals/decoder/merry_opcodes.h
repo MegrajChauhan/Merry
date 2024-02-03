@@ -132,8 +132,35 @@ enum
       dest = base + index * scale [Useful for arrays: Doesn't change flags]
     */
     OP_LEA,
-    // The move instruction doesn't allow movement from 
-    OP_LOAD, 
+    /*
+       The move instructions do not allow accessing the data memory for data and so that ability will be provided by LOAD.
+       The VM works with 8 bytes at once and so if the program has compressed data for multiple variables into those 8 bytes then the use of logical shifts should help
+    */
+    OP_LOAD,
+    OP_STORE,
+
+    // as the move_regX and move_immX instructions overwrite the bytes not being written to, the excg instruction will mitigate that problem.
+    // This instruction will only work with registers and not immediates
+    // One issue here is that the values between the registers are exchanged
+    OP_EXCG8,  // exchange only 1 lower byte
+    OP_EXCG16, // exchange only 2 lower bytes
+    OP_EXCG32, // exchange only 4 lower bytes
+    OP_EXCG,   // exchange the entire values
+
+    // To MOVE values instead of exchanging, we use the movX instruction that moves the bytes without overwriting anything
+    // This also only works on registers
+    // we don't need the 64-bit version
+    OP_MOV8,
+    OP_MOV16,
+    OP_MOV32,
+
+    // some utility instructions
+    OP_CFLAGS, // clear the flags register
+    OP_RESET,  // reset all the registers
+    OP_CLZ,    // clear the zero flag
+    OP_CLN,    // clear the negative flag
+    OP_CLC,    // clear the carry flag
+    OP_CLO,    // clear the overflow flag
 };
 
 /*
@@ -203,11 +230,6 @@ typedef unsigned long long moperand_t;
     ASP_MOVENC_IMM, // move if carry is not set
     ASP_MOVENC_REG, // move if carry is not set
 
-    ASP_EXCG8,  // exchange instruction that exchanges the values between two registers[8 bits]
-    ASP_EXCG16, // exchange instruction that exchanges the values between two registers[16 bits]
-    ASP_EXCG32, // exchange instruction that exchanges the values between two registers[32 bits]
-    ASP_EXCG,   // exchange instruction that exchanges the values between two registers[64 bits
-
     // conditional jumps
     ASP_JZ,  // jump if zero
     ASP_JNZ, // jump if not zero
@@ -221,21 +243,6 @@ typedef unsigned long long moperand_t;
     ASP_JNN, // jump if no negative
     ASP_JGE, // jump if greater or equal
     ASP_JSE, // jump if smaller or equal
-
-    ASP_RESET, // the reset instruction[resets all the registers except program counter, bp, sp to zero. resets flags to zero as well.]
-
-    ASP_CFLAGS, // clear the flag register
-    ASP_CLZ,    // clear the zero flag
-    ASP_CLN,    // clear the negative flag
-    ASP_CLE,    // clear the equal flag
-    ASP_CLG,    // clear the greater flag
-    ASP_CLO,    // clear the overflow flag
-    ASP_CLC,    // clear the carrt flag
-
-    // memory related instructions
-    // These instructions only interact with data memory and not with the instruction memory
-    ASP_LOAD,  // load instruction to load from memory to a given register
-    ASP_STORE, // store instruction to store to memory from a given register
 
     ASP_INTR, // generate an interrupt
 */

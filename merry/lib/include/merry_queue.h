@@ -227,7 +227,7 @@
             ret = mfalse;                        \
             break;                               \
         }                                        \
-        dest = (qptr)->head->value;             \
+        dest = (qptr)->head->value;              \
         (qptr)->head = (qptr)->head->next;       \
         (qptr)->data_count--;                    \
         ret = mtrue;                             \
@@ -264,3 +264,4 @@
     { /*This is a emergency push and so it takes top priority*/ \
         (qptr->head->value) = val;                              \
     } while (0);
+    

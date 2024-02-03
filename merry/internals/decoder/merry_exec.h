@@ -84,6 +84,29 @@ _exec_(cmp_reg);
 // some extra instructions
 _exec_(inc);
 _exec_(dec);
+
+// data movement instructions
 _exec_(lea);
+_exec_(load);
+_exec_(store);
+
+_exec_(excg);
+_exec_(excg8);
+_exec_(excg16);
+_exec_(excg32);
+
+_exec_(mov8);
+_exec_(mov16);
+_exec_(mov32);
+
+// utility instructions
+#define _clear_(f) core->flag.f = 0
+
+_exec_(cflags);
+_exec_(reset);
+_exec_(clz);
+_exec_(cln);
+_exec_(clc);
+_exec_(clo);
 
 #endif

@@ -129,8 +129,13 @@ struct MerryCore
     MerryInstruction ir; // the current instruction
 };
 
-// opcode is actually 9 bits long
-#define _MERRY_CORE_GET_OPCODE_(inst) (inst >> 55)
+_MERRY_ALWAYS_INLINE void merry_core_zero_out_reg(MerryCore *core)
+{
+    for (msize_t i = 0; i < REGR_COUNT; i++)
+    {
+        core->registers[i] = 0;
+    }
+}
 
 // initialize a new core
 MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, msize_t id);

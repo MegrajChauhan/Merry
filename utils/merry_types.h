@@ -44,11 +44,12 @@ typedef unsigned char mbool_t; // bool
 typedef unsigned char mbyte_t;
 typedef unsigned short mword_t;
 typedef unsigned int mdword_t;
-typedef _MERRY_LONG_ mqword_t;
+typedef unsigned _MERRY_LONG_ mqword_t;
+typedef _MERRY_LONG_ msqword_t;
 
 // some extra definitions
-typedef _MERRY_LONG_ maddress_t;
-typedef _MERRY_LONG_ msize_t;
+typedef unsigned _MERRY_LONG_ maddress_t;
+typedef unsigned _MERRY_LONG_ msize_t;
 typedef mbool_t mret_t; // for function returns
 
 // define function pointers
