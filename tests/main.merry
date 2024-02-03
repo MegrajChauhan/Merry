@@ -1,5 +1,19 @@
-main:
+all_insts:
     nop
     hlt
     add Ma, Mb
     add Ma, 69
+    sub Ma, Mb
+    sub Ma, 69
+    mul Ma, Mb
+    mul Ma, 69
+    div Ma, Mb
+    div Ma, 69
+    mod Ma, Mb
+    mod Ma, 69
+    jmp halt
+halt:
+    hlt
+    jmp halt
+    call halt
+    ret

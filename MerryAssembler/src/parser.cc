@@ -20,10 +20,23 @@ std::vector<std::pair<merry::front_end::AstNodeInst, std::string>> instructions 
     {merry::front_end::AstNodeInst(merry::front_end::AstInstType::NOP), "nop"},
     {merry::front_end::AstNodeInst(merry::front_end::AstInstType::HLT), "hlt"},
     {merry::front_end::AstNodeInst(merry::front_end::AstInstType::ADD), "add"},
+    {merry::front_end::AstNodeInst(merry::front_end::AstInstType::SUB), "sub"},
+    {merry::front_end::AstNodeInst(merry::front_end::AstInstType::MUL), "mul"},
+    {merry::front_end::AstNodeInst(merry::front_end::AstInstType::DIV), "div"},
+    {merry::front_end::AstNodeInst(merry::front_end::AstInstType::MOD), "mod"},
+    {merry::front_end::AstNodeInst(merry::front_end::AstInstType::JMP), "jmp"},
+    {merry::front_end::AstNodeInst(merry::front_end::AstInstType::RET), "ret"},
+    {merry::front_end::AstNodeInst(merry::front_end::AstInstType::CALL), "call"},
 };
 
 std::vector<std::string> insts_with_ops = {
     "add",
+    "sub",
+    "mul",
+    "div",
+    "mod",
+    "jmp",
+    "call",
 };
 
 std::variant<merry::front_end::AstNodeInst, merry::front_end::AstNodeLabel> merry::front_end::Parser::get_next_node(){
