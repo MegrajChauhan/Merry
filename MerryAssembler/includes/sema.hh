@@ -59,6 +59,7 @@ namespace front_end{
                         copy2_ast.add_inst_or_label(inst);
                     }
                 }
+                copy2_ast.add_inst_or_label(AstNodeInst(AstInstType::HLT));
                 return copy2_ast;
             }
     };

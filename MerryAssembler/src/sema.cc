@@ -61,7 +61,7 @@ merry::front_end::AstNodeLabel merry::front_end::Sema::resolve_label_addr(AstNod
         std::cout << "Cannot redifine label " << label.get_name() << std::endl;
         exit(1);
     }
-    insts_size++;
     label.set_addr(insts_size);
+    insts_size++;
     return label;
 }

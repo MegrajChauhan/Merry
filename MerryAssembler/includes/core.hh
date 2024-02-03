@@ -22,7 +22,6 @@ namespace core{
             }
             void update(int c);
     };
-    std::string readFile(std::string path);
 };
 };
 
