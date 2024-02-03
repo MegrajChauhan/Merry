@@ -9,12 +9,45 @@ struct MerryCore;
 
 // The function structure
 #define _exec_(name) void merry_execute_##name(struct MerryCore *core)
+// some instructions that need full definition
+#define _lexec_(name, ...) void merry_execute_##name(struct MerryCore *core, __VA_ARGS__)
 
 #define _sign_extend8_(val) val | 0xFFFFFFFFFFFFFF00
 #define _sign_extend16_(val) val | 0xFFFFFFFFFFFF0000
 #define _sign_extend32_(val) val | 0xFFFFFFFFFF000000
 
-_exec_(nop);
+#define _clear_(f) core->flag.f = 0
+#define _fclear_(f) c->flag.f = 0
+
+#define _LowerTopReg_(current) (current >> 48) & 15
+#define _UpperTopReg_(current) (current >> 52) & 15
+#define _Lower4byteImm_(current) (current) & 0xFFFFFFFF
+
+#define _ArithMeticImmFrame_(sign)                                             \
+    register mqword_t current = core->current_inst;                            \
+    register mqword_t reg = _LowerTopReg_(current);                            \
+    core->registers[reg] = core->registers[reg] sign _Lower4byteImm_(current); \
+    _update_flags_(&core->flag);                                               \
+    _clear_(negative);
+
+#define _SArithMeticImmFrame_(sign)                                            \
+    register mqword_t current = core->current_inst;                            \
+    register mqword_t reg = _LowerTopReg_(current);                            \
+    core->registers[reg] = core->registers[reg] sign _Lower4byteImm_(current); \
+    _update_flags_(&core->flag);
+
+#define _ArithMeticRegFrame_(sign)                                                            \
+    register mqword_t current = core->current_inst;                                           \
+    register mqword_t reg = _UpperTopReg_(current);                                           \
+    core->registers[reg] = core->registers[reg] sign core->registers[_LowerTopReg_(current)]; \
+    _update_flags_(&core->flag);                                                              \
+    _clear_(negative);
+
+#define _SArithMeticRegFrame_(sign)                                                           \
+    register mqword_t current = core->current_inst;                                           \
+    register mqword_t reg = _UpperTopReg_(current);                                           \
+    core->registers[reg] = core->registers[reg] sign core->registers[_LowerTopReg_(current)]; \
+    _update_flags_(&core->flag);
 
 // execute the halt instruction
 _exec_(halt);
@@ -44,6 +77,7 @@ _exec_(imod_reg);
 
 // move instructions
 _exec_(move_imm);
+_lexec_(move_imm64, mqword_t imm);
 _exec_(move_reg);
 _exec_(move_reg8);
 _exec_(move_reg16);
@@ -71,17 +105,17 @@ _exec_(popa);
 
 // logical instructions
 // All AND, OR, XOR and CMP take 64 bits values that should follow the instruction in memory
-_exec_(and_imm);
+_lexec_(and_imm, mqword_t imm);
 _exec_(and_reg);
-_exec_(or_imm);
+_lexec_(or_imm, mqword_t imm);
 _exec_(or_reg);
-_exec_(xor_imm);
+_lexec_(xor_imm, mqword_t imm);
 _exec_(xor_reg);
 _exec_(not );
 _exec_(lshift);
 _exec_(rshift);
-_exec_(cmp_imm);
-_exec_(cmp_reg);
+// _exec_(cmp_imm);
+// _exec_(cmp_reg);
 
 // some extra instructions
 _exec_(inc);
@@ -89,8 +123,8 @@ _exec_(dec);
 
 // data movement instructions
 _exec_(lea);
-_exec_(load);
-_exec_(store);
+_lexec_(load, mqword_t address);
+_lexec_(store, mqword_t address);
 
 _exec_(excg);
 _exec_(excg8);
@@ -102,16 +136,15 @@ _exec_(mov16);
 _exec_(mov32);
 
 // utility instructions
-#define _clear_(f) core->flag.f = 0
 
 _exec_(cflags);
-_exec_(reset);
-_exec_(clz);
-_exec_(cln);
-_exec_(clc);
-_exec_(clo);
+// _exec_(reset);
+// _exec_(clz);
+// _exec_(cln);
+// _exec_(clc);
+// _exec_(clo);
 
 // contidional jumps
-_exec_(jnz);
+_lexec_(jnz, mqword_t address);
 
 #endif

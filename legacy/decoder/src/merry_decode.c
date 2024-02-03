@@ -276,7 +276,7 @@ mptr_t merry_decode(mptr_t d)
             case OP_IMOD_REG:
                 current_inst.op1 = (current >> 52) & 15; // get the destination register which is also an operand
                 current_inst.op2 = (current >> 48) & 15; // get the source register
-                current_inst.exec_func = &merry_execute_imod_reg;
+                current_inst.exec_func = &cmerry_execute_imod_reg;
                 break;
             case OP_MOVE_IMM:                              // just 32 bits immediates
                 current_inst.op1 = (current >> 48) & 15;   // get the destination register

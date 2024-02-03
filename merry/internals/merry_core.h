@@ -133,10 +133,11 @@ struct MerryCore
     // If this flag is set but other cores access this core's pages and values then it is not known what behaviour might happen
     mbool_t _is_private;
     MerryInstruction ir; // the current instruction
-    MerryStack *ras;     // the RAS
+    mqword_t current_inst;
+    MerryStack *ras; // the RAS
 };
 
-_MERRY_ALWAYS_INLINE void merry_core_zero_out_reg(MerryCore *core)
+static _MERRY_ALWAYS_INLINE_ void merry_core_zero_out_reg(MerryCore *core)
 {
     for (msize_t i = 0; i < REGR_COUNT; i++)
     {

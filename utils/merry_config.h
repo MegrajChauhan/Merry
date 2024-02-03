@@ -29,6 +29,8 @@
 #define _MERRY_LITTLE_ENDIAN_ 0x00
 #define _MERRY_BIG_ENDIAN_ 0x01
 
+#define _MERRY_OPTIMIZE_
+
 /*
  * Check for the endianness of the system. We can use this to our advantage for making the VM faster.
  */
@@ -87,9 +89,9 @@
 
 /*Based on optimizations, this may be set*/
 #if defined(_MERRY_OPTIMIZE_)
-#define _MERRY_ALWAYS_INLINE static inline __attribute__((always_inline))
+#define _MERRY_ALWAYS_INLINE_ __attribute__((always_inline))
 #else
-#define _MERRY_ALWAYS_INLINE static inline
+#define _MERRY_ALWAYS_INLINE_ static inline
 #endif
 
 #define _MERRY_NO_DISCARD_ [[nodiscard]]

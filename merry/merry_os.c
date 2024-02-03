@@ -70,20 +70,15 @@ void merry_os_destroy()
 {
     // free all the cores, memory, os and then exit
     _log_(_OS_, "Destroying", "Destroying the manager");
-    if (surelyT(os.data_mem != NULL))
-        merry_memory_free(os.data_mem);
-    if (surelyT(os.inst_mem != NULL))
-        merry_memory_free(os.inst_mem);
-    if (surelyT(os._lock != NULL))
-        merry_mutex_destroy(os._lock);
-    if (surelyT(os._cond != NULL))
-        merry_cond_destroy(os._cond);
+    merry_memory_free(os.data_mem);
+    merry_memory_free(os.inst_mem);
+    merry_mutex_destroy(os._lock);
+    merry_cond_destroy(os._cond);
     if (surelyT(os.cores != NULL))
     {
         for (msize_t i = 0; i < os.core_count; i++)
         {
-            if (surelyT(os.cores[i] != NULL))
-                merry_core_destroy(os.cores[i]);
+            merry_core_destroy(os.cores[i]);
         }
         free(os.cores);
     }
@@ -91,8 +86,7 @@ void merry_os_destroy()
     {
         for (msize_t i = 0; i < os.core_count; i++)
         {
-            if (surelyT(os.core_threads[i] != NULL))
-                merry_thread_destroy(os.core_threads[i]);
+            merry_thread_destroy(os.core_threads[i]);
         }
         free(os.core_threads);
     }
@@ -171,7 +165,7 @@ mret_t merry_os_mem_write_data(maddress_t address, mqword_t to_store, msize_t co
 //     }
 // }
 
-_MERRY_ALWAYS_INLINE mret_t merry_os_boot_core(msize_t core_id, maddress_t start_addr)
+_MERRY_ALWAYS_INLINE_ mret_t merry_os_boot_core(msize_t core_id, maddress_t start_addr)
 {
     // this function's job is to boot up the core_id core and prepare it for execution
     os.cores[core_id]->pc = start_addr; // point to the starting address of the core

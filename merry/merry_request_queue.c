@@ -38,11 +38,6 @@ mbool_t merry_pop_request(MerryRequestQueue *queue, MerryOSRequest *dest)
     return ret; // should be mfalse only when the queue is empty
 }
 
-void merry_destroy_request_queue(MerryRequestQueue *queue)
-{
-    _MERRY_DESTROY_QUEUE_(queue)
-}
-
 void merry_panic_push(MerryRequestQueue *queue, merrot_t error)
 {
     MerryOSRequest req = {error, NULL, 0};

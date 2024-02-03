@@ -54,9 +54,9 @@ typedef struct MerryAddress MerryAddress; // an internal struct
 #define _MERRY_MEMORY_PGALLOC_MAP_PAGE_ _MERRY_MEM_GET_PAGE_(_MERRY_MEMORY_ADDRESSES_PER_PAGE_, _MERRY_PROT_DEFAULT_, _MERRY_FLAG_DEFAULT_)
 #define _MERRY_MEMORY_PGALLOC_UNMAP_PAGE_(address) _MERRY_MEM_GIVE_PAGE_(address, _MERRY_MEMORY_ADDRESSES_PER_PAGE_)
 
-#define _MERRY_MEMORY_DEDUCE_ADDRESS_(addr)                                                                     \
-    {                                                                                                           \
-        .page = addr / _MERRY_MEMORY_ADDRESSES_PER_PAGE_, .offset = address % _MERRY_MEMORY_ADDRESSES_PER_PAGE_ \
+#define _MERRY_MEMORY_DEDUCE_ADDRESS_(addr)                                                       \
+    {                                                                                             \
+        .page = addr / _MERRY_MEMORY_QS_PER_PAGE_, .offset = address % _MERRY_MEMORY_QS_PER_PAGE_ \
     }
 
 // struct MerryMemPageDetails
@@ -72,7 +72,7 @@ typedef struct MerryAddress MerryAddress; // an internal struct
 
 struct MerryMemPage
 {
-    mbptr_t address_space; // the actual memory of the page
+    mqptr_t address_space; // the actual memory of the page
     // MerryMemPageDetails details; // the page details
     MerryMutex *lock; // Many different pages can be accessed simultaneously
     // MerryCond *cond;

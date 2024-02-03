@@ -19,7 +19,7 @@ MerryStack *merry_init_stack(msize_t len, mbool_t dynamic, msize_t upper_lim, ms
     return st;
 }
 
-void merry_destroy_stack(MerryStack *stack)
+_MERRY_ALWAYS_INLINE_ void merry_destroy_stack(MerryStack *stack)
 {
     if (surelyF(stack == NULL))
         return;
@@ -56,7 +56,7 @@ mret_t merry_stack_push(MerryStack *st, mqword_t _to_push)
     return RET_SUCCESS;
 }
 
-mret_t merry_stack_pop(MerryStack *st, mqptr_t store_in)
+_MERRY_ALWAYS_INLINE_ mret_t merry_stack_pop(MerryStack *st, mqptr_t store_in)
 {
     if (stack_empty(st))
         return RET_FAILURE; // the stack is empty
@@ -65,7 +65,7 @@ mret_t merry_stack_pop(MerryStack *st, mqptr_t store_in)
     return RET_SUCCESS;
 }
 
-void merry_stack_popn(MerryStack *st)
+_MERRY_ALWAYS_INLINE_ void merry_stack_popn(MerryStack *st)
 {
     // simply pop the top value and return
     // don't care about errors

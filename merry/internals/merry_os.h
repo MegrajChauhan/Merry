@@ -36,6 +36,7 @@
 // This module is the backbone of the VM and controls everything
 
 #include "../../utils/merry_config.h"
+#include "../../utils/merry_types.h"
 #include "merry_reader.h"
 #include "merry_request_hdlr.h"
 #include "merry_core.h"

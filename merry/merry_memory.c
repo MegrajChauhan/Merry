@@ -10,7 +10,7 @@ _MERRY_INTERNAL_ MerryMemPage *merry_mem_allocate_new_mempage()
         return RET_NULL;
     }
     // try allocating the address space
-    if ((new_page->address_space = _MERRY_MEMORY_PGALLOC_MAP_PAGE_) == NULL)
+    if ((new_page->address_space = (mqptr_t)_MERRY_MEMORY_PGALLOC_MAP_PAGE_) == NULL)
     {
         free(new_page);
         return RET_NULL; // we failed
@@ -35,7 +35,7 @@ _MERRY_INTERNAL_ MerryMemPage *merry_mem_allocate_new_mempage_provided(mqptr_t p
         return RET_NULL;
     }
     // try allocating the address space
-    new_page->address_space = (mbptr_t)page; // we were provided
+    new_page->address_space = (mqptr_t)page; // we were provided
     // initialize the page's lock
     if ((new_page->lock = merry_mutex_init()) == RET_NULL)
     {
@@ -168,22 +168,16 @@ mret_t merry_memory_read(MerryMemory *memory, maddress_t address, mqptr_t _store
     // if the program requests the address that is at the end of a Page then getting the other 7 bytes would require getting it from another page
     // This is inconvenient and wrong. This type of access will generate an Access Error
     // we will expect even the program to behave correctly here
-    if (surelyF(_MERRY_MEMORY_IS_ACCESS_ERROR_(addr.offset)))
-    {
-        memory->error = MERRY_MEM_ACCESS_ERROR;
-        return RET_FAILURE;
-    }
     if (surelyF(addr.page >= memory->number_of_pages))
     {
         // this implies the request is for a page that doesn't exist
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    mbptr_t temp = &memory->pages[addr.page]->address_space[addr.offset];
+    *_store_in = memory->pages[addr.page]->address_space[addr.offset];
     // in LITTLE ENDIAN systems dereferencing temp will correctly get the next 7 bytes but in little endian format
     // in BIG ENDIAN systems dereferencing temp will correctly get the next 7 bytes and in the format that makes sense to humans
     // The VM is going to use whatever endianness the host has
-    _mem_read_(temp, _store_in);
     return RET_SUCCESS;
 }
 
@@ -191,22 +185,16 @@ mret_t merry_memory_write(MerryMemory *memory, maddress_t address, mqword_t _to_
 {
     // pretty much the same as read
     MerryAddress addr = _MERRY_MEMORY_DEDUCE_ADDRESS_(address);
-    if (surelyF(_MERRY_MEMORY_IS_ACCESS_ERROR_(addr.offset)))
-    {
-        memory->error = MERRY_MEM_ACCESS_ERROR;
-        return RET_FAILURE;
-    }
     if (surelyF(addr.page >= memory->number_of_pages))
     {
         // this implies the request is for a page that doesn't exist
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    mqptr_t temp = &memory->pages[addr.page]->address_space[addr.offset];
+    memory->pages[addr.page]->address_space[addr.offset] = _to_write;
     // in LITTLE ENDIAN systems dereferencing temp will correctly get the next 7 bytes but in little endian format
     // in BIG ENDIAN systems dereferencing temp will correctly get the next 7 bytes and in the format that makes sense to humans
     // The VM is going to use whatever endianness the host has
-    *temp = _to_write; // write the value
     return RET_SUCCESS;
 }
 
