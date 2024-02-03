@@ -1,4 +1,5 @@
 #include "../includes/lexer.hh"
+#define COMMENT_SYMBOL ';'
 
 void merry::front_end::Lexer::advance(){
     if (idx < _contents.size()-1)
@@ -30,7 +31,18 @@ std::vector<merry::front_end::Token> merry::front_end::Lexer::lex_all(){
 
 merry::front_end::Token merry::front_end::Lexer::next_token(){
     skip_whitespace();
+    if (idx >= _contents.size() - 1)
+        return Token(TokenType::TT_EOF, "\0", loc);
     // first off check for EOF
+    while (_c == COMMENT_SYMBOL && idx < _contents.size() - 1)
+    {
+        while (_c != '\n' && idx < _contents.size() - 1)
+            advance();
+        skip_whitespace();
+    }
+
+    skip_whitespace();
+
     if (idx >= _contents.size() - 1)
         return Token(TokenType::TT_EOF, "\0", loc);
     switch (_c)

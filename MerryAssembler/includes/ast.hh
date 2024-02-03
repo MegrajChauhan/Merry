@@ -9,6 +9,13 @@ namespace front_end{
         NOP,
         HLT,
         ADD,
+        SUB,
+        MUL,
+        DIV,
+        MOD,
+        JMP,
+        CALL,
+        RET,
     };
     class AstNodeInst{
         private:
@@ -19,6 +26,7 @@ namespace front_end{
             void add_operand(std::string op) { operands.push_back(op); }
             AstInstType get_inst_type() { return _inst_type; }
             std::vector<std::string> get_operands() { return operands; }
+            void clear_ops() { operands.clear(); }
             // Basiacly says if it's true it's OP_reg else it's OP_imm
             bool is_second_reg = false; // Should be filled by the Sema
     };
@@ -39,17 +47,21 @@ namespace front_end{
             Ast(){}
             void add_inst_or_label(std::variant<AstNodeInst, AstNodeLabel> inst) { insts.push_back(inst); }
             void print(){
+                size_t i = 0;
                 for(std::variant<AstNodeInst, AstNodeLabel> inst : insts){
+                    std::cout << i << ": ";
                     if(inst.index() == 0){
                         std::cout << "Inst with type: " << (int)std::get<AstNodeInst>(inst).get_inst_type() << " Is reg inst = " << (std::get<AstNodeInst>(inst).is_second_reg ? "true" : "false") << std::endl;
                         std::cout << "  Operands:\n";
                         for(std::string op : std::get<AstNodeInst>(inst).get_operands()){
                             std::cout << "    " << op << std::endl;
                         }
-                    } else if(inst.index() == 1){
-                        std::cout << "Label with name: " << std::get<AstNodeLabel>(inst).get_name() << "Addr: " << std::get<AstNodeLabel>(inst).get_addr() << std::endl;
                     }
+                    ++i;
                 }
+            }
+            void set_inst(size_t idx, std::variant<AstNodeInst, AstNodeLabel> node){
+                insts[idx] = node;
             }
             std::vector<std::variant<AstNodeInst, AstNodeLabel>> get_insts(){
                 return insts;
