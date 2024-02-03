@@ -1,6 +1,7 @@
 all_insts:
     nop
-    hlt
+    jmp next
+next:
     add Ma, Mb
     add Ma, 69
     sub Ma, Mb
@@ -11,9 +12,7 @@ all_insts:
     div Ma, 69
     mod Ma, Mb
     mod Ma, 69
-    jmp halt
-halt:
-    hlt
-    jmp halt
     call halt
+    hlt
+halt:
     ret

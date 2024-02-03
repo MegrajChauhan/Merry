@@ -47,7 +47,6 @@ std::variant<merry::front_end::AstNodeInst, merry::front_end::AstNodeLabel> merr
         current = _lexer.next_token();
         return AstNodeLabel(name);
     }
-    // TODO: Operands
     for(std::pair<merry::front_end::AstNodeInst, std::string> inst : instructions){
         if(inst.second == current.get_data()){
             if(std::find(insts_with_ops.begin(), insts_with_ops.end(), inst.second) == insts_with_ops.end()){

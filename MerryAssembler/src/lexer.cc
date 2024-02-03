@@ -1,4 +1,5 @@
 #include "../includes/lexer.hh"
+#include <cctype>
 #define COMMENT_SYMBOL ';'
 
 void merry::front_end::Lexer::advance(){
@@ -77,7 +78,7 @@ merry::front_end::Token merry::front_end::Lexer::next_token(){
         }
         return Token(TokenType::ID, buffer, loc);
     }
-    std::cout << "Invalid character " << _c << std::endl;
+    std::cout << "Invalid character `" << _c << "`\n";
     exit(1);
 }
 

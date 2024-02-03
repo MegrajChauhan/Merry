@@ -49,7 +49,7 @@ def main():
         quit(result)
     
     print("Compiling assembler (not finished!)")
-    result = os.system("g++ -ggdb -O3 -o ./build/asm ./MerryAssembler/src/*.cc -Wall -Wextra -Wswitch-enum")
+    result = os.system("c++ -ggdb -O3 -std=c++23 -o ./build/asm ./MerryAssembler/src/*.cc -Wall -Wextra -Wswitch-enum")
 
 if __name__ == "__main__":
     main()
