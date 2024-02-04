@@ -1,6 +1,7 @@
 #if !defined(_MERRY_ASM_CORE_)
 #define _MERRY_ASM_CORE_
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <iostream>
