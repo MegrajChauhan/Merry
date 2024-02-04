@@ -35,11 +35,12 @@ add_imm  -> opcode: 0x02
             immediate: 4 bytes immediate in the lower 4 bytes[Can be expanded into 6 bytes immediate at most]
             example: 0x02 0x00 0x00 0x00 0xAA 0xBB 0xCC 0xDD -> add 0xAABBCCDD to whatever is in the Ma[as indicated by the lower 4 bits of the second byte].             
 
+[Changes made here: Things should be easier with this]
 add_reg  -> opcode: 0x03
             operands: two registers
-            register 1: The upper four bits of the second byte.
-            register 2: The lower four bits of the second byte.
-            example: 0x03 0x01 0x00 0x00 0x00 0x00 0x00 0x00 -> add the contents of Mb register to Ma register[because the 2nd byte is 0x01-> 0b00000001]
+            register 1: The upper four bits of the last byte.
+            register 2: The lower four bits of the last byte.
+            example: 0x03 0x00 0x00 0x00 0x00 0x00 0x00 0x01 -> add the contents of Mb register to Ma register[because the last byte is 0x01-> 0b00000001]
 
 sub_imm -> opcode: 0x04: everything else is the same as add_imm
 sub_reg -> opcode: 0x05: everything else is the same as add_reg
@@ -80,9 +81,10 @@ move_reg8 -> opcode: 0x1D: same as move_reg except the lower 1 byte of the sourc
 move_reg16 -> opcode: 0x1E: same as move_reg except the lower 2 bytes of the source are moved into the destination register[Upper bytes of the destination register is cleared].
 move_reg32 -> opcode: 0x1F: same as move_reg except the lower 4 bytes of the source are moved into the destination register[Upper bytes of the destination register is cleared].
 
+[Changes made here]
 movesx_imm8 -> opcode: 0x20
                operands: destination register and a 8 bit value.
-               example: 0x20 0x00 0x05 0x00 0x00 0x00 0x00 0x1D -> sign extend 0x1D to 8 bytes and store it in Mf register.
+               example: 0x20 0x05 0x00 0x00 0x00 0x00 0x00 0x1D -> sign extend 0x1D to 8 bytes and store it in Mf register.
 
 movesx_imm16 -> opcode: 0x21 : same as  movesx_imm8 but with 2 bytes immediate value.
 movesx_imm32 -> opcode: 0x22 : same as  movesx_imm8 but with 4 bytes immediate value.

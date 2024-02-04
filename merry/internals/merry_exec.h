@@ -21,6 +21,8 @@ struct MerryCore;
 
 #define _LowerTopReg_(current) (current >> 48) & 15
 #define _UpperTopReg_(current) (current >> 52) & 15
+#define _LowerUpReg_(current) (current >> 4) & 15
+#define _LowerDownReg_(current) (current & 15)
 #define _Lower4byteImm_(current) (current) & 0xFFFFFFFF
 
 #define _ArithMeticImmFrame_(sign)                                              \
@@ -38,15 +40,15 @@ struct MerryCore;
 
 #define _ArithMeticRegFrame_(sign)                                                            \
     register mqword_t current = core->current_inst;                                           \
-    register mqword_t reg = _UpperTopReg_(current);                                           \
-    core->registers[reg] = core->registers[reg] sign core->registers[_LowerTopReg_(current)]; \
+    register mqword_t reg = _LowerUpReg_(current);                                           \
+    core->registers[reg] = core->registers[reg] sign core->registers[_LowerDownReg_(current)]; \
     _update_flags_(&core->flag);                                                              \
     _clear_(negative);
 
 #define _SArithMeticRegFrame_(sign)                                                                                 \
     register mqword_t current = core->current_inst;                                                                 \
-    register mqword_t reg = _UpperTopReg_(current);                                                                 \
-    core->registers[reg] = (msqword_t)core->registers[reg] sign(msqword_t) core->registers[_LowerTopReg_(current)]; \
+    register mqword_t reg = _LowerUpReg_(current);                                                                 \
+    core->registers[reg] = (msqword_t)core->registers[reg] sign(msqword_t) core->registers[_LowerDownReg_(current)]; \
     _update_flags_(&core->flag);
 
 // execute the halt instruction
