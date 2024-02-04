@@ -23,17 +23,17 @@ struct MerryCore;
 #define _UpperTopReg_(current) (current >> 52) & 15
 #define _Lower4byteImm_(current) (current) & 0xFFFFFFFF
 
-#define _ArithMeticImmFrame_(sign)                                             \
-    register mqword_t current = core->current_inst;                            \
-    register mqword_t reg = _LowerTopReg_(current);                            \
-    core->registers[reg] = core->registers[reg] sign _Lower4byteImm_(current); \
-    _update_flags_(&core->flag);                                               \
+#define _ArithMeticImmFrame_(sign)                                              \
+    register mqword_t current = core->current_inst;                             \
+    register mqword_t reg = _LowerTopReg_(current);                             \
+    core->registers[reg] = core->registers[reg] sign (_Lower4byteImm_(current)); \
+    _update_flags_(&core->flag);                                                \
     _clear_(negative);
 
-#define _SArithMeticImmFrame_(sign)                                            \
-    register mqword_t current = core->current_inst;                            \
-    register mqword_t reg = _LowerTopReg_(current);                            \
-    core->registers[reg] = core->registers[reg] sign _Lower4byteImm_(current); \
+#define _SArithMeticImmFrame_(sign)                                                                                   \
+    register mqword_t current = core->current_inst;                                                                   \
+    register mqword_t reg = _LowerTopReg_(current);                                                                   \
+    core->registers[reg] = (msqword_t)core->registers[reg] sign(msqword_t) _sign_extend32_(_Lower4byteImm_(current)); \
     _update_flags_(&core->flag);
 
 #define _ArithMeticRegFrame_(sign)                                                            \
@@ -43,14 +43,14 @@ struct MerryCore;
     _update_flags_(&core->flag);                                                              \
     _clear_(negative);
 
-#define _SArithMeticRegFrame_(sign)                                                           \
-    register mqword_t current = core->current_inst;                                           \
-    register mqword_t reg = _UpperTopReg_(current);                                           \
-    core->registers[reg] = core->registers[reg] sign core->registers[_LowerTopReg_(current)]; \
+#define _SArithMeticRegFrame_(sign)                                                                                 \
+    register mqword_t current = core->current_inst;                                                                 \
+    register mqword_t reg = _UpperTopReg_(current);                                                                 \
+    core->registers[reg] = (msqword_t)core->registers[reg] sign(msqword_t) core->registers[_LowerTopReg_(current)]; \
     _update_flags_(&core->flag);
 
 // execute the halt instruction
-_exec_(halt);
+// _exec_(halt);
 
 // arithmetic instructions
 _exec_(add_imm);
@@ -76,12 +76,12 @@ _exec_(imod_imm);
 _exec_(imod_reg);
 
 // move instructions
-_exec_(move_imm);
-_lexec_(move_imm64, mqword_t imm);
-_exec_(move_reg);
-_exec_(move_reg8);
-_exec_(move_reg16);
-_exec_(move_reg32);
+// _exec_(move_imm);
+// _lexec_(move_imm64, mqword_t imm);
+// _exec_(move_reg);
+// _exec_(move_reg8);
+// _exec_(move_reg16);
+// _exec_(move_reg32);
 
 _exec_(movesx_reg8);
 _exec_(movesx_reg16);
@@ -105,24 +105,24 @@ _exec_(popa);
 
 // logical instructions
 // All AND, OR, XOR and CMP take 64 bits values that should follow the instruction in memory
-_lexec_(and_imm, mqword_t imm);
-_exec_(and_reg);
-_lexec_(or_imm, mqword_t imm);
-_exec_(or_reg);
-_lexec_(xor_imm, mqword_t imm);
-_exec_(xor_reg);
-_exec_(not );
-_exec_(lshift);
-_exec_(rshift);
+// _lexec_(and_imm, mqword_t imm);
+// _exec_(and_reg);
+// _lexec_(or_imm, mqword_t imm);
+// _exec_(or_reg);
+// _lexec_(xor_imm, mqword_t imm);
+// _exec_(xor_reg);
+// _exec_(not );
+// _exec_(lshift);
+// _exec_(rshift);
 // _exec_(cmp_imm);
 // _exec_(cmp_reg);
 
 // some extra instructions
-_exec_(inc);
-_exec_(dec);
+// _exec_(inc);
+// _exec_(dec);
 
 // data movement instructions
-_exec_(lea);
+// _exec_(lea);
 _lexec_(load, mqword_t address);
 _lexec_(store, mqword_t address);
 
@@ -131,13 +131,13 @@ _exec_(excg8);
 _exec_(excg16);
 _exec_(excg32);
 
-_exec_(mov8);
-_exec_(mov16);
-_exec_(mov32);
+// _exec_(mov8);
+// _exec_(mov16);
+// _exec_(mov32);
 
 // utility instructions
 
-_exec_(cflags);
+// _exec_(cflags);
 // _exec_(reset);
 // _exec_(clz);
 // _exec_(cln);
@@ -145,6 +145,7 @@ _exec_(cflags);
 // _exec_(clo);
 
 // contidional jumps
-_lexec_(jnz, mqword_t address);
+// _lexec_(jnz, mqword_t address);
+// _lexec_(jz, mqword_t address);
 
 #endif

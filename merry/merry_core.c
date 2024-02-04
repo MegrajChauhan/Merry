@@ -109,8 +109,8 @@ _MERRY_INTERNAL_ mqword_t merry_core_get_immediate(MerryCore *core)
 mptr_t merry_runCore(mptr_t core)
 {
     MerryCore *c = (MerryCore *)core;
-    MerryInstruction *current_inst = &c->ir;
-    mqptr_t current = &c->current_inst;
+    register mqptr_t current = &c->current_inst;
+    register mqword_t curr = 0;
     while (mtrue)
     {
         // merry_mutex_lock(c->lock);
@@ -133,7 +133,8 @@ mptr_t merry_runCore(mptr_t core)
         case OP_NOP: // we don't care about NOP instructions
             break;
         case OP_HALT: // Simply stop the core
-            merry_execute_halt(c);
+            merry_requestHdlr_push_request(_REQ_REQHALT, c->core_id, c->cond);
+            c->stop_running = mtrue;
             break;
         // Please ignore all of the redundant code
         /// TODO: Remove all these redundant code
@@ -198,22 +199,28 @@ mptr_t merry_runCore(mptr_t core)
             merry_execute_imod_reg(c);
             break;
         case OP_MOVE_IMM: // just 32 bits immediates
-            merry_execute_move_imm(c);
+            curr = *current;
+            c->registers[(curr >> 48) & 15] = (curr) & 0xFFFFFFFF;
+            printf("Ma is %lu\n", c->registers[Ma]); // remove this
             break;
         case OP_MOVE_IMM_64: // 64 bits immediates
-            merry_execute_move_imm64(c, merry_core_get_immediate(c));
+            c->registers[*current & 15] = merry_core_get_immediate(c);
             break;
         case OP_MOVE_REG: // moves the whole 8 bytes
-            merry_execute_move_reg(c);
+            curr = *current;
+            c->registers[(curr >> 4) & 15] = c->registers[curr & 15]; // this is all
             break;
         case OP_MOVE_REG8: // moves only the lowest byte
-            merry_execute_move_reg8(c);
+            curr = *current;
+            c->registers[(curr >> 4) & 15] = c->registers[curr & 15] & 0xFF;
             break;
         case OP_MOVE_REG16: // moves only the lowest 2 bytes
-            merry_execute_move_reg16(c);
+            curr = *current;
+            c->registers[(curr >> 4) & 15] = c->registers[curr & 15] & 0xFFFF;
             break;
         case OP_MOVE_REG32: // moves only the lowest 4 byte
-            merry_execute_move_reg32(c);
+            curr = *current;
+            c->registers[(curr >> 4) & 15] = c->registers[curr & 15] & 0xFFFFFF;
             break;
         case OP_MOVESX_IMM8:
             merry_execute_movesx_imm8(c);
@@ -236,7 +243,7 @@ mptr_t merry_runCore(mptr_t core)
         case OP_JMP_OFF: // we have to make the 5 bytes 8 bytes by sign extension in case it is indeed in 2's complement
                          // the offset in this case is a signed number and the 40th bit is the sign bit
                          // the decoder executes the jump instruction
-            mqword_t off = (*current & 0xFFFFFFFFFFFF);
+            register mqword_t off = (*current & 0xFFFFFFFFFFFF);
             if ((off >> 47) == 1)
                 off |= 0xFFFF000000000000;
             c->pc += off - 1;
@@ -288,47 +295,64 @@ mptr_t merry_runCore(mptr_t core)
             merry_execute_popa(c);
             break;
         case OP_AND_IMM:
-            merry_execute_and_imm(c, merry_core_get_immediate(c));
+            c->registers[*current & 15] &= merry_core_get_immediate(c);
             break;
         case OP_AND_REG:
-            merry_execute_and_reg(c);
+            curr = *current;
+            c->registers[(curr >> 4) & 15] &= c->registers[curr & 15];
             break;
         case OP_OR_IMM:
-            merry_execute_or_imm(c, merry_core_get_immediate(c));
+            c->registers[*current & 15] |= merry_core_get_immediate(c);
             break;
         case OP_OR_REG:
-            merry_execute_or_reg(c);
+            curr = *current;
+            c->registers[(curr >> 4) & 15] |= c->registers[curr & 15];
             break;
         case OP_XOR_IMM:
-            merry_execute_xor_imm(c, merry_core_get_immediate(c));
+            c->registers[*current & 15] ^= merry_core_get_immediate(c);
             break;
         case OP_XOR_REG:
-            merry_execute_xor_reg(c);
+            curr = *current;
+            c->registers[(curr >> 4) & 15] ^= c->registers[curr & 15];
             break;
         case OP_NOT:
-            merry_execute_not(c);
+            curr = *current & 15;
+            c->registers[curr] = ~c->registers[curr];
             break;
         case OP_LSHIFT:
-            merry_execute_lshift(c);
+            curr = *current;
+            c->registers[(curr >> 8) & 15] <<= curr & 0x40;
             break;
         case OP_RSHIFT:
-            merry_execute_rshift(c);
+            curr = *current;
+            c->registers[(curr >> 8) & 15] >>= curr & 0x40;
             break;
         case OP_CMP_IMM:
-            _cmp_inst_(c->registers[*current & 15], merry_core_get_immediate(c), &c->flag);
+            register mqword_t reg = c->registers[*current & 15];
+            register mqword_t imm = merry_core_get_immediate(c);
+            _cmp_inst_(reg, imm, &c->flag);
+            if (reg == imm)
+                c->greater = 1;
             break;
         case OP_CMP_REG:
-            _cmp_inst_(c->registers[(*current >> 4) & 15], c->registers[*current & 15], &c->flag);
+            register mqword_t reg1 = c->registers[(*current >> 4) & 15];
+            register mqword_t reg2 = c->registers[*current & 15];
+            _cmp_inst_(reg1, reg2, &c->flag);
+            if (reg1, reg2)
+                c->greater = 1;
             break;
         case OP_INC:
-            merry_execute_inc(c);
+            curr = *current & 15;
+            c->registers[curr] = _inc_inst_(c->registers[curr]);
             break;
         case OP_DEC:
-            merry_execute_dec(c);
+            curr = *current & 15;
+            c->registers[curr] = _dec_inst_(c->registers[curr]);
             break;
         case OP_LEA:
             // 000000000 0000000 00000000 00000000 00000000 00000000 00000000 00000000
-            merry_execute_lea(c);
+            curr = *current;
+            c->registers[(curr >> 24) & 15] = c->registers[(curr >> 16) & 15] + c->registers[(curr >> 8) & 15] * c->registers[curr & 15];
             break;
         case OP_LOAD:
             merry_execute_load(c, merry_core_get_immediate(c));
@@ -349,16 +373,23 @@ mptr_t merry_runCore(mptr_t core)
             merry_execute_excg(c);
             break;
         case OP_MOV8:
-            merry_execute_mov8(c);
+            curr = *current;
+            c->registers[(curr >> 4) & 15] &= (0xFFFFFFFFFFFFFF00 | (c->registers[curr & 15] & 0xFF));
             break;
         case OP_MOV16:
-            merry_execute_mov16(c);
+            curr = *current;
+            c->registers[(curr >> 4) & 15] &= (0xFFFFFFFFFFFF0000 | (c->registers[curr & 15] & 0xFFFF));
             break;
         case OP_MOV32:
-            merry_execute_mov32(c);
+            curr = *current;
+            c->registers[(curr >> 4) & 15] &= (0xFFFFFFFFFF000000 | (c->registers[curr & 15] & 0xFFFFFF));
             break;
         case OP_CFLAGS:
-            merry_execute_cflags(c);
+            c->flag.carry = 0;
+            c->flag.negative = 0;
+            c->flag.overflow = 0;
+            c->flag.zero = 0;
+            c->greater = 0;
             break;
         case OP_RESET:
             merry_core_zero_out_reg(c);
@@ -375,11 +406,62 @@ mptr_t merry_runCore(mptr_t core)
         case OP_CLO:
             _fclear_(overflow);
             break;
-        case OP_JNZ:
+        case OP_JZ:
+        case OP_JE:
             // the address to jmp should follow the instruction
-            merry_execute_jnz(c, merry_core_get_immediate(c));
+            if (c->flag.zero == 1)
+                c->pc = merry_core_get_immediate(c) - 1;
+            break;
+        case OP_JNZ:
+        case OP_JNE:
+            // the address to jmp should follow the instruction
+            if (c->flag.zero == 0)
+                c->pc = merry_core_get_immediate(c) - 1;
+            break;
+        case OP_JNC:
+            if (c->flag.carry == 0)
+                c->pc = merry_core_get_immediate(c) - 1;
+            break;
+        case OP_JC:
+            if (c->flag.carry == 1)
+                c->pc = merry_core_get_immediate(c) - 1;
+            break;
+        case OP_JNO:
+            if (c->flag.overflow == 0)
+                c->pc = merry_core_get_immediate(c) - 1;
+            break;
+        case OP_JO:
+            if (c->flag.overflow == 1)
+                c->pc = merry_core_get_immediate(c) - 1;
+            break;
+        case OP_JNN:
+            if (c->flag.negative == 0)
+                c->pc = merry_core_get_immediate(c) - 1;
+            break;
+        case OP_JN:
+            if (c->flag.negative == 1)
+                c->pc = merry_core_get_immediate(c) - 1;
+            break;
+        case OP_JS:
+        case OP_JNG:
+            if (c->greater == 0)
+                c->pc = merry_core_get_immediate(c) - 1;
+            break;
+        case OP_JNS:
+        case OP_JG:
+            if (c->greater == 1)
+                c->pc = merry_core_get_immediate(c) - 1;
+            break;
+        case OP_JGE:
+            if (c->greater == 1 || c->flag.zero == 0)
+                c->pc = merry_core_get_immediate(c) - 1;
+            break;
+        case OP_JSE:
+            if (c->greater == 0 || c->flag.zero == 0)
+                c->pc = merry_core_get_immediate(c) - 1;
             break;
         }
         c->pc++;
     }
+    printf("Ma is now %lu\n", c->registers[Ma]); // 1,000,000,000
 }

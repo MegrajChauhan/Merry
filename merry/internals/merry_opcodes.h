@@ -161,9 +161,26 @@ enum
     OP_CLN,    // clear the negative flag
     OP_CLC,    // clear the carry flag
     OP_CLO,    // clear the overflow flag
-    
+
     // conditional jumps
     OP_JNZ,
+    OP_JZ,
+    OP_JNE,
+    OP_JE,
+    OP_JNC,
+    OP_JC,
+    OP_JNO,
+    OP_JO,
+    OP_JNN,
+    OP_JN,
+    OP_JNG,
+    OP_JG,
+    OP_JNS,
+    OP_JS,
+    OP_JGE,
+    OP_JSE,
+
+    
 };
 
 /*
@@ -232,20 +249,6 @@ typedef unsigned long long moperand_t;
 
     ASP_MOVENC_IMM, // move if carry is not set
     ASP_MOVENC_REG, // move if carry is not set
-
-    // conditional jumps
-    ASP_JZ,  // jump if zero
-    ASP_JNZ, // jump if not zero
-    ASP_JE,  // jump if equal
-    ASP_JNE, // jump if not equal
-    ASP_JG,  // jump if greater
-    ASP_JS,  // jump if not greater
-    ASP_JO,  // jump if overflow
-    ASP_JNO, // jump if no overflow
-    ASP_JN,  // jump if negative
-    ASP_JNN, // jump if no negative
-    ASP_JGE, // jump if greater or equal
-    ASP_JSE, // jump if smaller or equal
 
     ASP_INTR, // generate an interrupt
 */

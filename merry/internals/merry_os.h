@@ -94,9 +94,9 @@ mptr_t merry_os_start_vm(mptr_t some_arg);
 // destroy the OS
 void merry_os_destroy();
 
-mret_t merry_os_mem_read_data(maddress_t address, mqptr_t store_in, msize_t core_id);
+// mret_t merry_os_mem_read_data(maddress_t address, mqptr_t store_in, msize_t core_id);
 
-mret_t merry_os_mem_write_data(maddress_t address, mqword_t to_store, msize_t core_id);
+// mret_t merry_os_mem_write_data(maddress_t address, mqword_t to_store, msize_t core_id);
 
 // print the suitable error message and exit the VM
 void merry_os_handle_error(merrot_t error);
