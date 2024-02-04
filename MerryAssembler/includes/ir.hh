@@ -29,6 +29,8 @@ namespace back_end{
         public:
             IrInst(IrInstType type = IrInstType::NOP) :_type(type) {}
             void add_operand(std::uint8_t op) { operands.push_back(op); }
+            IrInstType get_type() { return _type; }
+            std::vector<std::uint8_t> get_operands() { return operands; } 
     };
     class IrGen{
         private:
@@ -44,12 +46,11 @@ namespace back_end{
             void convert_astnode_to_inst();
             std::vector<IrInst> get_insts() {
                 for(std::variant<front_end::AstNodeInst, front_end::AstNodeLabel> inst : _ast.get_insts()){
-                    std::cout << "Index: " << idx << std::endl;
                     current_node = std::get<front_end::AstNodeInst>(_ast.get_insts().at(idx));
                     convert_astnode_to_inst();
                     ++idx;
                 }
-                return insts; 
+                return insts;
             }
     };
 };

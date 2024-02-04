@@ -76,12 +76,10 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
                   std::cout << "Invalid input: " << str << std::endl;
                   exit(1);
                 }
-                std::cout << "input: " << std::to_string(value) << std::endl;
                 uint8_t lower4_bytes =        ((value >> 8*0) & 0x000000FF); // lower 4 bits
                 uint8_t lower_middle4_bytes = ((value >> 8*1) & 0x000000FF); // Next 4 bits
                 uint8_t top_middle4_bytes =   ((value >> 8*2) & 0x000000FF); // Next 4 bits
                 uint8_t top4_bytes =          ((value >> 8*3) & 0x000000FF); // top 4 bits
-                std::cout << std::to_string(top4_bytes) << " " << std::to_string(top_middle4_bytes) << " " << std::to_string(lower_middle4_bytes) << " " << std::to_string(lower4_bytes) << std::endl;
                 inst.add_operand(lower4_bytes);
                 inst.add_operand(lower_middle4_bytes);
                 inst.add_operand(top_middle4_bytes);
@@ -121,12 +119,10 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
                   std::cout << "Invalid input: " << str << std::endl;
                   exit(1);
                 }
-                std::cout << "input: " << std::to_string(value) << std::endl;
                 uint8_t lower4_bytes =        ((value >> 8*0) & 0x000000FF); // lower 4 bits
                 uint8_t lower_middle4_bytes = ((value >> 8*1) & 0x000000FF); // Next 4 bits
                 uint8_t top_middle4_bytes =   ((value >> 8*2) & 0x000000FF); // Next 4 bits
                 uint8_t top4_bytes =          ((value >> 8*3) & 0x000000FF); // top 4 bits
-                std::cout << std::to_string(top4_bytes) << " " << std::to_string(top_middle4_bytes) << " " << std::to_string(lower_middle4_bytes) << " " << std::to_string(lower4_bytes) << std::endl;
                 inst.add_operand(lower4_bytes);
                 inst.add_operand(lower_middle4_bytes);
                 inst.add_operand(top_middle4_bytes);
@@ -166,12 +162,10 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
                   std::cout << "Invalid input: " << str << std::endl;
                   exit(1);
                 }
-                std::cout << "input: " << std::to_string(value) << std::endl;
                 uint8_t lower4_bytes =        ((value >> 8*0) & 0x000000FF); // lower 4 bits
                 uint8_t lower_middle4_bytes = ((value >> 8*1) & 0x000000FF); // Next 4 bits
                 uint8_t top_middle4_bytes =   ((value >> 8*2) & 0x000000FF); // Next 4 bits
                 uint8_t top4_bytes =          ((value >> 8*3) & 0x000000FF); // top 4 bits
-                std::cout << std::to_string(top4_bytes) << " " << std::to_string(top_middle4_bytes) << " " << std::to_string(lower_middle4_bytes) << " " << std::to_string(lower4_bytes) << std::endl;
                 inst.add_operand(lower4_bytes);
                 inst.add_operand(lower_middle4_bytes);
                 inst.add_operand(top_middle4_bytes);
@@ -211,12 +205,10 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
                   std::cout << "Invalid input: " << str << std::endl;
                   exit(1);
                 }
-                std::cout << "input: " << std::to_string(value) << std::endl;
                 uint8_t lower4_bytes =        ((value >> 8*0) & 0x000000FF); // lower 4 bits
                 uint8_t lower_middle4_bytes = ((value >> 8*1) & 0x000000FF); // Next 4 bits
                 uint8_t top_middle4_bytes =   ((value >> 8*2) & 0x000000FF); // Next 4 bits
                 uint8_t top4_bytes =          ((value >> 8*3) & 0x000000FF); // top 4 bits
-                std::cout << std::to_string(top4_bytes) << " " << std::to_string(top_middle4_bytes) << " " << std::to_string(lower_middle4_bytes) << " " << std::to_string(lower4_bytes) << std::endl;
                 inst.add_operand(lower4_bytes);
                 inst.add_operand(lower_middle4_bytes);
                 inst.add_operand(top_middle4_bytes);
@@ -256,12 +248,10 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
                   std::cout << "Invalid input: " << str << std::endl;
                   exit(1);
                 }
-                std::cout << "input: " << std::to_string(value) << std::endl;
                 uint8_t lower4_bytes =        ((value >> 8*0) & 0x000000FF); // lower 4 bits
                 uint8_t lower_middle4_bytes = ((value >> 8*1) & 0x000000FF); // Next 4 bits
                 uint8_t top_middle4_bytes =   ((value >> 8*2) & 0x000000FF); // Next 4 bits
                 uint8_t top4_bytes =          ((value >> 8*3) & 0x000000FF); // top 4 bits
-                std::cout << std::to_string(top4_bytes) << " " << std::to_string(top_middle4_bytes) << " " << std::to_string(lower_middle4_bytes) << " " << std::to_string(lower4_bytes) << std::endl;
                 inst.add_operand(lower4_bytes);
                 inst.add_operand(lower_middle4_bytes);
                 inst.add_operand(top_middle4_bytes);
@@ -269,7 +259,64 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
             }
         } break;
         // End Mathn't
-
+        case front_end::AstInstType::CALL: {
+            inst = IrInst(IrInstType::CALL);
+            const char *str = current_node.get_operands().at(0).c_str();
+            char* endptr;
+            uint64_t value = strtoll(str, &endptr, 10);
+            if (endptr == str) {
+              std::cout << "No digits were found\n";
+              exit(1);
+            } else if (*endptr != '\0') {
+              std::cout << "Invalid input: " << str << std::endl;
+              exit(1);
+            }
+            uint8_t upper_a = uint8_t((value >> 56) & 0xff);
+            uint8_t lower_a = uint8_t((value >> 48) & 0xff);
+            uint8_t upper_b = uint8_t((value >> 40) & 0xff);
+            uint8_t lower_b = uint8_t((value >> 32) & 0xff);
+            uint8_t upper_c = uint8_t((value >> 24) & 0xff);
+            uint8_t lower_c = uint8_t((value >> 16) & 0xff);
+            uint8_t upper_d = uint8_t((value >> 8) & 0xff);
+            uint8_t lower_d = uint8_t((value >> 0) & 0xff);
+            inst.add_operand(lower_d);
+            inst.add_operand(upper_d);
+            inst.add_operand(lower_c);
+            inst.add_operand(upper_c);
+            inst.add_operand(lower_b);
+            inst.add_operand(upper_b);
+            inst.add_operand(lower_a);
+            inst.add_operand(upper_a);
+        } break;
+        case front_end::AstInstType::JMP: {
+            inst = IrInst(IrInstType::JMP_ADDR);
+            const char *str = current_node.get_operands().at(0).c_str();
+            char* endptr;
+            uint64_t value = strtoll(str, &endptr, 10);
+            if (endptr == str) {
+              std::cout << "No digits were found\n";
+              exit(1);
+            } else if (*endptr != '\0') {
+              std::cout << "Invalid input: " << str << std::endl;
+              exit(1);
+            }
+            uint8_t upper_a = uint8_t((value >> 56) & 0xff);
+            uint8_t lower_a = uint8_t((value >> 48) & 0xff);
+            uint8_t upper_b = uint8_t((value >> 40) & 0xff);
+            uint8_t lower_b = uint8_t((value >> 32) & 0xff);
+            uint8_t upper_c = uint8_t((value >> 24) & 0xff);
+            uint8_t lower_c = uint8_t((value >> 16) & 0xff);
+            uint8_t upper_d = uint8_t((value >> 8) & 0xff);
+            uint8_t lower_d = uint8_t((value >> 0) & 0xff);
+            inst.add_operand(lower_d);
+            inst.add_operand(upper_d);
+            inst.add_operand(lower_c);
+            inst.add_operand(upper_c);
+            inst.add_operand(lower_b);
+            inst.add_operand(upper_b);
+            inst.add_operand(lower_a);
+            inst.add_operand(upper_a);
+        } break;
     }
     add_inst(inst);
 
