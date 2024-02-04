@@ -1,18 +1,18 @@
 all_insts:
-    nop
-    jmp next
+    nop ; 0
+    jmp next ; 1
 next:
-    add Ma, Mb
-    add Ma, 69
-    sub Ma, Mb
-    sub Ma, 69
-    mul Ma, Mb
-    mul Ma, 69
-    div Ma, Mb
-    div Ma, 69
-    mod Ma, Mb
-    mod Ma, 69
-    call halt
-    hlt
+    add Ma, Mb ; 2
+    add Ma, 69 ; 3
+    sub Ma, Mb ; 4
+    sub Ma, 420 ; 5
+    mul Ma, Mb ; 6
+    mul Ma, 69420 ; 7
+    div Ma, Mb ; 8
+    div Ma, 69420 ; 9
+    mod Ma, Mb ; 10
+    mod Ma, 1 ; 11
+    call halt ; 12
+    hlt ; 13
 halt:
-    ret
+    ret ; 14
