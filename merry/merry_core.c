@@ -201,7 +201,7 @@ mptr_t merry_runCore(mptr_t core)
         case OP_MOVE_IMM: // just 32 bits immediates
             curr = *current;
             c->registers[(curr >> 48) & 15] = (curr) & 0xFFFFFFFF;
-            printf("Ma is %lu\n", c->registers[Ma]); // remove this
+            // printf("Ma is %lu\n", c->registers[Ma]); // remove this
             break;
         case OP_MOVE_IMM_64: // 64 bits immediates
             c->registers[*current & 15] = merry_core_get_immediate(c);
@@ -246,10 +246,11 @@ mptr_t merry_runCore(mptr_t core)
             register mqword_t off = (*current & 0xFFFFFFFFFFFF);
             if ((off >> 47) == 1)
                 off |= 0xFFFF000000000000;
-            c->pc += off - 1;
+            c->pc += off;
             break;
         case OP_JMP_ADDR:
-            c->pc = merry_core_get_immediate(c) - 1;
+            // 6 bytes should be fine
+            c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
             break;
         case OP_CALL:
             // save the current return address
@@ -259,7 +260,7 @@ mptr_t merry_runCore(mptr_t core)
                 c->stop_running = mtrue;
                 break;
             }
-            c->pc = merry_core_get_immediate(c) - 1; // the address to the first instruction of the procedure
+            c->pc = (*current & 0xFFFFFFFFFFFF) - 1; // the address to the first instruction of the procedure
             merry_execute_call(c);
             break;
         case OP_RET:
@@ -342,12 +343,10 @@ mptr_t merry_runCore(mptr_t core)
                 c->greater = 1;
             break;
         case OP_INC:
-            curr = *current & 15;
-            c->registers[curr] = _inc_inst_(c->registers[curr]);
+            c->registers[*current & 15]++;
             break;
         case OP_DEC:
-            curr = *current & 15;
-            c->registers[curr] = _dec_inst_(c->registers[curr]);
+            c->registers[*current & 15]--; // now inc and dec are able to affect the flags register?
             break;
         case OP_LEA:
             // 000000000 0000000 00000000 00000000 00000000 00000000 00000000 00000000
@@ -410,58 +409,58 @@ mptr_t merry_runCore(mptr_t core)
         case OP_JE:
             // the address to jmp should follow the instruction
             if (c->flag.zero == 1)
-                c->pc = merry_core_get_immediate(c) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
             break;
         case OP_JNZ:
         case OP_JNE:
             // the address to jmp should follow the instruction
             if (c->flag.zero == 0)
-                c->pc = merry_core_get_immediate(c) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
             break;
         case OP_JNC:
             if (c->flag.carry == 0)
-                c->pc = merry_core_get_immediate(c) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
             break;
         case OP_JC:
             if (c->flag.carry == 1)
-                c->pc = merry_core_get_immediate(c) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
             break;
         case OP_JNO:
             if (c->flag.overflow == 0)
-                c->pc = merry_core_get_immediate(c) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
             break;
         case OP_JO:
             if (c->flag.overflow == 1)
-                c->pc = merry_core_get_immediate(c) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
             break;
         case OP_JNN:
             if (c->flag.negative == 0)
-                c->pc = merry_core_get_immediate(c) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
             break;
         case OP_JN:
             if (c->flag.negative == 1)
-                c->pc = merry_core_get_immediate(c) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
             break;
         case OP_JS:
         case OP_JNG:
             if (c->greater == 0)
-                c->pc = merry_core_get_immediate(c) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
             break;
         case OP_JNS:
         case OP_JG:
             if (c->greater == 1)
-                c->pc = merry_core_get_immediate(c) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
             break;
         case OP_JGE:
             if (c->greater == 1 || c->flag.zero == 0)
-                c->pc = merry_core_get_immediate(c) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
             break;
         case OP_JSE:
             if (c->greater == 0 || c->flag.zero == 0)
-                c->pc = merry_core_get_immediate(c) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
             break;
         }
         c->pc++;
     }
-    printf("Ma is now %lu\n", c->registers[Ma]); // 1,000,000,000
+    // printf("Ma is now %lu\n", c->registers[Ma]); // 1,000,000,000
 }
