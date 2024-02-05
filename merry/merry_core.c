@@ -463,7 +463,10 @@ mptr_t merry_runCore(mptr_t core)
             if (c->registers[Mc] != 0)
                 c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
             break;
-        
+        case OP_INTR:
+            if (merry_requestHdlr_push_request(*current & 0xFFFF, c->core_id, c->cond) == RET_FAILURE)
+                c->stop_running = mtrue;
+            break;
         }
         c->pc++;
     }

@@ -53,6 +53,8 @@ enum
     /*51 - 150 for any program generated errors*/
     // any remaining for actual requests
     _REQ_REQHALT = 151, /*Halt request: Halt the core that is making the request. Also check if any other cores are online, if not stop execution.*/
+    _REQ_EXIT,          /*The same as halt but instead it stops every core from running*/
+    _REQ_NEWCORE,       /*Create a new core for execution. This requires the requesting core's Ma register to contain the address from which the new core should execute from*/
 };
 
 #endif

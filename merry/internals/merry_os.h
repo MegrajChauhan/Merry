@@ -76,7 +76,7 @@ struct Merry
 */
 
 // this only initializes an instance of Merry while leaving inst_mem, data_mem uninitialized which is valid as we need to know the input and how many
-// pages to start with 
+// pages to start with
 
 static Merry os;
 
@@ -90,6 +90,9 @@ static Merry os;
 
 mret_t merry_os_init(mcstr_t _inp_file);
 mptr_t merry_os_start_vm(mptr_t some_arg);
+
+mret_t merry_os_add_core();
+mret_t merry_os_boot_core(msize_t core_id, maddress_t start_addr);
 
 // destroy the OS
 void merry_os_destroy();
