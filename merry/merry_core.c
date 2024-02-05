@@ -332,14 +332,14 @@ mptr_t merry_runCore(mptr_t core)
             register mqword_t reg = c->registers[*current & 15];
             register mqword_t imm = merry_core_get_immediate(c);
             _cmp_inst_(reg, imm, &c->flag);
-            if (reg == imm)
+            if (reg > imm)
                 c->greater = 1;
             break;
         case OP_CMP_REG:
             register mqword_t reg1 = c->registers[(*current >> 4) & 15];
             register mqword_t reg2 = c->registers[*current & 15];
             _cmp_inst_(reg1, reg2, &c->flag);
-            if (reg1, reg2)
+            if (reg1 > reg2)
                 c->greater = 1;
             break;
         case OP_INC:
@@ -459,6 +459,11 @@ mptr_t merry_runCore(mptr_t core)
             if (c->greater == 0 || c->flag.zero == 0)
                 c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
             break;
+        case OP_LOOP:
+            if (c->registers[Mc] != 0)
+                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
+            break;
+        
         }
         c->pc++;
     }

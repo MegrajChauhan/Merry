@@ -20,11 +20,18 @@ _MERRY_ALWAYS_INLINE_ _exec_(add_reg){
     // add one register to another register
     _ArithMeticRegFrame_(+)}
 
-_MERRY_ALWAYS_INLINE_ _exec_(sub_imm){
-    _ArithMeticImmFrame_(-)}
+_MERRY_ALWAYS_INLINE_ _exec_(sub_imm)
+{
+   _ArithMeticImmFrame_(-) 
+   if (core->flag.negative == 0)
+           core->greater == 1;
+}
 
 _MERRY_ALWAYS_INLINE_ _exec_(sub_reg){
-    _ArithMeticRegFrame_(-)}
+    _ArithMeticRegFrame_(-)
+    if (core->flag.negative == 0)
+           core->greater == 1;
+    }
 
 _MERRY_ALWAYS_INLINE_ _exec_(mul_imm){
     _ArithMeticImmFrame_(*)}
@@ -107,10 +114,16 @@ _MERRY_ALWAYS_INLINE_ _exec_(iadd_reg){
     _SArithMeticRegFrame_(+)}
 
 _MERRY_ALWAYS_INLINE_ _exec_(isub_imm){
-    _SArithMeticImmFrame_(-)}
+    _SArithMeticImmFrame_(-)
+    if (core->flag.negative == 0)
+           core->greater == 1;
+    }
 
 _MERRY_ALWAYS_INLINE_ _exec_(isub_reg){
-    _SArithMeticRegFrame_(-)}
+    _SArithMeticRegFrame_(-)
+    if (core->flag.negative == 0)
+           core->greater == 1;
+    }
 
 _MERRY_ALWAYS_INLINE_ _exec_(imul_imm){
     _SArithMeticImmFrame_(*)}
