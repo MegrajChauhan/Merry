@@ -109,12 +109,15 @@ jmp_off -> opcode: 0x26
                     The immediate is sign extended as per the sign and then added to the pc.
            example: 0x26 0x00 0x01 0x02 0x03 0x04 0x05 0x06 -> The last 6 bytes are the offset. Since it is a signed value, providing 2's complemented negative value will decrement the PC.
 
+[Changes made here]
 jmp_addr -> opcode: 0x27
-            operands: 8 bytes address that follows the instruction in memory.
-            example: if the jmp_addr instruction is encountered, the next 8 bytes are read again which is the address to jump to.
+            operands: 6 bytes address
+            example: 0x27 0x00 [6 bytes address]
 
+[Changes made here]
 call -> opcode: 0x28
-        operands: 8 bytes address that follows the instruction in memory
+        operands: 6 bytes address 
+        example: 0x28 0x00 [6 bytes address]
 
 ret -> opcode: 0x29
        no operands
@@ -234,8 +237,9 @@ clo -> opcode: 0x4D: Resets the overflow flag from the flags register
 
 [I am hoping that the reader can deduce what these instructions do.]
 jnz -> opcode: 0x4E
-       operands: A 64-bit address that follows.
+       operands: A 6 bytes address.
        details: Jump if the zero flag is not set
+       example: 0x4E 0x00 [6 bytes address]
 
 jz -> opcode: 0x4F: same as jnz
 jne -> opcode: 0x50: same as jnz
