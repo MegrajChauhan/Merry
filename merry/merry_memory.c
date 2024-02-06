@@ -162,7 +162,7 @@ void merry_memory_free(MerryMemory *memory)
 mret_t merry_memory_read(MerryMemory *memory, maddress_t address, mqptr_t _store_in)
 {
     // get the actual address and the page
-    MerryAddress addr = _MERRY_MEMORY_DEDUCE_ADDRESS_(address);
+    register MerryAddress addr = _MERRY_MEMORY_DEDUCE_ADDRESS_(address);
     // We read 8 bytes at once and so we have to check if the offset is within the page's limit
     // Since the CPU will read the memory in an aligned way, the program can access it in ways that are unpredictable
     // if the program requests the address that is at the end of a Page then getting the other 7 bytes would require getting it from another page
@@ -184,7 +184,7 @@ mret_t merry_memory_read(MerryMemory *memory, maddress_t address, mqptr_t _store
 mret_t merry_memory_write(MerryMemory *memory, maddress_t address, mqword_t _to_write)
 {
     // pretty much the same as read
-    MerryAddress addr = _MERRY_MEMORY_DEDUCE_ADDRESS_(address);
+    register MerryAddress addr = _MERRY_MEMORY_DEDUCE_ADDRESS_(address);
     if (surelyF(addr.page >= memory->number_of_pages))
     {
         // this implies the request is for a page that doesn't exist
@@ -246,6 +246,19 @@ mret_t merry_memory_write_lock(MerryMemory *memory, maddress_t address, mqword_t
     *temp = _to_write; // write the value
     merry_mutex_unlock(memory->pages[addr.page]->lock);
     return RET_SUCCESS;
+}
+
+mptr_t merry_memory_get_address(MerryMemory *memory, maddress_t address)
+{
+    register MerryAddress addr = _MERRY_MEMORY_DEDUCE_ADDRESS_(address);
+    if (surelyF(addr.page >= memory->number_of_pages))
+    {
+        // this implies the request is for a page that doesn't exist
+        memory->error = MERRY_MEM_INVALID_ACCESS;
+        return RET_NULL;
+    }
+    // this just basically returns an actual address to the address that the manager can use
+    return &memory->pages[addr.page]->address_space[addr.offset];
 }
 
 // mret_t merry_memory_load(MerryMemory *memory, mqptr_t to_load, msize_t num_of_qs)

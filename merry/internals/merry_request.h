@@ -55,6 +55,15 @@ enum
     _REQ_REQHALT = 151, /*Halt request: Halt the core that is making the request. Also check if any other cores are online, if not stop execution.*/
     _REQ_EXIT,          /*The same as halt but instead it stops every core from running*/
     _REQ_NEWCORE,       /*Create a new core for execution. This requires the requesting core's Ma register to contain the address from which the new core should execute from*/
+    _REQ_READCHAR,      /*Reads a character. The address to store to must be in the Ma register. Can also be used to read 1 byte numbers*/
+    _REQ_READWORD,      /*Reads a 2 byte short integer: The address in Ma register*/
+    _REQ_READDWORD,     /*Reads a 4 byte short integer: The address in Ma register*/
+    _REQ_READQWORD,     /*Reads a 8 byte short integer: The address in Ma register*/
+    _REQ_WRITECHAR,     /*Writes a character. The address to store to must be in the Ma register. Can also be used to read 1 byte numbers*/
+    _REQ_WRITEWORD,     /*Writes a 2 byte short integer: The address in Ma register*/
+    _REQ_WRITEDWORD,    /*Writes a 4 byte integer: The address in Ma register*/
+    _REQ_WRITEQWORD,    /*Writes a 8 byte integer: The address in Ma register*/
+    _REQ_WRITESTR,    /*Writes a string: The address in Ma register, Mb register must have the len*/
 };
 
 #endif

@@ -20,7 +20,7 @@
 #define _MERRY_SQUEUE_INIT_(qptr)                            \
     do                                                       \
     {                                                        \
-        qptr = (typeof(qptr) *)malloc(sizeof(typeof(qptr));) \
+        qptr = (typeof(qptr) *)malloc(sizeof(typeof(qptr))); \
     } while (0);
 
 #define _MERRY_SQUEUE_POPULATE_(qptr, size, type)          \

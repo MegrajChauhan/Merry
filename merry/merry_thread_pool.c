@@ -19,6 +19,8 @@ MerryThreadPool *merry_init_thread_pool(msize_t pool_size)
 _MERRY_INTERNAL_ void merry_thPool_kill_threads(MerryThreadPool *pool)
 {
     // we kill all the threads
+    if (pool->free_thread_count == pool->pool_size)
+        return;
     if (pool->pool_size == 1)
         atomic_exchange(&pool->threads[0].stop, mtrue);
     else

@@ -41,6 +41,8 @@
 #include "merry_request_hdlr.h"
 #include "merry_thread_pool.h"
 #include "merry_core.h"
+#include "services/merry_input.h"
+#include "services/merry_output.h"
 
 typedef struct Merry Merry;
 

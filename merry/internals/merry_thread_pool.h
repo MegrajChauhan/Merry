@@ -19,7 +19,7 @@ enum MerryThreadState
     NOT_INIT,
 };
 
-_MERRY_DEFINE_FUNC_PTR_(mptr_t, merry_pool_exec_t, ...)
+_MERRY_DEFINE_FUNC_PTR_(mptr_t, merry_pool_exec_t, mptr_t, ...)
 
 struct MerryThreadPoolThread
 {

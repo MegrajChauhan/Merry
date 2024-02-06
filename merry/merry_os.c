@@ -251,6 +251,7 @@ mptr_t merry_os_start_vm(mptr_t some_arg)
     // Core 0 is now up and running
     // The OS should be ready to handle requests
     MerryOSRequest current_req;
+    mptr_t temp;
     _log_(_OS_, "STARTING EXECUTION", "Manager is entering the request handling loop");
     while (os.stop == mfalse)
     {
@@ -299,6 +300,88 @@ mptr_t merry_os_start_vm(mptr_t some_arg)
                     case _REQ_NEWCORE:
                         _llog_(_OS_, "REQ", "New core creation request received from core ID %lu", current_req.id);
                         merry_os_execute_request_new_core(&os, &current_req);
+                        break;
+                    case _REQ_READCHAR:
+                        _llog_(_OS_, "REQ", "Reading character request received from core ID %lu", current_req.id);
+                        mptr_t temp;
+                        if ((temp = merry_memory_get_address(os.data_mem, os.cores[current_req.id]->registers[Ma])) == RET_NULL)
+                        {
+                            merry_requestHdlr_panic(os.data_mem->error);
+                            break;
+                        }
+                        merry_read_char(temp);
+                        break;
+                    case _REQ_READWORD:
+                        _llog_(_OS_, "REQ", "Reading word request received from core ID %lu", current_req.id);
+                        if ((temp = merry_memory_get_address(os.data_mem, os.cores[current_req.id]->registers[Ma])) == RET_NULL)
+                        {
+                            merry_requestHdlr_panic(os.data_mem->error);
+                            break;
+                        }
+                        merry_read_word(temp);
+                        break;
+                    case _REQ_READDWORD:
+                        _llog_(_OS_, "REQ", "Reading dword request received from core ID %lu", current_req.id);
+                        if ((temp = merry_memory_get_address(os.data_mem, os.cores[current_req.id]->registers[Ma])) == RET_NULL)
+                        {
+                            merry_requestHdlr_panic(os.data_mem->error);
+                            break;
+                        }
+                        merry_read_dword(temp);
+                        break;
+                    case _REQ_READQWORD:
+                        _llog_(_OS_, "REQ", "Reading qword request received from core ID %lu", current_req.id);
+                        if ((temp = merry_memory_get_address(os.data_mem, os.cores[current_req.id]->registers[Ma])) == RET_NULL)
+                        {
+                            merry_requestHdlr_panic(os.data_mem->error);
+                            break;
+                        }
+                        merry_read_qword(temp);
+                        break;
+                    case _REQ_WRITECHAR:
+                        _llog_(_OS_, "REQ", "Writing character request received from core ID %lu", current_req.id);
+                        if ((temp = merry_memory_get_address(os.data_mem, os.cores[current_req.id]->registers[Ma])) == RET_NULL)
+                        {
+                            merry_requestHdlr_panic(os.data_mem->error);
+                            break;
+                        }
+                        merry_write_char(temp);
+                        break;
+                    case _REQ_WRITEWORD:
+                        _llog_(_OS_, "REQ", "Writing word request received from core ID %lu", current_req.id);
+                        if ((temp = merry_memory_get_address(os.data_mem, os.cores[current_req.id]->registers[Ma])) == RET_NULL)
+                        {
+                            merry_requestHdlr_panic(os.data_mem->error);
+                            break;
+                        }
+                        merry_write_word(temp);
+                        break;
+                    case _REQ_WRITEDWORD:
+                        _llog_(_OS_, "REQ", "Writing dword request received from core ID %lu", current_req.id);
+                        if ((temp = merry_memory_get_address(os.data_mem, os.cores[current_req.id]->registers[Ma])) == RET_NULL)
+                        {
+                            merry_requestHdlr_panic(os.data_mem->error);
+                            break;
+                        }
+                        merry_write_dword(temp);
+                        break;
+                    case _REQ_WRITEQWORD:
+                        _llog_(_OS_, "REQ", "Writing qword request received from core ID %lu", current_req.id);
+                        if ((temp = merry_memory_get_address(os.data_mem, os.cores[current_req.id]->registers[Ma])) == RET_NULL)
+                        {
+                            merry_requestHdlr_panic(os.data_mem->error);
+                            break;
+                        }
+                        merry_write_qword(temp);
+                        break;
+                    case _REQ_WRITESTR:
+                        _llog_(_OS_, "REQ", "Writing string request received from core ID %lu", current_req.id);
+                        if ((temp = merry_memory_get_address(os.data_mem, os.cores[current_req.id]->registers[Ma])) == RET_NULL)
+                        {
+                            merry_requestHdlr_panic(os.data_mem->error);
+                            break;
+                        }
+                        merry_write_bytes(temp, os.cores[current_req.id]->registers[Mb]);
                         break;
                     default:
                         /// NOTE: this will come in handy when we implement some built-in syscalls and the program provides invalid syscalls
