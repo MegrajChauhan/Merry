@@ -39,6 +39,7 @@
 #include "../../utils/merry_types.h"
 #include "merry_reader.h"
 #include "merry_request_hdlr.h"
+#include "merry_thread_pool.h"
 #include "merry_core.h"
 
 typedef struct Merry Merry;
@@ -47,6 +48,7 @@ struct Merry
 {
   MerryCore **cores;          // the vcores
   MerryThread **core_threads; // the vcore's threads
+  MerryThreadPool *thPool;    // the manager's thread pool
   MerryMemory *inst_mem;      // the instruction memory that every vcore shares
   MerryMemory *data_mem;      // the data memory that every vcore shares
   MerryMutex *_lock;          // the Manager's lock
@@ -61,6 +63,7 @@ struct Merry
 #include "merry_os_exec.h"
 
 #define _MERRY_REQUEST_QUEUE_LEN_ 10 // for now
+#define _MERRY_THPOOL_LEN_ 10        // for now
 
 #define _MERRY_REQUEST_INTERNAL_ERROR_(request_id) (request_id >= 0 && request_id <= 50)
 #define _MERRY_REQUEST_PROGRAM_ERROR_(request_id) (request_id >= 51 && request_id <= 150)

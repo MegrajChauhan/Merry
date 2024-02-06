@@ -55,7 +55,9 @@ mret_t merry_os_init(mcstr_t _inp_file)
     os.core_threads = (MerryThread **)malloc(sizeof(MerryThread *)); // just 1 for now
     if (os.core_threads == RET_NULL)
         goto failure;
-    Merry *o = &os;
+    // Merry *o = &os;
+    if ((os.thPool = merry_init_thread_pool(_MERRY_THPOOL_LEN_)) == RET_NULL)
+        goto failure;
     return RET_SUCCESS; // we did everything correctly
 failure:
     _log_(_OS_, "Intialization Failure", "Failed to intialize the manager");
@@ -92,6 +94,7 @@ void merry_os_destroy()
         }
         free(os.core_threads);
     }
+    merry_destroy_thread_pool(os.thPool);
     merry_requestHdlr_destroy();
 }
 
