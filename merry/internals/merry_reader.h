@@ -36,7 +36,7 @@
 typedef struct MerryInpFile MerryInpFile;
 
 #define _READ_ERROR_(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
-#define _READ_DIRERROR_(message) fprintf(stderr, message)
+#define _READ_DIRERROR_(message, ...) fprintf(stderr, message, ##__VA_ARGS__)
 #define _INP_FILE_ORDERING_LITTLE_ _MERRY_LITTLE_ENDIAN_
 #define _INP_FILE_ORDERING_BIG_ _MERRY_BIG_ENDIAN_
 

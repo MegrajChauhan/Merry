@@ -121,39 +121,63 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
         return RET_FAILURE;
     }
     // the file has the signature bytes
+    inp->byte_order = header[7] & 0x1; // get the byte ordering of the input bytes
     // now get the ilen and dlen from SDT
-    inp->ilen = header[8];
-    inp->ilen = (inp->ilen << 8) | header[9];
-    inp->ilen = (inp->ilen << 8) | header[10];
-    inp->ilen = (inp->ilen << 8) | header[11];
-    inp->ilen = (inp->ilen << 8) | header[12];
-    inp->ilen = (inp->ilen << 8) | header[13];
-    inp->ilen = (inp->ilen << 8) | header[14];
-    inp->ilen = (inp->ilen << 8) | header[15];
-
-    inp->dlen = header[16];
-    inp->dlen = (inp->dlen << 8) | header[17];
-    inp->dlen = (inp->dlen << 8) | header[18];
-    inp->dlen = (inp->dlen << 8) | header[19];
-    inp->dlen = (inp->dlen << 8) | header[20];
-    inp->dlen = (inp->dlen << 8) | header[21];
-    inp->dlen = (inp->dlen << 8) | header[22];
-    inp->dlen = (inp->dlen << 8) | header[23];
-
-    // get the string len
-    inp->slen = header[24];
-    inp->slen = (inp->slen << 8) | header[25];
-    inp->slen = (inp->slen << 8) | header[26];
-    inp->slen = (inp->slen << 8) | header[27];
-    inp->slen = (inp->slen << 8) | header[28];
-    inp->slen = (inp->slen << 8) | header[29];
-    inp->slen = (inp->slen << 8) | header[30];
-    inp->slen = (inp->slen << 8) | header[31];
-
+    inp->ilen = ((
+                     (
+                         (
+                             (
+                                 (
+                                     (
+                                         (
+                                             (
+                                                 (
+                                                     (
+                                                         (
+                                                             (
+                                                                 header[8] << 8) |
+                                                             header[9])
+                                                         << 8) |
+                                                     header[10])
+                                                 << 8) |
+                                             header[11])
+                                         << 8) |
+                                     header[12])
+                                 << 8) |
+                             header[13])
+                         << 8) |
+                     header[14])
+                 << 8) |
+                header[15];
+    // get the data len
+    inp->dlen = ((
+                     (
+                         (
+                             (
+                                 (
+                                     (
+                                         (
+                                             (
+                                                 (
+                                                     (
+                                                         (
+                                                             (header[16] << 8) | header[17])
+                                                         << 8) |
+                                                     header[18])
+                                                 << 8) |
+                                             header[19])
+                                         << 8) |
+                                     header[20])
+                                 << 8) |
+                             header[21])
+                         << 8) |
+                     header[22])
+                 << 8) |
+                header[23];
     // now check if dlen and ilen are within the limits
     if (inp->file_len < (inp->dlen + inp->ilen + inp->slen))
     {
-        _READ_DIRERROR_("Read Error: Invalid instruction, string and data length. The total length exceeds the file's length.\n");
+        _READ_DIRERROR_("Read Error: Invalid instruction and data length.\n");
         return RET_FAILURE;
     }
     // we also need to make sure that ilen and dlen are valid

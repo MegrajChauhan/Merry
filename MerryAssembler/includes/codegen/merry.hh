@@ -19,7 +19,7 @@ namespace code_gen{
                 myfile.write(header.data(), 8);
                 header.clear();
                 // Insts size
-                uint64_t insts_size = _insts.size();
+                uint64_t insts_size = (_insts.size())*8;
                 uint8_t upper_a = uint8_t((insts_size >> 56) & 0xff);
                 uint8_t lower_a = uint8_t((insts_size >> 48) & 0xff);
                 uint8_t upper_b = uint8_t((insts_size >> 40) & 0xff);
