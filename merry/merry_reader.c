@@ -21,7 +21,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_alloc_pages(MerryInpFile *inp)
     // after parsing the input file, we need to map the memory pages and prepare for reading
     // In the future, the input files, if gets too large, we have to implement some optimizations for them
     // for example, the reader can read the file in the background and fill the memory as the VM is executing simultaneously
-    msize_t aligned = merry_align_size(inp->dlen);
+    msize_t aligned = merry_align_size(inp->dlen) + inp->slen; // data includes slen as well
     inp->dpage_count = aligned / _MERRY_MEMORY_ADDRESSES_PER_PAGE_ + (aligned % _MERRY_MEMORY_ADDRESSES_PER_PAGE_ > 0 ? 1 : 0);
     inp->ipage_count = inp->ilen / _MERRY_MEMORY_ADDRESSES_PER_PAGE_ + (inp->ilen % _MERRY_MEMORY_ADDRESSES_PER_PAGE_ > 0 ? 1 : 0);
     // even if dpage_count is 0, we sill need to map one page
@@ -104,8 +104,8 @@ _MERRY_INTERNAL_ msize_t merry_get_file_len(FILE *f)
 
 _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
 {
-    // This will parse the first 24 bytes to collect important information and validate it as well
-    mbyte_t header[_READER_HEADER_LEN_]; // 24 bytes
+    // This will parse the first 32 bytes to collect important information and validate it as well
+    mbyte_t header[_READER_HEADER_LEN_]; // 32 bytes
     // now we read the header
     if (fread(header, 1, _READER_HEADER_LEN_, inp->f) != _READER_HEADER_LEN_)
     {
@@ -122,61 +122,38 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
     }
     // the file has the signature bytes
     // now get the ilen and dlen from SDT
-    inp->ilen = ((
-                     (
-                         (
-                             (
-                                 (
-                                     (
-                                         (
-                                             (
-                                                 (
-                                                     (
-                                                         (
-                                                             (
-                                                                 header[8] << 8) |
-                                                             header[9])
-                                                         << 8) |
-                                                     header[10])
-                                                 << 8) |
-                                             header[11])
-                                         << 8) |
-                                     header[12])
-                                 << 8) |
-                             header[13])
-                         << 8) |
-                     header[14])
-                 << 8) |
-                header[15];
-    // get the data len
-    inp->dlen = ((
-                     (
-                         (
-                             (
-                                 (
-                                     (
-                                         (
-                                             (
-                                                 (
-                                                     (
-                                                         (
-                                                             (header[16] << 8) | header[17])
-                                                         << 8) |
-                                                     header[18])
-                                                 << 8) |
-                                             header[19])
-                                         << 8) |
-                                     header[20])
-                                 << 8) |
-                             header[21])
-                         << 8) |
-                     header[22])
-                 << 8) |
-                header[23];
+    inp->ilen = header[8];
+    inp->ilen = (inp->ilen << 8) | header[9];
+    inp->ilen = (inp->ilen << 8) | header[10];
+    inp->ilen = (inp->ilen << 8) | header[11];
+    inp->ilen = (inp->ilen << 8) | header[12];
+    inp->ilen = (inp->ilen << 8) | header[13];
+    inp->ilen = (inp->ilen << 8) | header[14];
+    inp->ilen = (inp->ilen << 8) | header[15];
+
+    inp->dlen = header[16];
+    inp->dlen = (inp->dlen << 8) | header[17];
+    inp->dlen = (inp->dlen << 8) | header[18];
+    inp->dlen = (inp->dlen << 8) | header[19];
+    inp->dlen = (inp->dlen << 8) | header[20];
+    inp->dlen = (inp->dlen << 8) | header[21];
+    inp->dlen = (inp->dlen << 8) | header[22];
+    inp->dlen = (inp->dlen << 8) | header[23];
+
+    // get the string len
+    inp->slen = header[24];
+    inp->slen = (inp->slen << 8) | header[25];
+    inp->slen = (inp->slen << 8) | header[26];
+    inp->slen = (inp->slen << 8) | header[27];
+    inp->slen = (inp->slen << 8) | header[28];
+    inp->slen = (inp->slen << 8) | header[29];
+    inp->slen = (inp->slen << 8) | header[30];
+    inp->slen = (inp->slen << 8) | header[31];
+
     // now check if dlen and ilen are within the limits
-    if (inp->file_len < (inp->dlen + inp->ilen))
+    if (inp->file_len < (inp->dlen + inp->ilen + inp->slen))
     {
-        _READ_DIRERROR_("Read Error: Invalid instruction and data length. The total length exceeds the file's length.\n");
+        _READ_DIRERROR_("Read Error: Invalid instruction, string and data length. The total length exceeds the file's length.\n");
         return RET_FAILURE;
     }
     // we also need to make sure that ilen and dlen are valid
@@ -233,8 +210,8 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_instructions_different(MerryInpFile *i
 {
     // read instructions when the ordering of the bytes in the input file is different than that of the host
     // this is not preferable but we can do nothing
-    msize_t count = inp->ilen / _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
-    msize_t ext = inp->ilen % _MERRY_MEMORY_ADDRESSES_PER_PAGE_; // this gives any remaining addresses
+    register msize_t count = inp->ilen / _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+    register msize_t ext = inp->ilen % _MERRY_MEMORY_ADDRESSES_PER_PAGE_; // this gives any remaining addresses
     // how should we approach this? All i can think of is, read 8 bytes, invert them, and write it to the mapped pages
     mbyte_t num[_MERRY_MEMORY_ADDRESSES_PER_PAGE_];
     mqword_t inverted[_MERRY_MEMORY_QS_PER_PAGE_];
@@ -323,8 +300,8 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_data_different(MerryInpFile *inp)
 {
     // read instructions when the ordering of the bytes in the input file is different than that of the host
     // this is not preferable but we can do nothing
-    msize_t count = inp->dlen / _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
-    msize_t ext = inp->dlen % _MERRY_MEMORY_ADDRESSES_PER_PAGE_; // this gives any remaining addresses
+    register msize_t count = inp->dlen / _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+    register msize_t ext = inp->dlen % _MERRY_MEMORY_ADDRESSES_PER_PAGE_; // this gives any remaining addresses
     // how should we approach this? All i can think of is, read 8 bytes, invert them, and write it to the mapped pages
     mbyte_t num[_MERRY_MEMORY_ADDRESSES_PER_PAGE_];
     mqword_t inverted[_MERRY_MEMORY_QS_PER_PAGE_];
@@ -392,8 +369,8 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_data_different(MerryInpFile *inp)
 
 _MERRY_INTERNAL_ mret_t merry_reader_read_data_same(MerryInpFile *inp)
 {
-    msize_t count = inp->dlen / _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
-    msize_t ext = inp->dlen % _MERRY_MEMORY_ADDRESSES_PER_PAGE_; // this gives any remaining addresses
+    register msize_t count = inp->dlen / _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+    register msize_t ext = inp->dlen % _MERRY_MEMORY_ADDRESSES_PER_PAGE_; // this gives any remaining addresses
     for (msize_t i = 0; i < count; i++)
     {
         // now we read
@@ -415,6 +392,49 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_data_same(MerryInpFile *inp)
             return RET_FAILURE;
         }
     }
+    // we will read string here
+    if (inp->slen == 0)
+        return RET_SUCCESS;
+
+    // firstly read
+    mqword_t rem = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - ext;
+
+    if (fread(inp->_data[count] + ext, 1, rem < inp->slen ? rem : inp->slen, inp->f) != (rem < inp->slen ? rem : inp->slen))
+    {
+        _READ_DIRERROR_("Read Error: Failed to read string.\n");
+        return RET_FAILURE;
+    }
+
+    if (inp->slen < rem)
+        return RET_SUCCESS; // we have read what we can
+
+    // we have read another page now
+    inp->slen -= rem; // we have read rem number of bytes already
+
+    register msize_t s_count = inp->slen / _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+    register msize_t s_ext = inp->slen % _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+    count++;
+    for (msize_t i = 0; i < (s_count); i++)
+    {
+        if (fread(inp->_data[count], 1, _MERRY_MEMORY_ADDRESSES_PER_PAGE_, inp->f) != _MERRY_MEMORY_ADDRESSES_PER_PAGE_)
+        {
+            // we failed
+            // what should we do when we fail to read?
+            _READ_DIRERROR_("Read Error: Failed to read string data.\n");
+            return RET_FAILURE;
+        }
+        count++;
+    }
+
+    if (s_ext > 0)
+    {
+        if (fread(inp->_data[count], 1, s_ext, inp->f) != s_ext)
+        {
+            _READ_DIRERROR_("Read Error: Failed to read string data.\n");
+            return RET_FAILURE;
+        }
+    }
+
     // in future, if we do optimize reader for faster file reading, we can make this function run as a detached thread constantly reading in the background
     return RET_SUCCESS; // we did it!
 }
@@ -426,15 +446,47 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_data(MerryInpFile *inp)
     if (inp->dlen == 0)
         return RET_SUCCESS;
     mret_t ret = merry_reader_read_data_same(inp);
-    // if (_MERRY_BYTE_ORDER_ == _MERRY_ENDIANNESS_)
-    // else
-    //     ret = merry_reader_read_data_different(inp);
+    if (_MERRY_BYTE_ORDER_ == _MERRY_ENDIANNESS_)
+        ret = merry_reader_read_data_same(inp);
+    else
+        ret = merry_reader_read_data_different(inp);
     // the same as instruction reading
     if (ret == RET_SUCCESS)
         return ret;
     merry_reader_unalloc_pages(inp);
     return ret;
 }
+
+// _MERRY_INTERNAL_ mret_t merry_reader_read_string(MerryInpFile *inp)
+// {
+//     if (inp->slen == 0)
+//         return RET_SUCCESS;
+//     register msize_t s_count = inp->slen / _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+//     register msize_t s_ext = inp->slen % _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+//     // slen will certainly not be that long
+//     register msize_t count = inp->dlen / _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+//     register msize_t ext = inp->dlen % _MERRY_MEMORY_ADDRESSES_PER_PAGE_; // this gives any remaining addresses
+//     mbyte_t _read[_MERRY_MEMORY_ADDRESSES_PER_PAGE_];
+
+//     mqword_t rem = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - ext;
+
+//     if (fread(&inp->_data[count - 1][ext - 1], 1, rem < inp->slen ? rem : inp->slen, inp->f) != _MERRY_MEMORY_ADDRESSES_PER_PAGE_)
+//     {
+//         _READ_DIRERROR_("Read Error: Failed to read string.\n");
+//         return RET_FAILURE;
+//     }
+
+//     for (msize_t i = 0; i < s_count; i++)
+//     {
+//         if (fread(inp->_data[i], 1, _MERRY_MEMORY_ADDRESSES_PER_PAGE_, inp->f) != _MERRY_MEMORY_ADDRESSES_PER_PAGE_)
+//         {
+//             // we failed
+//             // what should we do when we fail to read?
+//             _READ_DIRERROR_("Read Error: Failed to read data.\n");
+//             return RET_FAILURE;
+//         }
+//     }
+// }
 
 MerryInpFile *merry_read_file(mcstr_t _file_name)
 {

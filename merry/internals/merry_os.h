@@ -52,7 +52,7 @@ struct Merry
   MerryThread **core_threads; // the vcore's threads
   MerryThreadPool *thPool;    // the manager's thread pool
   MerryMemory *inst_mem;      // the instruction memory that every vcore shares
-  MerryMemory *data_mem;      // the data memory that every vcore shares
+  MerryDMemory *data_mem;      // the data memory that every vcore shares
   MerryMutex *_lock;          // the Manager's lock
   // MerryMutex *_mem_lock;  // lock for memory read/write
   MerryCond *_cond; // the Manager's cond
@@ -90,8 +90,8 @@ static Merry os;
 //   *g = &os;
 // }
 #define merry_manager_mem_read_inst(inst_mem, address, store_in) merry_memory_read(inst_mem, address, store_in)
-#define merry_manager_mem_read_data(address, store_in) merry_memory_read_lock(os.data_mem, address, store_in)
-#define merry_manager_mem_write_data(address, _value_to_write) merry_memory_write_lock(os.data_mem, address, _value_to_write)
+// #define merry_manager_mem_read_data(address, store_in) merry_dmemory_read_(os.data_mem, address, store_in)
+// #define merry_manager_mem_write_data(address, _value_to_write) merry_memory_write_lock(os.data_mem, address, _value_to_write)
 
 mret_t merry_os_init(mcstr_t _inp_file);
 mptr_t merry_os_start_vm(mptr_t some_arg);

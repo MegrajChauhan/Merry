@@ -28,9 +28,8 @@ struct MerryCore;
 #define _ArithMeticImmFrame_(sign)                                              \
     register mqword_t current = core->current_inst;                             \
     register mqword_t reg = _LowerTopReg_(current);                             \
-    core->registers[reg] = core->registers[reg] sign (_Lower4byteImm_(current)); \
-    _update_flags_(&core->flag);                                                \
-    _clear_(negative);
+    core->registers[reg] = core->registers[reg] sign(_Lower4byteImm_(current)); \
+    _update_flags_(&core->flag);
 
 #define _SArithMeticImmFrame_(sign)                                                                                   \
     register mqword_t current = core->current_inst;                                                                   \
@@ -38,16 +37,15 @@ struct MerryCore;
     core->registers[reg] = (msqword_t)core->registers[reg] sign(msqword_t) _sign_extend32_(_Lower4byteImm_(current)); \
     _update_flags_(&core->flag);
 
-#define _ArithMeticRegFrame_(sign)                                                            \
-    register mqword_t current = core->current_inst;                                           \
-    register mqword_t reg = _LowerUpReg_(current);                                           \
+#define _ArithMeticRegFrame_(sign)                                                             \
+    register mqword_t current = core->current_inst;                                            \
+    register mqword_t reg = _LowerUpReg_(current);                                             \
     core->registers[reg] = core->registers[reg] sign core->registers[_LowerDownReg_(current)]; \
-    _update_flags_(&core->flag);                                                              \
-    _clear_(negative);
+    _update_flags_(&core->flag);
 
-#define _SArithMeticRegFrame_(sign)                                                                                 \
-    register mqword_t current = core->current_inst;                                                                 \
-    register mqword_t reg = _LowerUpReg_(current);                                                                 \
+#define _SArithMeticRegFrame_(sign)                                                                                  \
+    register mqword_t current = core->current_inst;                                                                  \
+    register mqword_t reg = _LowerUpReg_(current);                                                                   \
     core->registers[reg] = (msqword_t)core->registers[reg] sign(msqword_t) core->registers[_LowerDownReg_(current)]; \
     _update_flags_(&core->flag);
 

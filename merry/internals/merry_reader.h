@@ -40,7 +40,7 @@ typedef struct MerryInpFile MerryInpFile;
 #define _INP_FILE_ORDERING_LITTLE_ _MERRY_LITTLE_ENDIAN_
 #define _INP_FILE_ORDERING_BIG_ _MERRY_BIG_ENDIAN_
 
-#define _READER_HEADER_LEN_ 24
+#define _READER_HEADER_LEN_ 32
 // #define _READER_GET_SIGNATURE_(header) (header >> 40)
 // #define _READER_GET_SDT_OFF_(header) header & 0xFFFFFFFF
 // #define _READER_GET_BYTE_ORDER_(header) (header >> 32) & 0x1
@@ -70,6 +70,7 @@ struct MerryInpFile
     msize_t byte_order;
     msize_t dlen; // data bytes len
     msize_t ilen; // the instruction bytes len
+    msize_t slen; // the string len
     // the file results
     msize_t ipage_count;
     msize_t dpage_count;
