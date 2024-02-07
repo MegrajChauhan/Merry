@@ -121,7 +121,6 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
         return RET_FAILURE;
     }
     // the file has the signature bytes
-    inp->byte_order = header[7] & 0x1; // get the byte ordering of the input bytes
     // now get the ilen and dlen from SDT
     inp->ilen = ((
                      (
@@ -177,31 +176,30 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
     // now check if dlen and ilen are within the limits
     if (inp->file_len < (inp->dlen + inp->ilen))
     {
-        _READ_DIRERROR_("Read Error: Invalid instruction and data length.\n");
+        _READ_DIRERROR_("Read Error: Invalid instruction and data length. The total length exceeds the file's length.\n");
         return RET_FAILURE;
     }
     // we also need to make sure that ilen and dlen are valid
     if (inp->ilen % 8 != 0)
     {
-        _READ_DIRERROR_("Read Error: The instruction length is invalid.\n");
+        _READ_DIRERROR_("Read Error: The instruction length is invalid. Must be a multiple of 8.\n");
         return RET_FAILURE;
     }
     if (inp->dlen % 8 != 0)
     {
-        _READ_DIRERROR_("Read Error: The data length is invalid.\n");
+        _READ_DIRERROR_("Read Error: The data length is invalid.Must be a multiple of 8.\n");
         return RET_FAILURE;
     }
     if (inp->ilen == 0)
     {
-        _READ_DIRERROR_("Read Error: The input file has no instructions to read.\n");
+        _READ_DIRERROR_("Read Error: The input file has no instructions to read. The input file cannot be empty\n");
         return RET_FAILURE;
     }
     return RET_SUCCESS;
 }
 
-_MERRY_INTERNAL_ mret_t merry_reader_byorder_same_i(MerryInpFile *inp)
+_MERRY_INTERNAL_ mret_t merry_reader_read_instructions_same(MerryInpFile *inp)
 {
-    // read instructions when the bytes ordering is the same as that of the host
     // we need to know how many pages to read
     // we have ipage_count but we still have to redo the calculations
     msize_t count = inp->ilen / _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
@@ -231,7 +229,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_byorder_same_i(MerryInpFile *inp)
     return RET_SUCCESS; // we did it!
 }
 
-_MERRY_INTERNAL_ mret_t merry_reader_byorder_diff_i(MerryInpFile *inp)
+_MERRY_INTERNAL_ mret_t merry_reader_read_instructions_different(MerryInpFile *inp)
 {
     // read instructions when the ordering of the bytes in the input file is different than that of the host
     // this is not preferable but we can do nothing
@@ -253,13 +251,13 @@ _MERRY_INTERNAL_ mret_t merry_reader_byorder_diff_i(MerryInpFile *inp)
         for (msize_t j = 0; j < _MERRY_MEMORY_QS_PER_PAGE_; j++)
         {
             inverted[j] = num[k];
-            inverted[j] = (inverted[j] << 8) | num[k+1];
-            inverted[j] = (inverted[j] << 8) | num[k+2];
-            inverted[j] = (inverted[j] << 8) | num[k+3];
-            inverted[j] = (inverted[j] << 8) | num[k+4];
-            inverted[j] = (inverted[j] << 8) | num[k+5];
-            inverted[j] = (inverted[j] << 8) | num[k+6];
-            inverted[j] = (inverted[j] << 8) | num[k+7];
+            inverted[j] = (inverted[j] << 8) | num[k + 1];
+            inverted[j] = (inverted[j] << 8) | num[k + 2];
+            inverted[j] = (inverted[j] << 8) | num[k + 3];
+            inverted[j] = (inverted[j] << 8) | num[k + 4];
+            inverted[j] = (inverted[j] << 8) | num[k + 5];
+            inverted[j] = (inverted[j] << 8) | num[k + 6];
+            inverted[j] = (inverted[j] << 8) | num[k + 7];
             k += 8;
         }
         // with the inverted ones, now write them to the mapped memory pages
@@ -282,13 +280,13 @@ _MERRY_INTERNAL_ mret_t merry_reader_byorder_diff_i(MerryInpFile *inp)
         for (msize_t j = 0; j < (ext / 8); j++)
         {
             inverted[j] = num[k];
-            inverted[j] = (inverted[j] << 8) | num[k+1];
-            inverted[j] = (inverted[j] << 8) | num[k+2];
-            inverted[j] = (inverted[j] << 8) | num[k+3];
-            inverted[j] = (inverted[j] << 8) | num[k+4];
-            inverted[j] = (inverted[j] << 8) | num[k+5];
-            inverted[j] = (inverted[j] << 8) | num[k+6];
-            inverted[j] = (inverted[j] << 8) | num[k+7];
+            inverted[j] = (inverted[j] << 8) | num[k + 1];
+            inverted[j] = (inverted[j] << 8) | num[k + 2];
+            inverted[j] = (inverted[j] << 8) | num[k + 3];
+            inverted[j] = (inverted[j] << 8) | num[k + 4];
+            inverted[j] = (inverted[j] << 8) | num[k + 5];
+            inverted[j] = (inverted[j] << 8) | num[k + 6];
+            inverted[j] = (inverted[j] << 8) | num[k + 7];
             k += 8;
         }
         // with the inverted ones, now write them to the mapped memory pages
@@ -308,17 +306,11 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_inst(MerryInpFile *inp)
     // after reading the header along with SDT, we now have all the information needed to read the file
     // first check if the byte ordering of the input bytes is the same as that of the host
     mret_t ret;
-    if (inp->byte_order == _MERRY_BYTE_ORDER_)
-    {
-        // the ordering is the same as that of the host
-        // this makes life a lot easier
-        // we can simply read the input bytes one by one to the VM's memory
-        ret = merry_reader_byorder_same_i(inp);
-    }
-    else
-        // this indicates the byte ordering is not the same as that of the host, this will be a bit painful
-        ret = merry_reader_byorder_diff_i(inp);
     // check if we succeeded
+    if (_MERRY_BYTE_ORDER_ == _MERRY_ENDIANNESS_)
+        ret = merry_reader_read_instructions_same(inp);
+    else
+        ret = merry_reader_read_instructions_different(inp);
     if (ret == RET_SUCCESS)
         return ret;
     // failed
@@ -327,7 +319,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_inst(MerryInpFile *inp)
     return ret;
 }
 
-_MERRY_INTERNAL_ mret_t merry_reader_byorder_diff_d(MerryInpFile *inp)
+_MERRY_INTERNAL_ mret_t merry_reader_read_data_different(MerryInpFile *inp)
 {
     // read instructions when the ordering of the bytes in the input file is different than that of the host
     // this is not preferable but we can do nothing
@@ -349,13 +341,13 @@ _MERRY_INTERNAL_ mret_t merry_reader_byorder_diff_d(MerryInpFile *inp)
         for (msize_t j = 0; j < _MERRY_MEMORY_QS_PER_PAGE_; j++)
         {
             inverted[j] = num[k];
-            inverted[j] = (inverted[j] << 8) | num[k+1];
-            inverted[j] = (inverted[j] << 8) | num[k+2];
-            inverted[j] = (inverted[j] << 8) | num[k+3];
-            inverted[j] = (inverted[j] << 8) | num[k+4];
-            inverted[j] = (inverted[j] << 8) | num[k+5];
-            inverted[j] = (inverted[j] << 8) | num[k+6];
-            inverted[j] = (inverted[j] << 8) | num[k+7];
+            inverted[j] = (inverted[j] << 8) | num[k + 1];
+            inverted[j] = (inverted[j] << 8) | num[k + 2];
+            inverted[j] = (inverted[j] << 8) | num[k + 3];
+            inverted[j] = (inverted[j] << 8) | num[k + 4];
+            inverted[j] = (inverted[j] << 8) | num[k + 5];
+            inverted[j] = (inverted[j] << 8) | num[k + 6];
+            inverted[j] = (inverted[j] << 8) | num[k + 7];
             k += 8;
         }
         // with the inverted ones, now write them to the mapped memory pages
@@ -378,13 +370,13 @@ _MERRY_INTERNAL_ mret_t merry_reader_byorder_diff_d(MerryInpFile *inp)
         for (msize_t j = 0; j < (ext / 8); j++)
         {
             inverted[j] = num[k];
-            inverted[j] = (inverted[j] << 8) | num[k+1];
-            inverted[j] = (inverted[j] << 8) | num[k+2];
-            inverted[j] = (inverted[j] << 8) | num[k+3];
-            inverted[j] = (inverted[j] << 8) | num[k+4];
-            inverted[j] = (inverted[j] << 8) | num[k+5];
-            inverted[j] = (inverted[j] << 8) | num[k+6];
-            inverted[j] = (inverted[j] << 8) | num[k+7];
+            inverted[j] = (inverted[j] << 8) | num[k + 1];
+            inverted[j] = (inverted[j] << 8) | num[k + 2];
+            inverted[j] = (inverted[j] << 8) | num[k + 3];
+            inverted[j] = (inverted[j] << 8) | num[k + 4];
+            inverted[j] = (inverted[j] << 8) | num[k + 5];
+            inverted[j] = (inverted[j] << 8) | num[k + 6];
+            inverted[j] = (inverted[j] << 8) | num[k + 7];
             k += 8;
         }
         // with the inverted ones, now write them to the mapped memory pages
@@ -398,7 +390,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_byorder_diff_d(MerryInpFile *inp)
     return RET_SUCCESS; // this should read the bytes properly
 }
 
-_MERRY_INTERNAL_ mret_t merry_reader_byorder_same_d(MerryInpFile *inp)
+_MERRY_INTERNAL_ mret_t merry_reader_read_data_same(MerryInpFile *inp)
 {
     msize_t count = inp->dlen / _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
     msize_t ext = inp->dlen % _MERRY_MEMORY_ADDRESSES_PER_PAGE_; // this gives any remaining addresses
@@ -433,13 +425,11 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_data(MerryInpFile *inp)
     // when it comes to data, even though there may be none, we still map one page
     if (inp->dlen == 0)
         return RET_SUCCESS;
-    mret_t ret;
+    mret_t ret = merry_reader_read_data_same(inp);
+    // if (_MERRY_BYTE_ORDER_ == _MERRY_ENDIANNESS_)
+    // else
+    //     ret = merry_reader_read_data_different(inp);
     // the same as instruction reading
-    if (inp->byte_order == _MERRY_BYTE_ORDER_)
-        ret = merry_reader_byorder_same_d(inp);
-    else
-        ret = merry_reader_byorder_diff_d(inp);
-
     if (ret == RET_SUCCESS)
         return ret;
     merry_reader_unalloc_pages(inp);

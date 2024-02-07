@@ -1,7 +1,7 @@
 #include "internals/merry_core.h"
 #include "internals/merry_os.h"
 
-MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, msize_t id)
+MerryCore *merry_core_init(MerryMemory *inst_mem, MerryDMemory *data_mem, msize_t id)
 {
     // allocate a new core
     _llog_(_CORE_, "Intialization", "Intializing core with ID %lu", id);

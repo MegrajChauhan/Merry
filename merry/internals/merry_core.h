@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include "merry_internals.h"
 #include "merry_memory.h"
+#include "merry_dmemory.h"
 #include "merry_opcodes.h"
 
 typedef struct MerryCore MerryCore;
@@ -114,8 +115,8 @@ struct MerryCore
     MerryCond *cond;  // the core's private condition variable
     MerryMutex *lock; // the core's private mutex lock
     // the core's memory
-    MerryMemory *data_mem; // the data memory
-    MerryMemory *inst_mem; // the instruction memory
+    MerryDMemory *data_mem; // the data memory
+    MerryMemory *inst_mem;  // the instruction memory
     // Merry *os;
     // Each address of the stack stores 8 bytes which implies each push or pop pushes and pops 8 bytes
     // there are no need for alignments
@@ -147,7 +148,7 @@ static _MERRY_ALWAYS_INLINE_ void merry_core_zero_out_reg(MerryCore *core)
 }
 
 // initialize a new core
-MerryCore *merry_core_init(MerryMemory *inst_mem, MerryMemory *data_mem, msize_t id);
+MerryCore *merry_core_init(MerryMemory *inst_mem, MerryDMemory *data_mem, msize_t id);
 
 void merry_core_destroy(MerryCore *core);
 

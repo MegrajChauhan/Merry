@@ -29,6 +29,9 @@
 #define _MERRY_LITTLE_ENDIAN_ 0x00
 #define _MERRY_BIG_ENDIAN_ 0x01
 
+// The endianness of merry
+#define _MERRY_ENDIANNESS_ _MERRY_LITTLE_ENDIAN_
+
 #define _MERRY_OPTIMIZE_
 
 /*

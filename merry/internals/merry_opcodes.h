@@ -35,6 +35,8 @@
  Since we have a lot of possible opcodes, we will not make use of any flags and instead use different variants for the same instruction
 */
 
+#include "../../utils/merry_config.h"
+
 enum
 {
     OP_NOP,  // no operation instruction
@@ -215,13 +217,6 @@ enum
 typedef unsigned long long moperand_t;
 
 #define merry_get_opcode(inst) (inst >> 56)
-#define merry_get_opcodel(inst) (int >> 48)
-
-/*
-    // conditional moves don't have the same variations like the unconditional moves
-    // conditional moves
-
-    ASP_INTR, // generate an interrupt
-*/
+#define merry_get_opcodel(inst) (inst >> 48)
 
 #endif
