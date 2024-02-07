@@ -105,7 +105,9 @@ _MERRY_INTERNAL_ msize_t merry_get_file_len(FILE *f)
 _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
 {
     // This will parse the first 32 bytes to collect important information and validate it as well
-    mbyte_t header[_READER_HEADER_LEN_]; // 32 bytes
+    // mbyte_t header[_READER_HEADER_LEN_]; // 32 bytes
+    mbyte_t header[24]; // 32 bytes
+
     // now we read the header
     if (fread(header, 1, _READER_HEADER_LEN_, inp->f) != _READER_HEADER_LEN_)
     {
@@ -121,59 +123,34 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
         return RET_FAILURE;
     }
     // the file has the signature bytes
-    inp->byte_order = header[7] & 0x1; // get the byte ordering of the input bytes
     // now get the ilen and dlen from SDT
-    inp->ilen = ((
-                     (
-                         (
-                             (
-                                 (
-                                     (
-                                         (
-                                             (
-                                                 (
-                                                     (
-                                                         (
-                                                             (
-                                                                 header[8] << 8) |
-                                                             header[9])
-                                                         << 8) |
-                                                     header[10])
-                                                 << 8) |
-                                             header[11])
-                                         << 8) |
-                                     header[12])
-                                 << 8) |
-                             header[13])
-                         << 8) |
-                     header[14])
-                 << 8) |
-                header[15];
-    // get the data len
-    inp->dlen = ((
-                     (
-                         (
-                             (
-                                 (
-                                     (
-                                         (
-                                             (
-                                                 (
-                                                     (
-                                                         (
-                                                             (header[16] << 8) | header[17])
-                                                         << 8) |
-                                                     header[18])
-                                                 << 8) |
-                                             header[19])
-                                         << 8) |
-                                     header[20])
-                                 << 8) |
-                             header[21])
-                         << 8) |
-                     header[22])
-                 << 8) |
-                header[23];
+    inp->ilen = header[8];
+    inp->ilen = (inp->ilen << 8) | header[9];
+    inp->ilen = (inp->ilen << 8) | header[10];
+    inp->ilen = (inp->ilen << 8) | header[11];
+    inp->ilen = (inp->ilen << 8) | header[12];
+    inp->ilen = (inp->ilen << 8) | header[13];
+    inp->ilen = (inp->ilen << 8) | header[14];
+    inp->ilen = (inp->ilen << 8) | header[15];
+
+    inp->dlen = header[16];
+    inp->dlen = (inp->dlen << 8) | header[17];
+    inp->dlen = (inp->dlen << 8) | header[18];
+    inp->dlen = (inp->dlen << 8) | header[19];
+    inp->dlen = (inp->dlen << 8) | header[20];
+    inp->dlen = (inp->dlen << 8) | header[21];
+    inp->dlen = (inp->dlen << 8) | header[22];
+    inp->dlen = (inp->dlen << 8) | header[23];
+    inp->slen = 0;
+    // get the string len
+    // inp->slen = header[24];
+    // inp->slen = (inp->slen << 8) | header[25];
+    // inp->slen = (inp->slen << 8) | header[26];
+    // inp->slen = (inp->slen << 8) | header[27];
+    // inp->slen = (inp->slen << 8) | header[28];
+    // inp->slen = (inp->slen << 8) | header[29];
+    // inp->slen = (inp->slen << 8) | header[30];
+    // inp->slen = (inp->slen << 8) | header[31];
     // now check if dlen and ilen are within the limits
     if (inp->file_len < (inp->dlen + inp->ilen + inp->slen))
     {
