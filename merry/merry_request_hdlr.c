@@ -31,7 +31,6 @@ mret_t merry_requestHdlr_push_request(msize_t req_id, msize_t id, MerryCond *req
         goto here; // don't accept more
     if (merry_push_request(req_hdlr.queue, req_cond, req_id, id) == mfalse)
     {
-        // failure
         _llog_(_REQHDLR_, "PANIC", "Request handler panic in core ID %lu", id);
         merry_panic_push(req_hdlr.queue, _PANIC_REQBUFFEROVERFLOW); // panic
         if (req_hdlr.queue->data_count == 1)

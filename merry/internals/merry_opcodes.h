@@ -72,17 +72,23 @@ enum
 
     // Now move intructions
     OP_MOVE_IMM = 26, // move an immediate value to a destination register[This is default and accepts 32 bit values]
-    OP_MOVE_IMM_64,   // move an immediate value to a destination register[This is a variant and accepts 64 bit value that must follow the inst in the memory]
-    OP_MOVE_REG,      // move a value from one register to another
-    OP_MOVE_REG8,     // move the lowest byte of one register to another
-    OP_MOVE_REG16,    // move the lowest two bytes of one register to another
-    OP_MOVE_REG32,    // move the lowest 4 bytes of one register to another
-    OP_MOVESX_IMM8,   // move a value and sign extend it as well[only 8-bit numbers are accepted]
-    OP_MOVESX_IMM16,  // move a value and sign extend it as well[only 16-bit numbers are accepted]
-    OP_MOVESX_IMM32,  // move a value and sign extend it as well[only 32-bit numbers are accepted]
-    OP_MOVESX_REG8,   // move the lower 1 byte to another register while sign extending it
-    OP_MOVESX_REG16,  // move the lower 2 bytes to another register while sign extending it
-    OP_MOVESX_REG32,  // move the lower 4 bytes to another register while sign extending it
+
+    OP_MOVE_IMM_64, // move an immediate value to a destination register[This is a variant and accepts 64 bit value that must follow the inst in the memory]
+
+    OP_MOVE_REG, // move a value from one register to another
+
+    OP_MOVE_REG8,    // move the lowest byte of one register to another
+    OP_MOVE_REG16,   // move the lowest two bytes of one register to another
+    OP_MOVE_REG32,   // move the lowest 4 bytes of one register to another
+    OP_MOVESX_IMM8,  // move a value and sign extend it as well[only 8-bit numbers are accepted]
+    OP_MOVESX_IMM16, // move a value and sign extend it as well[only 16-bit numbers are accepted]
+
+    OP_MOVESX_IMM32, // move a value and sign extend it as well[only 32-bit numbers are accepted]
+
+    OP_MOVESX_REG8,  // move the lower 1 byte to another register while sign extending it
+    OP_MOVESX_REG16, // move the lower 2 bytes to another register while sign extending it
+
+    OP_MOVESX_REG32, // move the lower 4 bytes to another register while sign extending it
     // we won't need zero extend. It can simply be aliased with simple move
 
     // Control flow instructions
@@ -180,7 +186,13 @@ enum
     OP_JGE,
     OP_JSE,
 
+    // conditional data movement instructions will be implemented in the future accordingly with the needs
+
+    // some uitlity instructions
+    OP_LOOP, // automatically jumps to the given address until the Mc register is 0
     
+    OP_INTR,
+
 };
 
 /*
@@ -208,47 +220,6 @@ typedef unsigned long long moperand_t;
 /*
     // conditional moves don't have the same variations like the unconditional moves
     // conditional moves
-    ASP_MOVEZ_IMM, // move if zero flag is set
-    ASP_MOVEZ_REG, // move if zero flag is set
-
-    ASP_MOVENZ_IMM, // move if zero flag is not set
-    ASP_MOVENZ_REG, // move if zero flag is not set
-
-    ASP_MOVEE_IMM, // move if equal flag is set
-    ASP_MOVEE_REG, // move if equal flag is set
-
-    ASP_MOVENE_IMM, // move if equal flag is not set
-    ASP_MOVENE_REG, // move if equal flag is not set
-
-    ASP_MOVEG_IMM, // move if greater flag is set
-    ASP_MOVEG_REG, // move if greater flag is set
-
-    ASP_MOVES_IMM, // move if greater flag is not set
-    ASP_MOVES_REG, // move if greater flag is not set
-
-    ASP_MOVEO_IMM, // move if overflow flag is set
-    ASP_MOVEO_REG, // move if overflow flag is set
-
-    ASP_MOVENO_IMM, // move if overflow flag is not set
-    ASP_MOVENO_REG, // move if overflow flag is not set
-
-    ASP_MOVEN_IMM, // move if negative flag is set
-    ASP_MOVEN_REG, // move if negative flag is set
-
-    ASP_MOVENN_IMM, // move if negative flag is not set
-    ASP_MOVENN_REG, // move if negative flag is not set
-
-    ASP_MOVEGE_IMM, // move if greater or equal flag is set
-    ASP_MOVEGE_REG, // move if greater or equal flag is set
-
-    ASP_MOVESE_IMM, // move if greater is not set or equal flag is set
-    ASP_MOVESE_REG, // move if greater is not set or equal flag is set
-
-    ASP_MOVEC_IMM, // move if carry is set
-    ASP_MOVEC_REG, // move if carry is set
-
-    ASP_MOVENC_IMM, // move if carry is not set
-    ASP_MOVENC_REG, // move if carry is not set
 
     ASP_INTR, // generate an interrupt
 */

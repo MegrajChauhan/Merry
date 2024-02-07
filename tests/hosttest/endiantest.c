@@ -7,7 +7,7 @@ int main()
     unsigned long long *y = (unsigned long long *)(x);
     unsigned long long z = *y;
     printf("PTR x: %p\nPTR y:%p\n", x, y);
-    printf("At x: %u\nAt y:%x\nAt z: %X\n", *x, *y, z);
+    printf("At x: %u\nAt y:%lx\nAt z: %lX\n", *x, *y, z);
     // x++;
     // y++;
     // printf("PTR x: %p\nPTR y:%p\n", x, y);

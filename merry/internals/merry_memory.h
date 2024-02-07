@@ -120,6 +120,8 @@ mret_t merry_memory_read_lock(MerryMemory *memory, maddress_t address, mqptr_t _
 
 mret_t merry_memory_write_lock(MerryMemory *memory, maddress_t address, mqword_t _to_write);
 
+mptr_t merry_memory_get_address(MerryMemory *memory, maddress_t address);
+
 // The below functions are called when right after the input file has been read in order to fill the memory to prepare for execution
 // mret_t merry_memory_load(MerryMemory *memory, mqptr_t to_load, msize_t num_of_qs);
 

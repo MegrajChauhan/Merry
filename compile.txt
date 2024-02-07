@@ -10,6 +10,9 @@ merry/merry_request_queue.c
 merry/merry_request_hdlr.c
 merry/merry_exec.c
 merry/merry_core.c
+merry/internals/services/src/merry_input.c
+merry/internals/services/src/merry_output.c
+merry/merry_thread_pool.c
 merry/merry_os_exec.c
 merry/merry_os.c
 merry/merry.c

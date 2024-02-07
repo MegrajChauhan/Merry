@@ -39,7 +39,10 @@
 #include "../../utils/merry_types.h"
 #include "merry_reader.h"
 #include "merry_request_hdlr.h"
+#include "merry_thread_pool.h"
 #include "merry_core.h"
+#include "services/merry_input.h"
+#include "services/merry_output.h"
 
 typedef struct Merry Merry;
 
@@ -47,6 +50,7 @@ struct Merry
 {
   MerryCore **cores;          // the vcores
   MerryThread **core_threads; // the vcore's threads
+  MerryThreadPool *thPool;    // the manager's thread pool
   MerryMemory *inst_mem;      // the instruction memory that every vcore shares
   MerryMemory *data_mem;      // the data memory that every vcore shares
   MerryMutex *_lock;          // the Manager's lock
@@ -61,6 +65,7 @@ struct Merry
 #include "merry_os_exec.h"
 
 #define _MERRY_REQUEST_QUEUE_LEN_ 10 // for now
+#define _MERRY_THPOOL_LEN_ 10        // for now
 
 #define _MERRY_REQUEST_INTERNAL_ERROR_(request_id) (request_id >= 0 && request_id <= 50)
 #define _MERRY_REQUEST_PROGRAM_ERROR_(request_id) (request_id >= 51 && request_id <= 150)
@@ -76,7 +81,7 @@ struct Merry
 */
 
 // this only initializes an instance of Merry while leaving inst_mem, data_mem uninitialized which is valid as we need to know the input and how many
-// pages to start with 
+// pages to start with
 
 static Merry os;
 
@@ -90,6 +95,9 @@ static Merry os;
 
 mret_t merry_os_init(mcstr_t _inp_file);
 mptr_t merry_os_start_vm(mptr_t some_arg);
+
+mret_t merry_os_add_core();
+mret_t merry_os_boot_core(msize_t core_id, maddress_t start_addr);
 
 // destroy the OS
 void merry_os_destroy();
