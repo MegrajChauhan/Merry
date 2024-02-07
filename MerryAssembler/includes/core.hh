@@ -8,6 +8,11 @@
 
 namespace merry{
 namespace core{
+    enum struct Format{
+        merry,
+        assembly,
+        elf_object,
+    };
     class Loc{
         private:
             size_t col, row;
