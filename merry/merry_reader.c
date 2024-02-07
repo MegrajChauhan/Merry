@@ -121,63 +121,31 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
         return RET_FAILURE;
     }
     // the file has the signature bytes
-    inp->byte_order = header[7] & 0x1; // get the byte ordering of the input bytes
+    inp->byte_order = _MERRY_LITTLE_ENDIAN_; // byte ordering is always going to be little endian (fuck off arm)
     // now get the ilen and dlen from SDT
-    inp->ilen = ((
-                     (
-                         (
-                             (
-                                 (
-                                     (
-                                         (
-                                             (
-                                                 (
-                                                     (
-                                                         (
-                                                             (
-                                                                 header[8] << 8) |
-                                                             header[9])
-                                                         << 8) |
-                                                     header[10])
-                                                 << 8) |
-                                             header[11])
-                                         << 8) |
-                                     header[12])
-                                 << 8) |
-                             header[13])
-                         << 8) |
-                     header[14])
-                 << 8) |
-                header[15];
-    // get the data len
-    inp->dlen = ((
-                     (
-                         (
-                             (
-                                 (
-                                     (
-                                         (
-                                             (
-                                                 (
-                                                     (
-                                                         (
-                                                             (header[16] << 8) | header[17])
-                                                         << 8) |
-                                                     header[18])
-                                                 << 8) |
-                                             header[19])
-                                         << 8) |
-                                     header[20])
-                                 << 8) |
-                             header[21])
-                         << 8) |
-                     header[22])
-                 << 8) |
-                header[23];
+    inp->ilen = ((msize_t)header[8]) |
+                ((msize_t)header[9] << 8) |
+                ((msize_t)header[10] << 16) |
+                ((msize_t)header[11] << 24) |
+                ((msize_t)header[12] << 32) |
+                ((msize_t)header[13] << 40) |
+                ((msize_t)header[14] << 48) |
+                ((msize_t)header[15] << 56);
+
+    inp->dlen = ((msize_t)header[16]) |
+                ((msize_t)header[17] << 8) |
+                ((msize_t)header[18] << 16) |
+                ((msize_t)header[19] << 24) |
+                ((msize_t)header[20] << 32) |
+                ((msize_t)header[21] << 40) |
+                ((msize_t)header[22] << 48) |
+                ((msize_t)header[23] << 56);
+
+    printf("ilen = %ld, dlen = %ld\n", inp->ilen, inp->dlen);
     // now check if dlen and ilen are within the limits
     if (inp->file_len < (inp->dlen + inp->ilen))
     {
-        _READ_DIRERROR_("Read Error: Invalid instruction and data length.\n");
+        _READ_DIRERROR_("Read Error: Invalid instruction and data length. got length %lu but only %lu bytes are in the file\n", (inp->dlen + inp->ilen), inp->file_len);
         return RET_FAILURE;
     }
     // we also need to make sure that ilen and dlen are valid

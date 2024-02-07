@@ -1,14 +1,14 @@
 PC = program counter
 nop -> Does nothing
 hlt -> Halts or stops the program
-(all outputs are in REG)
+(all outputs are in REG1 or REG)
 add REG, IMM -> Adds the IMM to the REG
-sub REG, IMM -> Subtracts the IMM with the REG
+sub REG, IMM -> Subtracts the IMM from the REG
 mul REG, IMM -> Multiples the IMM with the REG
 div REG, IMM -> Divides the IMM with the REG
 mod REG, IMM -> Modulo's the IMM with the REG
 add REG1, REG2 -> Adds the REG2 to the REG1
-sub REG1, REG2 -> Subtracts the REG2 with the REG1
+sub REG1, REG2 -> Subtracts the REG2 from the REG1
 mul REG1, REG2 -> Multiples the REG2 with the REG1
 div REG1, REG2 -> Divides the REG2 with the REG1
 mod REG1, REG2 -> Modulo's the REG2 with the REG1
