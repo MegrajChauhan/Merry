@@ -22,6 +22,10 @@ registers      index or how they are encoded into instructions
    Mm4                       0x0E
    Mm5                       0x0F
 
+FLAGS REGISTER:
+The contents of the flag register depends on the architecture. But the general contents of it are: carry flag, zero flag, overflow flag, negative flag and greater flag.
+Compare instructions and arithmetic instructions can affect the state of these flags.
+
 nop -> opcode = 0x00
        every value of the other 7 byte is ignored.
        Does nothing
@@ -256,3 +260,33 @@ jns -> opcode: 0x58: same as jnz
 js -> opcode: 0x59: same as jnz
 jge -> opcode: 0x5A: same as jnz
 jse -> opcode: 0x5B: same as jnz
+
+loop -> opcode: 0x5C
+        operands: takes a 6 byte address just like jmp.
+        details: continuously jumps to the given address untill the Mc register is 0
+        example: Say Mc = 20, This instruction: 0x5C 0x00 [6 bytes address], untill Mc becomes 0, the program will keep jumping to the address effectively looping 20 times.
+
+[These are the only instructions for now.]
+
+[The following will describe interrupts, services, what each does and the interrupt conventions]
+Merry has an internal manager that manages the entire machine. It tells each core when to start, stop and is the brain of Merry. Ultimately the manager has the task of providing services to the
+program that is running on the machine. Every single service that doesn't require the cores like IO, Networking, File handling, Multi-threading, Dynamic library loading, OS communication, etc
+is provided by the manager and as such the programs require a way to request for a service. Now, the possible side-effects of having a central hub for such critical services mandates careful
+consideration of the machine's performance as it may hinder the efficiency and the speed of the running program rendering the machine useless as a problem solving tool.
+
+intr -> opcode: 0x5D
+        operand: The interrupt number. The lower 2 bytes represent the interrupt number.
+
+Interrupt numbers/IDs:
+Each interrupt number/ID represents a unique service that the Manager can provide. Numbers 0-150 are reserved for internal use and thus the interrupts that the program can use start from 151.
+If a program were to use any interrupt from 0-150, the manager will handle it as an error and abruptly exit. This behaviour could be utilized for error handling and thus they will be explained in the
+future. For now here are the interrupt:
+
+Interrupt Number |               Details         
+    151                 HALT: Causes the core that makes this request to exit. If only one core was running to begin with then the VM exits.
+                        If the request causes the VM to stop, the requesting core's Ma register should contain the return value. The HALT instruction produces the same behaviour.
+    152                 EXIT: Causes the VM to exit. The same behaviour as HALT except every core running will be stopped and the VM exits. Just like 151, the requesting core's Ma register
+                        must have the return value.
+    153                 NEW_CORE: Creates a new virtual core that can start running from the point specified by the program. The address for the new core to start executing from should be in the Ma
+                        register of the requesting core. After the request is fulfilled, Ma of the requesting core will contain 1 if the request was a success otherwise it will contain 0. 
+

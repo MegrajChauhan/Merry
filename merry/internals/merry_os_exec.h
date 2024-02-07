@@ -34,5 +34,6 @@
 
 // handle the halt request
 _os_exec_(halt); 
+_os_exec_(new_core);
 
 #endif

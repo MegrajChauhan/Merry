@@ -1,5 +1,7 @@
 #include "internals/merry_os.h"
 
+#include <stdatomic.h>
+
 mret_t merry_os_init(mcstr_t _inp_file)
 {
     // initialize the os
@@ -42,18 +44,20 @@ mret_t merry_os_init(mcstr_t _inp_file)
     if (merry_requestHdlr_init(_MERRY_REQUEST_QUEUE_LEN_, os._cond) == RET_FAILURE)
         goto inp_failure;
     merry_destory_reader(input);
-    os.core_count = 0; // we will start with one core
+    os.core_count = 1; // we will start with one core
     os.cores = (MerryCore **)malloc(sizeof(MerryCore *));
     if (os.cores == RET_NULL)
         goto failure;
-    os.cores[0] = merry_core_init(os.inst_mem, os.data_mem, os.core_count);
+    os.cores[0] = merry_core_init(os.inst_mem, os.data_mem, 0);
     if (os.cores[0] == RET_NULL)
         goto failure;
     os.stop = mfalse;
     os.core_threads = (MerryThread **)malloc(sizeof(MerryThread *)); // just 1 for now
     if (os.core_threads == RET_NULL)
         goto failure;
-    Merry *o = &os;
+    // Merry *o = &os;
+    if ((os.thPool = merry_init_thread_pool(_MERRY_THPOOL_LEN_)) == RET_NULL)
+        goto failure;
     return RET_SUCCESS; // we did everything correctly
 failure:
     _log_(_OS_, "Intialization Failure", "Failed to intialize the manager");
@@ -90,6 +94,7 @@ void merry_os_destroy()
         }
         free(os.core_threads);
     }
+    merry_destroy_thread_pool(os.thPool);
     merry_requestHdlr_destroy();
 }
 
@@ -165,7 +170,7 @@ void merry_os_destroy()
 //     }
 // }
 
-_MERRY_ALWAYS_INLINE_ mret_t merry_os_boot_core(msize_t core_id, maddress_t start_addr)
+mret_t merry_os_boot_core(msize_t core_id, maddress_t start_addr)
 {
     // this function's job is to boot up the core_id core and prepare it for execution
     os.cores[core_id]->pc = start_addr; // point to the starting address of the core
@@ -179,6 +184,43 @@ _MERRY_ALWAYS_INLINE_ mret_t merry_os_boot_core(msize_t core_id, maddress_t star
     return RET_SUCCESS;
 }
 
+mret_t merry_os_add_core()
+{
+    // just add another core
+    MerryThread **temp = (MerryThread **)malloc(sizeof(MerryThread *) * (os.core_count + 1));
+    if (temp == NULL)
+        return RET_FAILURE; // we failed
+    MerryCore **tempc = (MerryThread **)malloc(sizeof(MerryThread *) * (os.core_count + 1));
+    if (tempc == NULL)
+    {
+        // we failed again
+        free(temp);
+        return RET_FAILURE;
+    }
+    tempc[os.core_count] = merry_core_init(os.inst_mem, os.data_mem, os.core_count);
+    if (tempc[os.core_count] == RET_NULL)
+    {
+        free(temp);
+        free(tempc);
+        return RET_FAILURE;
+    }
+    // we have succeeded in add cores
+    merry_mutex_lock(os._lock); // Safety for when request Pool is implemented
+    for (msize_t i = 0; i <= os.core_count; i++)
+    {
+        temp[i] = os.core_threads[i];
+        tempc[i] = os.cores[i];
+    }
+    // now free the old pointers and replace them
+    free(os.core_threads);
+    free(os.cores);
+    os.core_threads = temp;
+    os.cores = tempc;
+    os.core_count++;
+    merry_mutex_unlock(os._lock);
+    return RET_SUCCESS;
+}
+
 _MERRY_INTERNAL_ void merry_os_prepare_for_exit()
 {
     // prepare for termination
@@ -186,10 +228,11 @@ _MERRY_INTERNAL_ void merry_os_prepare_for_exit()
     _log_(_OS_, "Exiting", "Preparing for exit");
     for (msize_t i = 0; i < os.core_count; i++)
     {
-        merry_mutex_lock(os.cores[i]->lock);
-        os.cores[i]->stop_running = mtrue; // stop
+        // merry_mutex_lock(os.cores[i]->lock);
+        // os.cores[i]->stop_running = mtrue; // stop
+        atomic_exchange(&os.cores[i]->stop_running, mtrue);
         // we may add furthur functionalities here such as the ability to know the value of different registers at the time of termination
-        merry_mutex_unlock(os.cores[i]->lock);
+        // merry_mutex_unlock(os.cores[i]->lock);
     }
     // some cores may be waiting for their requests to be fulfilled
     merry_requestHdlr_kill_requests(); // kill all requests
@@ -208,6 +251,7 @@ mptr_t merry_os_start_vm(mptr_t some_arg)
     // Core 0 is now up and running
     // The OS should be ready to handle requests
     MerryOSRequest current_req;
+    mptr_t temp;
     _log_(_OS_, "STARTING EXECUTION", "Manager is entering the request handling loop");
     while (os.stop == mfalse)
     {
@@ -247,6 +291,97 @@ mptr_t merry_os_start_vm(mptr_t some_arg)
                     case _REQ_REQHALT: // halting request
                         _llog_(_OS_, "REQ", "Halt request received from core ID %lu", current_req.id);
                         merry_os_execute_request_halt(&os, &current_req); // this shouldn't generate any errors
+                        break;
+                    case _REQ_EXIT:
+                        _llog_(_OS_, "REQ", "Exit request received from core ID %lu", current_req.id);
+                        merry_os_prepare_for_exit();
+                        os.ret = os.cores[current_req.id]->registers[Ma];
+                        break;
+                    case _REQ_NEWCORE:
+                        _llog_(_OS_, "REQ", "New core creation request received from core ID %lu", current_req.id);
+                        merry_os_execute_request_new_core(&os, &current_req);
+                        break;
+                    case _REQ_READCHAR:
+                        _llog_(_OS_, "REQ", "Reading character request received from core ID %lu", current_req.id);
+                        mptr_t temp;
+                        if ((temp = merry_memory_get_address(os.data_mem, os.cores[current_req.id]->registers[Ma])) == RET_NULL)
+                        {
+                            merry_requestHdlr_panic(os.data_mem->error);
+                            break;
+                        }
+                        merry_read_char(temp);
+                        break;
+                    case _REQ_READWORD:
+                        _llog_(_OS_, "REQ", "Reading word request received from core ID %lu", current_req.id);
+                        if ((temp = merry_memory_get_address(os.data_mem, os.cores[current_req.id]->registers[Ma])) == RET_NULL)
+                        {
+                            merry_requestHdlr_panic(os.data_mem->error);
+                            break;
+                        }
+                        merry_read_word(temp);
+                        break;
+                    case _REQ_READDWORD:
+                        _llog_(_OS_, "REQ", "Reading dword request received from core ID %lu", current_req.id);
+                        if ((temp = merry_memory_get_address(os.data_mem, os.cores[current_req.id]->registers[Ma])) == RET_NULL)
+                        {
+                            merry_requestHdlr_panic(os.data_mem->error);
+                            break;
+                        }
+                        merry_read_dword(temp);
+                        break;
+                    case _REQ_READQWORD:
+                        _llog_(_OS_, "REQ", "Reading qword request received from core ID %lu", current_req.id);
+                        if ((temp = merry_memory_get_address(os.data_mem, os.cores[current_req.id]->registers[Ma])) == RET_NULL)
+                        {
+                            merry_requestHdlr_panic(os.data_mem->error);
+                            break;
+                        }
+                        merry_read_qword(temp);
+                        break;
+                    case _REQ_WRITECHAR:
+                        _llog_(_OS_, "REQ", "Writing character request received from core ID %lu", current_req.id);
+                        if ((temp = merry_memory_get_address(os.data_mem, os.cores[current_req.id]->registers[Ma])) == RET_NULL)
+                        {
+                            merry_requestHdlr_panic(os.data_mem->error);
+                            break;
+                        }
+                        merry_write_char(temp);
+                        break;
+                    case _REQ_WRITEWORD:
+                        _llog_(_OS_, "REQ", "Writing word request received from core ID %lu", current_req.id);
+                        if ((temp = merry_memory_get_address(os.data_mem, os.cores[current_req.id]->registers[Ma])) == RET_NULL)
+                        {
+                            merry_requestHdlr_panic(os.data_mem->error);
+                            break;
+                        }
+                        merry_write_word(temp);
+                        break;
+                    case _REQ_WRITEDWORD:
+                        _llog_(_OS_, "REQ", "Writing dword request received from core ID %lu", current_req.id);
+                        if ((temp = merry_memory_get_address(os.data_mem, os.cores[current_req.id]->registers[Ma])) == RET_NULL)
+                        {
+                            merry_requestHdlr_panic(os.data_mem->error);
+                            break;
+                        }
+                        merry_write_dword(temp);
+                        break;
+                    case _REQ_WRITEQWORD:
+                        _llog_(_OS_, "REQ", "Writing qword request received from core ID %lu", current_req.id);
+                        if ((temp = merry_memory_get_address(os.data_mem, os.cores[current_req.id]->registers[Ma])) == RET_NULL)
+                        {
+                            merry_requestHdlr_panic(os.data_mem->error);
+                            break;
+                        }
+                        merry_write_qword(temp);
+                        break;
+                    case _REQ_WRITESTR:
+                        _llog_(_OS_, "REQ", "Writing string request received from core ID %lu", current_req.id);
+                        if ((temp = merry_memory_get_address(os.data_mem, os.cores[current_req.id]->registers[Ma])) == RET_NULL)
+                        {
+                            merry_requestHdlr_panic(os.data_mem->error);
+                            break;
+                        }
+                        merry_write_bytes(temp, os.cores[current_req.id]->registers[Mb]);
                         break;
                     default:
                         /// NOTE: this will come in handy when we implement some built-in syscalls and the program provides invalid syscalls
