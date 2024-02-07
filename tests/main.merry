@@ -1,5 +1,4 @@
 all_insts:
-    hlt
     nop ; 0
     jmp next ; 1
 next:
