@@ -14,7 +14,7 @@ namespace code_gen{
             }
             void write_header(){
                 std::vector<char> header = {
-                    0x4d, 0x49, 0x4e, 0x00, 0x00, 0x00, 0x00, 0x00s 
+                    0x4d, 0x49, 0x4e, 0x00, 0x00, 0x00, 0x00, 0x00
                 };
                 myfile.write(header.data(), 8);
                 header.clear();
