@@ -353,7 +353,7 @@ mret_t merry_dmemory_read_qword(MerryDMemory *memory, maddress_t address, mqptr_
     return RET_SUCCESS;
 }
 
-mret_t merry_dmemory_write_dword(MerryDMemory *memory, maddress_t address, mqword_t _to_write)
+mret_t merry_dmemory_write_qword(MerryDMemory *memory, maddress_t address, mqword_t _to_write)
 {
     // pretty much the same as read
     register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);

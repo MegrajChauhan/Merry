@@ -252,16 +252,16 @@ jnc -> opcode: 0x52: same as jnz
 jc -> opcode: 0x53: same as jnz
 jno -> opcode: 0x54: same as jnz
 jo -> opcode: 0x55: same as jnz
-jnn -> opcode: 0x54: same as jnz
-jn -> opcode: 0x55: same as jnz
-jng -> opcode: 0x56: same as jnz
-jg -> opcode: 0x57: same as jnz
-jns -> opcode: 0x58: same as jnz
-js -> opcode: 0x59: same as jnz
-jge -> opcode: 0x5A: same as jnz
-jse -> opcode: 0x5B: same as jnz
+jnn -> opcode: 0x56: same as jnz
+jn -> opcode: 0x57: same as jnz
+jng -> opcode: 0x58: same as jnz
+jg -> opcode: 0x59: same as jnz
+jns -> opcode: 0x5A: same as jnz
+js -> opcode: 0x5B: same as jnz
+jge -> opcode: 0x5C: same as jnz
+jse -> opcode: 0x5D: same as jnz
 
-loop -> opcode: 0x5C
+loop -> opcode: 0x5E
         operands: takes a 6 byte address just like jmp.
         details: continuously jumps to the given address untill the Mc register is 0
         example: Say Mc = 20, This instruction: 0x5C 0x00 [6 bytes address], untill Mc becomes 0, the program will keep jumping to the address effectively looping 20 times.
@@ -274,7 +274,7 @@ program that is running on the machine. Every single service that doesn't requir
 is provided by the manager and as such the programs require a way to request for a service. Now, the possible side-effects of having a central hub for such critical services mandates careful
 consideration of the machine's performance as it may hinder the efficiency and the speed of the running program rendering the machine useless as a problem solving tool.
 
-intr -> opcode: 0x5D
+intr -> opcode: 0x5F
         operand: The interrupt number. The lower 2 bytes represent the interrupt number.
 
 Interrupt numbers/IDs:

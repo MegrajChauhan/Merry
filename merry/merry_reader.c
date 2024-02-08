@@ -106,7 +106,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
 {
     // This will parse the first 32 bytes to collect important information and validate it as well
     // mbyte_t header[_READER_HEADER_LEN_]; // 32 bytes
-    mbyte_t header[24]; // 32 bytes
+    mbyte_t header[_READER_HEADER_LEN_]; // 32 bytes
 
     // now we read the header
     if (fread(header, 1, _READER_HEADER_LEN_, inp->f) != _READER_HEADER_LEN_)
@@ -141,7 +141,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
     inp->dlen = (inp->dlen << 8) | header[21];
     inp->dlen = (inp->dlen << 8) | header[22];
     inp->dlen = (inp->dlen << 8) | header[23];
-    
+
     // get the string len
     inp->slen = header[24];
     inp->slen = (inp->slen << 8) | header[25];
@@ -373,7 +373,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_data_different(MerryInpFile *inp)
     // firstly read
     mqword_t rem = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - ext;
 
-    if (fread(inp->_data[count] + ext, 1, rem < inp->slen ? rem : inp->slen, inp->f) != (rem < inp->slen ? rem : inp->slen))
+    if (fread(inp->_data[count] + (ext / 8), 1, rem < inp->slen ? rem : inp->slen, inp->f) != (rem < inp->slen ? rem : inp->slen))
     {
         _READ_DIRERROR_("Read Error: Failed to read string.\n");
         return RET_FAILURE;
@@ -444,11 +444,16 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_data_same(MerryInpFile *inp)
     // firstly read
     mqword_t rem = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - ext;
 
-    if (fread(inp->_data[count] + ext, 1, rem < inp->slen ? rem : inp->slen, inp->f) != (rem < inp->slen ? rem : inp->slen))
+    if (fread(inp->_data[count] + (ext / 8), 1, rem < inp->slen ? rem : inp->slen, inp->f) != (rem < inp->slen ? rem : inp->slen))
     {
         _READ_DIRERROR_("Read Error: Failed to read string.\n");
         return RET_FAILURE;
     }
+
+    // for (msize_t i = 0; i < 7; i++)
+    // {
+    //     printf("%lX\n", inp->_data[count][i]);
+    // }
 
     if (inp->slen < rem)
         return RET_SUCCESS; // we have read what we can
@@ -490,7 +495,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_data(MerryInpFile *inp)
     // when it comes to data, even though there may be none, we still map one page
     if (inp->dlen == 0)
         return RET_SUCCESS;
-    mret_t ret = merry_reader_read_data_same(inp);
+    mret_t ret;
     if (_MERRY_BYTE_ORDER_ == _MERRY_ENDIANNESS_)
         ret = merry_reader_read_data_same(inp);
     else

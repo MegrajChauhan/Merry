@@ -31,20 +31,20 @@
 typedef struct MerryRequestNode MerryRequestNode;
 typedef struct MerryRequestQueue MerryRequestQueue;
 
-_MERRY_CREATE_QUEUE_NODE_(MerryOSRequest, MerryRequestNode)
+_MERRY_CREATE_QUEUE_NODE_NOPTR_(MerryOSRequest, MerryRequestNode)
 
-_MERRY_CREATE_QUEUE_(MerryRequestQueue, MerryRequestNode)
+_MERRY_CREATE_QUEUE_NOPTR_(MerryRequestQueue, MerryRequestNode)
 
 MerryRequestQueue *merry_request_queue_init(msize_t number_of_requests);
 
 static _MERRY_ALWAYS_INLINE_ mbool_t merry_is_queue_full(MerryRequestQueue *queue)
 {
-    return _MERRY_IS_QUEUE_FULL_(queue) ? mtrue : mfalse;
+    return _MERRY_IS_QUEUE_FULL_NOPTR_(queue) ? mtrue : mfalse;
 }
 
 static _MERRY_ALWAYS_INLINE_ mbool_t merry_is_queue_emtpy(MerryRequestQueue *queue)
 {
-    return _MERRY_IS_QUEUE_EMPTY_(queue) ? mtrue : mfalse;
+    return _MERRY_IS_QUEUE_EMPTY_NOPTR_(queue) ? mtrue : mfalse;
 }
 
 void merry_request_queue_destroy(MerryRequestQueue *queue);

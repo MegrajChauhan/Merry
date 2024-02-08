@@ -58,7 +58,7 @@
     } while (0);
 // checking if the pointer was initialized is the caller's job
 
-#define _MERRY_QUEUE_CREATE_NODES_(qptr, node_name, create_node_count, ret)                  \
+#define _MERRY_QUEUE_CREATE_NODES_(qptr, node_name, create_node_count, ret, val_type)              \
     do                                                                                       \
     {                                                                                        \
         qptr->node_count = (create_node_count);                                              \
@@ -72,7 +72,7 @@
         node_name *current = (qptr)->head;                                                   \
         for (msize_t i = 0; i < (create_node_count); i++)                                    \
         {                                                                                    \
-            current->value = (typeof(current->value))malloc(sizeof(typeof(current->value))); \
+            current->value = (val_type*)malloc(sizeof((val_type))); \
             if (current->value == NULL)                                                      \
             {                                                                                \
                 (ret) = mfalse;                                                              \

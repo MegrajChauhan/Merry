@@ -284,7 +284,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(call)
    // the parameters can then be accessed using the sva instruction
 
    /// NOTE: It is to be made sure that the parameters and values of other procedures should not be meddled with
-   if (_is_stack_full_(core) || _check_stack_lim_(core, 4))
+   if (_is_stack_full_(core) || !_check_stack_lim_(core, 4))
    {
       // the stack is full and we cannot perform this call
       // the stack must at least have 5 addresses free to be able to perform a call
@@ -498,7 +498,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(popa)
 _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(load, mqword_t address)
 {
    // read from the given address
-   if (merry_dmemory_read_qword(core->data_mem, address, &core->registers[core->current_inst & 15]) == RET_FAILURE)
+   if (merry_dmemory_read_qword(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
    {
       merry_requestHdlr_panic(core->data_mem->error);
       core->stop_running = mtrue;
@@ -510,7 +510,7 @@ _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(load, mqword_t address)
 _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(store, mqword_t address)
 {
    // store to the given address from the given register
-   if (merry_dmemory_write_qword(core->data_mem, address, core->registers[core->current_inst & 15]) == RET_FAILURE)
+   if (merry_dmemory_write_qword(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
    {
       merry_requestHdlr_panic(core->data_mem->error);
       core->stop_running = mtrue;
@@ -522,7 +522,7 @@ _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(store, mqword_t address)
 _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(loadw, mqword_t address)
 {
    // read from the given address
-   if (merry_dmemory_read_word(core->data_mem, address, &core->registers[core->current_inst & 15]) == RET_FAILURE)
+   if (merry_dmemory_read_word(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
    {
       merry_requestHdlr_panic(core->data_mem->error);
       core->stop_running = mtrue;
@@ -534,7 +534,7 @@ _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(loadw, mqword_t address)
 _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(storew, mqword_t address)
 {
    // store to the given address from the given register
-   if (merry_dmemory_write_word(core->data_mem, address, core->registers[core->current_inst & 15]) == RET_FAILURE)
+   if (merry_dmemory_write_word(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
    {
       merry_requestHdlr_panic(core->data_mem->error);
       core->stop_running = mtrue;
@@ -546,7 +546,7 @@ _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(storew, mqword_t address)
 _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(loadd, mqword_t address)
 {
    // read from the given address
-   if (merry_dmemory_read_dword(core->data_mem, address, &core->registers[core->current_inst & 15]) == RET_FAILURE)
+   if (merry_dmemory_read_dword(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
    {
       merry_requestHdlr_panic(core->data_mem->error);
       core->stop_running = mtrue;
@@ -558,7 +558,7 @@ _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(loadd, mqword_t address)
 _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(stored, mqword_t address)
 {
    // store to the given address from the given register
-   if (merry_dmemory_write_dword(core->data_mem, address, core->registers[core->current_inst & 15]) == RET_FAILURE)
+   if (merry_dmemory_write_dword(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
    {
       merry_requestHdlr_panic(core->data_mem->error);
       core->stop_running = mtrue;
@@ -570,7 +570,7 @@ _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(stored, mqword_t address)
 _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(loadb, mqword_t address)
 {
    // read from the given address
-   if (merry_dmemory_read_byte(core->data_mem, address, &core->registers[core->current_inst & 15]) == RET_FAILURE)
+   if (merry_dmemory_read_byte(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
    {
       merry_requestHdlr_panic(core->data_mem->error);
       core->stop_running = mtrue;
@@ -582,7 +582,7 @@ _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(loadb, mqword_t address)
 _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(storeb, mqword_t address)
 {
    // store to the given address from the given register
-   if (merry_dmemory_write_byte(core->data_mem, address, core->registers[core->current_inst & 15]) == RET_FAILURE)
+   if (merry_dmemory_write_byte(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
    {
       merry_requestHdlr_panic(core->data_mem->error);
       core->stop_running = mtrue;
