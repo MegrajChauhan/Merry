@@ -56,6 +56,9 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
 
                 // Setting top 4 bits
                 registers = (registers & 0x0F) | (top_4_bits_to_set & 0xF0);
+                for(int i = 0; i < 6; ++i){
+                  inst.add_operand(0);
+                }
                 inst.add_operand(registers);
             } else{
                 inst = IrInst(IrInstType::ADD_IMM);
@@ -99,6 +102,9 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
 
                 // Setting top 4 bits
                 registers = (registers & 0x0F) | (top_4_bits_to_set & 0xF0);
+                for(int i = 0; i < 6; ++i){
+                  inst.add_operand(0);
+                }
                 inst.add_operand(registers);
             } else{
                 inst = IrInst(IrInstType::SUB_IMM);
@@ -142,6 +148,9 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
 
                 // Setting top 4 bits
                 registers = (registers & 0x0F) | (top_4_bits_to_set & 0xF0);
+                for(int i = 0; i < 6; ++i){
+                  inst.add_operand(0);
+                }
                 inst.add_operand(registers);
             } else{
                 inst = IrInst(IrInstType::MOD_IMM);
@@ -185,6 +194,9 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
 
                 // Setting top 4 bits
                 registers = (registers & 0x0F) | (top_4_bits_to_set & 0xF0);
+                for(int i = 0; i < 6; ++i){
+                  inst.add_operand(0);
+                }
                 inst.add_operand(registers);
             } else{
                 inst = IrInst(IrInstType::DIV_IMM);
@@ -228,6 +240,9 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
 
                 // Setting top 4 bits
                 registers = (registers & 0x0F) | (top_4_bits_to_set & 0xF0);
+                for(int i = 0; i < 6; ++i){
+                  inst.add_operand(0);
+                }
                 inst.add_operand(registers);
             } else{
                 inst = IrInst(IrInstType::MUL_IMM);
@@ -271,7 +286,6 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
               std::cout << "Invalid input: " << str << std::endl;
               exit(1);
             }
-            uint8_t upper_a = uint8_t((value >> 56) & 0xff);
             uint8_t lower_a = uint8_t((value >> 48) & 0xff);
             uint8_t upper_b = uint8_t((value >> 40) & 0xff);
             uint8_t lower_b = uint8_t((value >> 32) & 0xff);
@@ -286,7 +300,6 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
             inst.add_operand(lower_b);
             inst.add_operand(upper_b);
             inst.add_operand(lower_a);
-            inst.add_operand(upper_a);
         } break;
         case front_end::AstInstType::JMP: {
             inst = IrInst(IrInstType::JMP_ADDR);
@@ -300,7 +313,6 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
               std::cout << "Invalid input: " << str << std::endl;
               exit(1);
             }
-            uint8_t upper_a = uint8_t((value >> 56) & 0xff);
             uint8_t lower_a = uint8_t((value >> 48) & 0xff);
             uint8_t upper_b = uint8_t((value >> 40) & 0xff);
             uint8_t lower_b = uint8_t((value >> 32) & 0xff);
@@ -315,7 +327,6 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
             inst.add_operand(lower_b);
             inst.add_operand(upper_b);
             inst.add_operand(lower_a);
-            inst.add_operand(upper_a);
         } break;
     }
     add_inst(inst);

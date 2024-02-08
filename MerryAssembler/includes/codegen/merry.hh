@@ -28,14 +28,14 @@ namespace code_gen{
                 uint8_t lower_c = uint8_t((insts_size >> 16) & 0xff);
                 uint8_t upper_d = uint8_t((insts_size >> 8) & 0xff);
                 uint8_t lower_d = uint8_t((insts_size >> 0) & 0xff);
-                header.push_back(lower_d);
-                header.push_back(upper_d);
-                header.push_back(lower_c);
-                header.push_back(upper_c);
-                header.push_back(lower_b);
-                header.push_back(upper_b);
-                header.push_back(lower_a);
                 header.push_back(upper_a);
+                header.push_back(lower_a);
+                header.push_back(upper_b);
+                header.push_back(lower_b);
+                header.push_back(upper_c);
+                header.push_back(lower_c);
+                header.push_back(upper_d);
+                header.push_back(lower_d);
                 myfile.write(header.data(), 8);
                 // Data
                 header.clear();
