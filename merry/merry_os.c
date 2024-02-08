@@ -301,6 +301,18 @@ mptr_t merry_os_start_vm(mptr_t some_arg)
                         _llog_(_OS_, "REQ", "New core creation request received from core ID %lu", current_req.id);
                         merry_os_execute_request_new_core(&os, &current_req);
                         break;
+                    case _REQ_READCHAR:
+                        if (merry_read_char(os.data_mem, os.cores[current_req.id]->registers[Ma]) == RET_FAILURE)
+                            os.cores[current_req.id]->registers[Mb] = 1; // error
+                        else
+                            os.cores[current_req.id]->registers[Mb] = 0; // success
+                        break;
+                    case _REQ_WRITECHAR:
+                        if (merry_write_char(os.data_mem, os.cores[current_req.id]->registers[Ma]) == RET_FAILURE)
+                            os.cores[current_req.id]->registers[Mb] = 1; // error
+                        else
+                            os.cores[current_req.id]->registers[Mb] = 0; // success
+                        break;
                     default:
                         /// NOTE: this will come in handy when we implement some built-in syscalls and the program provides invalid syscalls
                         merry_error("Unknown request code: '%llu' is not a valid request code", current_req.request_number);

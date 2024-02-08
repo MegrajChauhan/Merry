@@ -354,10 +354,52 @@ mptr_t merry_runCore(mptr_t core)
             c->registers[(curr >> 24) & 15] = c->registers[(curr >> 16) & 15] + c->registers[(curr >> 8) & 15] * c->registers[curr & 15];
             break;
         case OP_LOAD:
-            merry_execute_load(c, merry_core_get_immediate(c));
+            merry_execute_load(c, *current & 0xFFFFFFFFFFFF);
             break;
         case OP_STORE:
-            merry_execute_store(c, merry_core_get_immediate(c));
+            merry_execute_store(c, *current & 0xFFFFFFFFFFFF);
+            break;
+        case OP_LOADB:
+            merry_execute_loadb(c, *current & 0xFFFFFFFFFFFF);
+            break;
+        case OP_STOREB:
+            merry_execute_storeb(c, *current & 0xFFFFFFFFFFFF);
+            break;
+        case OP_LOADW:
+            merry_execute_loadw(c, *current & 0xFFFFFFFFFFFF);
+            break;
+        case OP_STOREW:
+            merry_execute_storew(c, *current & 0xFFFFFFFFFFFF);
+            break;
+        case OP_LOADD:
+            merry_execute_loadd(c, *current & 0xFFFFFFFFFFFF);
+            break;
+        case OP_STORED:
+            merry_execute_stored(c, *current & 0xFFFFFFFFFFFF);
+            break;
+        case OP_LOAD_REG:
+            merry_execute_load(c, c->registers[((*current >> 8) & 0x15)]);
+            break;
+        case OP_STORE_REG:
+            merry_execute_store(c, c->registers[((*current >> 8) & 0x15)]);
+            break;
+        case OP_LOADB_REG:
+            merry_execute_loadb(c, c->registers[((*current >> 8) & 0x15)]);
+            break;
+        case OP_STOREB_REG:
+            merry_execute_storeb(c, c->registers[((*current >> 8) & 0x15)]);
+            break;
+        case OP_LOADW_REG:
+            merry_execute_loadw(c, c->registers[((*current >> 8) & 0x15)]);
+            break;
+        case OP_STOREW_REG:
+            merry_execute_storew(c, c->registers[((*current >> 8) & 0x15)]);
+            break;
+        case OP_LOADD_REG:
+            merry_execute_loadd(c, c->registers[((*current >> 8) & 0x15)]);
+            break;
+        case OP_STORED_REG:
+            merry_execute_stored(c, c->registers[((*current >> 8) & 0x15)]);
             break;
         case OP_EXCG8:
             merry_execute_excg8(c);

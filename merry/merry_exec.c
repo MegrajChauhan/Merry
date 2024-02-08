@@ -22,16 +22,15 @@ _MERRY_ALWAYS_INLINE_ _exec_(add_reg){
 
 _MERRY_ALWAYS_INLINE_ _exec_(sub_imm)
 {
-   _ArithMeticImmFrame_(-) 
-   if (core->flag.negative == 0)
+   _ArithMeticImmFrame_(-) if (core->flag.negative == 0)
            core->greater == 1;
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(sub_reg){
-    _ArithMeticRegFrame_(-)
-    if (core->flag.negative == 0)
+_MERRY_ALWAYS_INLINE_ _exec_(sub_reg)
+{
+   _ArithMeticRegFrame_(-) if (core->flag.negative == 0)
            core->greater == 1;
-    }
+}
 
 _MERRY_ALWAYS_INLINE_ _exec_(mul_imm){
     _ArithMeticImmFrame_(*)}
@@ -53,7 +52,6 @@ _MERRY_ALWAYS_INLINE_ _exec_(div_imm)
    }
    core->registers[reg] = core->registers[reg] / imm;
    _update_flags_(&core->flag);
-   core->flag.negative = 0;
 }
 
 _MERRY_ALWAYS_INLINE_ _exec_(div_reg)
@@ -69,7 +67,6 @@ _MERRY_ALWAYS_INLINE_ _exec_(div_reg)
    }
    core->registers[reg] = core->registers[reg] / core->registers[(current >> 48) & 15];
    _update_flags_(&core->flag);
-   core->flag.negative = 0;
 }
 
 _MERRY_ALWAYS_INLINE_ _exec_(mod_imm)
@@ -86,7 +83,6 @@ _MERRY_ALWAYS_INLINE_ _exec_(mod_imm)
    }
    core->registers[reg] = core->registers[reg] % imm;
    _update_flags_(&core->flag);
-   core->flag.negative = 0;
 }
 
 _MERRY_ALWAYS_INLINE_ _exec_(mod_reg)
@@ -102,7 +98,6 @@ _MERRY_ALWAYS_INLINE_ _exec_(mod_reg)
    }
    core->registers[reg] = core->registers[reg] % core->registers[(current >> 48) & 15];
    _update_flags_(&core->flag);
-   core->flag.negative = 0;
 }
 
 _MERRY_ALWAYS_INLINE_ _exec_(iadd_imm){
@@ -113,17 +108,17 @@ _MERRY_ALWAYS_INLINE_ _exec_(iadd_imm){
 _MERRY_ALWAYS_INLINE_ _exec_(iadd_reg){
     _SArithMeticRegFrame_(+)}
 
-_MERRY_ALWAYS_INLINE_ _exec_(isub_imm){
-    _SArithMeticImmFrame_(-)
-    if (core->flag.negative == 0)
+_MERRY_ALWAYS_INLINE_ _exec_(isub_imm)
+{
+   _SArithMeticImmFrame_(-) if (core->flag.negative == 0)
            core->greater == 1;
-    }
+}
 
-_MERRY_ALWAYS_INLINE_ _exec_(isub_reg){
-    _SArithMeticRegFrame_(-)
-    if (core->flag.negative == 0)
+_MERRY_ALWAYS_INLINE_ _exec_(isub_reg)
+{
+   _SArithMeticRegFrame_(-) if (core->flag.negative == 0)
            core->greater == 1;
-    }
+}
 
 _MERRY_ALWAYS_INLINE_ _exec_(imul_imm){
     _SArithMeticImmFrame_(*)}
@@ -503,7 +498,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(popa)
 _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(load, mqword_t address)
 {
    // read from the given address
-   if (merry_memory_read(core->data_mem, address, &core->registers[core->current_inst & 15]) == RET_FAILURE)
+   if (merry_dmemory_read_qword(core->data_mem, address, &core->registers[core->current_inst & 15]) == RET_FAILURE)
    {
       merry_requestHdlr_panic(core->data_mem->error);
       core->stop_running = mtrue;
@@ -515,7 +510,79 @@ _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(load, mqword_t address)
 _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(store, mqword_t address)
 {
    // store to the given address from the given register
-   if (merry_memory_write(core->data_mem, address, core->registers[core->current_inst & 15]) == RET_FAILURE)
+   if (merry_dmemory_write_qword(core->data_mem, address, core->registers[core->current_inst & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be stored
+}
+
+_MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(loadw, mqword_t address)
+{
+   // read from the given address
+   if (merry_dmemory_read_word(core->data_mem, address, &core->registers[core->current_inst & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be loaded
+}
+
+_MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(storew, mqword_t address)
+{
+   // store to the given address from the given register
+   if (merry_dmemory_write_word(core->data_mem, address, core->registers[core->current_inst & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be stored
+}
+
+_MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(loadd, mqword_t address)
+{
+   // read from the given address
+   if (merry_dmemory_read_dword(core->data_mem, address, &core->registers[core->current_inst & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be loaded
+}
+
+_MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(stored, mqword_t address)
+{
+   // store to the given address from the given register
+   if (merry_dmemory_write_dword(core->data_mem, address, core->registers[core->current_inst & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be stored
+}
+
+_MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(loadb, mqword_t address)
+{
+   // read from the given address
+   if (merry_dmemory_read_byte(core->data_mem, address, &core->registers[core->current_inst & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be loaded
+}
+
+_MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(storeb, mqword_t address)
+{
+   // store to the given address from the given register
+   if (merry_dmemory_write_byte(core->data_mem, address, core->registers[core->current_inst & 15]) == RET_FAILURE)
    {
       merry_requestHdlr_panic(core->data_mem->error);
       core->stop_running = mtrue;

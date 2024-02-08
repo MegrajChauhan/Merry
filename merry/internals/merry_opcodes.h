@@ -195,6 +195,24 @@ enum
     
     OP_INTR,
 
+    // Some more
+    OP_LOADB,  // load byte
+    OP_LOADW,  // load 2 bytes
+    OP_LOADD,  // load 4 bytes
+    OP_STOREB,  // store byte
+    OP_STOREW,  // store 2 bytes
+    OP_STORED,  // store 4 bytes
+
+    // the addresses are in register
+    OP_LOAD_REG,
+    OP_STORE_REG,
+    OP_LOADB_REG,
+    OP_STOREB_REG,
+    OP_LOADW_REG,
+    OP_STOREW_REG,
+    OP_LOADD_REG,
+    OP_STORED_REG,
+
 };
 
 /*

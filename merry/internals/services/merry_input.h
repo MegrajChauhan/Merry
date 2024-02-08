@@ -1,15 +1,16 @@
-// #ifndef _MERRY_INPUT_
-// #define _MERRY_INPUT_
+#ifndef _MERRY_INPUT_
+#define _MERRY_INPUT_
 
-// #include "../../../utils/merry_types.h"
+#include "../../../utils/merry_types.h"
 // // #include <string.h>
-// #include <stdio.h>
-// #include <stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "../merry_dmemory.h"
 
 // #define _MERRY_BASE_LEN_ 32
 
-// // the simplest one
-// void merry_read_char(mptr_t _store_in); // _store_in is an address in the data_mem that the manager will provide
+// the simplest one
+mret_t merry_read_char(MerryDMemory *mem, maddress_t address); // _store_in is an address in the data_mem that the manager will provide
 
 // // implementing the above is all that is needed
 // // reading integers and strings can be implemented with the above as the base
@@ -26,4 +27,4 @@
 // // this is going to read a number of 8 bytes long
 // void merry_read_qword(mptr_t _store_in);
 
-// #endif
+#endif

@@ -1,10 +1,11 @@
-// #ifndef _MERRY_OUTPUT_
-// #define _MERRY_OUTPUT_
+#ifndef _MERRY_OUTPUT_
+#define _MERRY_OUTPUT_
 
-// #include "../../../utils/merry_types.h"
-// #include <stdio.h>
+#include "../../../utils/merry_types.h"
+#include <stdio.h>
+#include "../merry_dmemory.h"
 
-// void merry_write_char(mptr_t _to_write);
+mret_t merry_write_char(MerryDMemory *mem, maddress_t address);
 
 // void merry_write_word(mptr_t _to_write);
 
@@ -14,4 +15,4 @@
 
 // void merry_write_bytes(mptr_t _to_write, msize_t _len);
 
-// #endif
+#endif
