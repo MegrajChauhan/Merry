@@ -8,7 +8,7 @@
 
 #if defined(_MERRY_HOST_OS_LINUX_)
 
-#if defined(_MERRY_HOST_CPU_AMD_)
+#if defined(_MERRY_HOST_CPU_x86_64_ARCH_)
 // Read a word (2 bytes) from memory
 _mem_read_word_:
     movzx rax, word ptr [rdi]  // Load a word (2 bytes) from the source address into rax

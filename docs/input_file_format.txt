@@ -1,0 +1,5 @@
+The Input File's Structure and Format:
+
+Merry expects a binary file from the user as it's input file. The path to the file can be provided which allows Merry to look for the file itself and read it.
+The file's extension must be ".mbin". Other file extensions are not accepted and Merry throws an error if other file extensions was found. The user needs to make sure that the input file does exist
+and is not a directory.   

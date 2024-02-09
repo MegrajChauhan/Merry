@@ -67,7 +67,7 @@ _cmp_inst_:
     ret
 #endif
 
-#if defined(_MERRY_HOST_CPU_AMD_)
+#if defined(_MERRY_HOST_CPU_x86_64_ARCH_)
 _update_flags_:
    pushfq          // push the flags register unto the stack
    pop rax        // pop the flags
