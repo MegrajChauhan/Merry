@@ -1,0 +1,76 @@
+INSTRUCTIONS:
+Merry currently supports 109 instructions out of which 5 are not implemented yet.
+
+The structure for all the instructions is:
+0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+  ^--------------
+The first byte -| is the opcode while the remaining bytes are used for operands. In some instructions, another 8 bytes that are right after the instruction is required.
+
+Here is how each register should be encoded into an instruction.
+Binary will also be used to make sure that everything is understood.
+
+registers      index or how they are encoded into instructions
+   Ma                        0x00
+   Mb                        0x01
+   Mc                        0x02
+   Md                        0x03
+   Me                        0x04
+   Mf                        0x05
+   M1                        0x06
+   M2                        0x07
+   M3                        0x08
+   M4                        0x09
+   M5                        0x0A
+   Mm1                       0x0B
+   Mm2                       0x0C
+   Mm3                       0x0D
+   Mm4                       0x0E
+   Mm5                       0x0F
+
+ALL THE INSTRUCTIONS:
+1) nop:
+   opcode: 0x00
+   Details: Does absolutely nothing
+   example: 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+
+2) halt:
+   opcode: 0x01
+   Details: Halts the program. In some cases, stops the VM.
+   example: 0x01 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+
+3) add_imm:
+   opcode: 0x02
+   operands: Takes one register and a 4 bytes immediate value.
+   Details: Adds whatever is in the given register with the immediate value and stores it in the same register.
+   Encoding: The lower 4 bits of the second byte contains the register and the lower 4 bytes contain the immediate.
+   example: 0x02 0x00 0x00 0x00 0xAA 0xBB 0xCC 0xDD
+                 ^              |------------------| -> immediate[0xAABBCCDD]
+            register[Ma] 
+
+4) add_reg:
+   opcode: 0x03
+   operands: Takes two registers.
+   Details: Adds whatever is in the first register with whatever is in the second register and stores it in the first register.
+   Encoding: The upper 4 bits of the last byte contains the first register and the lower 4 bits contain the second register.
+   example: 0x03 0x00 0x00 0x00 0x00 0x00 0x00 0x12
+                                                ^-- register[First = Mb, second = Mc]
+5) sub_imm:
+   opcode: 0x04
+   operands: Takes one register and a 4 bytes immediate value.
+   Details: Subtracts whatever is in the given register with the immediate value and stores it in the same register.
+   Encoding: The lower 4 bits of the second byte contains the register and the lower 4 bytes contain the immediate.
+   example: 0x04 0x00 0x00 0x00 0xAA 0xBB 0xCC 0xDD
+                 ^              |------------------| -> immediate[0xAABBCCDD]
+            register[Ma] 
+
+6) sub_reg:
+   opcode: 0x05
+   operands: Takes two registers.
+   Details: Subs whatever is in the first register with whatever is in the second register and stores it in the first register.
+   Encoding: The upper 4 bits of the last byte contains the first register and the lower 4 bits contain the second register.
+   example: 0x03 0x00 0x00 0x00 0x00 0x00 0x00 0x12
+                                                ^-- register[First = Mb, second = Mc]
+
+                  
+ 
+                    
