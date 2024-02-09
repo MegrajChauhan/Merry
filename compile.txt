@@ -17,3 +17,4 @@ merry/merry_thread_pool.c
 merry/merry_os_exec.c
 merry/merry_os.c
 merry/merry.c
+main.c

@@ -1,88 +1,107 @@
-// #define _MERRY_LOGGER_ENABLED_
+#include "internals/merry.h"
 
-#include "internals/merry_os.h"
-#include <stdio.h>
-#include <time.h>
-
-// a thread func
-// mptr_t test_func(mptr_t val)
-// {
-//   // val is 0
-//   int x = *(int *)val;
-//   while (x < 100)
-//   {
-//     x++;
-//   }
-//   return NULL;
-// }
-// printf("Hello World from Merry!\n");
-// // some testing
-// if (merry_allocator_init() == RET_FAILURE)
-// {
-//   printf("Allocator init failed.\n");
-//   return 0;
-// }
-// print_details();
-// MerryThread *th = merry_thread_init();
-// print_details();
-// if (th == NULL)
-// {
-//   printf("Thread init failed.\n");
-// }
-// int p = 0;
-// if (merry_create_thread(th, &test_func, &p) == RET_FAILURE)
-// {
-//   printf("Thread initialization failed.\n");
-// }
-// else
-// {
-//   merry_thread_join(th, NULL);
-// }
-// getc(stdin);
-// print_details();
-// merry_thread_destroy(th);
-// print_details();
-// merry_allocator_destroy();
-
-int main()
+MerryCLP *merry_parse_options(int argc, char **argv)
 {
-    merry_init_logger();
-    if (merry_os_init("inpFile.mbin") == RET_FAILURE)
-        return 0;
-    // Merry *temp; // temporary
-    // get(&temp);
-    MerryThread *osthread = merry_thread_init();
-    if (osthread == NULL)
+    if (argc < 2)
     {
-        fprintf(stderr, "Failed to intialize VM.\n");
-        goto failure;
+        // we have an error here
+        fprintf(stderr, "Error parsing command line options.\n");
+        return RET_NULL;
     }
-    clock_t start = clock();
-    if (merry_create_thread(osthread, &merry_os_start_vm, NULL) == RET_FAILURE)
+    MerryCLP *clp = (MerryCLP *)malloc(sizeof(MerryCLP));
+    if (clp == NULL)
     {
-        fprintf(stderr, "Failed to start VM.\n");
-        merry_thread_destroy(osthread);
-        goto failure;
+        // This is funny and unintended.
+        // if the malloc fails, this message will be thrown while displaying the "help" message
+        // even though the command was probably correct
+        fprintf(stderr, "Failed to parse options\n");
+        return RET_NULL;
     }
-    merry_close_logger();
-    merry_thread_join(osthread, NULL); // I am an idiot
-    clock_t end = clock();
-    merry_thread_destroy(osthread);
-    merry_os_destroy();
-    printf("Time taken to run: %lfs.\n", (double)(end - start) / CLOCKS_PER_SEC);
-    return 0;
-failure:
-    merry_close_logger();
-    merry_os_destroy();
-    return -1;
+    for (msize_t i = 1; i < argc; i++)
+    {
+        switch (argv[i][0])
+        {
+        case '-':
+        {
+            // some options may start with '-' and some may start with '--'
+            // there is no clear distinction for it. For eg: '-h', '--help', '--h' and '-help' are the same and valid
+            switch (argv[i][1])
+            {
+            case '-':
+            {
+                switch (argv[i][2])
+                {
+                case 'h':
+                    if (strcmp(&argv[i][2], "help") == 0 || strcmp(&argv[i][2], "h") == 0)
+                    {
+                        clp->options[_OPT_HELP].provided = mtrue; // the program asks for help
+                    }
+                    break;
+                case 'v':
+                    if (strcmp(&argv[i][2], "version") == 0 || strcmp(&argv[i][2], "v") == 0)
+                    {
+                        clp->options[_OPT_VER].provided = mtrue; // the program asks for help
+                    }
+                    break;
+                default:
+                    fprintf(stderr, "Unknown option '%s'\n", argv[i]);
+                    free(clp);
+                    return RET_NULL;
+                    break;
+                }
+            }
+                // we don't have a second '-'
+            case 'h':
+                if (strcmp(&argv[i][1], "help") == 0 || strcmp(&argv[i][1], "h") == 0)
+                {
+                    clp->options[_OPT_HELP].provided = mtrue; // the program asks for help
+                }
+                break;
+            case 'v':
+                if (strcmp(&argv[i][1], "v") == 0 || strcmp(&argv[i][1], "version") == 0)
+                {
+                    clp->options[_OPT_VER].provided = mtrue; // the program asks for help
+                }
+                break;
+            case 'f':
+                // the following option after this must be a destination to the input file
+                if (argc < (i + 2))
+                {
+                    fprintf(stderr, "Expected path to input file after '-f' option, got EOF instead.\n");
+                    free(clp);
+                    return RET_NULL;
+                }
+                clp->options[_OPT_FILE].provided = mtrue;
+                clp->options[_OPT_FILE]._given_value_str_ = &argv[i + 1];
+                i++;
+                break;
+            default:
+                fprintf(stderr, "Unknown option '%s'\n", argv[i]);
+                free(clp);
+                return RET_NULL;
+            }
+            break;
+        }
+        default:
+            fprintf(stderr, "Unknown option '%s'\n", argv[i]);
+            free(clp);
+            return RET_NULL;
+        }
+    }
+    return clp;
 }
 
-/*
- No optimizations:
- 1 million loops: 0.162401s
- 1 Billion loops: 140.932465s(Holy crap!)[2 minutes and 20 seconds! Jesus!]
+void merry_print_help()
+{
+    fprintf(stdout,
+            "Usage; merry -f <path_to_input_file> [OPTIONS]\n"
+            "OPTIONS:\n"
+            "-h, --h, -help, --help --> Print this help\n"
+            "-v, --v, -v, --v       --> Display the current version\n"
+            "-f                     --> Provide the path to the input file\n");
+}
 
- Optimizations(-03):
- 1 Million loops:
- 1 Billion loops: 84.5s
-*/
+void merry_destroy_parser(MerryCLP *clp)
+{
+    free(clp);
+}

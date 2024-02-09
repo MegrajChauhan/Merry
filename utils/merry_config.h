@@ -34,6 +34,10 @@
 
 #define _MERRY_OPTIMIZE_
 
+#define _MERRY_VERSION_ "0.0.0"
+#define _MERRY_VERSION_STATE_ "no_state" // beta, alpha, etc
+
+
 /*
  * Check for the endianness of the system. We can use this to our advantage for making the VM faster.
  */
