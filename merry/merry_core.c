@@ -512,6 +512,42 @@ mptr_t merry_runCore(mptr_t core)
             if (merry_requestHdlr_push_request(*current & 0xFFFF, c->core_id, c->cond) == RET_FAILURE)
                 c->stop_running = mtrue;
             break;
+        case OP_CMPXCHG:
+            // this operation must be atomic
+            // but it cannot be guranteed in a VM
+            // this instruction will take a 6-byte address and 2 registers
+            mqptr_t _addr_ = (mqptr_t)merry_memory_get_address(c->data_mem, *current & 0xFFFFFFFFFFFF);
+            if (_addr_ == RET_NULL)
+            {
+                merry_requestHdlr_panic(c->data_mem->error);
+                c->stop_running = mtrue;
+                break;
+            }
+            atomic_compare_exchange_strong((mqptr_t)merry_memory_get_address(c->data_mem, _addr_), &c->registers[(*current >> 52) & 15], c->registers[(*current >> 48) & 15]);
+            break;
+        case OP_IN:
+            // the input is stored in a register that is encoded into the last 4 bits of the instruction
+            c->registers[*current & 15] = getchar();
+            break;
+        case OP_OUT:
+            // the byte to output is stored in a register that is encoded into the last 4 bits of the instruction
+            putchar((int)c->registers[*current & 15]);
+            break;
+        case OP_INP:
+            // the address to store in is encoded into the instruction
+            // the number of bytes to input is in the Mc register
+            register mqword_t len = c->registers[Mc];
+            mbptr_t _addr_ = (mbptr_t)merry_memory_get_address(c->data_mem, *current & 0xFFFFFFFFFFFF);
+            if (_addr_ == RET_NULL)
+            {
+                merry_requestHdlr_panic(c->data_mem->error);
+                c->stop_running = mtrue;
+                break;
+            }
+            for (msize_t i = 0; i < len; i++, _addr_++)
+            {
+                c->registers[*current & 15] = getchar();
+            }
         }
         c->pc++;
     }

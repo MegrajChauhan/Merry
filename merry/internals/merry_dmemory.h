@@ -68,5 +68,15 @@ mret_t merry_dmemory_write_lock(MerryDMemory *memory, maddress_t address, mqword
 // -------
 
 mbptr_t merry_dmemory_get_byte_address(MerryDMemory *memory, maddress_t address);
+mbptr_t merry_dmemory_get_byte_address_bounds(MerryDMemory *memory, maddress_t address, msize_t bound);
+
+mwptr_t merry_dmemory_get_word_address(MerryDMemory *memory, maddress_t address);
+mwptr_t merry_dmemory_get_word_address_bounds(MerryDMemory *memory, maddress_t address, msize_t bound);
+
+mdptr_t merry_dmemory_get_dword_address(MerryDMemory *memory, maddress_t address);
+mdptr_t merry_dmemory_get_dword_address_bounds(MerryDMemory *memory, maddress_t address, msize_t bound);
+
+mqptr_t merry_dmemory_get_qword_address(MerryDMemory *memory, maddress_t address);
+mqptr_t merry_dmemory_get_qword_address_bounds(MerryDMemory *memory, maddress_t address, msize_t bound);
 
 #endif

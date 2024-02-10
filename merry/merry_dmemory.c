@@ -444,3 +444,22 @@ mbptr_t merry_dmemory_get_byte_address(MerryDMemory *memory, maddress_t address)
     // this just basically returns an actual address to the address that the manager can use
     return &memory->pages[addr.page]->address_space[addr.offset];
 }
+
+mbptr_t merry_dmemory_get_byte_address_bounds(MerryDMemory *memory, maddress_t address, msize_t bound)
+{
+    register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
+    if (surelyF(addr.page >= memory->number_of_pages))
+    {
+        // this implies the request is for a page that doesn't exist
+        memory->error = MERRY_MEM_INVALID_ACCESS;
+        return RET_NULL;
+    }
+    if (surelyF((addr.offset + bound) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
+    {
+        // this implies the request is for a page that doesn't exist
+        memory->error = MERRY_MEM_INVALID_ACCESS;
+        return RET_NULL;
+    }
+    // this just basically returns an actual address to the address that the manager can use
+    return &memory->pages[addr.page]->address_space[addr.offset];
+}

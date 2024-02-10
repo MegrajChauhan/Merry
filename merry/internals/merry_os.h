@@ -39,7 +39,7 @@
 #include "../../utils/merry_types.h"
 #include "merry_reader.h"
 #include "merry_request_hdlr.h"
-#include "merry_thread_pool.h"
+// #include "merry_thread_pool.h"
 #include "merry_core.h"
 #include "services/merry_input.h"
 #include "services/merry_output.h"
@@ -50,7 +50,7 @@ struct Merry
 {
   MerryCore **cores;          // the vcores
   MerryThread **core_threads; // the vcore's threads
-  MerryThreadPool *thPool;    // the manager's thread pool
+  // MerryThreadPool *thPool;    // the manager's thread pool
   MerryMemory *inst_mem;      // the instruction memory that every vcore shares
   MerryDMemory *data_mem;      // the data memory that every vcore shares
   MerryMutex *_lock;          // the Manager's lock

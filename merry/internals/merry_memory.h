@@ -43,6 +43,7 @@
 #include "../includes/merry_errors.h"
 #include "../../utils/merry_logger.h"
 #include <stdlib.h>
+#include <stdatomic.h>
 
 // declarations
 // typedef struct MerryMemPageDetails MerryMemPageDetails; // the details about a memory page
@@ -74,6 +75,7 @@ struct MerryMemPage
     mqptr_t address_space; // the actual memory of the page
     // MerryMemPageDetails details; // the page details
     MerryMutex *lock; // Many different pages can be accessed simultaneously
+    mbool_t _is_locked;
     // MerryCond *cond;
 };
 

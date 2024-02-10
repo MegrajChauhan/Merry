@@ -39,179 +39,190 @@
 
 enum
 {
-    OP_NOP,  // no operation instruction
-    OP_HALT, // halt instruction
+  OP_NOP,  // no operation instruction
+  OP_HALT, // halt instruction
 
-    /*Firstly: The basic arithmetic instructions*/
-    // The arithmetic instructions have two variants: One with IMM/DEST and another with SRC/DEST
-    OP_ADD_IMM,
-    OP_ADD_REG,
-    OP_SUB_IMM,
-    OP_SUB_REG,
-    OP_MUL_IMM,
-    OP_MUL_REG,
-    OP_DIV_IMM,
-    OP_DIV_REG,
-    OP_MOD_IMM,
-    OP_MOD_REG,
+  /*Firstly: The basic arithmetic instructions*/
+  // The arithmetic instructions have two variants: One with IMM/DEST and another with SRC/DEST
+  OP_ADD_IMM,
+  OP_ADD_REG,
+  OP_SUB_IMM,
+  OP_SUB_REG,
+  OP_MUL_IMM,
+  OP_MUL_REG,
+  OP_DIV_IMM,
+  OP_DIV_REG,
+  OP_MOD_IMM,
+  OP_MOD_REG,
 
-    // The signed versions of the above instructions
-    OP_IADD_IMM,
-    OP_IADD_REG,
-    OP_ISUB_IMM,
-    OP_ISUB_REG,
-    OP_IMUL_IMM,
-    OP_IMUL_REG,
-    OP_IDIV_IMM,
-    OP_IDIV_REG,
-    OP_IMOD_IMM,
-    OP_IMOD_REG,
+  // The signed versions of the above instructions
+  OP_IADD_IMM,
+  OP_IADD_REG,
+  OP_ISUB_IMM,
+  OP_ISUB_REG,
+  OP_IMUL_IMM,
+  OP_IMUL_REG,
+  OP_IDIV_IMM,
+  OP_IDIV_REG,
+  OP_IMOD_IMM,
+  OP_IMOD_REG,
 
-    // as for floating point numbers
-    // Merry currently assumes that the bits of the operands are in IEEE format and that the processor also uses IEEE format for execution
-    // these instructions related to floating point numbers will be added soon enough
-    // 5 opcodes will be reserved for floating point instructions
+  // as for floating point numbers
+  // Merry currently assumes that the bits of the operands are in IEEE format and that the processor also uses IEEE format for execution
+  // these instructions related to floating point numbers will be added soon enough
+  // 5 opcodes will be reserved for floating point instructions
 
-    // Now move intructions
-    OP_MOVE_IMM = 26, // move an immediate value to a destination register[This is default and accepts 32 bit values]
+  // Now move intructions
+  OP_MOVE_IMM = 26, // move an immediate value to a destination register[This is default and accepts 32 bit values]
 
-    OP_MOVE_IMM_64, // move an immediate value to a destination register[This is a variant and accepts 64 bit value that must follow the inst in the memory]
+  OP_MOVE_IMM_64, // move an immediate value to a destination register[This is a variant and accepts 64 bit value that must follow the inst in the memory]
 
-    OP_MOVE_REG, // move a value from one register to another
+  OP_MOVE_REG, // move a value from one register to another
 
-    OP_MOVE_REG8,    // move the lowest byte of one register to another
-    OP_MOVE_REG16,   // move the lowest two bytes of one register to another
-    OP_MOVE_REG32,   // move the lowest 4 bytes of one register to another
-    OP_MOVESX_IMM8,  // move a value and sign extend it as well[only 8-bit numbers are accepted]
-    OP_MOVESX_IMM16, // move a value and sign extend it as well[only 16-bit numbers are accepted]
+  OP_MOVE_REG8,    // move the lowest byte of one register to another
+  OP_MOVE_REG16,   // move the lowest two bytes of one register to another
+  OP_MOVE_REG32,   // move the lowest 4 bytes of one register to another
+  OP_MOVESX_IMM8,  // move a value and sign extend it as well[only 8-bit numbers are accepted]
+  OP_MOVESX_IMM16, // move a value and sign extend it as well[only 16-bit numbers are accepted]
 
-    OP_MOVESX_IMM32, // move a value and sign extend it as well[only 32-bit numbers are accepted]
+  OP_MOVESX_IMM32, // move a value and sign extend it as well[only 32-bit numbers are accepted]
 
-    OP_MOVESX_REG8,  // move the lower 1 byte to another register while sign extending it
-    OP_MOVESX_REG16, // move the lower 2 bytes to another register while sign extending it
+  OP_MOVESX_REG8,  // move the lower 1 byte to another register while sign extending it
+  OP_MOVESX_REG16, // move the lower 2 bytes to another register while sign extending it
 
-    OP_MOVESX_REG32, // move the lower 4 bytes to another register while sign extending it
-    // we won't need zero extend. It can simply be aliased with simple move
+  OP_MOVESX_REG32, // move the lower 4 bytes to another register while sign extending it
+  // we won't need zero extend. It can simply be aliased with simple move
 
-    // Control flow instructions
-    // the JMP instruction takes only a maximum of 40 bits from the instruction as the address
-    // either an offset is to be provided or the address can be provided as well
-    OP_JMP_OFF,  // JMP inst but the offset from current PC is provided[If the offset provided is in 2's complement then we can jump back]
-    OP_JMP_ADDR, // JMP inst but the address is directly provided
-    OP_CALL,     // the call instruction
-    OP_RET,      // return from a call
-    OP_SVA,      // access variables on the stack
-    OP_SVC,      // change the variable's value on the stack
+  // Control flow instructions
+  // the JMP instruction takes only a maximum of 40 bits from the instruction as the address
+  // either an offset is to be provided or the address can be provided as well
+  OP_JMP_OFF,  // JMP inst but the offset from current PC is provided[If the offset provided is in 2's complement then we can jump back]
+  OP_JMP_ADDR, // JMP inst but the address is directly provided
+  OP_CALL,     // the call instruction
+  OP_RET,      // return from a call
+  OP_SVA,      // access variables on the stack
+  OP_SVC,      // change the variable's value on the stack
 
-    // conditional jmps once we have a branch predictor
+  // conditional jmps once we have a branch predictor
 
-    // Now some stack operations
-    OP_PUSH_IMM, // the push instruction that pushes an immediate
-    OP_PUSH_REG, // push a register
-    OP_POP,      // pop a value to a register
-    OP_PUSHA,    // push all the registers {The order is from Ma through Mm5 linearly}
-    OP_POPA,     // pop to all registers in the reverse order
+  // Now some stack operations
+  OP_PUSH_IMM, // the push instruction that pushes an immediate
+  OP_PUSH_REG, // push a register
+  OP_POP,      // pop a value to a register
+  OP_PUSHA,    // push all the registers {The order is from Ma through Mm5 linearly}
+  OP_POPA,     // pop to all registers in the reverse order
 
-    // logical instructions
-    OP_AND_IMM, // REG & IMM
-    OP_AND_REG, // REG & REG
-    OP_OR_IMM,  // REG | TMM
-    OP_OR_REG,  // REG | REG
-    OP_XOR_IMM, // REG ^ IMM
-    OP_XOR_REG, // REG ^ REG
-    OP_NOT,     // ~REG
-    OP_LSHIFT,  // REG << <num>
-    OP_RSHIFT,  // REG >> <num>
-    OP_CMP_IMM, // CMP REG and IMM
-    OP_CMP_REG, // CMP REG and REG
+  // logical instructions
+  OP_AND_IMM, // REG & IMM
+  OP_AND_REG, // REG & REG
+  OP_OR_IMM,  // REG | TMM
+  OP_OR_REG,  // REG | REG
+  OP_XOR_IMM, // REG ^ IMM
+  OP_XOR_REG, // REG ^ REG
+  OP_NOT,     // ~REG
+  OP_LSHIFT,  // REG << <num>
+  OP_RSHIFT,  // REG >> <num>
+  OP_CMP_IMM, // CMP REG and IMM
+  OP_CMP_REG, // CMP REG and REG
 
-    // additional arithmetic instructions
-    // These will not affect the flags register at all
-    OP_INC,
-    OP_DEC,
+  // additional arithmetic instructions
+  // These will not affect the flags register at all
+  OP_INC,
+  OP_DEC,
 
-    // data movement instructions
-    /*
-      LEA will require many operands.
-      The first operand is the base address which can be any register.
-      The second operand is the index which can also be in any register
-      The third operand is the scale which can also be in any register
-      The last is the destination register which can also be any register
-      dest = base + index * scale [Useful for arrays: Doesn't change flags]
-    */
-    OP_LEA,
-    /*
-       The move instructions do not allow accessing the data memory for data and so that ability will be provided by LOAD.
-       The VM works with 8 bytes at once and so if the program has compressed data for multiple variables into those 8 bytes then the use of logical shifts should help
-    */
-    OP_LOAD,
-    OP_STORE,
+  // data movement instructions
+  /*
+    LEA will require many operands.
+    The first operand is the base address which can be any register.
+    The second operand is the index which can also be in any register
+    The third operand is the scale which can also be in any register
+    The last is the destination register which can also be any register
+    dest = base + index * scale [Useful for arrays: Doesn't change flags]
+  */
+  OP_LEA,
+  /*
+     The move instructions do not allow accessing the data memory for data and so that ability will be provided by LOAD.
+     The VM works with 8 bytes at once and so if the program has compressed data for multiple variables into those 8 bytes then the use of logical shifts should help
+  */
+  OP_LOAD,
+  OP_STORE,
 
-    // as the move_regX and move_immX instructions overwrite the bytes not being written to, the excg instruction will mitigate that problem.
-    // This instruction will only work with registers and not immediates
-    // One issue here is that the values between the registers are exchanged
-    OP_EXCG8,  // exchange only 1 lower byte
-    OP_EXCG16, // exchange only 2 lower bytes
-    OP_EXCG32, // exchange only 4 lower bytes
-    OP_EXCG,   // exchange the entire values
+  // as the move_regX and move_immX instructions overwrite the bytes not being written to, the excg instruction will mitigate that problem.
+  // This instruction will only work with registers and not immediates
+  // One issue here is that the values between the registers are exchanged
+  OP_EXCG8,  // exchange only 1 lower byte
+  OP_EXCG16, // exchange only 2 lower bytes
+  OP_EXCG32, // exchange only 4 lower bytes
+  OP_EXCG,   // exchange the entire values
 
-    // To MOVE values instead of exchanging, we use the movX instruction that moves the bytes without overwriting anything
-    // This also only works on registers
-    // we don't need the 64-bit version
-    OP_MOV8,
-    OP_MOV16,
-    OP_MOV32,
+  // To MOVE values instead of exchanging, we use the movX instruction that moves the bytes without overwriting anything
+  // This also only works on registers
+  // we don't need the 64-bit version
+  OP_MOV8,
+  OP_MOV16,
+  OP_MOV32,
 
-    // some utility instructions
-    OP_CFLAGS, // clear the flags register
-    OP_RESET,  // reset all the registers
-    OP_CLZ,    // clear the zero flag
-    OP_CLN,    // clear the negative flag
-    OP_CLC,    // clear the carry flag
-    OP_CLO,    // clear the overflow flag
+  // some utility instructions
+  OP_CFLAGS, // clear the flags register
+  OP_RESET,  // reset all the registers
+  OP_CLZ,    // clear the zero flag
+  OP_CLN,    // clear the negative flag
+  OP_CLC,    // clear the carry flag
+  OP_CLO,    // clear the overflow flag
 
-    // conditional jumps
-    OP_JNZ,
-    OP_JZ,
-    OP_JNE,
-    OP_JE,
-    OP_JNC,
-    OP_JC,
-    OP_JNO,
-    OP_JO,
-    OP_JNN,
-    OP_JN,
-    OP_JNG,
-    OP_JG,
-    OP_JNS,
-    OP_JS,
-    OP_JGE,
-    OP_JSE,
+  // conditional jumps
+  OP_JNZ,
+  OP_JZ,
+  OP_JNE,
+  OP_JE,
+  OP_JNC,
+  OP_JC,
+  OP_JNO,
+  OP_JO,
+  OP_JNN,
+  OP_JN,
+  OP_JNG,
+  OP_JG,
+  OP_JNS,
+  OP_JS,
+  OP_JGE,
+  OP_JSE,
 
-    // conditional data movement instructions will be implemented in the future accordingly with the needs
+  // conditional data movement instructions will be implemented in the future accordingly with the needs
 
-    // some uitlity instructions
-    OP_LOOP, // automatically jumps to the given address until the Mc register is 0
-    
-    OP_INTR,
+  // some uitlity instructions
+  OP_LOOP, // automatically jumps to the given address until the Mc register is 0
 
-    // Some more
-    OP_LOADB,  // load byte
-    OP_LOADW,  // load 2 bytes
-    OP_LOADD,  // load 4 bytes
-    OP_STOREB,  // store byte
-    OP_STOREW,  // store 2 bytes
-    OP_STORED,  // store 4 bytes
+  OP_INTR,
 
-    // the addresses are in register
-    OP_LOAD_REG,
-    OP_STORE_REG,
-    OP_LOADB_REG,
-    OP_STOREB_REG,
-    OP_LOADW_REG,
-    OP_STOREW_REG,
-    OP_LOADD_REG,
-    OP_STORED_REG,
+  // Some more
+  OP_LOADB,  // load byte
+  OP_LOADW,  // load 2 bytes
+  OP_LOADD,  // load 4 bytes
+  OP_STOREB, // store byte
+  OP_STOREW, // store 2 bytes
+  OP_STORED, // store 4 bytes
+
+  // the addresses are in register
+  OP_LOAD_REG,
+  OP_STORE_REG,
+  OP_LOADB_REG,
+  OP_STOREB_REG,
+  OP_LOADW_REG,
+  OP_STOREW_REG,
+  OP_LOADD_REG,
+  OP_STORED_REG,
+
+  // helping instructions
+  OP_CMPXCHG, // the atomic compare and exchange instruction
+
+  // Some other instructions
+  // IO through interrupts is also allowed
+  // This is also a way to do so
+  OP_IN,   // input a byte
+  OP_OUT,  // print a byte[As a character]
+  OP_INP,  // input a given number of bytes
+  OP_OUTP, // output a given number of bytes[As characters]
 
 };
 
