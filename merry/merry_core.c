@@ -516,7 +516,8 @@ mptr_t merry_runCore(mptr_t core)
             // this operation must be atomic
             // but it cannot be guranteed in a VM
             // this instruction will take a 6-byte address and 2 registers
-            mqptr_t _addr_ = (mqptr_t)merry_memory_get_address(c->data_mem, *current & 0xFFFFFFFFFFFF);
+            // this works for 1 byte only
+            mbptr_t _addr_ = merry_dmemory_get_byte_address(c->data_mem, *current & 0xFFFFFFFFFFFF);
             if (_addr_ == RET_NULL)
             {
                 merry_requestHdlr_panic(c->data_mem->error);
@@ -525,19 +526,19 @@ mptr_t merry_runCore(mptr_t core)
             }
             atomic_compare_exchange_strong((mqptr_t)merry_memory_get_address(c->data_mem, _addr_), &c->registers[(*current >> 52) & 15], c->registers[(*current >> 48) & 15]);
             break;
-        case OP_IN:
+        case OP_CIN:
             // the input is stored in a register that is encoded into the last 4 bits of the instruction
             c->registers[*current & 15] = getchar();
             break;
-        case OP_OUT:
+        case OP_COUT:
             // the byte to output is stored in a register that is encoded into the last 4 bits of the instruction
             putchar((int)c->registers[*current & 15]);
             break;
-        case OP_INP:
+        case OP_SIN:
             // the address to store in is encoded into the instruction
             // the number of bytes to input is in the Mc register
             register mqword_t len = c->registers[Mc];
-            mbptr_t _addr_ = (mbptr_t)merry_memory_get_address(c->data_mem, *current & 0xFFFFFFFFFFFF);
+            mbptr_t _addr_ = merry_dmemory_get_byte_address_bounds(c->data_mem, *current & 0xFFFFFFFFFFFF, len);
             if (_addr_ == RET_NULL)
             {
                 merry_requestHdlr_panic(c->data_mem->error);
@@ -546,8 +547,77 @@ mptr_t merry_runCore(mptr_t core)
             }
             for (msize_t i = 0; i < len; i++, _addr_++)
             {
-                c->registers[*current & 15] = getchar();
+                *_addr_ = getchar();
             }
+            break;
+        case OP_SOUT:
+            // the address to store in is encoded into the instruction
+            // the number of bytes to input is in the Mc register
+            register mqword_t len = c->registers[Mc];
+            mbptr_t _addr_ = merry_dmemory_get_byte_address_bounds(c->data_mem, *current & 0xFFFFFFFFFFFF, len);
+            if (_addr_ == RET_NULL)
+            {
+                merry_requestHdlr_panic(c->data_mem->error);
+                c->stop_running = mtrue;
+                break;
+            }
+            for (msize_t i = 0; i < len; i++, _addr_++)
+            {
+                putchar(*_addr_);
+            }
+            break;
+        case OP_IN:
+            fscanf(stdin, "%hhi", &c->registers[*current & 15]);
+            break;
+        case OP_OUT:
+            fprintf(stdout, "%hhi", c->registers[*current & 15]);
+            break;
+        case OP_INW:
+            // same as OP_IN, store in a register
+            fscanf(stdin, "%hd", &c->registers[*current & 15]);
+            break;
+        case OP_OUTW:
+            // same as OP_OUT, stored in a register
+            fprintf(stdout, "%hd", c->registers[*current & 15]);
+            break;
+        case OP_IND:
+            fscanf(stdin, "%d", &c->registers[*current & 15]);
+            break;
+        case OP_OUTD:
+            fprintf(stdout, "%d", c->registers[*current & 15]);
+            break;
+        case OP_INQ:
+            fscanf(stdin, "%lld", &c->registers[*current & 15]);
+            break;
+        case OP_OUTQ:
+            fprintf(stdout, "%lld", c->registers[*current & 15]);
+            break;
+        case OP_UIN:
+            fscanf(stdin, "%hhu", &c->registers[*current & 15]);
+            break;
+        case OP_UOUT:
+            fprintf(stdout, "%hhu", c->registers[*current & 15]);
+            break;
+        case OP_UINW:
+            // same as OP_IN, store in a register
+            fscanf(stdin, "%hu", &c->registers[*current & 15]);
+            break;
+        case OP_UOUTW:
+            // same as OP_OUT, stored in a register
+            fprintf(stdout, "%hu", c->registers[*current & 15]);
+            break;
+        case OP_UIND:
+            fscanf(stdin, "%d", &c->registers[*current & 15]);
+            break;
+        case OP_UOUTD:
+            fprintf(stdout, "%u", c->registers[*current & 15]);
+            break;
+        case OP_UINQ:
+            fscanf(stdin, "%llu", &c->registers[*current & 15]);
+            break;
+        case OP_UOUTQ:
+            fprintf(stdout, "%llu", c->registers[*current & 15]);
+            break;
         }
         c->pc++;
     }

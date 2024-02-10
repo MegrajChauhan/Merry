@@ -219,10 +219,28 @@ enum
   // Some other instructions
   // IO through interrupts is also allowed
   // This is also a way to do so
+  OP_CIN,  // character input
+  OP_COUT, // character output
+  OP_SIN,  // input a given number of bytes[characters or a string][string in]
+  OP_SOUT, // output a given number of bytes[As characters][string out]
+
   OP_IN,   // input a byte
-  OP_OUT,  // print a byte[As a character]
-  OP_INP,  // input a given number of bytes
-  OP_OUTP, // output a given number of bytes[As characters]
+  OP_OUT,  // print a byte
+  OP_INW,  // input a word[signed]
+  OP_OUTW, // output a word[signed]
+  OP_IND,  // input a dword[signed]
+  OP_OUTD, // output a dword[signed]
+  OP_INQ,  // input a qword[signed]
+  OP_OUTQ, // output a qword[signed]
+
+  OP_UIN,   // input a byte[unsigned]
+  OP_UOUT,  // output a byte[unsigned]
+  OP_UINW,  // input a word[unsigned]
+  OP_UOUTW, // output a word[unsigned]
+  OP_UIND,  // input a dword[unsigned]
+  OP_UOUTD, // output a dword[unsigned]
+  OP_UINQ,  // input a qword[unsigned]
+  OP_UOUTQ, // output a qword[unsigned]
 
 };
 

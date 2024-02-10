@@ -463,3 +463,102 @@ mbptr_t merry_dmemory_get_byte_address_bounds(MerryDMemory *memory, maddress_t a
     // this just basically returns an actual address to the address that the manager can use
     return &memory->pages[addr.page]->address_space[addr.offset];
 }
+
+mwptr_t merry_dmemory_get_word_address(MerryDMemory *memory, maddress_t address)
+{
+    register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
+    if (surelyF(addr.page >= memory->number_of_pages))
+    {
+        // this implies the request is for a page that doesn't exist
+        memory->error = MERRY_MEM_INVALID_ACCESS;
+        return RET_NULL;
+    }
+    // this just basically returns an actual address to the address that the manager can use
+    return &memory->pages[addr.page]->address_wspace[addr.offset / 2];
+}
+
+// here bound is bound*2 bytes
+mwptr_t merry_dmemory_get_word_address_bounds(MerryDMemory *memory, maddress_t address, msize_t bound)
+{
+    register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
+    if (surelyF(addr.page >= memory->number_of_pages))
+    {
+        // this implies the request is for a page that doesn't exist
+        memory->error = MERRY_MEM_INVALID_ACCESS;
+        return RET_NULL;
+    }
+    if (surelyF((addr.offset + bound * 2) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
+    {
+        // this implies the request is for a page that doesn't exist
+        memory->error = MERRY_MEM_INVALID_ACCESS;
+        return RET_NULL;
+    }
+    // this just basically returns an actual address to the address that the manager can use
+    return &memory->pages[addr.page]->address_wspace[addr.offset / 2];
+}
+
+mdptr_t merry_dmemory_get_dword_address(MerryDMemory *memory, maddress_t address)
+{
+    register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
+    if (surelyF(addr.page >= memory->number_of_pages))
+    {
+        // this implies the request is for a page that doesn't exist
+        memory->error = MERRY_MEM_INVALID_ACCESS;
+        return RET_NULL;
+    }
+    // this just basically returns an actual address to the address that the manager can use
+    return &memory->pages[addr.page]->address_dspace[addr.offset / 4];
+}
+
+// here bound is bound*4 bytes
+mdptr_t merry_dmemory_get_dword_address_bounds(MerryDMemory *memory, maddress_t address, msize_t bound)
+{
+    register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
+    if (surelyF(addr.page >= memory->number_of_pages))
+    {
+        // this implies the request is for a page that doesn't exist
+        memory->error = MERRY_MEM_INVALID_ACCESS;
+        return RET_NULL;
+    }
+    if (surelyF((addr.offset + bound * 4) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
+    {
+        // this implies the request is for a page that doesn't exist
+        memory->error = MERRY_MEM_INVALID_ACCESS;
+        return RET_NULL;
+    }
+    // this just basically returns an actual address to the address that the manager can use
+    return &memory->pages[addr.page]->address_dspace[addr.offset / 4];
+}
+
+mqptr_t merry_dmemory_get_qword_address(MerryDMemory *memory, maddress_t address)
+{
+    register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
+    if (surelyF(addr.page >= memory->number_of_pages))
+    {
+        // this implies the request is for a page that doesn't exist
+        memory->error = MERRY_MEM_INVALID_ACCESS;
+        return RET_NULL;
+    }
+    // this just basically returns an actual address to the address that the manager can use
+    return &memory->pages[addr.page]->address_qspace[addr.offset / 8];
+}
+
+// here bound is bound*8 bytes
+mqptr_t merry_dmemory_get_qword_address_bounds(MerryDMemory *memory, maddress_t address, msize_t bound)
+{
+    register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
+    if (surelyF(addr.page >= memory->number_of_pages))
+    {
+        // this implies the request is for a page that doesn't exist
+        memory->error = MERRY_MEM_INVALID_ACCESS;
+        return RET_NULL;
+    }
+    if (surelyF((addr.offset + bound * 8) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
+    {
+        // this implies the request is for a page that doesn't exist
+        memory->error = MERRY_MEM_INVALID_ACCESS;
+        return RET_NULL;
+    }
+    // this just basically returns an actual address to the address that the manager can use
+    return &memory->pages[addr.page]->address_qspace[addr.offset / 8];
+}

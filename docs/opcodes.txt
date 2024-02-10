@@ -277,6 +277,8 @@ consideration of the machine's performance as it may hinder the efficiency and t
 intr -> opcode: 0x5F
         operand: The interrupt number. The lower 2 bytes represent the interrupt number.
 
+
+
 Interrupt numbers/IDs:
 Each interrupt number/ID represents a unique service that the Manager can provide. Numbers 0-150 are reserved for internal use and thus the interrupts that the program can use start from 151.
 If a program were to use any interrupt from 0-150, the manager will handle it as an error and abruptly exit. This behaviour could be utilized for error handling and thus they will be explained in the
@@ -290,3 +292,4 @@ Interrupt Number |               Details
     153                 NEW_CORE: Creates a new virtual core that can start running from the point specified by the program. The address for the new core to start executing from should be in the Ma
                         register of the requesting core. After the request is fulfilled, Ma of the requesting core will contain 1 if the request was a success otherwise it will contain 0. 
 
+[New instructions not documented yet]
