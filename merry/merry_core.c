@@ -4,7 +4,7 @@
 MerryCore *merry_core_init(MerryMemory *inst_mem, MerryDMemory *data_mem, msize_t id)
 {
     // allocate a new core
-    _llog_(_CORE_, "Intialization", "Intializing core with ID %lu", id);
+    // _llog_(_CORE_, "Intialization", "Intializing core with ID %lu", id);
     MerryCore *new_core = (MerryCore *)malloc(sizeof(MerryCore));
     // check if the core has been initialized
     if (new_core == RET_NULL)
@@ -50,14 +50,14 @@ MerryCore *merry_core_init(MerryMemory *inst_mem, MerryDMemory *data_mem, msize_
         goto failure;
     return new_core;
 failure:
-    _log_(_CORE_, "FAILURE", "Core intialization failed");
+    // _log_(_CORE_, "FAILURE", "Core intialization failed");
     merry_core_destroy(new_core);
     return RET_NULL;
 }
 
 void merry_core_destroy(MerryCore *core)
 {
-    _llog_(_CORE_, "DESTROYING", "Destroying core with ID %lu", core->core_id);
+    // _llog_(_CORE_, "DESTROYING", "Destroying core with ID %lu", core->core_id);
     if (surelyF(core == NULL))
         return;
     merry_cond_destroy(core->cond);
@@ -99,7 +99,7 @@ _MERRY_INTERNAL_ mqword_t merry_core_get_immediate(MerryCore *core)
     if (merry_manager_mem_read_inst(core->inst_mem, core->pc, &res) == RET_FAILURE)
     {
         // we failed
-        _llog_(_DECODER_, "DECODE_FAILED", "Decoding failed; Memory read failed", core->core_id);
+        // _llog_(_DECODER_, "DECODE_FAILED", "Decoding failed; Memory read failed", core->core_id);
         core->stop_running = mtrue;
         merry_requestHdlr_panic(core->inst_mem->error);
     }
@@ -116,14 +116,14 @@ mptr_t merry_runCore(mptr_t core)
         // merry_mutex_lock(c->lock);
         if (c->stop_running == mtrue)
         {
-            _llog_(_CORE_, "STOPPING", "Core ID %lu stopping now", c->core_id);
+            // _llog_(_CORE_, "STOPPING", "Core ID %lu stopping now", c->core_id);
             break;
         }
         // merry_mutex_unlock(c->lock);
         if (merry_manager_mem_read_inst(c->inst_mem, c->pc, current) == RET_FAILURE)
         {
             // we failed
-            _llog_(_DECODER_, "DECODE_FAILED", "Decoding failed; Memory read failed", c->core_id);
+            // _llog_(_DECODER_, "DECODE_FAILED", "Decoding failed; Memory read failed", c->core_id);
             merry_requestHdlr_panic(c->inst_mem->error);
             /// TODO: Replace all of these types of statements with atomic operations instead.
             break; // stay out of it
@@ -517,15 +517,17 @@ mptr_t merry_runCore(mptr_t core)
             // but it cannot be guranteed in a VM
             // this instruction will take a 6-byte address and 2 registers
             // this works for 1 byte only
-            mbptr_t _addr_ = merry_dmemory_get_byte_address(c->data_mem, *current & 0xFFFFFFFFFFFF);
-            if (_addr_ == RET_NULL)
             {
-                merry_requestHdlr_panic(c->data_mem->error);
-                c->stop_running = mtrue;
+                mbptr_t _addr_ = merry_dmemory_get_byte_address(c->data_mem, *current & 0xFFFFFFFFFFFF);
+                if (_addr_ == RET_NULL)
+                {
+                    merry_requestHdlr_panic(c->data_mem->error);
+                    c->stop_running = mtrue;
+                    break;
+                }
+                atomic_compare_exchange_strong((mqptr_t)merry_memory_get_address(c->data_mem, _addr_), &c->registers[(*current >> 52) & 15], c->registers[(*current >> 48) & 15]);
                 break;
             }
-            atomic_compare_exchange_strong((mqptr_t)merry_memory_get_address(c->data_mem, _addr_), &c->registers[(*current >> 52) & 15], c->registers[(*current >> 48) & 15]);
-            break;
         case OP_CIN:
             // the input is stored in a register that is encoded into the last 4 bits of the instruction
             c->registers[*current & 15] = getchar();
@@ -537,35 +539,39 @@ mptr_t merry_runCore(mptr_t core)
         case OP_SIN:
             // the address to store in is encoded into the instruction
             // the number of bytes to input is in the Mc register
-            register mqword_t len = c->registers[Mc];
-            mbptr_t _addr_ = merry_dmemory_get_byte_address_bounds(c->data_mem, *current & 0xFFFFFFFFFFFF, len);
-            if (_addr_ == RET_NULL)
             {
-                merry_requestHdlr_panic(c->data_mem->error);
-                c->stop_running = mtrue;
+                register mqword_t len = c->registers[Mc];
+                mbptr_t _addr_ = merry_dmemory_get_byte_address_bounds(c->data_mem, *current & 0xFFFFFFFFFFFF, len);
+                if (_addr_ == RET_NULL)
+                {
+                    merry_requestHdlr_panic(c->data_mem->error);
+                    c->stop_running = mtrue;
+                    break;
+                }
+                for (msize_t i = 0; i < len; i++, _addr_++)
+                {
+                    *_addr_ = getchar();
+                }
                 break;
             }
-            for (msize_t i = 0; i < len; i++, _addr_++)
-            {
-                *_addr_ = getchar();
-            }
-            break;
         case OP_SOUT:
             // the address to store in is encoded into the instruction
             // the number of bytes to input is in the Mc register
             register mqword_t len = c->registers[Mc];
-            mbptr_t _addr_ = merry_dmemory_get_byte_address_bounds(c->data_mem, *current & 0xFFFFFFFFFFFF, len);
-            if (_addr_ == RET_NULL)
             {
-                merry_requestHdlr_panic(c->data_mem->error);
-                c->stop_running = mtrue;
+                mbptr_t _addr_ = merry_dmemory_get_byte_address_bounds(c->data_mem, *current & 0xFFFFFFFFFFFF, len);
+                if (_addr_ == RET_NULL)
+                {
+                    merry_requestHdlr_panic(c->data_mem->error);
+                    c->stop_running = mtrue;
+                    break;
+                }
+                for (msize_t i = 0; i < len; i++, _addr_++)
+                {
+                    putchar(*_addr_);
+                }
                 break;
             }
-            for (msize_t i = 0; i < len; i++, _addr_++)
-            {
-                putchar(*_addr_);
-            }
-            break;
         case OP_IN:
             fscanf(stdin, "%hhi", &c->registers[*current & 15]);
             break;

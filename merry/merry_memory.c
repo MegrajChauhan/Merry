@@ -44,7 +44,7 @@ _MERRY_INTERNAL_ MerryMemPage *merry_mem_allocate_new_mempage_provided(mqptr_t p
         return RET_NULL;
     }
     // everything went successfully
-    _log_(_MEM_, "Page Allocation", "Allocating memory provided");
+    // _log_(_MEM_, "Page Allocation", "Allocating memory provided");
     return new_page;
 }
 
@@ -67,12 +67,12 @@ _MERRY_INTERNAL_ void merry_mem_free_mempage(MerryMemPage *page)
 // exposed function: initialize memory with num_of_pages pages
 MerryMemory *merry_memory_init(msize_t num_of_pages)
 {
-    _llog_(_MEM_, "INIT", "Intializing memory with %lu pages", num_of_pages);
+    // _llog_(_MEM_, "INIT", "Intializing memory with %lu pages", num_of_pages);
     MerryMemory *memory = (MerryMemory *)malloc(sizeof(MerryMemory));
     if (memory == RET_NULL)
     {
         // we failed
-        _log_(_MEM_, "FAILED", "Memory inti failed");
+        // _log_(_MEM_, "FAILED", "Memory inti failed");
         return RET_NULL;
     }
     memory->error = MERRY_ERROR_NONE;
@@ -81,25 +81,25 @@ MerryMemory *merry_memory_init(msize_t num_of_pages)
     if (memory->pages == RET_NULL)
     {
         // failed
-        _log_(_MEM_, "FAILED", "Mmeory init failed");
+        // _log_(_MEM_, "FAILED", "Mmeory init failed");
         free(memory);
         return RET_NULL;
     }
     // now we need to initialize every single page
     for (msize_t i = 0; i < num_of_pages; i++, memory->number_of_pages++)
     {
-        _llog_(_MEM_, "ALLOCATING PAGES", "Allocating page %lu", i);
+        // _llog_(_MEM_, "ALLOCATING PAGES", "Allocating page %lu", i);
         memory->pages[i] = merry_mem_allocate_new_mempage();
         if (memory->pages[i] == RET_NULL)
         {
             // failure
-            _log_(_MEM_, "FAILED", "Memory intialization failed while allocating pages");
+            // _log_(_MEM_, "FAILED", "Memory intialization failed while allocating pages");
             merry_memory_free(memory);
             return RET_NULL;
         }
     }
     // we have allocated everything successfully
-    _log_(_MEM_, "MEM_INIT_SUCCESS", "Memory successfully initialized");
+    // _log_(_MEM_, "MEM_INIT_SUCCESS", "Memory successfully initialized");
     return memory;
 }
 
@@ -107,12 +107,12 @@ MerryMemory *merry_memory_init_provided(mqptr_t *mapped_pages, msize_t num_of_pa
 {
     // just perform the regular allocation but don't map new pages
     // instead use the already mapped ones
-    _llog_(_MEM_, "INIT", "Intializing memory with %lu pages", num_of_pages);
+    // _llog_(_MEM_, "INIT", "Intializing memory with %lu pages", num_of_pages);
     MerryMemory *memory = (MerryMemory *)malloc(sizeof(MerryMemory));
     if (memory == RET_NULL)
     {
         // we failed
-        _log_(_MEM_, "FAILED", "Memory inti failed");
+        // _log_(_MEM_, "FAILED", "Memory inti failed");
         return RET_NULL;
     }
     memory->error = MERRY_ERROR_NONE;
@@ -121,31 +121,31 @@ MerryMemory *merry_memory_init_provided(mqptr_t *mapped_pages, msize_t num_of_pa
     if (memory->pages == RET_NULL)
     {
         // failed
-        _log_(_MEM_, "FAILED", "Memory inti failed");
+        // _log_(_MEM_, "FAILED", "Memory inti failed");
         free(memory);
         return RET_NULL;
     }
     // now we need to initialize every single page
     for (msize_t i = 0; i < num_of_pages; i++, memory->number_of_pages++)
     {
-        _llog_(_MEM_, "ALLOCATING PAGES", "Allocating page %lu", i);
+        // _llog_(_MEM_, "ALLOCATING PAGES", "Allocating page %lu", i);
         memory->pages[i] = merry_mem_allocate_new_mempage_provided(mapped_pages[i]);
         if (memory->pages[i] == RET_NULL)
         {
             // failure
-            _log_(_MEM_, "FAILED", "Memory intialization failed while allocating pages");
+            // _log_(_MEM_, "FAILED", "Memory intialization failed while allocating pages");
             merry_memory_free(memory);
             return RET_NULL;
         }
     }
     // we have allocated everything successfully
-    _log_(_MEM_, "MEM_INIT_SUCCESS", "Memory successfully initialized");
+    // _log_(_MEM_, "MEM_INIT_SUCCESS", "Memory successfully initialized");
     return memory;
 }
 
 void merry_memory_free(MerryMemory *memory)
 {
-    _log_(_MEM_, "DESTORYING", "Destroying memory");
+    // _log_(_MEM_, "DESTORYING", "Destroying memory");
     if (surelyF(memory == NULL))
         return;
     if (memory->pages != NULL)

@@ -35,7 +35,7 @@ int main(int argc, char **argv)
         return -1;
     }
     // Now since we don't have any fancy or complex options to handle, let's get straight to business
-    merry_init_logger();
+    merry_logger_init(_parsed_options->options[_OPT_ENABLE_LOGGER].provided == mtrue ? mtrue : mfalse); // we won't enable logging yet, this is just an option rn
     if (merry_os_init(*_parsed_options->options[_OPT_FILE]._given_value_str_) == RET_FAILURE)
     {
         // the valid error messages will be automatically printed
@@ -55,7 +55,7 @@ int main(int argc, char **argv)
         merry_thread_destroy(osthread);
         goto failure;
     }
-    merry_close_logger();
+    merry_logger_close();
     merry_thread_join(osthread, NULL); // I am an idiot
     merry_thread_destroy(osthread);
     merry_os_destroy();

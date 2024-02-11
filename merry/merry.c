@@ -75,6 +75,9 @@ MerryCLP *merry_parse_options(int argc, char **argv)
                 clp->options[_OPT_FILE]._given_value_str_ = &argv[i + 1];
                 i++;
                 break;
+            case 'l':
+                clp->options[_OPT_ENABLE_LOGGER].provided = mtrue;
+                break;
             default:
                 fprintf(stderr, "Unknown option '%s'\n", argv[i]);
                 free(clp);
@@ -98,7 +101,10 @@ void merry_print_help()
             "OPTIONS:\n"
             "-h, --h, -help, --help --> Print this help\n"
             "-v, --v, -v, --v       --> Display the current version\n"
-            "-f                     --> Provide the path to the input file\n");
+            "-f                     --> Provide the path to the input file\n"
+            "-l                     --> Enable logging of the VM[Disabled for now. Doesn't work]"
+            "                           Enabling logging doesn't ensure that a log file will be generated."
+            "                           The performance will be affected.");
 }
 
 void merry_destroy_parser(MerryCLP *clp)
