@@ -59,13 +59,13 @@ _MERRY_ALWAYS_INLINE_ _exec_(div_reg)
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 52) & 15;
    register mqword_t reg2 = (current >> 48) & 15;
-   if (core->registers[core->registers[reg2]] == 0)
+   if (core->registers[reg2] == 0)
    {
       merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
       core->stop_running = mtrue;
       return;
    }
-   core->registers[reg] = core->registers[reg] / core->registers[(current >> 48) & 15];
+   core->registers[reg] = core->registers[reg] / core->registers[reg2];
    _update_flags_(&core->flag);
 }
 
@@ -90,13 +90,13 @@ _MERRY_ALWAYS_INLINE_ _exec_(mod_reg)
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 52) & 15;
    register mqword_t reg2 = (current >> 48) & 15;
-   if (core->registers[core->registers[reg2]] == 0)
+   if (core->registers[reg2] == 0)
    {
       merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
       core->stop_running = mtrue;
       return;
    }
-   core->registers[reg] = core->registers[reg] % core->registers[(current >> 48) & 15];
+   core->registers[reg] = core->registers[reg] % core->registers[reg2];
    _update_flags_(&core->flag);
 }
 
