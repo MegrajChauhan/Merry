@@ -7,6 +7,7 @@
 # If you know how to write a build file in anything, you can do that. The order in which the source files should be compiled is in "compile.txt"
 import os
 import sys
+import glob
 
 def print_usage():
     print("python build.py <Destination Directory> <Output Name> <Extra flags>")
@@ -24,7 +25,7 @@ def main():
     if not os.path.exists(destination_directory):
         os.makedirs(destination_directory)
 
-    with open("compile.txt", "r") as read:
+    with open("./compile.txt", "r") as read:
         files_to_compile = read.readlines()
     
     final_file = " "
@@ -37,7 +38,7 @@ def main():
         else:
             print(f"Warning: File not found - {file_path}")
     destination = os.path.join(destination_directory, output_file_name)
-    compile_command = f"gcc -O3  -ggdb -Wall -Wextra {sys.argv[3] if avai == True else " "} {final_file} -o {destination}"
+    compile_command = f"gcc -O3 -fsanitize=address -ggdb -Wall -Wextra {sys.argv[3] if avai == True else " "} {final_file} -o {destination}"
     print("Compiling the source files...")
     print(f"Command run: '{compile_command}'")
     print("\nCOMPILER MESSAGES IF ANY:")
@@ -49,7 +50,7 @@ def main():
         quit(result)
     
     print("Compiling assembler (not finished!)")
-    result = os.system("c++ -ggdb -O3 -std=c++23 -o ./build/asm ./MerryAssembler/src/*.cc -Wall -Wextra -Wswitch-enum")
+    result = os.system("c++ -ggdb -fsanitize=address -O2 -std=c++23 -o ./build/asm ./MerryAssembler/src/*.cc -Wall -Wextra -Wswitch-enum")
     if result == 0:
         print(f"Compilation successful with return value of {result}")
     else:
