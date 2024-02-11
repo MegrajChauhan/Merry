@@ -25,6 +25,9 @@ typedef struct MerryDAddress MerryDAddress; // an internal struct
 struct MerryDMemPage
 {
     mbptr_t address_space;
+    mwptr_t address_wspace;
+    mdptr_t address_dspace;
+    mqptr_t address_qspace;
     MerryMutex *lock;
 };
 
@@ -47,15 +50,33 @@ MerryDMemory *merry_dmemory_init_provided(mqptr_t *mapped_pages, msize_t num_of_
 
 void merry_dmemory_free(MerryDMemory *memory);
 
-mret_t merry_dmemory_read_byte(MerryDMemory *memory, maddress_t address, mbptr_t _store_in);
-
+mret_t merry_dmemory_read_byte(MerryDMemory *memory, maddress_t address, mqptr_t _store_in);
 mret_t merry_dmemory_write_byte(MerryDMemory *memory, maddress_t address, mqword_t _to_write);
+
+mret_t merry_dmemory_read_word(MerryDMemory *memory, maddress_t address, mqptr_t _store_in);
+mret_t merry_dmemory_write_word(MerryDMemory *memory, maddress_t address, mqword_t _to_write);
+
+mret_t merry_dmemory_read_dword(MerryDMemory *memory, maddress_t address, mqptr_t _store_in);
+mret_t merry_dmemory_write_dword(MerryDMemory *memory, maddress_t address, mqword_t _to_write);
+
+mret_t merry_dmemory_read_qword(MerryDMemory *memory, maddress_t address, mqptr_t _store_in);
+mret_t merry_dmemory_write_qword(MerryDMemory *memory, maddress_t address, mqword_t _to_write);
 
 // Useless functions for now
 mret_t merry_dmemory_read_lock(MerryDMemory *memory, maddress_t address, mqptr_t _store_in);
 mret_t merry_dmemory_write_lock(MerryDMemory *memory, maddress_t address, mqword_t _to_write);
 // -------
 
-mptr_t merry_dmemory_get_address(MerryDMemory *memory, maddress_t address);
+mbptr_t merry_dmemory_get_byte_address(MerryDMemory *memory, maddress_t address);
+mbptr_t merry_dmemory_get_byte_address_bounds(MerryDMemory *memory, maddress_t address, msize_t bound);
+
+mwptr_t merry_dmemory_get_word_address(MerryDMemory *memory, maddress_t address);
+mwptr_t merry_dmemory_get_word_address_bounds(MerryDMemory *memory, maddress_t address, msize_t bound);
+
+mdptr_t merry_dmemory_get_dword_address(MerryDMemory *memory, maddress_t address);
+mdptr_t merry_dmemory_get_dword_address_bounds(MerryDMemory *memory, maddress_t address, msize_t bound);
+
+mqptr_t merry_dmemory_get_qword_address(MerryDMemory *memory, maddress_t address);
+mqptr_t merry_dmemory_get_qword_address_bounds(MerryDMemory *memory, maddress_t address, msize_t bound);
 
 #endif

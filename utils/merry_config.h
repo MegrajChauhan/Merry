@@ -34,6 +34,10 @@
 
 #define _MERRY_OPTIMIZE_
 
+#define _MERRY_VERSION_ "0.0.0"
+#define _MERRY_VERSION_STATE_ "no_state" // beta, alpha, etc
+
+
 /*
  * Check for the endianness of the system. We can use this to our advantage for making the VM faster.
  */
@@ -70,8 +74,7 @@
 #endif
 
 // for only x86_64 available
-#if defined(_MERRY_HOST_CPU_AMD_)
-// the CPU supports x86_64 instructions[can be set by intel processors as well]
+#if defined(__x86_64)
 #define _MERRY_HOST_CPU_x86_64_ARCH_ 1
 #endif
 

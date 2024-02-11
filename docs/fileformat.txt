@@ -1,3 +1,8 @@
+/////////////////////////////////////////////
+LEGACY FORMAT
+/////////////////////////////////////////////
+
+
 NOTE: Not everything here is correct. I will explain soon enough.
 
    All lines starting with a '.' is some metadata given to the reader.

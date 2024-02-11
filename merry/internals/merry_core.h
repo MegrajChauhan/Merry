@@ -64,7 +64,7 @@ typedef struct MerryFlagRegister MerryFlagRegister;
 
 struct MerryFlagRegister
 {
-#if defined(_MERRY_HOST_CPU_AMD_)
+#if defined(_MERRY_HOST_CPU_x86_64_ARCH_)
     // This defines the flags structure for the AMD64 processors
     unsigned long carry : 1;     /*0th bit is the CF in AMD64 EFlags*/
     flags_res(r1, 1);            /*1 bit reserved here*/

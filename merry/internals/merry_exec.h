@@ -125,6 +125,12 @@ _exec_(popa);
 // _exec_(lea);
 _lexec_(load, mqword_t address);
 _lexec_(store, mqword_t address);
+_lexec_(loadb, mqword_t address);
+_lexec_(storeb, mqword_t address);
+_lexec_(loadw, mqword_t address);
+_lexec_(storew, mqword_t address);
+_lexec_(loadd, mqword_t address);
+_lexec_(stored, mqword_t address);
 
 _exec_(excg);
 _exec_(excg8);

@@ -106,7 +106,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
 {
     // This will parse the first 32 bytes to collect important information and validate it as well
     // mbyte_t header[_READER_HEADER_LEN_]; // 32 bytes
-    mbyte_t header[24]; // 32 bytes
+    mbyte_t header[_READER_HEADER_LEN_]; // 32 bytes
 
     // now we read the header
     if (fread(header, 1, _READER_HEADER_LEN_, inp->f) != _READER_HEADER_LEN_)
@@ -141,16 +141,16 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
     inp->dlen = (inp->dlen << 8) | header[21];
     inp->dlen = (inp->dlen << 8) | header[22];
     inp->dlen = (inp->dlen << 8) | header[23];
-    inp->slen = 0;
+
     // get the string len
-    // inp->slen = header[24];
-    // inp->slen = (inp->slen << 8) | header[25];
-    // inp->slen = (inp->slen << 8) | header[26];
-    // inp->slen = (inp->slen << 8) | header[27];
-    // inp->slen = (inp->slen << 8) | header[28];
-    // inp->slen = (inp->slen << 8) | header[29];
-    // inp->slen = (inp->slen << 8) | header[30];
-    // inp->slen = (inp->slen << 8) | header[31];
+    inp->slen = header[24];
+    inp->slen = (inp->slen << 8) | header[25];
+    inp->slen = (inp->slen << 8) | header[26];
+    inp->slen = (inp->slen << 8) | header[27];
+    inp->slen = (inp->slen << 8) | header[28];
+    inp->slen = (inp->slen << 8) | header[29];
+    inp->slen = (inp->slen << 8) | header[30];
+    inp->slen = (inp->slen << 8) | header[31];
     // now check if dlen and ilen are within the limits
     if (inp->file_len < (inp->dlen + inp->ilen + inp->slen))
     {
@@ -163,9 +163,9 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
         _READ_DIRERROR_("Read Error: The instruction length is invalid. Must be a multiple of 8.\n");
         return RET_FAILURE;
     }
-    if (inp->dlen % 8 != 0)
+    if ((inp->dlen + inp->slen) % 8 != 0) // string is also data
     {
-        _READ_DIRERROR_("Read Error: The data length is invalid.Must be a multiple of 8.\n");
+        _READ_DIRERROR_("Read Error: The data length is invalid. Must be a multiple of 8.\n");
         return RET_FAILURE;
     }
     if (inp->ilen == 0)
@@ -365,6 +365,50 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_data_different(MerryInpFile *inp)
             return RET_FAILURE;
         }
     }
+
+    // we will read string here
+    if (inp->slen == 0)
+        return RET_SUCCESS;
+
+    // firstly read
+    mqword_t rem = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - ext;
+
+    if (fread(inp->_data[count] + (ext / 8), 1, rem < inp->slen ? rem : inp->slen, inp->f) != (rem < inp->slen ? rem : inp->slen))
+    {
+        _READ_DIRERROR_("Read Error: Failed to read string.\n");
+        return RET_FAILURE;
+    }
+
+    if (inp->slen < rem)
+        return RET_SUCCESS; // we have read what we can
+
+    // we have read another page now
+    inp->slen -= rem; // we have read rem number of bytes already
+
+    register msize_t s_count = inp->slen / _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+    register msize_t s_ext = inp->slen % _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+    count++;
+    for (msize_t i = 0; i < (s_count); i++)
+    {
+        if (fread(inp->_data[count], 1, _MERRY_MEMORY_ADDRESSES_PER_PAGE_, inp->f) != _MERRY_MEMORY_ADDRESSES_PER_PAGE_)
+        {
+            // we failed
+            // what should we do when we fail to read?
+            _READ_DIRERROR_("Read Error: Failed to read string data.\n");
+            return RET_FAILURE;
+        }
+        count++;
+    }
+
+    if (s_ext > 0)
+    {
+        if (fread(inp->_data[count], 1, s_ext, inp->f) != s_ext)
+        {
+            _READ_DIRERROR_("Read Error: Failed to read string data.\n");
+            return RET_FAILURE;
+        }
+    }
+
     return RET_SUCCESS; // this should read the bytes properly
 }
 
@@ -400,11 +444,16 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_data_same(MerryInpFile *inp)
     // firstly read
     mqword_t rem = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - ext;
 
-    if (fread(inp->_data[count] + ext, 1, rem < inp->slen ? rem : inp->slen, inp->f) != (rem < inp->slen ? rem : inp->slen))
+    if (fread(inp->_data[count] + (ext / 8), 1, rem < inp->slen ? rem : inp->slen, inp->f) != (rem < inp->slen ? rem : inp->slen))
     {
         _READ_DIRERROR_("Read Error: Failed to read string.\n");
         return RET_FAILURE;
     }
+
+    // for (msize_t i = 0; i < 7; i++)
+    // {
+    //     printf("%lX\n", inp->_data[count][i]);
+    // }
 
     if (inp->slen < rem)
         return RET_SUCCESS; // we have read what we can
@@ -446,7 +495,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_data(MerryInpFile *inp)
     // when it comes to data, even though there may be none, we still map one page
     if (inp->dlen == 0)
         return RET_SUCCESS;
-    mret_t ret = merry_reader_read_data_same(inp);
+    mret_t ret;
     if (_MERRY_BYTE_ORDER_ == _MERRY_ENDIANNESS_)
         ret = merry_reader_read_data_same(inp);
     else

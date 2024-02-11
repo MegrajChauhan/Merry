@@ -2,3 +2,5 @@ merryNo.txt
 .vscode
 build
 out.txt
+target
+Cargo.lock

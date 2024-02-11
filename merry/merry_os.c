@@ -56,8 +56,8 @@ mret_t merry_os_init(mcstr_t _inp_file)
     if (os.core_threads == RET_NULL)
         goto failure;
     // Merry *o = &os;
-    if ((os.thPool = merry_init_thread_pool(_MERRY_THPOOL_LEN_)) == RET_NULL)
-        goto failure;
+    // if ((os.thPool = merry_init_thread_pool(_MERRY_THPOOL_LEN_)) == RET_NULL)
+    //     goto failure;
     return RET_SUCCESS; // we did everything correctly
 failure:
     _log_(_OS_, "Intialization Failure", "Failed to intialize the manager");
@@ -94,7 +94,7 @@ void merry_os_destroy()
         }
         free(os.core_threads);
     }
-    merry_destroy_thread_pool(os.thPool);
+    // merry_destroy_thread_pool(os.thPool);
     merry_requestHdlr_destroy();
 }
 
@@ -300,6 +300,18 @@ mptr_t merry_os_start_vm(mptr_t some_arg)
                     case _REQ_NEWCORE:
                         _llog_(_OS_, "REQ", "New core creation request received from core ID %lu", current_req.id);
                         merry_os_execute_request_new_core(&os, &current_req);
+                        break;
+                    case _REQ_READCHAR:
+                        if (merry_read_char(os.data_mem, os.cores[current_req.id]->registers[Ma]) == RET_FAILURE)
+                            os.cores[current_req.id]->registers[Mb] = 1; // error
+                        else
+                            os.cores[current_req.id]->registers[Mb] = 0; // success
+                        break;
+                    case _REQ_WRITECHAR:
+                        if (merry_write_char(os.data_mem, os.cores[current_req.id]->registers[Ma]) == RET_FAILURE)
+                            os.cores[current_req.id]->registers[Mb] = 1; // error
+                        else
+                            os.cores[current_req.id]->registers[Mb] = 0; // success
                         break;
                     default:
                         /// NOTE: this will come in handy when we implement some built-in syscalls and the program provides invalid syscalls

@@ -1,0 +1,74 @@
+The Input File's Structure and Format:
+Merry expects a binary file from the user as it's input file. The path to the file can be provided which allows Merry to look for the file itself and read it.
+The file's extension must be ".mbin". Other file extensions are not accepted and Merry throws an error if other file extensions was found. The user needs to make
+sure that the input file does exist and is not a directory. 
+Now, we will discuss the structure of the file or the structure that Merry expects in the file. 
+The file's structure contains a header, the instructions, the data and strings. Lets keep header aside for now and talk about the other sections.
+
+The input file has mainly 3 sections that represents the entire code in binary. The sections are:
+1) The Instruction section: contains all the instructions that needs to be executed.
+2) The Data section: contains all the data that the instructions manipulate.
+3) The Strings section: contains all the characters or bytes that the program starts with. It is essentially just a part of the data section but Merry doesn't 
+   change the byte ordering of the data that resides here.
+
+The header is a group of 32 bytes that contains metadata about the program which is essential in understanding the size of the sections mentioned above. 
+The header also plays an important role in identifying that the file is indeed a program that can be run.
+
+Structure of the header:
+As mentioned, the header is 32 bytes in size and encodes the size of the instruction section, data section and the string section. The first 3 bytes of the input
+file but be MIN in binary or 0x4D 0x49 0x4E. These 3 bytes tell Merry that this file contains an actual program that can be run. The 5 bytes after that are reserved for future use.
+
+The next 8 bytes encode the number of bytes that the instruction section covers which must be a multiple of 8. Let me repeat, this encodes the number of BYTES
+that the instruction section covers AND not the number of instructions. The next 8 bytes are the same as above except it encodes the number of bytes that the data 
+section covers. The last 8 bytes also do the same except it encodes the number of bytes that the string section covers.
+
+An example of header:
+0x4D 0x49 0x4E 0x00 0x00 0x00 0x00 0x00 [The first 8 bytes]
+0x00 0x00 0x00 0x00 0x12 0x34 0x56 0x78 [The second 8 bytes: As can be seen, the size of the instruction section is 0x12345678 bytes. Can never be zero and must be a multiple of 8.]
+0x00 0x00 0x00 0x00 0x00 0x00 0x00 0xFF [The third 8 bytes: As can be seen, the size of the data section is 0xFF bytes. Can be zero and must be a multiple of 8.]
+0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 [The last 8 bytes: As can be seen, the size of the string section is 0 bytes. Can be zero and must be a multiple of 8.]
+
+As you can probably see, the byte ordering is BIG ENDIAN for the sizes. That is because it is easier to encode BIG ENDIAN numbers in assemblers. As for the instructions, they must be in
+little endian format. This is because most processors are little endian and it makes it faster to read little endian data.
+
+The Instruction section:
+The instruction section contains, as the name suggests, the instructions for the program. The details of the structure of each instruction can be seen in instructions.txt but the main
+takeaway here is the encoding of the instructions. Each instruction is 8 bytes long. Some instructions require an 8-byte immediate values that must follow the instruction in memory.
+The reason that the instruction size must be a multiple of 8 is because it makes things easier for the reader to read the input file and since every instruction is 8 bytes long, it is obvious.
+
+Well, the instructions must be in the LITTLE ENDIAN format in the input file. This also makes things easier for the reader. In BIG ENDIAN format, here is an example instruction:
+
+0x27 0x00 0x00 0x00 0x12 0x34 0x56 0x78
+
+Note that this is in BIG ENDIAN format. This instruction encodes the JMP instruction or more preciesly the JMP_ADDR instruction which takes a 6-byte address as the operand to jump to.
+The opcode is 0x27 while the address to jump to is 0x000012345678. Also note that this address here jumps to the 0x12345678th instruction in memory and not the 0x12345678th instruction byte.
+
+[
+    A little side note: Merry has separated data memory and instruction memory. Every byte in data memory is addressable and accessible to the program while the instruction memory is 
+    inaccessible to programs. As this is important for encoding the instructions, it is of the utmost importance to understand the addressing.
+    In the instruction memory, one address addresses 8 bytes at once while in the data memory, one address addresses only one byte.
+    Here is an example:
+    0x12 0x34 0x56 0x78 0x9A 0xAB 0xCD 0xDE
+    If this above sequence were in the instruction memory and the data memory at the very front, then using address 0 in the instruction memory would address the entire 8 bytes i.e 
+    address 0 points to those 8 bytes whereas in the data memory the address 0 would only point at the byte 0x12.  
+]
+
+The above mentioned JUMP instruction must be encoded in LITTLE ENDIAN rather than the BIG ENDIAN. Here is how the instruction should be in the input file.
+
+0x78 0x56 0x34 0x12 0x00 0x00 0x00 0x27
+
+The Data Section:
+Everything mentioned in the instruction section above applies to the data section as well. The data must be encoded in LITTLE ENDIAN format. The addressing scheme is already described
+above. 
+Now Merry flips the bytes of the data section and the instruction section according to match the byte ordering of the host machine. If the host machine is LITTLE ENDIAN, no flips would be 
+needed while if the host was not LITTLE ENDIAN, one problem arises. Say the program contains a message string "Hello World!". Now since this is a string, the LITTLE ENDIAN encoding doesn't 
+apply to this and the bytes of the string should be placed as is in the string. But if the host were BIG ENDIAN, Merry will flip the encoding of the bytes, which results in the undesirable
+"oW olleH 0000!dlr" in the memory. No body would want to see that message do they? That is where the string section comes into play.
+
+The String Section:
+Whatever data is in this section is not reordered according to the host. Merry will read the bytes in the same ordering as it is in the input file so the "Hello World!" is the same in every 
+machine. This cannot be used just for strings, it can be used for other data that need to be byte ordering independent.
+
+[
+  Note: In the input file, the header comes first, then comes the instruction section, then the data section and finally the string section.
+]
