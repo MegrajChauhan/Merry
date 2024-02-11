@@ -242,6 +242,9 @@ enum
   OP_UINQ,  // input a qword[unsigned]
   OP_UOUTQ, // output a qword[unsigned]
 
+  OP_OUTR, // print all register's contents as signed values[takes no operands]
+  OP_UOUTR, // print all register's contents as unsigned values[takes no operands]
+
 };
 
 /*

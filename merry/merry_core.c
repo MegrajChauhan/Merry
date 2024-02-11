@@ -618,6 +618,14 @@ mptr_t merry_runCore(mptr_t core)
         case OP_UOUTQ:
             fprintf(stdout, "%llu", c->registers[*current & 15]);
             break;
+        case OP_OUTR:
+            for (msize_t i = 0; i < REGR_COUNT; i++)
+                fprintf(stdout, "%lli\n", c->registers[i]);
+            break;
+        case OP_UOUTR:
+            for (msize_t i = 0; i < REGR_COUNT; i++)
+                fprintf(stdout, "%llu\n", c->registers[i]);
+            break;
         }
         c->pc++;
     }
