@@ -4,3 +4,4 @@ build
 out.txt
 target
 Cargo.lock
+inpFile.mbin

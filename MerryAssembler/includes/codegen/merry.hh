@@ -28,16 +28,22 @@ namespace code_gen{
                 uint8_t lower_c = uint8_t((insts_size >> 16) & 0xff);
                 uint8_t upper_d = uint8_t((insts_size >> 8) & 0xff);
                 uint8_t lower_d = uint8_t((insts_size >> 0) & 0xff);
-                header.push_back(lower_d);
-                header.push_back(upper_d);
-                header.push_back(lower_c);
-                header.push_back(upper_c);
-                header.push_back(lower_b);
-                header.push_back(upper_b);
-                header.push_back(lower_a);
                 header.push_back(upper_a);
+                header.push_back(lower_a);
+                header.push_back(upper_b);
+                header.push_back(lower_b);
+                header.push_back(upper_c);
+                header.push_back(lower_c);
+                header.push_back(upper_d);
+                header.push_back(lower_d);
                 myfile.write(header.data(), 8);
                 // Data
+                header.clear();
+                for(int i = 0; i < 8; ++i){
+                    header.push_back(0);
+                }
+                myfile.write(header.data(), 8);
+                // Strings
                 header.clear();
                 for(int i = 0; i < 8; ++i){
                     header.push_back(0);
@@ -46,8 +52,6 @@ namespace code_gen{
             }
             void emit_inst(){
                 // Do some stuff that makes it a decimal (no idea what it does)
-                char type = (int)_inst.get_type();
-                myfile.write(reinterpret_cast<char*>(&type), sizeof(type));
                 std::vector<std::uint8_t> operands = _inst.get_operands();
                 for(int i = 0; i < 7; ++i) {
                     if (i < (int)operands.size()) {
@@ -57,6 +61,8 @@ namespace code_gen{
                         myfile.write(reinterpret_cast<char*>(&dumb_cxx_shit_that_doesnt_work), sizeof(uint8_t));
                     }
                 }
+                char type = (int)_inst.get_type();
+                myfile.write(reinterpret_cast<char*>(&type), sizeof(type));
             }
             void emit_all_insts(){
                 write_header();
