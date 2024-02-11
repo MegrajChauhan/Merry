@@ -62,7 +62,7 @@ int main(int argc, char **argv)
     // printf("Time taken to run: %lfs.\n", (double)(end - start) / CLOCKS_PER_SEC);
     return 0;
 failure:
-    merry_close_logger();
+    merry_logger_close();
     merry_os_destroy();
     return -1;
 }
