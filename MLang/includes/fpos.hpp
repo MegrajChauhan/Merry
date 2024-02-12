@@ -18,6 +18,9 @@ namespace MLang
         std::string file_name;
         size_t col;
         size_t line;
+
+        FStatus(std::string, size_t, size_t);
+
     };
     class FPos
     {

@@ -1,5 +1,11 @@
 #include "../includes/lexer.hpp"
 
+MLang::Token::Token(TokenType type, std::string val)
+{
+    this->type = type;
+    this->value = val;
+}
+
 MLang::Lexer::Lexer(std::string filename)
 {
     this->pos.set_filename(filename); // set the filename
@@ -34,9 +40,24 @@ bool MLang::Lexer::open_file_for_lexing()
         return false;
     }
     // now we need to get the contents and then we can close the file safely
-    // file.seekg()
+
+    // seek to the end
+    file.seekg(std::ios_base::cur, std::ios_base::end);
+    // get the file's length
+    size_t len = file.tellg();
+    // the temporary buffer
+    char buf[len];
+    // rewind
+    file.seekg(std::ios_base::beg); // go back to the beginning
+    // read
+    file.read(buf, len);
+    // store the contents
+    this->filecontents.assign(buf);
+    // close the file
     file.close();
-    return true; // everything went smoothly
+    // set the iterator
+    this->iter = this->filecontents.begin(); // set the iterator
+    return true;                             // everything went smoothly
 }
 
 MLang::Token MLang::Lexer::lex()

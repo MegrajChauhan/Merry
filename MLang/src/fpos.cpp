@@ -1,5 +1,12 @@
 #include "../includes/fpos.hpp"
 
+MLang::FStatus::FStatus(std::string name, size_t col, size_t line)
+{
+    this->col = col;
+    this->file_name = name;
+    this->line = line;
+}
+
 void MLang::FPos::update_pos(int current_char)
 {
     if (current_char == '\n')

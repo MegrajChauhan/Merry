@@ -42,6 +42,9 @@ namespace MLang
     {
         TokenType type;    // the token's type
         std::string value; // for eg the token _TT_INT could have a value "123" from the code
+
+        Token(TokenType, std::string);
+
     };
 
     enum LexErr
@@ -69,23 +72,23 @@ namespace MLang
         // skip all whitespaces, tabs, newlines etc
         void skip_all_unnecessary()
         {
-            char temp = this->file.get();
-            while (should_skip(temp) && temp != EOF)
-            {
-                this->pos.update_pos(temp);
-                temp = this->file.get();
-            }
+            // char temp = this->file.get();
+            // while (should_skip(temp) && temp != EOF)
+            // {
+            //     this->pos.update_pos(temp);
+            //     temp = this->file.get();
+            // }
         }
 
         void skip_whitespaces()
         {
             // just whitespaces
-            char temp = this->file.get();
-            while (temp == ' ' && temp != EOF)
-            {
-                this->pos.update_pos(temp);
-                temp = this->file.get();
-            }
+            // char temp = this->file.get();
+            // while (temp == ' ' && temp != EOF)
+            // {
+            //     this->pos.update_pos(temp);
+            //     temp = this->file.get();
+            // }
         }
 
     public:
