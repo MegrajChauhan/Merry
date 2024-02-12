@@ -84,6 +84,11 @@
 #define _MERRY_HOST_OS_LINUX_ 1
 #endif
 
+#if defined(_WIN64)
+// the os is windows
+#define _MERRY_HOST_OS_WINDOWS_ 1
+#endif
+
 #define _MERRY_TO_BOOL_(x) !!(x) // convert x to bool
 
 #ifndef surelyT

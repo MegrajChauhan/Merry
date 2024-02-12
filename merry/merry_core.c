@@ -106,7 +106,7 @@ _MERRY_INTERNAL_ mqword_t merry_core_get_immediate(MerryCore *core)
     return res;
 }
 
-mptr_t merry_runCore(mptr_t core)
+_THRET_T_ merry_runCore(mptr_t core)
 {
     MerryCore *c = (MerryCore *)core;
     register mqptr_t current = &c->current_inst;
@@ -635,5 +635,10 @@ mptr_t merry_runCore(mptr_t core)
         }
         c->pc++;
     }
-    // printf("Ma is now %lu\n", c->registers[Ma]); // 1,000,000,000
+// printf("Ma is now %lu\n", c->registers[Ma]); // 1,000,000,000
+#if defined(_MERRY_HOST_OS_LINUX_)
+    return (mptr_t)c->registers[Ma];
+#elif defined(_MERRY_HOST_OS_WINDOWS_)
+    return c->registers[Ma];
+#endif
 }

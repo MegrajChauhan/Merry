@@ -240,7 +240,7 @@ _MERRY_INTERNAL_ void merry_os_prepare_for_exit()
 }
 
 /*From here the OS gets requests from the request handler and fulfills the request*/
-mptr_t merry_os_start_vm(mptr_t some_arg)
+_THRET_T_ merry_os_start_vm(mptr_t some_arg)
 {
     // this will start the OS
     // _log_(_OS_, "Starting Manager", "Manager thread running");
@@ -325,8 +325,12 @@ mptr_t merry_os_start_vm(mptr_t some_arg)
             merry_cond_signal(current_req._wait_lock);
         }
     }
-    // _llog_(_OS_, "EXIT", "Manager terminating with exit code %ld", os.ret);
+// _llog_(_OS_, "EXIT", "Manager terminating with exit code %ld", os.ret);
+#if defined(_MERRY_HOST_OS_LINUX_)
     return (mptr_t)os.ret; // freeing the OS is the Main's Job
+#elif defined(_MERRY_HOST_OS_WINDOWS_)
+    return os.ret;
+#endif
 }
 
 void merry_os_handle_error(merrot_t error)

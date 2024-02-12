@@ -49,7 +49,7 @@ add_reg  -> opcode: 0x03
 sub_imm -> opcode: 0x04: everything else is the same as add_imm
 sub_reg -> opcode: 0x05: everything else is the same as add_reg
 mul_imm -> opcode: 0x06: everything else is the same as add_imm
-sub_reg -> opcode: 0x07: everything else is the same as add_reg
+mul_reg -> opcode: 0x07: everything else is the same as add_reg
 div_imm -> opcode: 0x08: everything else is the same as add_imm
 div_reg -> opcode: 0x09: everything else is the same as add_reg
 mod_imm -> opcode: 0x0A: everything else is the same as add_imm
@@ -59,7 +59,7 @@ iadd_reg -> opcode: 0x0D -> everything else is the same as add_reg
 isub_imm -> opcode: 0x0E -> everything else is the same as add_imm
 isub_reg -> opcode: 0x0F -> everything else is the same as add_reg
 imul_imm -> opcode: 0x10 -> everything else is the same as add_imm
-isub_reg -> opcode: 0x11 -> everything else is the same as add_reg
+imul_reg -> opcode: 0x11 -> everything else is the same as add_reg
 idiv_imm -> opcode: 0x12 -> everything else is the same as add_imm
 idiv_reg -> opcode: 0x13 -> everything else is the same as add_reg
 imod_imm -> opcode: 0x14 -> everything else is the same as add_imm

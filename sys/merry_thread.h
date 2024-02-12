@@ -35,9 +35,12 @@ typedef struct MerryThread MerryThread;
 #if defined(_MERRY_HOST_OS_LINUX_)
 #include "merry_thread_posix.h"
 #define _MERRY_THREADS_POSIX_ 1
+#elif defined(_MERRY_HOST_OS_WINDOWS_)
+#include "merry_thread_win32.h"
+#define _MERRY_THREADS_WIN_ 1
 #endif
 
-_MERRY_DEFINE_FUNC_PTR_(void *, ThreadExecFunc, void *)
+_MERRY_DEFINE_FUNC_PTR_(_THRET_T_, ThreadExecFunc, void *)
 
 // #include "../merry/lib/include/merry_memory_allocator.h" <Legacy>
 #include <stdlib.h>
