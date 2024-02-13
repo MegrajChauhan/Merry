@@ -67,7 +67,17 @@ MLang::Token MLang::Lexer::lex()
     TokenType type = _TT_ERR;
     std::string val = "";
     std::string temp;
+
+    this->skip_all_unnecessary();
+    if (*this->iter == '/' && this->peek() == '/')
+    {
+        // this is a comment, get rid of it
+        this->consume_comment();
+    }
     // check if the current character is an operator
+    if (this->iter == this->enditer)
+        return Token(_TT_EOF, "");
+    // we need to get rid of any whitespaces and newlines here
     if (is_oper(*this->iter))
     {
         // we have ourselves an operator
@@ -85,13 +95,16 @@ MLang::Token MLang::Lexer::lex()
             type = (*_token).second; // we have the type
             // as this is an operator, we do not need the string value
         }
+        this->consume();
         goto done; // we should be good to go
     }
     if (is_num(*this->iter))
-    {
-        
-    }
-
+        return this->get_num(); // return a number token
+    if (is_alpha(*this->iter))
+        return this->get_iden_or_keyword();
+    // since we are here we know it is an error
+    std::cerr << "Invalid token " << *this->iter << "\n";
+    abort();
 done:
     return Token(type, val); // the lexed token
 }

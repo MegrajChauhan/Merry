@@ -11,13 +11,13 @@
 #include <string>
 #include <unordered_map>
 #include <filesystem> // for checking if directory
-#include <optional>
+#include <iostream>
 // #include "fpos.hpp"
 
-#define should_skip(ch) (ch == ' ' || ch == '\t' || ch == '\r') // add more as needed
+#define should_skip(ch) (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') // add more as needed
 #define is_num(ch) (ch >= '0' && ch <= '9')
 #define is_alpha(ch) ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'))
-#define is_oper(ch) (ch == '(' || ch == ')' || ch == '{' || ch == '}' || ch == ':' || ch == ';')
+#define is_oper(ch) (ch == '(' || ch == ')' || ch == '{' || ch == '}' || ch == ':' || ch == ';' || ch == '=')
 
 namespace MLang
 {
@@ -35,6 +35,7 @@ namespace MLang
         _TT_OPERATOR_CCURLY,    // the '}' operator
         _TT_OPERATOR_COLON,     // the ':' operator
         _TT_OPERATOR_SEMICOLON, // the ';' operator
+        _TT_OPERATOR_EQUAL,     // the "=" operator
 
         // some general token types
         _TT_IDENTIFIER, // function names and variable names
@@ -46,8 +47,8 @@ namespace MLang
     };
 
     // the global map to identify the token types
-    std::unordered_map<std::string, TokenType> _iden_map_ = {
-        {"int", _TT_KEYWORD_INT}, {"float", _TT_KEYWORD_FLOAT}, {"(", _TT_OPERATOR_OPAREN}, {")", _TT_OPERATOR_CPAREN}, {"{", _TT_OPERATOR_OCURLY}, {"}", _TT_OPERATOR_CCURLY}, {":", _TT_OPERATOR_COLON}, {";", _TT_OPERATOR_SEMICOLON}};
+    static std::unordered_map<std::string, TokenType> _iden_map_ = {
+        {"int", _TT_KEYWORD_INT}, {"float", _TT_KEYWORD_FLOAT}, {"(", _TT_OPERATOR_OPAREN}, {")", _TT_OPERATOR_CPAREN}, {"{", _TT_OPERATOR_OCURLY}, {"}", _TT_OPERATOR_CCURLY}, {":", _TT_OPERATOR_COLON}, {";", _TT_OPERATOR_SEMICOLON}, {"=", _TT_OPERATOR_EQUAL}};
 
     struct Token
     {
@@ -111,6 +112,16 @@ namespace MLang
             this->iter++;
         }
 
+        void consume_comment()
+        {
+            while (*this->iter != '\n' && this->iter != this->enditer)
+            {
+                this->iter++;
+            }
+            if (*this->iter == '\n')
+                this->iter++;
+        }
+
         Token get_num()
         {
             // read a number from the file
@@ -150,8 +161,9 @@ namespace MLang
             auto _keytype = _iden_map_.find(iden_or_keyword);
             if (_keytype == _iden_map_.end())
             {
-                // std::cerr << "Invalid keyword"
+                return Token(_TT_IDENTIFIER, iden_or_keyword); // must be an identifier
             }
+            return Token((*_keytype).second, "");
         }
 
     public:
