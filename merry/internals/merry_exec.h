@@ -75,6 +75,16 @@ _exec_(idiv_reg);
 _exec_(imod_imm);
 _exec_(imod_reg);
 
+_exec_(fadd);
+_exec_(fsub);
+_exec_(fmul);
+_exec_(fdiv);
+
+_exec_(fadd32);
+_exec_(fsub32);
+_exec_(fmul32);
+_exec_(fdiv32);
+
 // move instructions
 // _exec_(move_imm);
 // _lexec_(move_imm64, mqword_t imm);
@@ -131,6 +141,14 @@ _lexec_(loadw, mqword_t address);
 _lexec_(storew, mqword_t address);
 _lexec_(loadd, mqword_t address);
 _lexec_(stored, mqword_t address);
+_lexec_(load_reg, mqword_t address);
+_lexec_(store_reg, mqword_t address);
+_lexec_(loadb_reg, mqword_t address);
+_lexec_(storeb_reg, mqword_t address);
+_lexec_(loadw_reg, mqword_t address);
+_lexec_(storew_reg, mqword_t address);
+_lexec_(loadd_reg, mqword_t address);
+_lexec_(stored_reg, mqword_t address);
 
 _exec_(excg);
 _exec_(excg8);

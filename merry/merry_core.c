@@ -73,19 +73,11 @@ void merry_core_destroy(MerryCore *core)
             // we failed here
             // This shouldn't happen unless the stack_mem variable was messed with and corrupted
             // This is the worst idea but we simply do nothing[OPPS UNSAFE? PFTT...WHAT COULD POSSIBLY GO WRONG?!]
-            // nothing really, after the VM terminates, the OS will unmap all the resources that was being used and hence we becomes safe
+            // nothing really, after the VM terminates, the OS will unmap all the resources that was being used and hence we become safe
             // While it would be interesting to know why this error happened, the cause probably didn't come from the VM itself since i am trying to write it as "SAFE" as possible
             // This may sound like a joke considering how absurd, unstructured, redundand, unsafe the code so far has been
         }
     }
-    // if (surelyT(core->decoder != NULL))
-    // {
-    //     merry_destroy_decoder(core->decoder);
-    // }
-    // if (surelyT(core->decoder_thread != NULL))
-    // {
-    //     merry_thread_destroy(core->decoder_thread);
-    // }
     merry_destroy_stack(core->ras);
     core->data_mem = NULL;
     core->inst_mem = NULL;
@@ -197,6 +189,30 @@ _THRET_T_ merry_runCore(mptr_t core)
             break;
         case OP_IMOD_REG:
             merry_execute_imod_reg(c);
+            break;
+        case OP_FADD:
+            merry_execute_fadd(c);
+            break;
+        case OP_FSUB:
+            merry_execute_fsub(c);
+            break;
+        case OP_FMUL:
+            merry_execute_fmul(c);
+            break;
+        case OP_FDIV:
+            merry_execute_fdiv(c);
+            break;
+        case OP_FADD32:
+            merry_execute_fadd32(c);
+            break;
+        case OP_FSUB32:
+            merry_execute_fsub32(c);
+            break;
+        case OP_FMUL32:
+            merry_execute_fmul32(c);
+            break;
+        case OP_FDIV32:
+            merry_execute_fdiv32(c);
             break;
         case OP_MOVE_IMM: // just 32 bits immediates
             curr = *current;
@@ -378,28 +394,28 @@ _THRET_T_ merry_runCore(mptr_t core)
             merry_execute_stored(c, *current & 0xFFFFFFFFFFFF);
             break;
         case OP_LOAD_REG:
-            merry_execute_load(c, c->registers[((*current) & 0x15)]);
+            merry_execute_load_reg(c, c->registers[((*current) & 0x15)]);
             break;
         case OP_STORE_REG:
-            merry_execute_store(c, c->registers[((*current) & 0x15)]);
+            merry_execute_store_reg(c, c->registers[((*current) & 0x15)]);
             break;
         case OP_LOADB_REG:
-            merry_execute_loadb(c, c->registers[((*current) & 0x15)]);
+            merry_execute_loadb_reg(c, c->registers[((*current) & 0x15)]);
             break;
         case OP_STOREB_REG:
-            merry_execute_storeb(c, c->registers[((*current) & 0x15)]);
+            merry_execute_storeb_reg(c, c->registers[((*current) & 0x15)]);
             break;
         case OP_LOADW_REG:
-            merry_execute_loadw(c, c->registers[((*current) & 0x15)]);
+            merry_execute_loadw_reg(c, c->registers[((*current) & 0x15)]);
             break;
         case OP_STOREW_REG:
-            merry_execute_storew(c, c->registers[((*current) & 0x15)]);
+            merry_execute_storew_reg(c, c->registers[((*current) & 0x15)]);
             break;
         case OP_LOADD_REG:
-            merry_execute_loadd(c, c->registers[((*current) & 0x15)]);
+            merry_execute_loadd_reg(c, c->registers[((*current) & 0x15)]);
             break;
         case OP_STORED_REG:
-            merry_execute_stored(c, c->registers[((*current) & 0x15)]);
+            merry_execute_stored_reg(c, c->registers[((*current) & 0x15)]);
             break;
         case OP_EXCG8:
             merry_execute_excg8(c);
@@ -518,14 +534,14 @@ _THRET_T_ merry_runCore(mptr_t core)
             // this instruction will take a 6-byte address and 2 registers
             // this works for 1 byte only
             {
-                mbptr_t _addr_ = merry_dmemory_get_byte_address(c->data_mem, *current & 0xFFFFFFFFFFFF);
+                mqptr_t _addr_ = merry_dmemory_get_qword_address(c->data_mem, *current & 0xFFFFFFFFFFFF);
                 if (_addr_ == RET_NULL)
                 {
                     merry_requestHdlr_panic(c->data_mem->error);
                     c->stop_running = mtrue;
                     break;
                 }
-                atomic_compare_exchange_strong((mqptr_t)merry_memory_get_address(c->data_mem, _addr_), &c->registers[(*current >> 52) & 15], c->registers[(*current >> 48) & 15]);
+                atomic_compare_exchange_strong(_addr_, &c->registers[(*current >> 52) & 15], c->registers[(*current >> 48) & 15]);
                 break;
             }
         case OP_CIN:
@@ -556,7 +572,7 @@ _THRET_T_ merry_runCore(mptr_t core)
             }
         case OP_SOUT:
             // the address to store in is encoded into the instruction
-            // the number of bytes to input is in the Mc register
+            // the number of bytes to output is in the Mc register
             register mqword_t len = c->registers[Mc];
             {
                 mbptr_t _addr_ = merry_dmemory_get_byte_address_bounds(c->data_mem, *current & 0xFFFFFFFFFFFF, len);
@@ -623,6 +639,18 @@ _THRET_T_ merry_runCore(mptr_t core)
             break;
         case OP_UOUTQ:
             fprintf(stdout, "%llu", c->registers[*current & 15]);
+            break;
+        case OP_INF:
+            fscanf(stdin, "%lf", &c->registers[*current & 15]);
+            break;
+        case OP_OUTF:
+            fprintf(stdout, "%lf", c->registers[*current & 15]);
+            break;
+        case OP_INF32:
+            fscanf(stdin, "%f", &c->registers[*current & 15]);
+            break;
+        case OP_OUTF32:
+            fprintf(stdout, "%f", c->registers[*current & 15]);
             break;
         case OP_OUTR:
             for (msize_t i = 0; i < REGR_COUNT; i++)

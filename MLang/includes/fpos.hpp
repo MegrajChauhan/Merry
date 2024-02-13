@@ -20,7 +20,6 @@ namespace MLang
         size_t line;
 
         FStatus(std::string, size_t, size_t);
-
     };
     class FPos
     {

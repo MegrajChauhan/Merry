@@ -55,12 +55,13 @@ int main(int argc, char **argv)
         merry_thread_destroy(osthread);
         goto failure;
     }
+    mret_t returnval = RET_SUCCESS;
     merry_logger_close();
-    merry_thread_join(osthread, NULL); // I am an idiot
+    merry_thread_join(osthread, &returnval); // I am an idiot
     merry_thread_destroy(osthread);
     merry_os_destroy();
     // printf("Time taken to run: %lfs.\n", (double)(end - start) / CLOCKS_PER_SEC);
-    return 0;
+    return returnval;
 failure:
     merry_logger_close();
     merry_os_destroy();

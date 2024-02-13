@@ -70,7 +70,13 @@ enum
   // as for floating point numbers
   // Merry currently assumes that the bits of the operands are in IEEE format and that the processor also uses IEEE format for execution
   // these instructions related to floating point numbers will be added soon enough
-  // 5 opcodes will be reserved for floating point instructions
+
+  // floating point instructions only take register operands
+  // These below ones are 64-bit i.e double precision
+  OP_FADD,
+  OP_FSUB,
+  OP_FMUL,
+  OP_FDIV,
 
   // Now move intructions
   OP_MOVE_IMM = 26, // move an immediate value to a destination register[This is default and accepts 32 bit values]
@@ -242,8 +248,20 @@ enum
   OP_UINQ,  // input a qword[unsigned]
   OP_UOUTQ, // output a qword[unsigned]
 
-  OP_OUTR, // print all register's contents as signed values[takes no operands]
+  OP_INF,  // read a 64-bit float
+  OP_OUTF, // print a 64-bit float
+
+  OP_INF32, // read a 32-bit float
+  OP_OUTF32, // print a 32-bit float
+
+  OP_OUTR,  // print all register's contents as signed values[takes no operands]
   OP_UOUTR, // print all register's contents as unsigned values[takes no operands]
+
+  // for 32-bit floating point numbers
+  OP_FADD32,
+  OP_FSUB32,
+  OP_FMUL32,
+  OP_FDIV32,
 
 };
 

@@ -1,4 +1,5 @@
 #include "../includes/lexer.hpp"
+#include <iostream>
 
 MLang::Token::Token(TokenType type, std::string val)
 {
@@ -8,7 +9,7 @@ MLang::Token::Token(TokenType type, std::string val)
 
 MLang::Lexer::Lexer(std::string filename)
 {
-    this->pos.set_filename(filename); // set the filename
+    // this->pos.set_filename(filename); // set the filename
     // we can't open it here
     this->filename = filename;
 }
@@ -56,13 +57,46 @@ bool MLang::Lexer::open_file_for_lexing()
     // close the file
     file.close();
     // set the iterator
-    this->iter = this->filecontents.begin(); // set the iterator
-    return true;                             // everything went smoothly
+    this->iter = this->filecontents.begin();  // set the iterator
+    this->enditer = this->filecontents.end(); // the end iterator
+    return true;                              // everything went smoothly
 }
 
 MLang::Token MLang::Lexer::lex()
 {
     TokenType type = _TT_ERR;
+    std::string val = "";
+    std::string temp;
+    // check if the current character is an operator
+    if (is_oper(*this->iter))
+    {
+        // we have ourselves an operator
+        // since we do not have multi-character operators, we can ignore it for now
+        temp.push_back(*this->iter);
+        auto _token = MLang::_iden_map_.find(temp);
+        if (_token == MLang::_iden_map_.end())
+        {
+            // this is an error as this is an invalid
+            std::cerr << "Invalid token " << *this->iter << "\n";
+            abort();
+        }
+        else
+        {
+            type = (*_token).second; // we have the type
+            // as this is an operator, we do not need the string value
+        }
+        goto done; // we should be good to go
+    }
+    if (is_num(*this->iter))
+    {
+        
+    }
 
-    return Token(type, " "); // the lexed token
+done:
+    return Token(type, val); // the lexed token
+}
+
+MLang::LexErr MLang::Lexer::get_error()
+{
+    return this->error; // the calle needs to identify the errors
 }

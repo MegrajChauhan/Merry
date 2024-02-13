@@ -12,6 +12,32 @@
 //    _llog_(_CORE_, "EXEC_DONE", "Halt execution done; core ID %lu", core->core_id);
 // }
 
+_MERRY_INTERNAL_ void merry_cmp_floats64(MerryCore *core, double val1, double val2)
+{
+   if (val1 == val2)
+      core->flag.zero = 1; // equal
+   else
+      core->flag.zero = 0;
+   if (val1 > val2)
+      core->greater = 1;
+   else
+      core->greater = 0;
+   // only these two flags are affected
+}
+
+_MERRY_INTERNAL_ void merry_cmp_floats32(MerryCore *core, float val1, float val2)
+{
+   if (val1 == val2)
+      core->flag.zero = 1; // equal
+   else
+      core->flag.zero = 0;
+   if (val1 > val2)
+      core->greater = 1;
+   else
+      core->greater = 0;
+   // only these two flags are affected
+}
+
 _MERRY_ALWAYS_INLINE_ _exec_(add_imm){
     // add immediate value to a register
     _ArithMeticImmFrame_(+)}
@@ -144,15 +170,15 @@ _MERRY_ALWAYS_INLINE_ _exec_(idiv_imm)
 _MERRY_ALWAYS_INLINE_ _exec_(idiv_reg)
 {
    register mqword_t current = core->current_inst;
-   register mqword_t reg = (current >> 52) & 15;
-   register mqword_t reg2 = (current >> 48) & 15;
-   if (core->registers[core->registers[reg2]] == 0)
+   register mqword_t reg = (current >> 4) & 15;
+   register mqword_t reg2 = (current) & 15;
+   if (core->registers[reg2] == 0)
    {
       merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
       core->stop_running = mtrue;
       return;
    }
-   core->registers[reg] = core->registers[reg] / core->registers[(current >> 48) & 15];
+   core->registers[reg] = core->registers[reg] / core->registers[reg2];
    _update_flags_(&core->flag);
 }
 
@@ -174,16 +200,91 @@ _MERRY_ALWAYS_INLINE_ _exec_(imod_imm)
 _MERRY_ALWAYS_INLINE_ _exec_(imod_reg)
 {
    register mqword_t current = core->current_inst;
-   register mqword_t reg = (current >> 52) & 15;
-   register mqword_t reg2 = (current >> 48) & 15;
-   if (core->registers[core->registers[reg2]] == 0)
+   register mqword_t reg = (current >> 4) & 15;
+   register mqword_t reg2 = (current) & 15;
+   if (core->registers[reg2] == 0)
    {
       merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
       core->stop_running = mtrue;
       return;
    }
-   core->registers[reg] = core->registers[reg] % core->registers[(current >> 48) & 15];
+   core->registers[reg] = core->registers[reg] % core->registers[reg2];
    _update_flags_(&core->flag);
+}
+
+_MERRY_ALWAYS_INLINE_ _exec_(fadd)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg1 = (current >> 4) & 15;
+   register mqword_t reg2 = (current) & 15;
+   core->registers[reg1] = ((double)core->registers[reg1] + (double)core->registers[reg2]);
+   // we have no flags for floating point arithmetic
+   // so we gotta do with the flags register we have
+   merry_cmp_floats64(core, core->registers[reg1], core->registers[reg2]);
+}
+
+_MERRY_ALWAYS_INLINE_ _exec_(fsub)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg1 = (current >> 4) & 15;
+   register mqword_t reg2 = (current) & 15;
+   core->registers[reg1] = ((double)core->registers[reg1] - (double)core->registers[reg2]);
+   merry_cmp_floats64(core, core->registers[reg1], core->registers[reg2]);
+}
+
+_MERRY_ALWAYS_INLINE_ _exec_(fmul)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg1 = (current >> 4) & 15;
+   register mqword_t reg2 = (current) & 15;
+   core->registers[reg1] = ((double)core->registers[reg1] * (double)core->registers[reg2]);
+   merry_cmp_floats64(core, core->registers[reg1], core->registers[reg2]);
+}
+
+_MERRY_ALWAYS_INLINE_ _exec_(fdiv)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg1 = (current >> 4) & 15;
+   register mqword_t reg2 = (current) & 15;
+   core->registers[reg1] = ((double)core->registers[reg1] / (double)core->registers[reg2]);
+   merry_cmp_floats64(core, core->registers[reg1], core->registers[reg2]);
+}
+
+_MERRY_ALWAYS_INLINE_ _exec_(fadd32)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg1 = (current >> 4) & 15;
+   register mqword_t reg2 = (current) & 15;
+   core->registers[reg1] = ((float)core->registers[reg1] + (float)core->registers[reg2]);
+   merry_cmp_floats32(core, core->registers[reg1], core->registers[reg2]);
+}
+
+_MERRY_ALWAYS_INLINE_ _exec_(fsub32)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg1 = (current >> 4) & 15;
+   register mqword_t reg2 = (current) & 15;
+   core->registers[reg1] = ((float)core->registers[reg1] - (float)core->registers[reg2]);
+   merry_cmp_floats32(core, core->registers[reg1], core->registers[reg2]);
+}
+
+_MERRY_ALWAYS_INLINE_ _exec_(fmul32)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg1 = (current >> 4) & 15;
+   register mqword_t reg2 = (current) & 15;
+   core->registers[reg1] = ((float)core->registers[reg1] * (float)core->registers[reg2]);
+   merry_cmp_floats32(core, core->registers[reg1], core->registers[reg2]);
+}
+
+_MERRY_ALWAYS_INLINE_ _exec_(fdiv32)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg1 = (current >> 4) & 15;
+   register mqword_t reg2 = (current) & 15;
+   // divide by zero should result in infinity
+   core->registers[reg1] = ((float)core->registers[reg1] / (float)core->registers[reg2]);
+   merry_cmp_floats32(core, core->registers[reg1], core->registers[reg2]);
 }
 
 // _MERRY_ALWAYS_INLINE_ _exec_(move_imm)
@@ -411,91 +512,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(popa)
    }
 }
 
-// _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(and_imm, mqword_t imm)
-// {
-//    core->registers[core->current_inst & 15] &= imm;
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(and_reg)
-// {
-//    register mqword_t curr = core->current_inst;
-//    core->registers[(curr >> 4) & 15] &= core->registers[curr & 15];
-// }
-
-// _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(or_imm, mqword_t imm)
-// {
-//    core->registers[core->current_inst & 15] |= imm;
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(or_reg)
-// {
-//    register mqword_t curr = core->current_inst;
-//    core->registers[(curr >> 4) & 15] |= core->registers[curr & 15];
-// }
-
-// _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(xor_imm, mqword_t imm)
-// {
-//    core->registers[core->current_inst & 15] ^= imm;
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(xor_reg)
-// {
-//    register mqword_t curr = core->current_inst;
-//    core->registers[(curr >> 4) & 15] ^= core->registers[curr & 15];
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(not )
-// {
-//    register mqword_t curr = core->current_inst & 15;
-//    core->registers[curr] = ~core->registers[curr];
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(lshift)
-// {
-//    register mqword_t curr = core->current_inst;
-//    core->registers[(curr >> 8) & 15] <<= curr & 0x40;
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(rshift)
-// {
-//    register mqword_t curr = core->current_inst;
-//    core->registers[(curr >> 8) & 15] >>= curr & 0x40;
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(cmp_imm)
-// {
-//    _cmp_inst_(core->registers[core->ir.op1], core->ir.op2, &core->flag);
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(cmp_reg)
-// {
-//    _cmp_inst_(core->registers[core->ir.op1], core->registers[core->ir.op2], &core->flag);
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(inc)
-// {
-//    register mqword_t curr = core->current_inst & 15;
-//    core->registers[curr] = _inc_inst_(core->registers[curr]);
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(dec)
-// {
-//    register mqword_t curr = core->current_inst & 15;
-//    core->registers[curr] = _dec_inst_(core->registers[curr]);
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(lea)
-// {
-//    // op1 is the destination register
-//    // op2 is the base
-//    // Oop3 is the index
-//    // flag is the scale
-//    // all these values are kept in a register
-//    register mqword_t curr = core->current_inst;
-//    core->registers[(curr >> 24) & 15] = core->registers[(curr >> 16) & 15] + core->registers[(curr >> 8) & 15] * core->registers[curr & 15];
-// }
-
-_MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(load, mqword_t address)
+_MERRY_ALWAYS_INLINE_ _lexec_(load, mqword_t address)
 {
    // read from the given address
    if (merry_dmemory_read_qword(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -507,7 +524,7 @@ _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(load, mqword_t address)
    // the value should be loaded
 }
 
-_MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(store, mqword_t address)
+_MERRY_ALWAYS_INLINE_ _lexec_(store, mqword_t address)
 {
    // store to the given address from the given register
    if (merry_dmemory_write_qword(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -519,7 +536,7 @@ _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(store, mqword_t address)
    // the value should be stored
 }
 
-_MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(loadw, mqword_t address)
+_MERRY_ALWAYS_INLINE_ _lexec_(loadw, mqword_t address)
 {
    // read from the given address
    if (merry_dmemory_read_word(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -531,7 +548,7 @@ _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(loadw, mqword_t address)
    // the value should be loaded
 }
 
-_MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(storew, mqword_t address)
+_MERRY_ALWAYS_INLINE_ _lexec_(storew, mqword_t address)
 {
    // store to the given address from the given register
    if (merry_dmemory_write_word(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -543,7 +560,7 @@ _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(storew, mqword_t address)
    // the value should be stored
 }
 
-_MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(loadd, mqword_t address)
+_MERRY_ALWAYS_INLINE_ _lexec_(loadd, mqword_t address)
 {
    // read from the given address
    if (merry_dmemory_read_dword(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -555,7 +572,7 @@ _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(loadd, mqword_t address)
    // the value should be loaded
 }
 
-_MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(stored, mqword_t address)
+_MERRY_ALWAYS_INLINE_ _lexec_(stored, mqword_t address)
 {
    // store to the given address from the given register
    if (merry_dmemory_write_dword(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -567,7 +584,7 @@ _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(stored, mqword_t address)
    // the value should be stored
 }
 
-_MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(loadb, mqword_t address)
+_MERRY_ALWAYS_INLINE_ _lexec_(loadb, mqword_t address)
 {
    // read from the given address
    if (merry_dmemory_read_byte(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -579,10 +596,106 @@ _MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(loadb, mqword_t address)
    // the value should be loaded
 }
 
-_MERRY_ALWAYS_INLINE_ _MERRY_ALWAYS_INLINE_ _lexec_(storeb, mqword_t address)
+_MERRY_ALWAYS_INLINE_ _lexec_(storeb, mqword_t address)
 {
    // store to the given address from the given register
    if (merry_dmemory_write_byte(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be stored
+}
+
+_MERRY_ALWAYS_INLINE_ _lexec_(load_reg, mqword_t address)
+{
+   // read from the given address
+   if (merry_dmemory_read_qword(core->data_mem, address, &core->registers[(core->current_inst >> 4) & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be loaded
+}
+
+_MERRY_ALWAYS_INLINE_ _lexec_(store_reg, mqword_t address)
+{
+   // store to the given address from the given register
+   if (merry_dmemory_write_qword(core->data_mem, address, core->registers[(core->current_inst >> 4) & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be stored
+}
+
+_MERRY_ALWAYS_INLINE_ _lexec_(loadw_reg, mqword_t address)
+{
+   // read from the given address
+   if (merry_dmemory_read_word(core->data_mem, address, &core->registers[(core->current_inst >> 4) & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be loaded
+}
+
+_MERRY_ALWAYS_INLINE_ _lexec_(storew_reg, mqword_t address)
+{
+   // store to the given address from the given register
+   if (merry_dmemory_write_word(core->data_mem, address, core->registers[(core->current_inst >> 4) & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be stored
+}
+
+_MERRY_ALWAYS_INLINE_ _lexec_(loadd_reg, mqword_t address)
+{
+   // read from the given address
+   if (merry_dmemory_read_dword(core->data_mem, address, &core->registers[(core->current_inst >> 4) & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be loaded
+}
+
+_MERRY_ALWAYS_INLINE_ _lexec_(stored_reg, mqword_t address)
+{
+   // store to the given address from the given register
+   if (merry_dmemory_write_dword(core->data_mem, address, core->registers[(core->current_inst >> 4) & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be stored
+}
+
+_MERRY_ALWAYS_INLINE_ _lexec_(loadb_reg, mqword_t address)
+{
+   // read from the given address
+   if (merry_dmemory_read_byte(core->data_mem, address, &core->registers[(core->current_inst >> 4) & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be loaded
+}
+
+_MERRY_ALWAYS_INLINE_ _lexec_(storeb_reg, mqword_t address)
+{
+   // store to the given address from the given register
+   if (merry_dmemory_write_byte(core->data_mem, address, core->registers[(core->current_inst >> 4) & 15]) == RET_FAILURE)
    {
       merry_requestHdlr_panic(core->data_mem->error);
       core->stop_running = mtrue;
@@ -630,68 +743,3 @@ _MERRY_ALWAYS_INLINE_ _exec_(excg)
    core->registers[(curr >> 4) & 15] = reg2;
    core->registers[curr & 15] = reg1;
 }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(mov8)
-// {
-//    // just move the bytes and don't overwrite anything
-//    register mqword_t curr = core->current_inst;
-//    core->registers[(curr >> 4) & 15] &= (0xFFFFFFFFFFFFFF00 | (core->registers[curr & 15] & 0xFF));
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(mov16)
-// {
-//    register mqword_t curr = core->current_inst;
-//    core->registers[(curr >> 4) & 15] &= (0xFFFFFFFFFFFFFF00 | (core->registers[curr & 15] & 0xFFFF));
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(mov32)
-// {
-//    register mqword_t curr = core->current_inst;
-//    core->registers[(curr >> 4) & 15] &= (0xFFFFFFFFFFFFFF00 | (core->registers[curr & 15] & 0xFFFFFF));
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(cflags)
-// {
-//    core->flag.carry = 0;
-//    core->flag.negative = 0;
-//    core->flag.overflow = 0;
-//    core->flag.zero = 0;
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(clz)
-// {
-//    _clear_(zero);
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(cln)
-// {
-//    _clear_(negative);
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(clc)
-// {
-//    _clear_(carry);
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(clo)
-// {
-//    _clear_(overflow);
-// }
-
-// _MERRY_ALWAYS_INLINE_ _lexec_(jnz, mqword_t address)
-// {
-//    if (core->flag.zero == 0)
-//    {
-//       // we jmp
-//       core->pc = address - 1;
-//    }
-// }
-
-// _MERRY_ALWAYS_INLINE_ _lexec_(jz, mqword_t address)
-// {
-//    if (core->flag.zero == 1)
-//    {
-//       // we jmp
-//       core->pc = address - 1;
-//    }
-// }

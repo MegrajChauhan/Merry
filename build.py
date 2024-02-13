@@ -7,7 +7,24 @@
 # If you know how to write a build file in anything, you can do that. The order in which the source files should be compiled is in "compile.txt"
 import os
 import sys
-import glob
+# from cpuinfo import cpuinfo
+
+# def has_fpu():
+#     """
+#     Check if the CPU has a Floating Point Unit (FPU).
+#     Should work according to the internet
+#     """
+#     cpu_info = cpuinfo.get_cpu_info()
+#     features = cpu_info.get('flags', [])
+#     ## since different platforms could have different names or FPUs, we need to add checks for them here as well 
+#     return 'fpu' in features or 'vfpu' in features
+
+# def uses_ieee754():
+#     ## should tell if the host uses IEEE754 or not according to the internet 
+#     if sys.float_info.__getattribute__('max') == float('inf'):
+#         return True
+#     else:
+#         return False
 
 def print_usage():
     print("python build.py <Destination Directory> <Output Name> <Extra flags>")
@@ -38,7 +55,7 @@ def main():
         else:
             print(f"Warning: File not found - {file_path}")
     destination = os.path.join(destination_directory, output_file_name)
-    compile_command = f"gcc -O3 -fsanitize=address -ggdb -Wall -Wextra {sys.argv[3] if avai == True else " "} {final_file} -o {destination}"
+    compile_command = f"gcc -O3  -fsanitize=address -ggdb -Wall -Wextra {sys.argv[3] if avai == True else " "} {final_file} -o {destination}"
     print("Compiling the source files...")
     print(f"Command run: '{compile_command}'")
     print("\nCOMPILER MESSAGES IF ANY:")
