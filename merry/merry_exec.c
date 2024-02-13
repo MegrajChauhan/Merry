@@ -287,41 +287,6 @@ _MERRY_ALWAYS_INLINE_ _exec_(fdiv32)
    merry_cmp_floats32(core, core->registers[reg1], core->registers[reg2]);
 }
 
-// _MERRY_ALWAYS_INLINE_ _exec_(move_imm)
-// {
-//    register mqword_t current = core->current_inst;
-//    core->registers[(current >> 48) & 15] = (current) & 0xFFFFFFFF;
-// }
-
-// _MERRY_ALWAYS_INLINE_ _lexec_(move_imm64, mqword_t imm)
-// {
-//    core->registers[core->current_inst & 15] = imm;
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(move_reg)
-// {
-//    register mqword_t current = core->current_inst;
-//    core->registers[(current >> 4) & 15] = core->registers[current & 15]; // this is all
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(move_reg8)
-// {
-//    register mqword_t current = core->current_inst;
-//    core->registers[(current >> 4) & 15] = core->registers[current & 15] & 0xFF;
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(move_reg16)
-// {
-//    register mqword_t current = core->current_inst;
-//    core->registers[(current >> 4) & 15] = core->registers[current & 15] & 0xFFFF;
-// }
-
-// _MERRY_ALWAYS_INLINE_ _exec_(move_reg32)
-// {
-//    register mqword_t current = core->current_inst;
-//    core->registers[(current >> 4) & 15] = core->registers[current & 15] & 0xFFFFFF;
-// }
-
 _MERRY_ALWAYS_INLINE_ _exec_(movesx_imm8)
 {
    register mqword_t current = core->current_inst;
