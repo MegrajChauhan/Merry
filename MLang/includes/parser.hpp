@@ -1,30 +1,19 @@
 #ifndef _PARSER_
 #define _PARSER_
 
-#include "lexer.hpp"
+/*
+  We have nodes and scopes to take care of here.
+  The curly braces define a scope and each defines a new scope.
+  Even functions are scopes. Each scope has it's own symbol table for it's local variables.
+  
+*/
 
 namespace MLang
 {
-    // the type of node
-    enum NodeKind
-    {
-    };
-
-    struct Scope
-    {
-        Scope *parent_scope; // the parent scope
-        Scope *child;        // the child scope
-    };
-
-    struct Node
-    {
-    };
-
     class Parser
     {
-    private:
-        Scope global; // the first global scope
     public:
+    private:
     };
 };
 

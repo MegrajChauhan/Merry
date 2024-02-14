@@ -1,1 +1,2 @@
 Add proper error handling to the lexer.
+Add proper error handling for the entire compiler.
