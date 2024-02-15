@@ -1,25 +1,14 @@
 #ifndef _LEXER_
 #define _LEXER_
 
-/*
- The Lexer will read the contents of the input file and store it.
- It will then lex per request only.
- This way we can be quicker.
-*/
-
-#include <fstream> // file IO
+#include <vector>
 #include <string>
 #include <unordered_map>
-#include <filesystem> // for checking if directory
-#include <iostream>
-// #include "fpos.hpp"
+#include <cctype>
+#include "error.hpp"
+#include "reader.hpp"
 
-#define should_skip(ch) (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') // add more as needed
-#define is_num(ch) (ch >= '0' && ch <= '9')
-#define is_alpha(ch) ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'))
-#define is_oper(ch) (ch == '(' || ch == ')' || ch == '{' || ch == '}' || ch == ':' || ch == ';' || ch == '=')
-
-namespace MLang
+namespace mlang
 {
     enum TokenType
     {
@@ -47,135 +36,74 @@ namespace MLang
     };
 
     // the global map to identify the token types
-    static std::unordered_map<std::string, TokenType> _iden_map_ = {
-        {"int", _TT_KEYWORD_INT}, {"float", _TT_KEYWORD_FLOAT}, {"(", _TT_OPERATOR_OPAREN}, {")", _TT_OPERATOR_CPAREN}, {"{", _TT_OPERATOR_OCURLY}, {"}", _TT_OPERATOR_CCURLY}, {":", _TT_OPERATOR_COLON}, {";", _TT_OPERATOR_SEMICOLON}, {"=", _TT_OPERATOR_EQUAL}};
+    static std::unordered_map<std::string, TokenType>
+        _iden_map_ =
+            {
+                {"int", _TT_KEYWORD_INT}, {"float", _TT_KEYWORD_FLOAT}, {"(", _TT_OPERATOR_OPAREN}, {")", _TT_OPERATOR_CPAREN}, {"{", _TT_OPERATOR_OCURLY}, {"}", _TT_OPERATOR_CCURLY}, {":", _TT_OPERATOR_COLON}, {";", _TT_OPERATOR_SEMICOLON}, {"=", _TT_OPERATOR_EQUAL}};
 
     struct Token
     {
         TokenType type;    // the token's type
         std::string value; // for eg the token _TT_INT could have a value "123" from the code
 
-        Token(TokenType, std::string);
-    };
+        Token() = default;
 
-    enum LexErr
-    {
-        IS_DIR,
-        DOES_NOT_EXIST,
-        FAILED_TO_OPEN,
-        FILE_EMPTY
+        Token(TokenType, std::string);
     };
 
     class Lexer
     {
     private:
-        // FPos pos; // keep track of pos
-        std::string filename;
-        std::string filecontents;
-        std::string::iterator iter;
-        std::string::iterator enditer;
-        LexErr error; // any error encountered
+        Reader reader;
+        size_t col_no;
+        std::string current_line;
+        std::string::iterator curr_char;
+        bool eof;
 
-        bool check_file_ext(std::string file_name)
+        void consume()
         {
-            return file_name.ends_with("me");
-        }
-
-        // skip all whitespaces, tabs, newlines etc
-        void skip_all_unnecessary()
-        {
-            while (should_skip(*this->iter) && this->iter != this->enditer)
+            // this should consume the current character
+            // if the lexer has completely consumed the current line, it also needs to advance
+            if (curr_char == current_line.end())
             {
-                // this->pos.update_pos(*this->iter);
-                this->iter++; // update the iterator
+                if ((current_line = reader.next_line()) == "EOF")
+                {
+                    eof = true;
+                    return;
+                }
+                col_no = 0;
+                curr_char = current_line.begin();
+            }
+            else
+            {
+                col_no++;
+                curr_char++;
             }
         }
 
-        void skip_whitespaces()
+        void clear_unnecessary()
         {
-            // just whitespaces
-            while (*this->iter == ' ' && this->iter != this->enditer)
+            // clear all unnecessary characters
+            while (std::isspace(static_cast<unsigned char>(*this->curr_char)))
             {
-                // this->pos.update_pos(*this->iter);
-                this->iter++; // update the iterator
+                consume();
             }
         }
 
         char peek()
         {
-            return *(this->iter + 1);
-        }
-
-        void consume()
-        {
-            // this->pos.update_pos(*this->iter);
-            this->iter++;
-        }
-
-        void consume_comment()
-        {
-            while (*this->iter != '\n' && this->iter != this->enditer)
-            {
-                this->iter++;
-            }
-            if (*this->iter == '\n')
-                this->iter++;
-        }
-
-        Token get_num()
-        {
-            // read a number from the file
-            std::string num;
-            bool is_float = false;
-            while (is_num(*this->iter) || *this->iter == '.')
-            {
-                if (*this->iter == '.' && is_float == true)
-                {
-                    std::cerr << "Invalid number: " << num << "\n";
-                    abort();
-                }
-                num.push_back(*this->iter);
-                this->consume();
-            }
-            return Token(is_float ? _TT_FLOAT : _TT_INT, num);
-        }
-
-        Token get_iden_or_keyword()
-        {
-            std::string iden_or_keyword;
-            bool has_underscore = false;
-            while (is_alpha(*this->iter) || *this->iter == '_')
-            {
-                if (*this->iter == '_')
-                    has_underscore = true;
-                iden_or_keyword.push_back(*this->iter);
-                this->consume();
-            }
-            // now check if it is an identifier or a keyword
-            // we will save time by seeing if the token has '_'
-            // since we don't have keywords that use '_', it must be an identifier
-            if (has_underscore)
-            {
-                return Token(_TT_IDENTIFIER, iden_or_keyword);
-            }
-            auto _keytype = _iden_map_.find(iden_or_keyword);
-            if (_keytype == _iden_map_.end())
-            {
-                return Token(_TT_IDENTIFIER, iden_or_keyword); // must be an identifier
-            }
-            return Token((*_keytype).second, "");
+            if (curr_char != current_line.end())
+                return *(curr_char + 1);
+            return '\0';
         }
 
     public:
-        Lexer(std::string);
+        Lexer() = default;
 
-        bool open_file_for_lexing();
+        bool setup_reader(std::string);
 
         Token lex();
-
-        LexErr get_error();
     };
-
 };
 
 #endif

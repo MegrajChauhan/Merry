@@ -542,8 +542,8 @@ _THRET_T_ merry_runCore(mptr_t core)
                     break;
                 }
                 atomic_compare_exchange_strong(_addr_, &c->registers[(*current >> 52) & 15], c->registers[(*current >> 48) & 15]);
-                break;
             }
+            break;
         case OP_CIN:
             // the input is stored in a register that is encoded into the last 4 bits of the instruction
             c->registers[*current & 15] = getchar();
@@ -568,13 +568,13 @@ _THRET_T_ merry_runCore(mptr_t core)
                 {
                     *_addr_ = getchar();
                 }
-                break;
             }
+            break;
         case OP_SOUT:
             // the address to store in is encoded into the instruction
             // the number of bytes to output is in the Mc register
-            register mqword_t len = c->registers[Mc];
             {
+                register mqword_t len = c->registers[Mc];
                 mbptr_t _addr_ = merry_dmemory_get_byte_address_bounds(c->data_mem, *current & 0xFFFFFFFFFFFF, len);
                 if (_addr_ == RET_NULL)
                 {
@@ -586,8 +586,8 @@ _THRET_T_ merry_runCore(mptr_t core)
                 {
                     putchar(*_addr_);
                 }
-                break;
             }
+            break;
         case OP_IN:
             fscanf(stdin, "%hhi", &c->registers[*current & 15]);
             break;

@@ -1,7 +1,7 @@
 int main()
 {
-    a: int = 99;
-    b: float = 997.34;
+    a: int = 69;
+    // this is a comment
 }
 
-// we have no imports for now
+// use std::io; // could be an import
