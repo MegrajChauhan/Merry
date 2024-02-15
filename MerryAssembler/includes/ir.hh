@@ -21,6 +21,8 @@ namespace back_end{
         JMP_ADDR=0x27,
         CALL=0x28,
         RET=0x29,
+        OUTR=0x83,
+        UOUTR=0x84,
     };
     class IrInst{
         private:

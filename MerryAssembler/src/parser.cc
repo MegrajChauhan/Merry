@@ -27,6 +27,8 @@ std::vector<std::pair<merry::front_end::AstNodeInst, std::string>> instructions 
     {merry::front_end::AstNodeInst(merry::front_end::AstInstType::JMP), "jmp"},
     {merry::front_end::AstNodeInst(merry::front_end::AstInstType::RET), "ret"},
     {merry::front_end::AstNodeInst(merry::front_end::AstInstType::CALL), "call"},
+    {merry::front_end::AstNodeInst(merry::front_end::AstInstType::OUTR), "outr"},
+    {merry::front_end::AstNodeInst(merry::front_end::AstInstType::UOUTR), "uoutr"},
 };
 
 std::vector<std::string> insts_with_ops = {

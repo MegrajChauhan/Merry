@@ -41,6 +41,12 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
         case front_end::AstInstType::RET: {
             inst = IrInst(IrInstType::RET);
         } break;
+        case front_end::AstInstType::OUTR: {
+            inst = IrInst(IrInstType::OUTR);
+        } break;
+        case front_end::AstInstType::UOUTR: {
+            inst = IrInst(IrInstType::UOUTR);
+        } break;
 
         // Mathn't
         case front_end::AstInstType::ADD: {
@@ -48,17 +54,14 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
             if(current_node.is_second_reg){
                 inst = IrInst(IrInstType::ADD_REG);
                 uint8_t registers = 0; // Example registers
-                uint8_t lower_4_bits_to_set = register_to_byte(current_node.get_operands().at(0)); // Example value for lower 4 bits
-                uint8_t top_4_bits_to_set = register_to_byte(current_node.get_operands().at(1));   // Example value for top 4 bits
+                uint8_t lower_4_bits_to_set = register_to_byte(current_node.get_operands().at(1)); // Example value for lower 4 bits
+                uint8_t top_4_bits_to_set = register_to_byte(current_node.get_operands().at(0));   // Example value for top 4 bits
 
                 // Setting lower 4 bits
                 registers = (registers & 0xF0) | (lower_4_bits_to_set & 0x0F);
 
                 // Setting top 4 bits
                 registers = (registers & 0x0F) | (top_4_bits_to_set & 0xF0);
-                for(int i = 0; i < 6; ++i){
-                  inst.add_operand(0);
-                }
                 inst.add_operand(registers);
             } else{
                 inst = IrInst(IrInstType::ADD_IMM);
@@ -68,7 +71,6 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
                 // Setting lower 4 bits
                 registers = (registers & 0xF0) | (lower_4_bits_to_set & 0x0F);
 
-                inst.add_operand(registers);
                 const char *str = current_node.get_operands().at(1).c_str();
                 char* endptr;
                 uint32_t value = strtol(str, &endptr, 10);
@@ -84,6 +86,9 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
                 inst.add_operand(lower_middle4_bytes);
                 inst.add_operand(top_middle4_bytes);
                 inst.add_operand(top4_bytes);
+                inst.add_operand(0);
+                inst.add_operand(0);
+                inst.add_operand(registers);
             }
         } break;
         case front_end::AstInstType::SUB: {
@@ -91,17 +96,14 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
             if(current_node.is_second_reg){
                 inst = IrInst(IrInstType::SUB_REG);
                 uint8_t registers = 0; // Example registers
-                uint8_t lower_4_bits_to_set = register_to_byte(current_node.get_operands().at(0)); // Example value for lower 4 bits
-                uint8_t top_4_bits_to_set = register_to_byte(current_node.get_operands().at(1));   // Example value for top 4 bits
+                uint8_t lower_4_bits_to_set = register_to_byte(current_node.get_operands().at(1)); // Example value for lower 4 bits
+                uint8_t top_4_bits_to_set = register_to_byte(current_node.get_operands().at(0));   // Example value for top 4 bits
 
                 // Setting lower 4 bits
                 registers = (registers & 0xF0) | (lower_4_bits_to_set & 0x0F);
 
                 // Setting top 4 bits
                 registers = (registers & 0x0F) | (top_4_bits_to_set & 0xF0);
-                for(int i = 0; i < 6; ++i){
-                  inst.add_operand(0);
-                }
                 inst.add_operand(registers);
             } else{
                 inst = IrInst(IrInstType::SUB_IMM);
@@ -127,6 +129,9 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
                 inst.add_operand(lower_middle4_bytes);
                 inst.add_operand(top_middle4_bytes);
                 inst.add_operand(top4_bytes);
+                inst.add_operand(0);
+                inst.add_operand(0);
+                inst.add_operand(registers);
             }
         } break;
         case front_end::AstInstType::MOD: {
@@ -134,17 +139,14 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
             if(current_node.is_second_reg){
                 inst = IrInst(IrInstType::MOD_REG);
                 uint8_t registers = 0; // Example registers
-                uint8_t lower_4_bits_to_set = register_to_byte(current_node.get_operands().at(0)); // Example value for lower 4 bits
-                uint8_t top_4_bits_to_set = register_to_byte(current_node.get_operands().at(1));   // Example value for top 4 bits
+                uint8_t lower_4_bits_to_set = register_to_byte(current_node.get_operands().at(1)); // Example value for lower 4 bits
+                uint8_t top_4_bits_to_set = register_to_byte(current_node.get_operands().at(0));   // Example value for top 4 bits
 
                 // Setting lower 4 bits
                 registers = (registers & 0xF0) | (lower_4_bits_to_set & 0x0F);
 
                 // Setting top 4 bits
                 registers = (registers & 0x0F) | (top_4_bits_to_set & 0xF0);
-                for(int i = 0; i < 6; ++i){
-                  inst.add_operand(0);
-                }
                 inst.add_operand(registers);
             } else{
                 inst = IrInst(IrInstType::MOD_IMM);
@@ -170,6 +172,9 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
                 inst.add_operand(lower_middle4_bytes);
                 inst.add_operand(top_middle4_bytes);
                 inst.add_operand(top4_bytes);
+                inst.add_operand(0);
+                inst.add_operand(0);
+                inst.add_operand(registers);
             }
         } break;
         case front_end::AstInstType::DIV: {
@@ -177,17 +182,14 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
             if(current_node.is_second_reg){
                 inst = IrInst(IrInstType::DIV_REG);
                 uint8_t registers = 0; // Example registers
-                uint8_t lower_4_bits_to_set = register_to_byte(current_node.get_operands().at(0)); // Example value for lower 4 bits
-                uint8_t top_4_bits_to_set = register_to_byte(current_node.get_operands().at(1));   // Example value for top 4 bits
+                uint8_t lower_4_bits_to_set = register_to_byte(current_node.get_operands().at(1)); // Example value for lower 4 bits
+                uint8_t top_4_bits_to_set = register_to_byte(current_node.get_operands().at(0));   // Example value for top 4 bits
 
                 // Setting lower 4 bits
                 registers = (registers & 0xF0) | (lower_4_bits_to_set & 0x0F);
 
                 // Setting top 4 bits
                 registers = (registers & 0x0F) | (top_4_bits_to_set & 0xF0);
-                for(int i = 0; i < 6; ++i){
-                  inst.add_operand(0);
-                }
                 inst.add_operand(registers);
             } else{
                 inst = IrInst(IrInstType::DIV_IMM);
@@ -213,6 +215,9 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
                 inst.add_operand(lower_middle4_bytes);
                 inst.add_operand(top_middle4_bytes);
                 inst.add_operand(top4_bytes);
+                inst.add_operand(0);
+                inst.add_operand(0);
+                inst.add_operand(registers);
             }
         } break;
         case front_end::AstInstType::MUL: {
@@ -220,17 +225,14 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
             if(current_node.is_second_reg){
                 inst = IrInst(IrInstType::MUL_REG);
                 uint8_t registers = 0; // Example registers
-                uint8_t lower_4_bits_to_set = register_to_byte(current_node.get_operands().at(0)); // Example value for lower 4 bits
-                uint8_t top_4_bits_to_set = register_to_byte(current_node.get_operands().at(1));   // Example value for top 4 bits
+                uint8_t lower_4_bits_to_set = register_to_byte(current_node.get_operands().at(1)); // Example value for lower 4 bits
+                uint8_t top_4_bits_to_set = register_to_byte(current_node.get_operands().at(0));   // Example value for top 4 bits
 
                 // Setting lower 4 bits
                 registers = (registers & 0xF0) | (lower_4_bits_to_set & 0x0F);
 
                 // Setting top 4 bits
                 registers = (registers & 0x0F) | (top_4_bits_to_set & 0xF0);
-                for(int i = 0; i < 6; ++i){
-                  inst.add_operand(0);
-                }
                 inst.add_operand(registers);
             } else{
                 inst = IrInst(IrInstType::MUL_IMM);
@@ -256,6 +258,9 @@ void merry::back_end::IrGen::convert_astnode_to_inst(){
                 inst.add_operand(lower_middle4_bytes);
                 inst.add_operand(top_middle4_bytes);
                 inst.add_operand(top4_bytes);
+                inst.add_operand(0);
+                inst.add_operand(0);
+                inst.add_operand(registers);
             }
         } break;
         // End Mathn't
