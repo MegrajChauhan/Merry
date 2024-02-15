@@ -96,6 +96,8 @@ namespace mlang
         size_t get_current_line_num();
 
         void set_filename(std::string);
+
+        std::string get_file_name();
     };
 };
 

@@ -67,3 +67,8 @@ void mlang::Reader::set_filename(std::string filename)
 {
     this->file_name = filename;
 }
+
+std::string mlang::Reader::get_file_name()
+{
+    return file_name;
+}

@@ -7,6 +7,12 @@
 #include <cctype>
 #include "error.hpp"
 #include "reader.hpp"
+#include "../utils/colors.hpp"
+
+#define should_skip(ch) (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') // add more as needed
+#define is_num(ch) (ch >= '0' && ch <= '9')
+#define is_alpha(ch) ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'))
+#define is_oper(ch) (ch == '(' || ch == ')' || ch == '{' || ch == '}' || ch == ':' || ch == ';' || ch == '=')
 
 namespace mlang
 {
@@ -81,6 +87,17 @@ namespace mlang
             }
         }
 
+        void consume_comment()
+        {
+            if ((current_line = reader.next_line()) == "EOF")
+            {
+                eof = true;
+                return;
+            }
+            col_no = 0;
+            curr_char = current_line.begin();
+        }
+
         void clear_unnecessary()
         {
             // clear all unnecessary characters
@@ -97,12 +114,57 @@ namespace mlang
             return '\0';
         }
 
+        Token get_iden_or_keyword()
+        {
+            Token token;
+            std::string iden_or_keyword;
+            while (is_alpha(*curr_char) || *curr_char == '_')
+            {
+                iden_or_keyword.push_back(*curr_char);
+                consume();
+            }
+            auto kind = _iden_map_.find(iden_or_keyword);
+            if (kind == _iden_map_.end())
+            {
+                // since the characters we read are valid then it must be an identifier
+                token.type = _TT_IDENTIFIER;
+                token.value = iden_or_keyword;
+            }
+            else
+            {
+                // then it is a keyword
+                token.type = (*kind).second;
+            }
+            return token;
+        }
+
+        Token get_number()
+        {
+            Token token;
+            size_t underscore_count = 0;
+            std::string val;
+            while (is_num(*curr_char) || *curr_char == '.')
+            {
+                if (*curr_char == '.')
+                {
+                    underscore_count++;
+                    if (underscore_count > 1)
+                    {
+
+                    }
+                }
+                val.push_back(*curr_char);
+            }
+        }
+
     public:
         Lexer() = default;
 
         bool setup_reader(std::string);
 
         Token lex();
+
+        void invalid_token();
     };
 };
 
