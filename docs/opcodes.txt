@@ -49,7 +49,7 @@ add_reg  -> opcode: 0x03
 sub_imm -> opcode: 0x04: everything else is the same as add_imm
 sub_reg -> opcode: 0x05: everything else is the same as add_reg
 mul_imm -> opcode: 0x06: everything else is the same as add_imm
-sub_reg -> opcode: 0x07: everything else is the same as add_reg
+mul_reg -> opcode: 0x07: everything else is the same as add_reg
 div_imm -> opcode: 0x08: everything else is the same as add_imm
 div_reg -> opcode: 0x09: everything else is the same as add_reg
 mod_imm -> opcode: 0x0A: everything else is the same as add_imm
@@ -59,11 +59,17 @@ iadd_reg -> opcode: 0x0D -> everything else is the same as add_reg
 isub_imm -> opcode: 0x0E -> everything else is the same as add_imm
 isub_reg -> opcode: 0x0F -> everything else is the same as add_reg
 imul_imm -> opcode: 0x10 -> everything else is the same as add_imm
-isub_reg -> opcode: 0x11 -> everything else is the same as add_reg
+imul_reg -> opcode: 0x11 -> everything else is the same as add_reg
 idiv_imm -> opcode: 0x12 -> everything else is the same as add_imm
 idiv_reg -> opcode: 0x13 -> everything else is the same as add_reg
 imod_imm -> opcode: 0x14 -> everything else is the same as add_imm
 imod_reg -> opcode: 0x15 -> everything else is the same as add_reg
+
+[It is not guranteed that floating point instructions will work correctly across different host]
+fadd -> opcode: 0x16 -> only takes 2 registers encoded exactly as add_reg. 
+fsub -> opcode: 0x17 -> only takes 2 registers encoded exactly as add_reg. 
+fmul -> opcode: 0x18 -> only takes 2 registers encoded exactly as add_reg. 
+fdiv -> opcode: 0x19 -> only takes 2 registers encoded exactly as add_reg. 
 
 move_imm -> opcode: 0x1A
             operands: One register and one immediate
@@ -277,7 +283,84 @@ consideration of the machine's performance as it may hinder the efficiency and t
 intr -> opcode: 0x5F
         operand: The interrupt number. The lower 2 bytes represent the interrupt number.
 
+loadb -> opcode: 0x60
+         operands: register and a 6 byte address
+         example: 0x60 0x01 0x00 0xAA 0xBB 0xCC 0xDD 0xEE [load the byte at address 0xAABBCCDDEE into register 0x01(Mb)]
 
+loadw -> opcode: 0x61: same as loadb but loads 2 bytes instead
+loadd -> opcode: 0x62: same as loadb but loads 4 bytes instead
+
+storeb -> opcode: 0x63
+          operands: register and a 6 bytes address
+          encoding: The instruction is exactly the same as loadb except it stores a byte rather than loading.
+
+storew -> opcode: 0x64: same as storeb except stores 2 bytes
+storew -> opcode: 0x65: same as storeb except stores 4 bytes
+
+load_reg -> opcode: 0x66
+            operands: 2 registers encoded in the same way as add_reg
+            example: 0x66 0x00 0x00 0x00 0x00 0x00 0x00 0x12 [load 8 byte from the address provided in Mc into Mb(0x12 i.e 0x01 and 0x02)]
+store_reg -> opcode: 0x67: exactly the same as load_reg except in the example "0x66 0x00 0x00 0x00 0x00 0x00 0x00 0x12" the value of Mb will be stored into the address specified in Mc
+loadb_reg -> opcode: 0x68: same as load_reg but loads just 1 byte is loaded.
+storeb_reg -> opcode: 0x69: same as load_reg but loads just 1 byte is stored.
+loadw_reg -> opcode: 0x6A: same as load_reg but loads just 2 byte is loaded.
+storew_reg -> opcode: 0x6B: same as load_reg but loads just 2 byte is stored.
+loadd_reg -> opcode: 0x6C: same as load_reg but loads just 4 byte is loaded.
+stored_reg -> opcode: 0x6D: same as load_reg but loads just 4 byte is stored.
+
+cmpxchg -> opcode: 0x6E
+           operands: a 6 bytes address and 2 registers
+           example: 0x6E 0x12 0x00 0xAA 0xBB 0xCC 0xDD 0xEE
+           details: In the above example, the operands are two registers Mb and Mc(because second byte = 0x12) and an address 0xAABBCCDDEE.
+                    Whatever is in the given address is compared with whatever is in the Mb register. If they are equal, the value at the address
+                    is replaced by the value in Mc register. If the values are not equal, whatever is in the register Mb is replaced by whatever is in
+                    the given address. This is an atomic operation.
+
+cin -> opcode: 0x6F
+       operands: takes just one register
+       example: 0x6F 0x00 0x00 0x00 0x00 0x00 0x01
+       details: Reads one character from console and stores it into the register.
+cout -> opcode: 0x70: same as cin except whatever is in the given register is printed as character.
+sin -> opcode: 0x71
+       operands: The number of characters to read in the Mc register and a 6 bytes address.
+       details: The address is encoded into the last 6 bytes of the instruction. The specified number of characters
+       are read and stored in the address.
+sout -> opcode: 0x72: same as sin but the bytes are printed as characters.
+
+in -> opcode: 0x73: same as cin but reads a signed 1 byte number instead.
+out -> opcode: 0x74: same as cout but prints a signed 1 byte number instead.
+inw -> opcode: 0x75: same as cin but reads a signed 2 bytes number instead.
+outw -> opcode: 0x76: same as cout but prints a signed 2 bytes number instead.
+ind -> opcode: 0x77: same as cin but reads a signed 4 bytes number instead.
+outd -> opcode: 0x78: same as cout but prints a signed 4 bytes number instead.
+inq -> opcode: 0x79: same as cin but reads a signed 8 bytes number instead.
+outq -> opcode: 0x7A: same as cout but prints a signed 8 bytes number instead.
+
+uin -> opcode: 0x7B: same as cin but reads a unsigned 1 byte number instead.
+uout -> opcode: 0x7C: same as cout but prints a unsigned 1 byte number instead.
+uinw -> opcode: 0x7D: same as cin but reads a unsigned 2 bytes number instead.
+uoutw -> opcode: 0x7E: same as cout but prints a unsigned 2 bytes number instead.
+uind -> opcode: 0x7F: same as cin but reads a unsigned 4 bytes number instead.
+uoutd -> opcode: 0x80: same as cout but prints a unsigned 4 bytes number instead.
+uinq -> opcode: 0x81: same as cin but reads a unsigned 8 bytes number instead.
+uoutq -> opcode: 0x82: same as cout but prints a unsigned 8 bytes number instead.
+
+inf -> opcode: 0x83: same as cin but reads a 64-bit floating point number.
+outf -> opcode: 0x84: same as cout but outputs a 64-bit floating point number.
+inf32 -> opcode: 0x85: same as cin but reads a 32-bit floating point number.
+outf32 -> opcode: 0x86: same as cout but outputs a 32-bit floating point number.
+
+outr -> opcode: 0x87: displays the content of every register as a signed number
+uoutr -> opcode: 0x88: displays the content of every register as an unsigned number.
+
+[It is not guranteed that floating point instructions will work correctly across different host]
+fadd32 -> opcode: 0x89 -> only takes 2 registers encoded exactly as add_reg. 
+fsub32 -> opcode: 0x8A -> only takes 2 registers encoded exactly as add_reg. 
+fmul32 -> opcode: 0x8B -> only takes 2 registers encoded exactly as add_reg. 
+fdiv32 -> opcode: 0x8C -> only takes 2 registers encoded exactly as add_reg. 
+
+NOTE: The mentioned floating point arithmetic affect only 2 flags. Hence the following instructions should work after them:
+jnz, jz, jne, je, jng, jg, jns, js, jge, jse 
 
 Interrupt numbers/IDs:
 Each interrupt number/ID represents a unique service that the Manager can provide. Numbers 0-150 are reserved for internal use and thus the interrupts that the program can use start from 151.

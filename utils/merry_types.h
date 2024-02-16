@@ -68,4 +68,10 @@ typedef void *mptr_t;
 
 typedef msize_t merrot_t;
 
+#if defined(_MERRY_HOST_OS_LINUX_)
+#define _THRET_T_ mptr_t
+#elif defined(_MERRY_HOST_OS_WINDOWS_)
+#define _THRET_T_ unsigned __stdcall
+#endif
+
 #endif

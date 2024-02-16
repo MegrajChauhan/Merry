@@ -42,6 +42,10 @@ int main(int argc, char **argv)
         merry_destroy_parser(_parsed_options);
         return -1;
     }
+    // if (merry_os_init("example/iseven.mbin") == RET_FAILURE)
+    // {
+    //     return -1;
+    // }
     merry_destroy_parser(_parsed_options);
     MerryThread *osthread = merry_thread_init();
     if (osthread == NULL)
@@ -55,12 +59,13 @@ int main(int argc, char **argv)
         merry_thread_destroy(osthread);
         goto failure;
     }
+    msize_t returnval = 0;
     merry_logger_close();
-    merry_thread_join(osthread, NULL); // I am an idiot
+    merry_thread_join(osthread, &returnval); // I am an idiot
     merry_thread_destroy(osthread);
     merry_os_destroy();
     // printf("Time taken to run: %lfs.\n", (double)(end - start) / CLOCKS_PER_SEC);
-    return 0;
+    return returnval;
 failure:
     merry_logger_close();
     merry_os_destroy();

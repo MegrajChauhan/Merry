@@ -36,6 +36,7 @@ struct MerryCLP
     MerryCLOption options[_MERRY_MAX_OPTIONS_];
 };
 
+
 MerryCLP *merry_parse_options(int argc, char **argv);
 
 void merry_print_help();

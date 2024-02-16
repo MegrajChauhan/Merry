@@ -16,4 +16,4 @@ next:
     outr ; 12
     hlt ; 13
 halt:
-    ret ; 14
+    ret ; 14 ;; correct

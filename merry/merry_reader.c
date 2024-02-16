@@ -79,7 +79,7 @@ _MERRY_INTERNAL_ mbool_t merry_check_file_extension(mcstr_t _file_name)
     if (surelyF(_file_name == NULL || strlen(_file_name) < 5))
         goto ret_err;
     // now check for the file extension
-    mstr_t dot = strchr(_file_name, '.');
+    mstr_t dot = strrchr(_file_name, '.');
     if (surelyF(dot == NULL))
         goto ret_err;
     if (surelyT(strcmp(dot + 1, "mbin") == 0))
@@ -493,7 +493,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_data_same(MerryInpFile *inp)
 _MERRY_INTERNAL_ mret_t merry_reader_read_data(MerryInpFile *inp)
 {
     // when it comes to data, even though there may be none, we still map one page
-    if (inp->dlen == 0)
+    if ((inp->dlen + inp->slen) == 0)
         return RET_SUCCESS;
     mret_t ret;
     if (_MERRY_BYTE_ORDER_ == _MERRY_ENDIANNESS_)
