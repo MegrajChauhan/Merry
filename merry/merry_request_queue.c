@@ -42,4 +42,5 @@ void merry_panic_push(MerryRequestQueue *queue, merrot_t error)
 {
     MerryOSRequest req = {error, NULL, 0};
     _MERRY_QUEUE_PANIC_PUSH_NOPTR_(queue, req)
+    queue->data_count++;
 }

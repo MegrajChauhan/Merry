@@ -83,8 +83,8 @@ _MERRY_ALWAYS_INLINE_ _exec_(div_imm)
 _MERRY_ALWAYS_INLINE_ _exec_(div_reg)
 {
    register mqword_t current = core->current_inst;
-   register mqword_t reg = (current >> 52) & 15;
-   register mqword_t reg2 = (current >> 48) & 15;
+   register mqword_t reg = (current >> 4) & 15;
+   register mqword_t reg2 = (current) & 15;
    if (core->registers[reg2] == 0)
    {
       merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);

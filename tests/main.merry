@@ -8,10 +8,10 @@ next:
     sub Ma, 10 ; 6
     mul Ma, Mb ; 7
     mul Ma, 69420 ; 8
-    div Ma, Mb ; 8
-    div Ma, 69420 ; 9
-    mod Ma, Mb ; 10
-    mod Ma, 1 ; 10
+    ;div Ma, Mb ; 8
+    ;div Ma, 69420 ; 9
+    ;mod Ma, Mb ; 10
+    ;mod Ma, 1 ; 10
     call halt ; 11
     outr ; 12
     hlt ; 13
