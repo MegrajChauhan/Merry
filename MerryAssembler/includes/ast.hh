@@ -16,6 +16,8 @@ namespace front_end{
         JMP,
         CALL,
         RET,
+        OUTR,
+        UOUTR,
     };
     class AstNodeInst{
         private:

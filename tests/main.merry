@@ -1,18 +1,19 @@
 all_insts:
     nop ; 0
-    jmp next ; 1
+    jmp next ; 1 jmp 2
 next:
-    add Ma, Mb ; 2 ;; Generates incorrect code[should have been "01 00 00 00 00 00 00 03" but is "00 00 00 00 00 00 10 03"]
-    add Ma, 69 ; 3 ;; Generates incorrect code[should have been "45 00 00 00 00 00 00 02" but is "00 45 00 00 00 00 00 02"]
-    sub Ma, Mb ; 4 ;; incorrect code[Same problem as add Ma, Mb]
-    sub Ma, 10 ; 5 ;; incorrect code[Same problem as add Ma, 69]
-    mul Ma, Mb ; 6 ;; incorrect code[same problem as add Ma, Mb]
-    mul Ma, 69420 ; 7 ;; incorrect code[Same problem as add Ma, 69]
-    ; div Ma, Mb ; 8
-    div Ma, 69420 ; 9 ;; same error as add Ma, 69
-    ; mod Ma, Mb ; 10
-    mod Ma, 1 ; 11 ;; same error as add Ma, 69
-    call halt ; 12 ;; correct
-    hlt ; 13 ;; correct
+    add Ma, Mb ; 3
+    add Ma, 69 ; 4
+    sub Ma, Mb ; 5
+    sub Ma, 10 ; 6
+    mul Ma, Mb ; 7
+    mul Ma, 69420 ; 8
+    div Ma, Mb ; 8
+    div Ma, 69420 ; 9
+    mod Ma, Mb ; 10
+    mod Ma, 1 ; 10
+    call halt ; 11
+    outr ; 12
+    hlt ; 13
 halt:
     ret ; 14 ;; correct

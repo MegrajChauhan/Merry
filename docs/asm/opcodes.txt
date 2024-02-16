@@ -1,6 +1,6 @@
 PC = program counter
 nop -> Does nothing
-hlt -> Halts or stops the program
+hlt -> Halts or stops the current core and if only 1 is running stops the VM
 (all outputs are in REG1 or REG)
 add REG, IMM -> Adds the IMM to the REG
 sub REG, IMM -> Subtracts the IMM from the REG
@@ -15,3 +15,4 @@ mod REG1, REG2 -> Modulo's the REG2 with the REG1
 jmp LABEL -> Sets the current PC to the LABEL
 call LABEL -> Sets the current PC to the LABEL and also pushes the value of the return address to the stack
 ret -> Pops the value of the stack and sets the PC to it
+outr, uoutr -> outputs the registers into their respective signed and unsigned formats
