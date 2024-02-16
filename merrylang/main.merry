@@ -1,6 +1,0 @@
-using std::IO; // importing a library
-
-int main()
-{
-    let x: int = 98;
-}

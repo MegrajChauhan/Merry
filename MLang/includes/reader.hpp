@@ -1,15 +1,11 @@
 #ifndef _READER_
 #define _READER_
 
-// The main task of this is to read any file given to it and not just the input file
-// for reading modules as well
-
 #include <vector>
 #include <string>
 #include <fstream>
 #include <filesystem>
 #include <iostream>
-#include "error.hpp"
 
 namespace mlang
 {
@@ -25,36 +21,11 @@ namespace mlang
         INVALID_EXT,
     };
 
-    struct ReaderErrorNode
-    {
-        // the context will be READING so it will be unnecessary
-        // reading error are all fatal
-        // the only errors are mentioned above
-        ReaderErrorKind kind;
-        std::filesystem::path file_path;
-
-        ReaderErrorNode(ReaderErrorKind kind, std::filesystem::path path);
-    };
-
-    class ReaderError : public Error<ReaderErrorNode>
-    {
-    public:
-        ReaderError() = default;
-
-        // in the case of the reader just one error is enough to stop the entire process
-        // we don't even need to push new errors and get them
-        void print_error(ReaderErrorNode error);
-    };
-
     class Reader
     {
     private:
         std::string file_name;
-        std::string curr_line;
-        std::fstream file_handle;
-        size_t current_line;
-        ReaderError error;
-
+    
         bool is_valid_filename()
         {
             // check if file_name is valid
@@ -68,17 +39,17 @@ namespace mlang
             std::filesystem::path path = std::filesystem::current_path() / this->file_name;
             if (!std::filesystem::exists(path))
             {
-                error.print_error(ReaderErrorNode(FILE_NOT_FOUND, path));
+                print_error(FILE_NOT_FOUND);
                 return false;
             }
             if (std::filesystem::is_directory(path))
             {
-                error.print_error(ReaderErrorNode(DIRECTORY, path));
+                print_error(DIRECTORY);
                 return false;
             }
             if (std::filesystem::is_empty(path))
             {
-                error.print_error(ReaderErrorNode(EMPTY, path));
+                print_error(EMPTY);
                 return false;
             }
             return true;
@@ -89,15 +60,15 @@ namespace mlang
 
         Reader() = default;
 
-        bool open_and_setup();
+        bool setup();
 
-        std::string next_line();
-
-        size_t get_current_line_num();
+        std::string read();
 
         void set_filename(std::string);
 
         std::string get_file_name();
+
+        void print_error(ReaderErrorKind);
     };
 };
 

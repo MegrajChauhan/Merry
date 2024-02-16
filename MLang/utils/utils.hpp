@@ -2,6 +2,7 @@
 #define _UTILS_
 
 #include <string>
+#include "colors.hpp"
 
 namespace mlang
 {
@@ -14,6 +15,9 @@ namespace mlang
 
     PosDetail extract_word(std::string str, std::string::iterator iter);
     PosDetail extract_word(std::string str, size_t pos);
+
+    std::string highlight_error(std::string str, PosDetail detail);
+
 };
 
 #endif

@@ -5,8 +5,8 @@
 #include <string>
 #include <unordered_map>
 #include <cctype>
-#include "error.hpp"
 #include "reader.hpp"
+// #include "../utils/utils.hpp"
 #include "../utils/colors.hpp"
 
 #define should_skip(ch) (ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') // add more as needed
@@ -60,28 +60,31 @@ namespace mlang
     class Lexer
     {
     private:
-        Reader reader;
-        size_t col_no;
-        std::string current_line;
+        size_t col_no = 0;
+        size_t line_num = 0;
+        std::string file_contents;
         std::string::iterator curr_char;
-        bool eof;
+        std::string filename;
+        bool eof = false;
 
         void consume()
         {
             // this should consume the current character
             // if the lexer has completely consumed the current line, it also needs to advance
-            if (curr_char == current_line.end())
+            if (curr_char == file_contents.end())
             {
-                if ((current_line = reader.next_line()) == "EOF")
-                {
-                    eof = true;
-                    return;
-                }
-                col_no = 0;
-                curr_char = current_line.begin();
+                eof = true;
+                return;
             }
             else
             {
+                if (*curr_char == '\n')
+                {
+                    col_no = 0;
+                    line_num++;
+                    curr_char++;
+                    return;
+                }
                 col_no++;
                 curr_char++;
             }
@@ -89,19 +92,27 @@ namespace mlang
 
         void consume_comment()
         {
-            if ((current_line = reader.next_line()) == "EOF")
+            if (curr_char == file_contents.end())
             {
                 eof = true;
                 return;
             }
             col_no = 0;
-            curr_char = current_line.begin();
+            while (*curr_char != '\n' && curr_char != file_contents.end())
+            {
+                curr_char++;
+            }
+            if (curr_char == file_contents.end())
+                eof = true;
+            curr_char++;
+            line_num++;
+            clear_unnecessary();
         }
 
         void clear_unnecessary()
         {
             // clear all unnecessary characters
-            while (std::isspace(static_cast<unsigned char>(*this->curr_char)))
+            while (std::isspace(static_cast<unsigned char>(*this->curr_char)) || *curr_char == '\n')
             {
                 consume();
             }
@@ -109,7 +120,7 @@ namespace mlang
 
         char peek()
         {
-            if (curr_char != current_line.end())
+            if (curr_char != file_contents.end())
                 return *(curr_char + 1);
             return '\0';
         }
@@ -150,11 +161,25 @@ namespace mlang
                     underscore_count++;
                     if (underscore_count > 1)
                     {
-
+                        invalid_token(val); // exit
                     }
                 }
                 val.push_back(*curr_char);
+                consume();
             }
+            return Token(underscore_count == 1 ? _TT_FLOAT : _TT_INT, val);
+        }
+
+        std::string get_current_line()
+        {
+            std::string line;
+            std::fstream temp(filename, std::ios::in); // temporary[Should not fail]
+            for (size_t i = 0; i <= line_num; i++)
+            {
+                std::getline(temp, line);
+            }
+            temp.close();
+            return line;
         }
 
     public:
@@ -164,6 +189,7 @@ namespace mlang
 
         Token lex();
 
+        void invalid_token(std::string);
         void invalid_token();
     };
 };
