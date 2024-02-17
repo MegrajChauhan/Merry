@@ -15,6 +15,7 @@ Merry is  a 64-bit Virtual Machine that emulates a non-existsent CPU. Merry has 
 7. Floating point instructions(Untested).
 8. Assembler(In development).
 9. Programming Language(In development).  
+10. Dynamic Library Loading(For linux only).
 and comming soon....
 
 # Some Important Notes:
