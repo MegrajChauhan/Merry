@@ -7,6 +7,10 @@ mbool_t merry_loader_init(msize_t initial_entry_count)
         return mfalse;
     loader.closed_entry_count = initial_entry_count;
     loader.entry_count = initial_entry_count;
+    for (msize_t i = 0; i < initial_entry_count; i++)
+    {
+        loader.entries[i].handle_open = mtrue;
+    }
     return mtrue;
 }
 
