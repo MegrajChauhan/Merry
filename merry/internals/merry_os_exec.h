@@ -30,10 +30,13 @@
 
 // an function that executes a requests needs to tell the OS if the request was successfully executed
 
-#define _os_exec_(reqname) mret_t merry_os_execute_request_##reqname(Merry* os, MerryOSRequest *request)
+#define _os_exec_(reqname) mret_t merry_os_execute_request_##reqname(Merry *os, MerryOSRequest *request)
 
 // handle the halt request
-_os_exec_(halt); 
+_os_exec_(halt);
 _os_exec_(new_core);
+_os_exec_(dynl);
+_os_exec_(dynul);
+_os_exec_(dyncall);
 
 #endif

@@ -55,9 +55,8 @@ mret_t merry_os_init(mcstr_t _inp_file)
     os.core_threads = (MerryThread **)malloc(sizeof(MerryThread *)); // just 1 for now
     if (os.core_threads == RET_NULL)
         goto failure;
-    // Merry *o = &os;
-    // if ((os.thPool = merry_init_thread_pool(_MERRY_THPOOL_LEN_)) == RET_NULL)
-    //     goto failure;
+    if (merry_loader_init(2) == mfalse)
+        goto failure;   // for now, 2
     return RET_SUCCESS; // we did everything correctly
 failure:
     // _log_(_OS_, "Intialization Failure", "Failed to intialize the manager");
@@ -95,80 +94,9 @@ void merry_os_destroy()
         free(os.core_threads);
     }
     // merry_destroy_thread_pool(os.thPool);
+    merry_loader_close();
     merry_requestHdlr_destroy();
 }
-
-// mret_t merry_os_mem_read_data(maddress_t address, mqptr_t store_in, msize_t core_id)
-// {
-//     // we can use different read/write based on the situation
-//     // os will surely not be NULL
-//     // store_in is either a reference or pointer to the core's register or something
-//     // core_id is the unique value provided to cores by the OS which is used for identification
-//     // since this request was made then the core is not NULL either
-//     if (os.cores[core_id]->_is_private == mtrue)
-//     {
-//         // this core is assuring that it's data is not accessed by other cores
-//         return merry_memory_read(os.data_mem, address, store_in);
-//     }
-//     else
-//     {
-//         return merry_manager_mem_read_data(address, store_in);
-//     }
-//     return RET_FAILURE;
-// }
-
-// mret_t merry_os_mem_write_data(maddress_t address, mqword_t to_store, msize_t core_id)
-// {
-//     if (os.cores[core_id]->_is_private == mtrue)
-//     {
-//         // this core is assuring that it's data is not accessed by other cores
-//         return merry_memory_write(os.data_mem, address, to_store);
-//     }
-//     else
-//     {
-//         return merry_manager_mem_write_data(address, to_store);
-//     }
-//     return RET_FAILURE;
-// }
-
-// // helper: stops all of the cores
-// _MERRY_INTERNAL_ void merry_os_stop_cores(Merry *os)
-// {
-//     merry_mutex_lock(os._lock);
-//     if (os.core_count == 0)
-//     {
-//         // we have just 1 core
-//         merry_mutex_lock(os.cores[0]->lock); // stop the core first
-//         os.cores[0]->stop_running = mtrue;   // tell it to stop
-//         merry_mutex_unlock(os.cores[0]->lock);
-//     }
-//     else
-//     {
-//         for (msize_t i = 0; i <= os.core_count; i++)
-//         {
-//             merry_mutex_lock(os.cores[i]->lock); // stop the core first
-//             os.cores[i]->stop_running = mtrue;   // tell it to stop
-//             merry_mutex_unlock(os.cores[i]->lock);
-//         }
-//     }
-//     merry_mutex_unlock(os._lock);
-// }
-
-// _MERRY_INTERNAL_ void merry_os_stop_core(Merry *os, msize_t core_id)
-// {
-//     merry_mutex_lock(os._lock);
-//     merry_mutex_lock(os.cores[core_id]->lock); // stop the core first
-//     os.cores[core_id]->stop_running = mtrue;   // tell it to stop
-//     merry_mutex_unlock(os.cores[core_id]->lock);
-//     merry_mutex_unlock(os._lock);
-//     if (os.core_count == 0)
-//     {
-//         // if count is 0 and we stopped the one already running
-//         os.stop = mtrue;
-//         os.ret = os.cores[core_id]->registers[Ma];
-//         merry_cond_signal(os._cond);
-//     }
-// }
 
 mret_t merry_os_boot_core(msize_t core_id, maddress_t start_addr)
 {
@@ -228,11 +156,7 @@ _MERRY_INTERNAL_ void merry_os_prepare_for_exit()
     // _log_(_OS_, "Exiting", "Preparing for exit");
     for (msize_t i = 0; i < os.core_count; i++)
     {
-        // merry_mutex_lock(os.cores[i]->lock);
-        // os.cores[i]->stop_running = mtrue; // stop
         atomic_exchange(&os.cores[i]->stop_running, mtrue);
-        // we may add furthur functionalities here such as the ability to know the value of different registers at the time of termination
-        // merry_mutex_unlock(os.cores[i]->lock);
     }
     // some cores may be waiting for their requests to be fulfilled
     merry_requestHdlr_kill_requests(); // kill all requests
@@ -313,6 +237,15 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
                         else
                             os.cores[current_req.id]->registers[Mb] = 0; // success
                         break;
+                    case _REQ_DYNL:
+                        merry_os_execute_request_dynl(&os, &current_req);
+                        break;
+                    case _REQ_DYNUL:
+                        merry_os_execute_request_dynul(&os, &current_req);
+                        break;
+                    case _REQ_DYNCALL:
+                        merry_os_execute_request_dyncall(&os, &current_req);
+                        break;
                     default:
                         /// NOTE: this will come in handy when we implement some built-in syscalls and the program provides invalid syscalls
                         fprintf(stderr, "Error: Unknown request code: '%llu' is not a valid request code", current_req.request_number);
@@ -364,6 +297,12 @@ void merry_os_handle_error(merrot_t error)
         break;
     case MERRY_INVALID_VARIABLE_ACCESS:
         merry_general_error("Invalid BP offsetting", "The requested offset goes beyond the bounds of the stack");
+        break;
+    case MERRY_DYNL_FAILED:
+        merry_general_error("Dynamic Loading Failed", "The requested library couldn't be loaded");
+        break;
+    case MERRY_DYNCALL_FAILED:
+        merry_general_error("Dynamic Call Failed", "The dynamic function call failed; Maybe the name was incorrect?");
         break;
     default:
         merry_error("Unknown error code: '%llu' is not a valid error code", error);

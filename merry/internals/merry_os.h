@@ -25,14 +25,6 @@
 #ifndef _MERRY_OS_
 #define _MERRY_OS_
 
-/*
-  Change of plans.
-  Since it looks like it will be hell to implement atomic operations at the Manager level, we will have to use something different and inefficient.
-  Now each memory page will have a lock of its own which is used for reading and writing.
-  Every read and write operation is now atomic at least for the data memory.
-  Instruction memory doesn't need atomic reads and writes as the vcores will only be reading from it.
-*/
-
 // This module is the backbone of the VM and controls everything
 
 #include "../../utils/merry_config.h"
@@ -43,6 +35,7 @@
 #include "merry_core.h"
 #include "services/merry_input.h"
 #include "services/merry_output.h"
+#include "../../sys/merry_dynl.h"
 
 typedef struct Merry Merry;
 

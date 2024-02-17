@@ -1,8 +1,7 @@
-merry/internals/imp/ext.S
 merry/internals/imp/arithmetic.S
-merry/internals/imp/extra.S
 merry/merry_logger.c
 merry/merry_stack.c
+sys/src/merry_dynl.c
 sys/src/merry_thread.c
 merry/internals/services/src/merry_input.c
 merry/internals/services/src/merry_output.c

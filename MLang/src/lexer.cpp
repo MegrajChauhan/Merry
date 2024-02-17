@@ -95,3 +95,48 @@ void mlang::Lexer::invalid_token()
     std::cerr << "\nAborting further compilation." << std::endl;
     exit(EXIT_FAILURE); // this is a failure
 }
+
+std::vector<mlang::Token> mlang::Lexer::lex_all()
+{
+    std::vector<Token> alltoks;
+    Token token;
+    std::string val;
+    while (true)
+    {
+        if (std::isspace(*curr_char) || *curr_char == '\n')
+        {
+            clear_unnecessary();
+        }
+        if (*curr_char == '/' && peek() == '/')
+        {
+            // this is a comment and we can completely skip this
+            while (*curr_char == '/' && peek() == '/')
+                consume_comment();
+        }
+        if (eof)
+            break;
+        if (is_oper(*curr_char))
+        {
+            val.push_back(*curr_char);
+            consume();
+            // we don't have multi-character operators and so we can skip it as well
+            auto operkind = _iden_map_.find(val);
+            // operkind should be valid
+            token.type = (*operkind).second;
+        }
+        else if (is_alpha(*curr_char))
+        {
+            token = get_iden_or_keyword();
+        }
+        else if (is_num(*curr_char))
+        {
+            token = get_number();
+        }
+        else
+        {
+            invalid_token();
+        }
+        alltoks.push_back(token);
+    }
+    return alltoks;
+}

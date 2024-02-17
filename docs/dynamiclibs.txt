@@ -1,0 +1,25 @@
+Merry allows libararies to be loaded dynamically. The libararies are not a merry input file but a binary file
+containing machine code that the host can execute. This means that compiled C libararies can be loaded and
+used by Merry programs. This is not limited to just C but also with any programming language that doesn't
+have function overloading.
+
+To load a library, the dynl service interrupt can be used. The return value of the interrupt will be in the Ma
+register. A handle will be returned in the Mb register which can be used to access the functions from that
+loaded library. 
+To remove the library, the dynul service interrupt can be used. 
+
+Each dynamically loaded function will receive a pointer to a memory location from data memory through
+which it should be able to access its needed variables.
+
+The dyncall service interrupt will make the call.
+
+dynl:
+This interrupt requires an address to a null-terminated string in the memory.
+The address should be in the Ma register. The handle will be returned in the Mb register.
+
+dynul:
+The handle must be in the Mb register.
+
+dyncall:
+The handle must be in the Mb register. The address to the name of the function in the Ma
+register. The address to the parameter in the Mc register. 

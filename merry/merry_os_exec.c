@@ -7,7 +7,7 @@ _os_exec_(halt)
     // since the core's decoder won't mess with other fields of the core, we can freely make changes
     // _llog_(_OS_, "Request", " Fulfilling the halt request: Requester %d", request->id);
     os->cores[request->id]->stop_running = mtrue; // this will automatically halt the core's decoder as well
-    if (os->core_count == 1) // I am an idiot
+    if (os->core_count == 1)                      // I am an idiot
     {
         // we had only one core to begin with then stop any further execution
         os->stop = mtrue;
@@ -35,4 +35,47 @@ _os_exec_(new_core)
         // _llog_(_OS_, "Request", " Successfully Created a new core: Requester %d", request->id);
     }
     return RET_SUCCESS; // for now
+}
+
+_os_exec_(dynl)
+{
+    // the address to the name of the library must be in the Ma register
+    // if the name is not and it is invalidly placed, the host will throw a segfault
+    mbptr_t name = merry_dmemory_get_byte_address(os->data_mem, os->cores[request->id]->registers[Ma]);
+    if (name == RET_NULL)
+    {
+        merry_requestHdlr_panic(os->data_mem->error);
+        return RET_FAILURE;
+    }
+    if (merry_loader_loadLib(name, &os->cores[request->id]->registers[Mb]) == mfalse)
+    {
+        merry_requestHdlr_panic(MERRY_DYNL_FAILED);
+        return RET_FAILURE;
+    }
+    return RET_SUCCESS;
+}
+
+_MERRY_ALWAYS_INLINE_ _os_exec_(dynul)
+{
+    merry_loader_unloadLib(os->cores[request->id]->registers[Mb]);
+    return RET_SUCCESS;
+}
+
+_os_exec_(dyncall)
+{
+    dynfunc_t function;
+    mqptr_t param = merry_dmemory_get_qword_address(os->data_mem, os->cores[request->id]->registers[Mc]);
+    mbptr_t func_name = merry_dmemory_get_byte_address(os->data_mem, os->cores[request->id]->registers[Ma]);
+    if (param == NULL || func_name == NULL)
+    {
+        merry_requestHdlr_panic(MERRY_DYNCALL_FAILED);
+        return RET_FAILURE;
+    }
+    if ((function = merry_loader_getFuncSymbol(os->cores[request->id]->registers[Mb], func_name)) == RET_NULL)
+    {
+        merry_requestHdlr_panic(MERRY_DYNCALL_FAILED);
+        return RET_FAILURE;
+    }
+    os->cores[request->id]->registers[Ma] = function(param);
+    return RET_SUCCESS;
 }

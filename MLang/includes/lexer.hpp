@@ -189,6 +189,8 @@ namespace mlang
 
         Token lex();
 
+        std::vector<Token> lex_all();
+
         void invalid_token(std::string);
         void invalid_token();
     };

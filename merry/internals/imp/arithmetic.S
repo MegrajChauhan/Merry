@@ -7,65 +7,9 @@
 
 // void _update_flags_(MerryFlagRegister *reg)
 .global _update_flags_
-
-// mqword_t _add_inst_(mqword_t op1, mqword_t op2)
-.global _add_inst_
-// mqword_t _sub_inst_(mqword_t op1, mqword_t op2)
-.global _sub_inst_
-// mqword_t _mul_inst_(mqword_t op1, mqword_t op2)
-.global _mul_inst_
-// mqword_t _div_inst_(mqword_t op1, mqword_t op2)
-.global _div_inst_
-
-// mqword_t _imul_inst_(mqword_t op1, mqword_t op2)
-.global _imul_inst_
-// mqword_t _idiv_inst_(mqword_t op1, mqword_t op2)
-.global _idiv_inst_
-
-// void _cmp_inst_(mqword_t val1, mqword_t val2, MerryFlagRegister *reg)
+// void _cmp_inst_(mqword_t val1, mqword_t val2, struct MerryFlagRegsiter *reg)
 .global _cmp_inst_
 
-
-#if defined(_MERRY_HOST_OS_LINUX_)
-_add_inst_:
-    mov rax, rdi  // get the first operand
-    add rax, rsi  // add the second operand
-    ret            // return the result in rax 
-
-// same as add above but for other instructions
-_sub_inst_:
-    mov rax, rdi  // get the first operand
-    sub rax, rsi  // sub the second operand
-    ret            // return the result in rax 
-
-_mul_inst_:
-    mov rax, rdi  
-    mul rsi  
-    ret
-     
-_div_inst_:
-    mov rax, rdi  
-    div rax, rsi  
-    ret
-
-// same as unsigned
-
-_imul_inst_:
-    mov rax, rdi  
-    imul rax, rsi  
-    ret
-     
-_idiv_inst_:
-    mov rax, rdi  
-    idiv rax, rsi  
-    ret
-
-_cmp_inst_:
-    cmp rdi, rsi // since these registers contain the value
-    mov rdi, rdx // the flags register 
-    call _update_flags_
-    ret
-#endif
 
 #if defined(_MERRY_HOST_CPU_x86_64_ARCH_)
 _update_flags_:
@@ -73,4 +17,13 @@ _update_flags_:
    pop rax        // pop the flags
    mov [rdi], rax // save the values back such that we have the flags value
    ret
+
+#if defined(_MERRY_HOST_OS_LINUX_)
+_cmp_inst_:
+   cmp rdi, rsi
+   mov rdi, rdx
+   call _update_flags_
+   ret
+#endif
+
 #endif

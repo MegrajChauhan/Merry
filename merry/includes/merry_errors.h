@@ -18,6 +18,8 @@ enum
     MERRY_CALL_DEPTH_REACHED,      // reached the limit of function calls
     MERRY_INVALID_RETURN,          // invalid return instruction
     MERRY_INVALID_VARIABLE_ACCESS, // accessing variable in the wrong way on the stack
+    MERRY_DYNL_FAILED,             // failed to load library
+    MERRY_DYNCALL_FAILED,          // failed to make a function call
 };
 
 #endif
