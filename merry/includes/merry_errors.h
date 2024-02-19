@@ -20,6 +20,7 @@ enum
     MERRY_INVALID_VARIABLE_ACCESS, // accessing variable in the wrong way on the stack
     MERRY_DYNL_FAILED,             // failed to load library
     MERRY_DYNCALL_FAILED,          // failed to make a function call
+    MERRY_FILEHANDLE_NULL,         // performing operations on a NULL file
 };
 
 #endif

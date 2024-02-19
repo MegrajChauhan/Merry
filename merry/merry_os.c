@@ -227,15 +227,15 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
                         break;
                     case _REQ_READCHAR:
                         if (merry_read_char(os.data_mem, os.cores[current_req.id]->registers[Ma]) == RET_FAILURE)
-                            os.cores[current_req.id]->registers[Mb] = 1; // error
+                            os.cores[current_req.id]->registers[Ma] = 1; // error
                         else
-                            os.cores[current_req.id]->registers[Mb] = 0; // success
+                            os.cores[current_req.id]->registers[Ma] = 0; // success
                         break;
                     case _REQ_WRITECHAR:
                         if (merry_write_char(os.data_mem, os.cores[current_req.id]->registers[Ma]) == RET_FAILURE)
-                            os.cores[current_req.id]->registers[Mb] = 1; // error
+                            os.cores[current_req.id]->registers[Ma] = 1; // error
                         else
-                            os.cores[current_req.id]->registers[Mb] = 0; // success
+                            os.cores[current_req.id]->registers[Ma] = 0; // success
                         break;
                     case _REQ_DYNL:
                         merry_os_execute_request_dynl(&os, &current_req);
@@ -245,6 +245,21 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
                         break;
                     case _REQ_DYNCALL:
                         merry_os_execute_request_dyncall(&os, &current_req);
+                        break;
+                    case _REQ_FOPEN:
+                        merry_os_execute_request_fopen(&os, &current_req);
+                        break;
+                    case _REQ_FCLOSE:
+                        merry_os_execute_request_fclose(&os, &current_req);
+                        break;
+                    case _REQ_FREAD:
+                        merry_os_execute_request_fread(&os, &current_req);
+                        break;
+                    case _REQ_FWRITE:
+                        merry_os_execute_request_fwrite(&os, &current_req);
+                        break;
+                    case _REQ_FEOF:
+                        merry_os_execute_request_feof(&os, &current_req);
                         break;
                     default:
                         /// NOTE: this will come in handy when we implement some built-in syscalls and the program provides invalid syscalls
@@ -303,6 +318,9 @@ void merry_os_handle_error(merrot_t error)
         break;
     case MERRY_DYNCALL_FAILED:
         merry_general_error("Dynamic Call Failed", "The dynamic function call failed; Maybe the name was incorrect?");
+        break;
+    case MERRY_FILEHANDLE_NULL:
+        merry_general_error("Failed to perform file operations", "The file handle is NULL and trying to perform operations on a NULL handle is not a good idea.");
         break;
     default:
         merry_error("Unknown error code: '%llu' is not a valid error code", error);

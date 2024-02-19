@@ -60,6 +60,12 @@ enum
     _REQ_DYNL,          // load a library
     _REQ_DYNUL,         // unload a library
     _REQ_DYNCALL,       // call a function from the loaded libary
+    _REQ_FOPEN,         // open a file
+    _REQ_FCLOSE,        // close an opened file
+    _REQ_FREAD,         // read from a file
+    _REQ_FWRITE,        // write to a file
+    _REQ_FEOF,          // has the EOF been reached?
+    // other functions like fseek, ftell, rewind can be implemented using the above as the base in software
 };
 
 #endif

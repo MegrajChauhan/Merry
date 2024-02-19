@@ -370,9 +370,25 @@ future. For now here are the interrupt:
 Interrupt Number |               Details         
     151                 HALT: Causes the core that makes this request to exit. If only one core was running to begin with then the VM exits.
                         If the request causes the VM to stop, the requesting core's Ma register should contain the return value. The HALT instruction produces the same behaviour.
+    
     152                 EXIT: Causes the VM to exit. The same behaviour as HALT except every core running will be stopped and the VM exits. Just like 151, the requesting core's Ma register
                         must have the return value.
+    
     153                 NEW_CORE: Creates a new virtual core that can start running from the point specified by the program. The address for the new core to start executing from should be in the Ma
                         register of the requesting core. After the request is fulfilled, Ma of the requesting core will contain 1 if the request was a success otherwise it will contain 0. 
+    
+    154                 READCHAR: Reads a character from the console and stores it in the address specified in the Ma register. The return value for the operation is returned in the Ma register.
+                        1 indicating error and 0 indicating success.
 
-[New instructions not documented yet]
+    155                 WRITECHAR: Exactly the same as READCHAR except the character is read from the specified address and printed to the console as a character.
+
+    156                 DYNL: Dynamically load a library and use it's functionality. The address to the first character of the name of the library to be loaded must be in the Ma register.
+                        The name must be null terminated and the name is upto the HOST's convention. For eg: In Linux, even if the library to be loaded is in the same directory as the directory from
+                        where the program is being executed, the filename must be "./<filename>" otherwise it is not opened.
+                        A handle is returned in the Mb register that can be used to access the loaded library. Keep in mind that you shouldn't mess with the handle.
+
+    157                 DYNUL: Unload a library loaded using the DYNL service interrupt. The handle to the library must be provided in the Mb register.
+
+    158                 DYNCALL: Call a function from the dynamically loaded library. The address to the parameter of the function must be in the Mc register and the address to the first
+                        character of the function's name must be in the Ma register. Again, the name must be null terminated. The return value from the called function will be in Ma.
+                        
