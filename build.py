@@ -7,6 +7,7 @@
 # If you know how to write a build file in anything, you can do that. The order in which the source files should be compiled is in "compile.txt"
 import os
 import sys
+import platform
 # from cpuinfo import cpuinfo
 
 # def has_fpu():
@@ -42,8 +43,12 @@ def main():
     if not os.path.exists(destination_directory):
         os.makedirs(destination_directory)
 
-    with open("./compile.txt", "r") as read:
-        files_to_compile = read.readlines()
+    if platform.system() == 'Windows':
+      with open(".\compilewindows.txt", "r") as read:
+         files_to_compile = read.readlines()
+    else:
+      with open("./compile.txt", "r") as read:
+         files_to_compile = read.readlines()
     
     final_file = " "
 

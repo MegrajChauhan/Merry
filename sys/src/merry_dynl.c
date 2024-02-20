@@ -17,7 +17,7 @@ mbool_t merry_loader_init(msize_t initial_entry_count)
 void merry_loader_close()
 {
     // all the open library handles must be closed
-    // but for safety purposed, we will check
+    // but for safety purposes, we will check
     if (loader.closed_entry_count != loader.entry_count)
     {
         for (msize_t i = 0; i < loader.entry_count; i++)
@@ -26,6 +26,8 @@ void merry_loader_close()
             {
 #if defined(_USE_LINUX_)
                 dlclose(loader.entries[i].lib_handle);
+#elif defined(_USE_WIN_)
+                FreeLibrary(loader.entries[i].lib_handle);
 #endif
             }
         }
@@ -90,6 +92,10 @@ mbool_t merry_loader_loadLib(mstr_t lib_path, msize_t *handle)
     loader.entries[*handle].lib_handle = dlopen(lib_path, RTLD_NOW | RTLD_GLOBAL);
     if (loader.entries[*handle].lib_handle == NULL)
         return mfalse;
+#elif defined(_USE_WIN_)
+    loader.entries[*handle].lib_handle = LoadLibrary(TEXT(lib_path));
+    if (loader.entries[*handle].lib_handle == NULL)
+        return mfalse;
 #endif
     loader.entries[*handle].handle_open = mfalse; // this handle is closed now
     loader.closed_entry_count--;
@@ -107,6 +113,8 @@ void merry_loader_unloadLib(msize_t handle)
         return; // it is already closed
 #if defined(_USE_LINUX_)
     dlclose(loader.entries[handle].lib_handle);
+#elif defined(_USE_WIN_)
+    FreeLibrary(loader.entries[handle].lib_handle);
 #endif
     loader.entries[handle].handle_open = mtrue;
     loader.closed_entry_count++;
@@ -120,6 +128,8 @@ dynfunc_t merry_loader_getFuncSymbol(msize_t handle, mstr_t sym_name)
         return RET_NULL; // it is already closed
 #if defined(_USE_LINUX_)
     return (dynfunc_t)dlsym(loader.entries[handle].lib_handle, sym_name);
+#elif defined(_USE_WIN_)
+    return (dynfunc_t)GetProcAddress(loader.entries[handle].lib_handle, sym_name);
 #endif
     return RET_NULL;
 }

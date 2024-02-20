@@ -1,4 +1,9 @@
+#if defined(__linux) || defined(__linux__) || defined(__gnu_linux__)
 #include "merry/internals/merry.h"
+#else
+#include "merry\internals\merry.h" // for windows{Could have been better if a build system was used but whatever}
+#endif
+
 
 int main(int argc, char **argv)
 {

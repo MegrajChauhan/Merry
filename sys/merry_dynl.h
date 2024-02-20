@@ -8,6 +8,9 @@
 #if defined(_MERRY_HOST_OS_LINUX_)
 #define _USE_LINUX_
 #include <dlfcn.h> // for loading a library dynamically
+#elif defined(_MERRY_HOST_OS_WINDOWS_)
+#define _USE_WIN_
+#include <windows.h>
 #endif
 
 typedef struct MerryDynEntry MerryDynEntry;
@@ -18,8 +21,12 @@ _MERRY_DEFINE_FUNC_PTR_(mdword_t, dynfunc_t, mptr_t ptr)
 struct MerryDynEntry
 {
     char entry_name[255]; // the library's name or path
-    mptr_t lib_handle;    // the loaded library's handle
-    mbool_t handle_open;  // is the library open to use?
+#if defined(_USE_LINUX_)
+    mptr_t lib_handle; // the loaded library's handle
+#elif defined(_USE_WIN_)
+    HINSTANCE lib_handle;
+#endif
+    mbool_t handle_open; // is the library open to use?
 };
 
 struct MerryDynLoader
