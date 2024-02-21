@@ -1,2 +1,11 @@
-Hello World
-You are in my world
+;; This is a comment
+.data:
+msg: .string "Hello World!", 10 ;; this is a string
+strlen: db 13
+
+.text:
+proc main
+
+main:
+  mov Ma, 12345
+  halt

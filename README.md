@@ -15,7 +15,7 @@ Merry is  a 64-bit Virtual Machine that emulates a non-existsent CPU. Merry has 
 7. Floating point instructions(Untested).
 8. Assembler(In development).
 9. Programming Language(In development).  
-10. Dynamic Library Loading(For linux only).
+10. Dynamic Library Loading(tested for linux only).
 11. File IO(Not fully tested)
 and comming soon....
 
@@ -24,22 +24,18 @@ Merry is not fully tested right now and so it may not work as expected. Hence an
 
 # Building the VM:
 Due to my lack of knowledge in build systems, I have had to use a script written in Python for building. For building the project, here is the command to run:
-```
+```bash
 python build.py <Destination Folder> <Final Name of the executable; For now it can be anything>
 ```
 Note that the above command must be ran in the root directory of the project. If the directory doesn't exist already, create one first. The name of the executable can be anything for now but using **merry** is recommended.
 
 # Running Programs:
 In order to make merry run any program, first go into the directory where the compiled executable resides and type the following command:
-```
-./<exe name> -f <input file name>
+```bash
+./<exe name> -f <input file path>
 ```
 
 This will make merry read the input file and start executing it. 
 
 # Things to know:
 Merry is still in development and hence it is appreciated for feedback on test failures. Many features are yet to be implemented. 
-
-# Helper:
-The person who has helped in the project:
-- @luccie-cmd
