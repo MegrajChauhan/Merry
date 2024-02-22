@@ -66,16 +66,15 @@ namespace masm
             size_t line_num = 0;
             std::string file_contents;
             std::string::iterator curr_char;
+            std::string::iterator end;
             std::string filename;
-            bool eof = false;
 
             void consume()
             {
                 // this should consume the current character
                 // if the lexer has completely consumed the current line, it also needs to advance
-                if (curr_char == file_contents.end())
+                if (curr_char == end)
                 {
-                    eof = true;
                     return;
                 }
                 else
@@ -94,12 +93,12 @@ namespace masm
 
             void consume_comment()
             {
-                if (curr_char == file_contents.end())
+                if (curr_char == end)
                 {
                     return;
                 }
                 col_no = 0;
-                while (*curr_char != '\n' && curr_char != file_contents.end())
+                while (*curr_char != '\n' && curr_char != end)
                 {
                     curr_char++;
                 }
@@ -113,7 +112,7 @@ namespace masm
             void clear_unnecessary()
             {
                 // clear all unnecessary characters
-                while (std::isspace(static_cast<unsigned char>(*this->curr_char)) || *curr_char == '\n')
+                while ((curr_char != end) && (std::isspace(static_cast<int>(*this->curr_char)) || *curr_char == ','))
                 {
                     consume();
                 }
@@ -121,7 +120,7 @@ namespace masm
 
             char peek()
             {
-                if (curr_char != file_contents.end())
+                if (curr_char != end)
                     return *(curr_char + 1);
                 return '\0';
             }
