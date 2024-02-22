@@ -1,6 +1,6 @@
 ;; This is a comment
 .data:
-msg: .string "Hello World!", 10 ;; this is a string
+;; msg: .string "Hello World!", 10 ;; this is a string
 strlen: db 13
 
 .text:
