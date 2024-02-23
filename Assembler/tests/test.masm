@@ -8,4 +8,4 @@ proc main
 
 main:
   mov Ma, 12345
-  halt
+  hlt
