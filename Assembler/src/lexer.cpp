@@ -21,7 +21,7 @@ masm::lexer::Token masm::lexer::Lexer::lex()
 {
     Token token;
     std::string val;
-    if (std::isspace(static_cast<int>(*curr_char)) || *curr_char == ',')
+    if (should_skip((*curr_char)))
     {
         clear_unnecessary();
     }
@@ -31,7 +31,7 @@ masm::lexer::Token masm::lexer::Lexer::lex()
         while (*curr_char == ';' && peek() == ';')
             consume_comment();
     }
-    if (curr_char == (end))
+    if (curr_char == end || idx == (file_contents.length() - 1))
         return Token(_TT_EOF, "");
     if (is_oper(*curr_char))
     {
@@ -56,8 +56,6 @@ masm::lexer::Token masm::lexer::Lexer::lex()
     }
     else
     {
-        std::cout << *curr_char << std::endl;
-        std::cout << ((curr_char == file_contents.end())? "true": "false")<<std::endl;
         invalid_token();
     }
     return token;

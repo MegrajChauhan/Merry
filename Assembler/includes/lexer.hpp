@@ -68,6 +68,7 @@ namespace masm
             std::string::iterator curr_char;
             std::string::iterator end;
             std::string filename;
+            size_t idx = 0;
 
             void consume()
             {
@@ -84,10 +85,12 @@ namespace masm
                         col_no = 0;
                         line_num++;
                         curr_char++;
+                        idx++;
                         return;
                     }
                     col_no++;
                     curr_char++;
+                    idx++;
                 }
             }
 
@@ -101,18 +104,20 @@ namespace masm
                 while (*curr_char != '\n' && curr_char != end)
                 {
                     curr_char++;
+                    idx++;
                 }
                 if (curr_char == file_contents.end())
                     return;
                 curr_char++;
                 line_num++;
+                idx++;
                 clear_unnecessary();
             }
 
             void clear_unnecessary()
             {
                 // clear all unnecessary characters
-                while ((curr_char != end) && (std::isspace(static_cast<int>(*this->curr_char)) || *curr_char == ','))
+                while ((curr_char != end) && should_skip(*curr_char))
                 {
                     consume();
                 }

@@ -50,19 +50,16 @@ std::string masm::reader::Reader::read()
 {
     std::string file_contents;
     std::fstream file(file_name, std::ios::in); // should work
-
     file.seekg(std::ios_base::cur, std::ios_base::end);
     // get the file's length
-    size_t len = file.tellg();
+    std::streamsize len = file.tellg();
     // the temporary buffer
-    char buf[len];
     // rewind
     file.seekg(std::ios_base::beg); // go back to the beginning
     // read
-    file.read(buf, len);
+    file_contents.resize(len);
+    file.read(&file_contents[0], len);
     // store the contents
-    file_contents.assign(buf);
-
     file.close();
     return file_contents;
 }
