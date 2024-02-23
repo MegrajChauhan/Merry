@@ -100,6 +100,38 @@ void masm::lexer::Lexer::invalid_token()
     exit(EXIT_FAILURE); // this is a failure
 }
 
+void masm::lexer::Lexer::parse_err_whole_line(std::string msg)
+{
+    std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
+    std::cerr << std::filesystem::path(std::filesystem::current_path() / filename) << ":" << line_num + 1 << ":" << col_no << ":" << _CCODE_RESET;
+    std::cerr << " " << msg << std::endl;
+    std::cerr << "  " << line_num + 1 << "| " << get_current_line() << "\n";
+    std::cerr << "    ";
+    for (size_t i = 0; i <= (col_no); i++)
+    {
+        std::cerr << "^";
+    }
+    std::cerr << "\nAborting further compilation." << std::endl;
+    exit(EXIT_FAILURE);
+}
+
+void masm::lexer::Lexer::parse_err_expected_colon()
+{
+    std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
+    std::cerr << std::filesystem::path(std::filesystem::current_path() / filename) << ":" << line_num + 1 << ":" << col_no - 1 << ":" << _CCODE_RESET;
+    std::cerr << " "
+              << "Expected ':' after an identifier" << std::endl;
+    std::cerr << "  " << line_num + 1 << "| " << get_current_line() << "\n";
+    std::cerr << "    ";
+    for (size_t i = 0; i <= (col_no - 1); i++)
+    {
+        std::cerr << " ";
+    }
+    std::cerr << "^";
+    std::cerr << "\nAborting further compilation." << std::endl;
+    exit(EXIT_FAILURE);
+}
+
 std::vector<masm::lexer::Token> masm::lexer::Lexer::lex_all()
 {
     std::vector<Token> alltoks;

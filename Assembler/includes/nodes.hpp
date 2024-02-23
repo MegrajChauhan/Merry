@@ -52,10 +52,9 @@ namespace masm
 
         struct NodeDefByte
         {
-            std::string byte_val;  // the defined byte
+            size_t byte_val;       // the byte value
             std::string byte_name; // the variable name
             // everything is just a number so even characters will be interpreted as numbers at last
-            DataType type;
 
             NodeDefByte() {}
         };

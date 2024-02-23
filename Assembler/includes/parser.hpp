@@ -21,6 +21,12 @@ namespace masm
             lexer::Lexer lexer;
             CurrentSection section = _SECTION_NONE;
             std::vector<nodes::Node> nodes; // the parsed nodes
+            masm::lexer::Token curr_tok;
+
+            void next_token()
+            {
+                curr_tok = lexer.lex();
+            }
 
         public:
             Parser() = default;
@@ -29,6 +35,10 @@ namespace masm
 
             // setup by file path
             void setup_lexer(std::string);
+
+            // parse the entire file
+            // if error, terminate else keep parsing
+            void parse();
         };
     };
 };
