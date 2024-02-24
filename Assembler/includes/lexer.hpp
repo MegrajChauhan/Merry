@@ -200,9 +200,11 @@ namespace masm
             void invalid_token();
 
             void parse_err_whole_line(std::string);
-            void parse_err_expected_colon();
+            void parse_err_expected_colon(std::string);
 
             void parse_err_previous_token(std::string, std::string);
+
+            void parse_error(std::string);
         };
     };
 };

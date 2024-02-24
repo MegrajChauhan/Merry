@@ -28,7 +28,7 @@ void masm::parser::Parser::parse()
             next_token();
             if (curr_tok.type != lexer::_TT_OPER_COLON)
             {
-                lexer.parse_err_expected_colon();
+                lexer.parse_err_expected_colon("after \'.data\'");
             }
             if (section == _SECTION_DATA)
             {
@@ -43,7 +43,7 @@ void masm::parser::Parser::parse()
             next_token();
             if (curr_tok.type != lexer::_TT_OPER_COLON)
             {
-                lexer.parse_err_expected_colon();
+                lexer.parse_err_expected_colon("after \'.text\'");
             }
             if (section == _SECTION_TEXT)
             {
@@ -58,6 +58,16 @@ void masm::parser::Parser::parse()
             handle_identifier();
             break;
         }
+        case lexer::_TT_KEY_PROC:
+        {
+            if (section != _SECTION_TEXT)
+            {
+                lexer.parse_error("Declaring a procedure in the data section is not allowed");
+                break;
+            }
+            handle_proc_declaration();
+            break;
+        }
         }
         next_token();
     }
@@ -70,7 +80,7 @@ void masm::parser::Parser::handle_identifier()
 
     if (curr_tok.type != lexer::_TT_OPER_COLON)
     {
-        lexer.parse_err_expected_colon();
+        lexer.parse_err_expected_colon("after an identifier");
         return;
     }
 
@@ -79,8 +89,14 @@ void masm::parser::Parser::handle_identifier()
     switch (curr_tok.type)
     {
     case lexer::_TT_KEY_DB:
+    {
+        if (section != _SECTION_DATA)
+        {
+            lexer.parse_error("Defining variables in the text section is not allowed");
+        }
         handle_definebyte(name);
         break;
+    }
     }
 }
 
@@ -93,13 +109,28 @@ void masm::parser::Parser::handle_definebyte(std::string name)
         lexer.parse_err_previous_token(curr_tok.value, std::string("Expected a number, got ") + curr_tok.value + " instead.");
     }
     nodes::Node node;
-
     node.type = nodes::_TYPE_DATA;
     node.kind = nodes::_DEF_BYTE;
     node.ptr = std::make_unique<nodes::NodeDefByte>();
     auto temp = (nodes::NodeDefByte *)node.ptr.get();
     temp->byte_name = name;
     temp->byte_val = (unsigned char)(std::stoll(curr_tok.value));
+    nodes.push_back(node);
+}
+
+void masm::parser::Parser::handle_proc_declaration()
+{
+    next_token();
+    if (curr_tok.type != lexer::_TT_IDENTIFIER)
+    {
+        lexer.parse_error("Expected a procedure name after the 'proc' keyword");
+    }
+    nodes::Node node;
+    node.type = nodes::_TYPE_INST;
+    node.kind = nodes::_PROC_DECLR;
+    node.ptr = std::make_unique<nodes::NodeProcDeclr>();
+    auto temp = (nodes::NodeProcDeclr *)node.ptr.get();
+    temp->proc_name = curr_tok.value;
     nodes.push_back(node);
 }
 

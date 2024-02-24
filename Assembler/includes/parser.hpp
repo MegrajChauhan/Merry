@@ -45,6 +45,8 @@ namespace masm
             void handle_identifier();
 
             void handle_definebyte(std::string);
+
+            void handle_proc_declaration();
         };
     };
 };

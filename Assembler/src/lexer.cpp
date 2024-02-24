@@ -105,48 +105,35 @@ void masm::lexer::Lexer::parse_err_whole_line(std::string msg)
     std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
     std::cerr << std::filesystem::path(std::filesystem::current_path() / filename) << ":" << line_num + 1 << ":" << col_no << ":" << _CCODE_RESET;
     std::cerr << " " << msg << std::endl;
-    std::cerr << "  " << line_num + 1 << "| " << get_current_line() << "\n";
-    std::cerr << "    ";
-    for (size_t i = 0; i <= (col_no); i++)
-    {
-        std::cerr << "^";
-    }
-    std::cerr << "\nAborting further compilation." << std::endl;
+    std::cerr << "Aborting further compilation." << std::endl;
     exit(EXIT_FAILURE);
 }
 
-void masm::lexer::Lexer::parse_err_expected_colon()
+void masm::lexer::Lexer::parse_err_expected_colon(std::string msg)
 {
     std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
     std::cerr << std::filesystem::path(std::filesystem::current_path() / filename) << ":" << line_num + 1 << ":" << col_no - 1 << ":" << _CCODE_RESET;
     std::cerr << " "
-              << "Expected ':' after an identifier" << std::endl;
-    std::cerr << "  " << line_num + 1 << "| " << get_current_line() << "\n";
-    std::cerr << "    ";
-    for (size_t i = 0; i <= (col_no - 1); i++)
-    {
-        std::cerr << " ";
-    }
-    std::cerr << "^";
-    std::cerr << "\nAborting further compilation." << std::endl;
+              << "Expected ':'" << msg << std::endl;
+    std::cerr << "Aborting further compilation." << std::endl;
     exit(EXIT_FAILURE);
 }
 
 void masm::lexer::Lexer::parse_err_previous_token(std::string prev_tok, std::string msg)
 {
-    col_no -= prev_tok.length();
     std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
     std::cerr << std::filesystem::path(std::filesystem::current_path() / filename) << ":" << line_num + 1 << ":" << col_no - 1 << ":" << _CCODE_RESET;
     std::cerr << " " << msg << std::endl;
-    std::cerr << "  " << line_num + 1 << "| " << get_current_line() << "\n";
-    std::cerr << "    ";
-    for (size_t i = 0; i <= (col_no - 1); i++)
-    {
-        std::cerr << " ";
-    }
-    for (size_t i = 0; i < prev_tok.length(); i++)
-        std::cerr << "^";
-    std::cerr << "\nAborting further compilation." << std::endl;
+    std::cerr << "Aborting further compilation." << std::endl;
+    exit(EXIT_FAILURE);
+}
+
+void masm::lexer::Lexer::parse_error(std::string msg)
+{
+    std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
+    std::cerr << std::filesystem::path(std::filesystem::current_path() / filename) << ":" << line_num + 1 << ":" << col_no - 1 << ":" << _CCODE_RESET;
+    std::cerr << " " << msg << std::endl;
+    std::cerr << "Aborting further compilation." << std::endl;
     exit(EXIT_FAILURE);
 }
 
