@@ -132,6 +132,24 @@ void masm::lexer::Lexer::parse_err_expected_colon()
     exit(EXIT_FAILURE);
 }
 
+void masm::lexer::Lexer::parse_err_previous_token(std::string prev_tok, std::string msg)
+{
+    col_no -= prev_tok.length();
+    std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
+    std::cerr << std::filesystem::path(std::filesystem::current_path() / filename) << ":" << line_num + 1 << ":" << col_no - 1 << ":" << _CCODE_RESET;
+    std::cerr << " " << msg << std::endl;
+    std::cerr << "  " << line_num + 1 << "| " << get_current_line() << "\n";
+    std::cerr << "    ";
+    for (size_t i = 0; i <= (col_no - 1); i++)
+    {
+        std::cerr << " ";
+    }
+    for (size_t i = 0; i < prev_tok.length(); i++)
+        std::cerr << "^";
+    std::cerr << "\nAborting further compilation." << std::endl;
+    exit(EXIT_FAILURE);
+}
+
 std::vector<masm::lexer::Token> masm::lexer::Lexer::lex_all()
 {
     std::vector<Token> alltoks;

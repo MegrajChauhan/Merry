@@ -39,6 +39,12 @@ namespace masm
             // parse the entire file
             // if error, terminate else keep parsing
             void parse();
+
+            std::vector<nodes::Node> get_nodes();
+
+            void handle_identifier();
+
+            void handle_definebyte(std::string);
         };
     };
 };

@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 
 namespace masm
 {
@@ -50,50 +51,82 @@ namespace masm
             Mm5,
         };
 
-        struct NodeDefByte
+        // Define base class
+        struct Base
+        {
+            virtual ~Base() {} // Make the base class polymorphic with a virtual destructor
+        };
+
+        // Define derived classes for each node type
+        struct NodeDefByte : public Base
         {
             size_t byte_val;       // the byte value
             std::string byte_name; // the variable name
-            // everything is just a number so even characters will be interpreted as numbers at last
 
-            NodeDefByte() {}
+            NodeDefByte() : byte_val(0) {} // Initialize byte_val to 0 by default
         };
 
-        struct NodeProcDeclr
+        struct NodeProcDeclr : public Base
         {
             std::string proc_name; // the proc's name
+
+            NodeProcDeclr() {} // Default constructor
         };
 
-        struct NodeLabel
+        struct NodeLabel : public Base
         {
             std::string label_name;
+
+            NodeLabel() {} // Default constructor
         };
 
-        struct NodeInstMovRegImm
+        struct NodeInstMovRegImm : public Base
         {
             Registers dest_regr; // destination register
             std::string value;   // the value of to move
             // the data type is most likely INT or NUM
+
+            NodeInstMovRegImm() {} // Default constructor
         };
 
-        union Details
-        {
-            NodeDefByte def_byte;
-            NodeProcDeclr proc_declr;
-            NodeLabel label;
-            NodeInstMovRegImm inst_mov_reg_imm;
-
-            Details() : def_byte() {}
-
-            ~Details() {}
-        };
-
+        // Define struct Node to hold a pointer to Base
         struct Node
         {
             NodeType type; // where this node is from
             NodeKind kind;
-            Details details;
-            Node() : details() {}
+            std::unique_ptr<Base> ptr;
+
+            Node() {}
+
+            Node(NodeType t, NodeKind k, std::unique_ptr<Base> p) : type(t), kind(k), ptr(std::move(p)) {}
+
+            // Copy constructor
+            Node(const Node &node) : type(node.type), kind(node.kind)
+            {
+                if (node.ptr)
+                {
+                    ptr = std::make_unique<Base>(*node.ptr);
+                }
+            }
+
+            // Assignment operator
+            Node &operator=(const Node &node)
+            {
+                if (this != &node)
+                {
+                    type = node.type;
+                    kind = node.kind;
+                    if (node.ptr)
+                    {
+                        ptr = std::make_unique<Base>(*node.ptr);
+                    }
+                    else
+                    {
+                        ptr.reset();
+                    }
+                }
+                return *this;
+            }
         };
     };
 };

@@ -201,6 +201,8 @@ namespace masm
 
             void parse_err_whole_line(std::string);
             void parse_err_expected_colon();
+
+            void parse_err_previous_token(std::string, std::string);
         };
     };
 };
