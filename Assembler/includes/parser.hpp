@@ -22,6 +22,7 @@ namespace masm
             CurrentSection section = _SECTION_NONE;
             std::vector<nodes::Node> nodes; // the parsed nodes
             masm::lexer::Token curr_tok;
+            bool encountered_text = false; // test if there is no text section cause there must be
 
             void next_token()
             {

@@ -81,10 +81,10 @@ namespace masm
         // Define derived classes for each node type
         struct NodeDefByte : public Base
         {
-            size_t byte_val;       // the byte value
+            std::string byte_val;       // the byte value
             std::string byte_name; // the variable name
 
-            NodeDefByte() : byte_val(0) {} // Initialize byte_val to 0 by default
+            NodeDefByte() {} // Initialize byte_val to 0 by default
         };
 
         struct NodeProcDeclr : public Base

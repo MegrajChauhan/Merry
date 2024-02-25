@@ -36,6 +36,7 @@ void masm::parser::Parser::parse()
                 break; // should not reach this point
             }
             section = _SECTION_DATA;
+            next_token();
             break;
         }
         case lexer::_TT_SECTION_TEXT:
@@ -51,11 +52,15 @@ void masm::parser::Parser::parse()
                 break; // should not reach this point
             }
             section = _SECTION_TEXT;
+            encountered_text = true;
+            next_token();
             break;
         }
         case lexer::_TT_IDENTIFIER:
         {
             handle_identifier();
+            if (nodes.back().kind != nodes::NodeKind::_LABEL)
+                next_token();
             break;
         }
         case lexer::_TT_KEY_PROC:
@@ -66,6 +71,7 @@ void masm::parser::Parser::parse()
                 break;
             }
             handle_proc_declaration();
+            next_token();
             break;
         }
         case lexer::_TT_INST_HLT:
@@ -76,6 +82,7 @@ void masm::parser::Parser::parse()
                 break;
             }
             nodes.push_back(nodes::Node(nodes::_TYPE_INST, nodes::_INST_HLT, std::make_unique<nodes::Base>()));
+            next_token();
             break;
         }
         case lexer::_TT_INST_MOV:
@@ -86,6 +93,7 @@ void masm::parser::Parser::parse()
                 break;
             }
             handle_inst_mov();
+            next_token();
             break;
         }
         default:
@@ -94,7 +102,11 @@ void masm::parser::Parser::parse()
                 "Expected an identifier name or a keyword");
         }
         }
-        next_token();
+    }
+    if (!encountered_text)
+    {
+        std::cerr << "Parse Error: The input contains no text section which is not allowed." << std::endl;
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -209,7 +221,7 @@ void masm::parser::Parser::handle_definebyte(std::string name)
     node.ptr = std::make_unique<nodes::NodeDefByte>();
     auto temp = (nodes::NodeDefByte *)node.ptr.get();
     temp->byte_name = name;
-    temp->byte_val = (unsigned char)(std::stoll(curr_tok.value));
+    temp->byte_val = curr_tok.value;
     nodes.push_back(node);
 }
 

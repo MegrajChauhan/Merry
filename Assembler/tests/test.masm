@@ -8,4 +8,6 @@ proc main
 
 main:
   mov Ma, 12345
+  mov Mb, strlen
+  mov Mc, Ma
   hlt
