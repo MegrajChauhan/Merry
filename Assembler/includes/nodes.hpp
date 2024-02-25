@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <unordered_map>
 
 namespace masm
 {
@@ -28,6 +29,7 @@ namespace masm
             _PROC_DECLR, // procedure declaration
             _LABEL,      // A label[Unless semantically verified even procedure definition is a label]
             _INST_MOV_REG_IMM,
+            _INST_MOV_REG_REG,
             _INST_HLT, // this doesn't need its own structure
         };
 
@@ -49,6 +51,25 @@ namespace masm
             Mm3,
             Mm4,
             Mm5,
+        };
+
+        static std::unordered_map<std::string, Registers> _regr_iden_map = {
+            {"Ma", Ma},
+            {"Mb", Mb},
+            {"Mc", Mc},
+            {"Md", Md},
+            {"Me", Me},
+            {"Mf", Mf},
+            {"M1", M1},
+            {"M2", M2},
+            {"M3", M3},
+            {"M4", M4},
+            {"M5", M5},
+            {"Mm1", Mm1},
+            {"Mm2", Mm2},
+            {"Mm3", Mm3},
+            {"Mm4", Mm4},
+            {"Mm5", Mm5},
         };
 
         // Define base class
@@ -82,11 +103,21 @@ namespace masm
 
         struct NodeInstMovRegImm : public Base
         {
+            bool is_iden = false; // interpret value as a variable name 
             Registers dest_regr; // destination register
-            std::string value;   // the value of to move
+            std::string value; // the value of to move
             // the data type is most likely INT or NUM
 
             NodeInstMovRegImm() {} // Default constructor
+        };
+
+        struct NodeInstMovRegReg : public Base
+        {
+            Registers dest_regr; // destination register
+            Registers src_reg;   // the source register
+            // the data type is most likely INT or NUM
+
+            NodeInstMovRegReg() {} // Default constructor
         };
 
         // Define struct Node to hold a pointer to Base

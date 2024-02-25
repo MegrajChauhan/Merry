@@ -6,6 +6,6 @@ strlen: db 13
 .text:
 proc main
 
-;;main:
-  ;;mov Ma, 12345
-  ;;hlt
+main:
+  mov Ma, 12345
+  hlt

@@ -47,6 +47,10 @@ namespace masm
             void handle_definebyte(std::string);
 
             void handle_proc_declaration();
+
+            void handle_label(std::string);
+
+            void handle_inst_mov();
         };
     };
 };

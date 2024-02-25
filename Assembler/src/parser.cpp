@@ -68,9 +68,88 @@ void masm::parser::Parser::parse()
             handle_proc_declaration();
             break;
         }
+        case lexer::_TT_INST_HLT:
+        {
+            if (section != _SECTION_TEXT)
+            {
+                lexer.parse_error("Using instructions in the data section is not allowed");
+                break;
+            }
+            nodes.push_back(nodes::Node(nodes::_TYPE_INST, nodes::_INST_HLT, std::make_unique<nodes::Base>()));
+            break;
+        }
+        case lexer::_TT_INST_MOV:
+        {
+            if (section != _SECTION_TEXT)
+            {
+                lexer.parse_error("Using instructions in the data section is not allowed");
+                break;
+            }
+            handle_inst_mov();
+            break;
+        }
+        default:
+        {
+            lexer.parse_error(
+                "Expected an identifier name or a keyword");
+        }
         }
         next_token();
     }
+}
+
+void masm::parser::Parser::handle_inst_mov()
+{
+    // We have to identify what the variant is
+    next_token();
+    // This must be a register no matter what
+    auto regr = nodes::_regr_iden_map.find(curr_tok.value);
+    if (curr_tok.type != lexer::_TT_IDENTIFIER || regr == nodes::_regr_iden_map.end())
+    {
+        lexer.parse_error("Expected register name after 'mov' instruction.");
+    }
+    next_token();
+    nodes::Node node;
+    node.type = nodes::NodeType::_TYPE_INST;
+    if (curr_tok.type == lexer::_TT_IDENTIFIER)
+    {
+        // then it could be a mov reg, reg
+        // or it could be a variable as well
+        auto iden2 = nodes::_regr_iden_map.find(curr_tok.value);
+        if (iden2 == nodes::_regr_iden_map.end())
+        {
+            // it is a variable name
+            node.kind = nodes::NodeKind::_INST_MOV_REG_IMM;
+            node.ptr = std::make_unique<nodes::NodeInstMovRegImm>();
+            auto temp = (nodes::NodeInstMovRegImm *)node.ptr.get();
+            temp->is_iden = true;
+            temp->dest_regr = regr->second;
+            temp->value = curr_tok.value;
+        }
+        else
+        {
+            node.kind = nodes::NodeKind::_INST_MOV_REG_REG;
+            node.ptr = std::make_unique<nodes::NodeInstMovRegReg>();
+            auto temp = (nodes::NodeInstMovRegReg *)node.ptr.get();
+            temp->src_reg = iden2->second;
+            temp->dest_regr = regr->second;
+        }
+    }
+    else if (curr_tok.type == lexer::_TT_INT)
+    {
+        // then we have an immediate here
+        // in future based on the size of the number, we could encode mov64 instruction
+        node.kind = nodes::NodeKind::_INST_MOV_REG_IMM;
+        node.ptr = std::make_unique<nodes::NodeInstMovRegImm>();
+        auto temp = (nodes::NodeInstMovRegImm *)node.ptr.get();
+        temp->dest_regr = regr->second;
+        temp->value = curr_tok.value;
+    }
+    else
+    {
+        lexer.parse_error("Expected an immediate value, register or a variable name.");
+    }
+    nodes.push_back(node);
 }
 
 void masm::parser::Parser::handle_identifier()
@@ -83,7 +162,6 @@ void masm::parser::Parser::handle_identifier()
         lexer.parse_err_expected_colon("after an identifier");
         return;
     }
-
     next_token();
 
     switch (curr_tok.type)
@@ -97,7 +175,24 @@ void masm::parser::Parser::handle_identifier()
         handle_definebyte(name);
         break;
     }
+    default:
+    {
+        // this is a label
+        handle_label(name);
+        break;
     }
+    }
+}
+
+void masm::parser::Parser::handle_label(std::string label_name)
+{
+    nodes::Node node;
+    node.type = nodes::_TYPE_INST;
+    node.kind = nodes::_LABEL;
+    node.ptr = std::make_unique<nodes::NodeLabel>();
+    auto temp = (nodes::NodeLabel *)node.ptr.get();
+    temp->label_name = label_name;
+    nodes.push_back(node);
 }
 
 void masm::parser::Parser::handle_definebyte(std::string name)
@@ -133,41 +228,6 @@ void masm::parser::Parser::handle_proc_declaration()
     temp->proc_name = curr_tok.value;
     nodes.push_back(node);
 }
-
-// {
-//     nodes::Node curr_node;
-//         case lexer::_TT_IDENTIFIER:
-//         {
-//             std::string name = curr_tok.value;
-//             next_token();
-//             if (curr_tok.type != lexer::_TT_OPER_COLON)
-//             {
-//                 // there must be a colon here
-//                 lexer.parse_err_expected_colon();
-//             }
-//             next_token();
-//             switch (curr_tok.type)
-//             {
-//             case lexer::_TT_KEY_DB:
-//             {
-//                 // then this is a define byte line where a byte is being defined
-//                 // the next token must be a byte value
-//                 next_token();
-//                 curr_node.type = nodes::_TYPE_DATA;
-//                 curr_node.kind = nodes::_DEF_BYTE;
-//                 curr_node.details.def_byte.byte_name = name;
-//                 curr_node.details.def_byte.byte_val = static_cast<unsigned char>(std::stoul(curr_tok.value));
-//                 next_token();
-//                 break;
-//             }
-//             }
-//             break;
-//         }
-//         }
-//         nodes.push_back(curr_node);
-//         next_token();
-//     }
-// }
 
 std::vector<masm::nodes::Node> masm::parser::Parser::get_nodes()
 {
