@@ -16,14 +16,23 @@ namespace masm
     {
         class Sema
         {
-            std::vector<nodes::Node> nodes; // the parsed nodes
-            symtable::SymTable symtable;    // the symbol table
+            std::vector<nodes::Node> nodes;      // the parsed nodes
+            std::vector<nodes::Node> inst_nodes; // the instruction nodes
+            symtable::SymTable symtable;         // the symbol table
+            std::filesystem::path filepath;
+
         public:
             Sema() = default;
 
             Sema(std::vector<nodes::Node>);
 
             Sema(parser::Parser);
+
+            void set_path(std::filesystem::path);
+
+            void analyse();
+
+            void analysis_error(size_t, std::string);
         };
     };
 };

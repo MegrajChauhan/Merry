@@ -81,7 +81,7 @@ namespace masm
         // Define derived classes for each node type
         struct NodeDefByte : public Base
         {
-            std::string byte_val;       // the byte value
+            std::string byte_val;  // the byte value
             std::string byte_name; // the variable name
 
             NodeDefByte() {} // Initialize byte_val to 0 by default
@@ -103,9 +103,9 @@ namespace masm
 
         struct NodeInstMovRegImm : public Base
         {
-            bool is_iden = false; // interpret value as a variable name 
-            Registers dest_regr; // destination register
-            std::string value; // the value of to move
+            bool is_iden = false; // interpret value as a variable name
+            Registers dest_regr;  // destination register
+            std::string value;    // the value of to move
             // the data type is most likely INT or NUM
 
             NodeInstMovRegImm() {} // Default constructor
@@ -126,13 +126,14 @@ namespace masm
             NodeType type; // where this node is from
             NodeKind kind;
             std::unique_ptr<Base> ptr;
+            size_t line;
 
             Node() {}
 
-            Node(NodeType t, NodeKind k, std::unique_ptr<Base> p) : type(t), kind(k), ptr(std::move(p)) {}
+            Node(NodeType t, NodeKind k, std::unique_ptr<Base> p, size_t pos = 0) : type(t), kind(k), ptr(std::move(p)), line(pos) {}
 
             // Copy constructor
-            Node(const Node &node) : type(node.type), kind(node.kind)
+            Node(const Node &node) : type(node.type), kind(node.kind), line(node.line)
             {
                 if (node.ptr)
                 {
@@ -147,6 +148,7 @@ namespace masm
                 {
                     type = node.type;
                     kind = node.kind;
+                    line = node.line;
                     if (node.ptr)
                     {
                         ptr = std::make_unique<Base>(*node.ptr);

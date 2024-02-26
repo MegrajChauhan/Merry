@@ -5,9 +5,30 @@ strlen: db 13
 
 .text:
 proc main
+proc add
 
+;; expect the first number in Ma register and second number in Mb register
+add:
+  add Ma, Mb
+  ret
+ 
 main:
   mov Ma, 12345
   mov Mb, strlen
   mov Mc, Ma
-  hlt
+  call add
+  hlt ;; we use halt here because this is what ultimately stops the program so there is no point in having a ret here
+
+;; Here is how thing go
+;; The assembler looks for the main procedure by default
+;; The first instruction in the main procedure is the very first instruction that will be executed
+;; What if there are more procedures before the main procedure?
+;; In this case, the procedures will be moved to the very end
+;; They will still be callable
+;; The same for labels as well
+
+;; In the given example, even though add is before main, in the final binary, it will be at
+;; the very last. Merry doesn't support anything like providing entry point.
+;; Though it could be added, it introduces problems and new ways for people to exploit 
+;; the programs and so the very first instruction at address 0 is the very first instruction executed.
+;; If no branches are present then the execution is straightforward

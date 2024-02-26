@@ -68,6 +68,7 @@ namespace masm
             std::string::iterator curr_char;
             std::string::iterator end;
             std::string filename;
+            std::filesystem::path path;
             size_t idx = 0;
 
             void consume()
@@ -193,6 +194,10 @@ namespace masm
             bool setup_reader(std::string);
 
             Token lex();
+
+            size_t get_curr_line() { return line_num; }
+
+            auto get_path() { return path; }
 
             std::vector<Token> lex_all();
 

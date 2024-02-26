@@ -161,6 +161,7 @@ void masm::parser::Parser::handle_inst_mov()
     {
         lexer.parse_error("Expected an immediate value, register or a variable name.");
     }
+    node.line = lexer.get_curr_line();
     nodes.push_back(node);
 }
 
@@ -204,6 +205,7 @@ void masm::parser::Parser::handle_label(std::string label_name)
     node.ptr = std::make_unique<nodes::NodeLabel>();
     auto temp = (nodes::NodeLabel *)node.ptr.get();
     temp->label_name = label_name;
+    node.line = lexer.get_curr_line();
     nodes.push_back(node);
 }
 
@@ -222,6 +224,7 @@ void masm::parser::Parser::handle_definebyte(std::string name)
     auto temp = (nodes::NodeDefByte *)node.ptr.get();
     temp->byte_name = name;
     temp->byte_val = curr_tok.value;
+    node.line = lexer.get_curr_line();
     nodes.push_back(node);
 }
 
@@ -238,6 +241,7 @@ void masm::parser::Parser::handle_proc_declaration()
     node.ptr = std::make_unique<nodes::NodeProcDeclr>();
     auto temp = (nodes::NodeProcDeclr *)node.ptr.get();
     temp->proc_name = curr_tok.value;
+    node.line = lexer.get_curr_line();
     nodes.push_back(node);
 }
 

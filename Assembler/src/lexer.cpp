@@ -8,6 +8,7 @@ bool masm::lexer::Lexer::setup_reader(std::string filename)
     curr_char = file_contents.begin();
     end = file_contents.end();
     this->filename = filename;
+    path = std::filesystem::current_path() / filename;
     return true;
 }
 
@@ -64,7 +65,7 @@ masm::lexer::Token masm::lexer::Lexer::lex()
 void masm::lexer::Lexer::invalid_token(std::string read)
 {
     std::cerr << "While " << _CCODE_BOLD << "Lexing:\n";
-    std::cerr << std::filesystem::path(std::filesystem::current_path() / filename) << ":" << line_num + 1 << ":" << col_no << ":" << _CCODE_RESET;
+    std::cerr << path << ":" << line_num + 1 << ":" << col_no << ":" << _CCODE_RESET;
     std::cerr << " Invalid token received: \n"; // we could add "expected" to make the error more informative
     // PosDetail detail = extract_word(current_line, curr_char);
     std::cerr << "  " << line_num + 1 << "| " << get_current_line() << "\n";
@@ -86,7 +87,7 @@ void masm::lexer::Lexer::invalid_token(std::string read)
 void masm::lexer::Lexer::invalid_token()
 {
     std::cerr << "While " << _CCODE_BOLD << "Lexing:\n";
-    std::cerr << std::filesystem::path(std::filesystem::current_path() / filename) << ":" << line_num + 1 << ":" << col_no << ":" << _CCODE_RESET;
+    std::cerr << path << ":" << line_num + 1 << ":" << col_no << ":" << _CCODE_RESET;
     std::cerr << " Invalid token received: \n"; // we could add "expected" to make the error more informative
     // PosDetail detail = extract_word(current_line, curr_char);
     std::cerr << "  " << line_num + 1 << "| " << get_current_line() << "\n";
@@ -103,7 +104,7 @@ void masm::lexer::Lexer::invalid_token()
 void masm::lexer::Lexer::parse_err_whole_line(std::string msg)
 {
     std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
-    std::cerr << std::filesystem::path(std::filesystem::current_path() / filename) << ":" << line_num + 1 << ":" << col_no << ":" << _CCODE_RESET;
+    std::cerr << path << ":" << line_num + 1 << ":" << col_no << ":" << _CCODE_RESET;
     std::cerr << " " << msg << std::endl;
     std::cerr << "Aborting further compilation." << std::endl;
     exit(EXIT_FAILURE);
@@ -112,7 +113,7 @@ void masm::lexer::Lexer::parse_err_whole_line(std::string msg)
 void masm::lexer::Lexer::parse_err_expected_colon(std::string msg)
 {
     std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
-    std::cerr << std::filesystem::path(std::filesystem::current_path() / filename) << ":" << line_num + 1 << ":" << col_no - 1 << ":" << _CCODE_RESET;
+    std::cerr << path << ":" << line_num + 1 << ":" << col_no - 1 << ":" << _CCODE_RESET;
     std::cerr << " "
               << "Expected ':'" << msg << std::endl;
     std::cerr << "Aborting further compilation." << std::endl;
@@ -122,7 +123,7 @@ void masm::lexer::Lexer::parse_err_expected_colon(std::string msg)
 void masm::lexer::Lexer::parse_err_previous_token(std::string prev_tok, std::string msg)
 {
     std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
-    std::cerr << std::filesystem::path(std::filesystem::current_path() / filename) << ":" << line_num + 1 << ":" << col_no - 1 << ":" << _CCODE_RESET;
+    std::cerr << path << ":" << line_num + 1 << ":" << col_no - 1 << ":" << _CCODE_RESET;
     std::cerr << " " << msg << std::endl;
     std::cerr << "Aborting further compilation." << std::endl;
     exit(EXIT_FAILURE);
@@ -131,7 +132,7 @@ void masm::lexer::Lexer::parse_err_previous_token(std::string prev_tok, std::str
 void masm::lexer::Lexer::parse_error(std::string msg)
 {
     std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
-    std::cerr << std::filesystem::path(std::filesystem::current_path() / filename) << ":" << line_num + 1 << ":" << col_no - 1 << ":" << _CCODE_RESET;
+    std::cerr << path << ":" << line_num + 1 << ":" << col_no - 1 << ":" << _CCODE_RESET;
     std::cerr << " " << msg << std::endl;
     std::cerr << "Aborting further compilation." << std::endl;
     exit(EXIT_FAILURE);
