@@ -20,7 +20,7 @@ namespace masm
         {
             lexer::Lexer lexer;
             CurrentSection section = _SECTION_NONE;
-            std::vector<nodes::Node> nodes; // the parsed nodes
+            std::vector<std::unique_ptr<nodes::Node>> nodes; // the parsed nodes
             masm::lexer::Token curr_tok;
             bool encountered_text = false; // test if there is no text section cause there must be
 
@@ -41,7 +41,9 @@ namespace masm
             // if error, terminate else keep parsing
             void parse();
 
-            std::vector<nodes::Node> get_nodes();
+            void move_nodes(std::vector<std::unique_ptr<nodes::Node>>&);
+
+            auto get_path(){return lexer.get_path();}
 
             void handle_identifier();
 

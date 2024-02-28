@@ -15,7 +15,7 @@ std::unordered_map<std::string, masm::symtable::SymTableEntry>::iterator masm::s
     return symtable.find(key);
 }
 
-bool masm::symtable::SymTable::is_valid(std::unordered_map<std::string, SymTableEntry>::iterator iter)
+bool masm::symtable::SymTable::is_invalid(std::unordered_map<std::string, SymTableEntry>::iterator iter)
 {
-    return iter == symtable.end();
+    return !(iter == symtable.end());
 }

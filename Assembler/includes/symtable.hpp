@@ -43,7 +43,7 @@ namespace masm
 
             std::unordered_map<std::string, SymTableEntry>::iterator find_entry(std::string);
 
-            bool is_valid(std::unordered_map<std::string, SymTableEntry>::iterator);
+            bool is_invalid(std::unordered_map<std::string, SymTableEntry>::iterator);
         };
     };
 };

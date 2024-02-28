@@ -1,14 +1,10 @@
 #include "../includes/sema.hpp"
 
-masm::sema::Sema::Sema(std::vector<nodes::Node> nodes)
-{
-    this->nodes = nodes;
-}
-
-masm::sema::Sema::Sema(parser::Parser parser)
+masm::sema::Sema::Sema(parser::Parser& parser)
 {
     parser.parse();
-    nodes = parser.get_nodes();
+    // nodes = parser.get_nodes();
+    parser.move_nodes(nodes);
 }
 
 void masm::sema::Sema::set_path(std::filesystem::path path)
@@ -35,9 +31,9 @@ void masm::sema::Sema::analyse()
      check if the variables used in the instructions are valid or not
      check if the calls have the correct procedure names or not
     */
-    for (auto node : nodes)
+    for (auto& node : nodes)
     {
-        switch (node.type)
+        switch (node->type)
         {
         // as there can only be two types, the other is default
         // though we also need to take care of the procedure declaration
@@ -45,16 +41,16 @@ void masm::sema::Sema::analyse()
         {
             // if it is a data
             // just check and push it
-            switch (node.kind)
+            switch (node->kind)
             {
             case nodes::NodeKind::_DEF_BYTE:
             {
-                auto var = (nodes::NodeDefByte *)node.ptr.get();
+                auto var = (nodes::NodeDefByte *)node->ptr.get();
                 // check if this label already exists
                 // if so then it is not allowed to redefine the same label twice
-                if (symtable.is_valid(symtable.find_entry(var->byte_name)))
+                if (symtable.is_invalid(symtable.find_entry(var->byte_name)))
                 {
-                    analysis_error(node.line, std::string("The variable ") + var->byte_name + " already exists; redefining");
+                    analysis_error(node->line, std::string("The variable '") + var->byte_name + "' already exists; redefining");
                 }
                 symtable.add_entry(var->byte_name, symtable::SymTableEntry(symtable::_VAR, var->byte_val, nodes::_TYPE_NUM));
             }
@@ -62,34 +58,34 @@ void masm::sema::Sema::analyse()
             break;
         }
         default:
-            switch (node.kind)
+            switch (node->kind)
             {
             case nodes::NodeKind::_LABEL:
             {
-                auto label = (nodes::NodeLabel *)node.ptr.get();
+                auto label = (nodes::NodeLabel *)node->ptr.get();
                 // check if this label already exists
                 // if so then it is not allowed to redefine the same label twice
-                if (symtable.is_valid(symtable.find_entry(label->label_name)))
+                if (symtable.is_invalid(symtable.find_entry(label->label_name)))
                 {
-                    analysis_error(node.line, std::string("The label ") + label->label_name + " already exists; redefining");
+                    analysis_error(node->line, std::string("The label ") + label->label_name + " already exists; redefining");
                 }
                 symtable.add_entry(label->label_name, symtable::SymTableEntry(symtable::_LABEL));
                 break;
             }
             case nodes::NodeKind::_PROC_DECLR:
             {
-                auto proc = (nodes::NodeProcDeclr *)node.ptr.get();
+                auto proc = (nodes::NodeProcDeclr *)node->ptr.get();
                 // check if this label already exists
                 // if so then it is not allowed to redefine the same label twice
-                if (symtable.is_valid(symtable.find_entry(proc->proc_name)))
+                if (symtable.is_invalid(symtable.find_entry(proc->proc_name)))
                 {
-                    analysis_error(node.line, std::string("The procedure ") + proc->proc_name + " already exists; redefining");
+                    analysis_error(node->line, std::string("The procedure ") + proc->proc_name + " already exists; redefining");
                 }
                 symtable.add_entry(proc->proc_name, symtable::SymTableEntry(symtable::_PROC));
                 break;
             }
             }
-            inst_nodes.push_back(node);
+            inst_nodes.push_back(std::make_unique<nodes::Node>(*(node.get())));
         }
     }
 }

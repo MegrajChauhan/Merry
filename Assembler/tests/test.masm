@@ -8,15 +8,15 @@ proc main
 proc add
 
 ;; expect the first number in Ma register and second number in Mb register
-add:
-  add Ma, Mb
-  ret
+;; add:
+;;  add Ma, Mb
+;;  ret
  
 main:
   mov Ma, 12345
   mov Mb, strlen
   mov Mc, Ma
-  call add
+  ;; call add
   hlt ;; we use halt here because this is what ultimately stops the program so there is no point in having a ret here
 
 ;; Here is how thing go
