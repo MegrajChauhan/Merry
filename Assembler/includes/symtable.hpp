@@ -11,9 +11,9 @@ namespace masm
     {
         enum SymEntryType
         {
-            _VAR,  // the entry is a variable
-            _PROC, // the entry is a procedure
-            _LABEL,// the entry is a label
+            _VAR,   // the entry is a variable
+            _PROC,  // the entry is a procedure
+            _LABEL, // the entry is a label
         };
 
         // a symtable entry
@@ -22,6 +22,7 @@ namespace masm
             SymEntryType type;
             std::string value;     // if variable, hold the value of the variable
             nodes::DataType dtype; // the data's type[for variables]
+            bool defined = false;  // only for some type of entries
             // [in future: for procedures, they could be private to a single file or to multiple file]
 
             SymTableEntry() = default;
@@ -44,6 +45,10 @@ namespace masm
             std::unordered_map<std::string, SymTableEntry>::iterator find_entry(std::string);
 
             bool is_invalid(std::unordered_map<std::string, SymTableEntry>::iterator);
+
+            auto begin() { return symtable.begin(); }
+
+            auto end() { return symtable.end(); }
         };
     };
 };

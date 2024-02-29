@@ -19,19 +19,31 @@ namespace masm
         {
             std::vector<std::unique_ptr<nodes::Node>> nodes;      // the parsed nodes
             std::vector<std::unique_ptr<nodes::Node>> inst_nodes; // the instruction nodes
-            symtable::SymTable symtable;         // the symbol table
+            symtable::SymTable symtable;                          // the symbol table
             std::filesystem::path filepath;
 
         public:
             Sema() = default;
 
-            Sema(parser::Parser&);
+            Sema(parser::Parser &);
 
             void set_path(std::filesystem::path);
 
             void analyse();
 
             void analysis_error(size_t, std::string);
+
+            void analysis_error(std::string);
+
+            void pass_nodes(std::vector<std::unique_ptr<nodes::Node>> &dest)
+            {
+                dest = std::move(inst_nodes);
+            }
+
+            auto get_symtable() { return symtable; }
+
+            // this makes sure that all the procedures have been defined
+            void check_proc_declr();
         };
     };
 };

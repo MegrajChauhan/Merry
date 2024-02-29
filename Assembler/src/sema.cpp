@@ -1,6 +1,6 @@
 #include "../includes/sema.hpp"
 
-masm::sema::Sema::Sema(parser::Parser& parser)
+masm::sema::Sema::Sema(parser::Parser &parser)
 {
     parser.parse();
     // nodes = parser.get_nodes();
@@ -21,6 +21,29 @@ void masm::sema::Sema::analysis_error(size_t line, std::string msg)
     exit(EXIT_FAILURE);
 }
 
+void masm::sema::Sema::analysis_error(std::string msg)
+{
+    std::cerr << "While " << _CCODE_BOLD << "Analysing:\n";
+    std::cerr << filepath << ":" << _CCODE_RESET;
+    std::cerr << " " << msg << std::endl;
+    std::cerr << "Aborting further compilation." << std::endl;
+    exit(EXIT_FAILURE);
+}
+
+void masm::sema::Sema::check_proc_declr()
+{
+    for (auto x : symtable)
+    {
+        if (x.second.type == symtable::SymEntryType::_PROC)
+        {
+            if (x.second.defined != true)
+            {
+                analysis_error(std::string("No definition of declared procedure '") + x.first + "' found.");
+            }
+        }
+    }
+}
+
 void masm::sema::Sema::analyse()
 {
     /*
@@ -31,7 +54,7 @@ void masm::sema::Sema::analyse()
      check if the variables used in the instructions are valid or not
      check if the calls have the correct procedure names or not
     */
-    for (auto& node : nodes)
+    for (auto &node : nodes)
     {
         switch (node->type)
         {
@@ -53,6 +76,7 @@ void masm::sema::Sema::analyse()
                     analysis_error(node->line, std::string("The variable '") + var->byte_name + "' already exists; redefining");
                 }
                 symtable.add_entry(var->byte_name, symtable::SymTableEntry(symtable::_VAR, var->byte_val, nodes::_TYPE_NUM));
+                break;
             }
             }
             break;
@@ -65,11 +89,35 @@ void masm::sema::Sema::analyse()
                 auto label = (nodes::NodeLabel *)node->ptr.get();
                 // check if this label already exists
                 // if so then it is not allowed to redefine the same label twice
-                if (symtable.is_invalid(symtable.find_entry(label->label_name)))
+                // also check if the label is a procedure that was already defined
+                auto res = symtable.find_entry(label->label_name);
+                if (symtable.is_invalid(res))
                 {
-                    analysis_error(node->line, std::string("The label ") + label->label_name + " already exists; redefining");
+                    if (res->second.type == symtable::SymEntryType::_PROC)
+                    {
+                        // it is a procedure
+                        if (res->second.defined == true)
+                        {
+                            // the procedure was already defined
+                            // cannot redefine
+                            analysis_error(node->line, std::string("Redefinition of procedure '") + res->first + "'.");
+                        }
+                        else
+                        {
+                            // this is a procedure definition and it hasn't been defined before
+                            res->second.defined = true;
+                        }
+                        break;
+                    }
+                    else
+                    {
+                        analysis_error(node->line, std::string("The label '") + label->label_name + "' already exists; redefining");
+                    }
                 }
-                symtable.add_entry(label->label_name, symtable::SymTableEntry(symtable::_LABEL));
+                else
+                {
+                    symtable.add_entry(label->label_name, symtable::SymTableEntry(symtable::_LABEL));
+                }
                 break;
             }
             case nodes::NodeKind::_PROC_DECLR:
@@ -79,13 +127,46 @@ void masm::sema::Sema::analyse()
                 // if so then it is not allowed to redefine the same label twice
                 if (symtable.is_invalid(symtable.find_entry(proc->proc_name)))
                 {
-                    analysis_error(node->line, std::string("The procedure ") + proc->proc_name + " already exists; redefining");
+                    analysis_error(node->line, std::string("The procedure '") + proc->proc_name + "' already exists; redefining");
                 }
                 symtable.add_entry(proc->proc_name, symtable::SymTableEntry(symtable::_PROC));
                 break;
             }
             }
-            inst_nodes.push_back(std::make_unique<nodes::Node>(*(node.get())));
+            inst_nodes.push_back(std::move(node));
+        }
+    }
+    // check if all the procedures have been correctly called
+    check_proc_declr();
+    // Now check if the instructions have valid symbols or not
+    // the same loop
+    for (auto &inst : inst_nodes)
+    {
+        // we only check for those instructions that may use variables and symbols
+        switch (inst->kind)
+        {
+        case nodes::NodeKind::_INST_MOV_REG_IMM:
+        {
+            auto node = (nodes::NodeInstMovRegImm *)inst->ptr.get();
+            if (node->is_iden)
+            {
+                // the second operand is an identifier
+                // we need to check if that is valid
+                // we need codegen to be intelligent enough
+                // to generate code based on the type of operands as well
+                // as move doesn't have a variant for mov reg, memory
+                // the codegen will have to either make it a load instruction
+                // or generate error about the invalid operands
+                // The best option here would be to add a move instruction variant for it
+                // but we can't do that yet cause we need to keep the ISA's size in mind as well
+                // so for now the best option would be to make the codgen intelligent
+                if (!symtable.is_invalid(symtable.find_entry(node->value)))
+                {
+                    analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
+                }
+            }
+            break;
+        }
         }
     }
 }

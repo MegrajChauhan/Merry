@@ -104,7 +104,7 @@ void masm::lexer::Lexer::invalid_token()
 void masm::lexer::Lexer::parse_err_whole_line(std::string msg)
 {
     std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
-    std::cerr << path << ":" << line_num + 1 << ":" << col_no << ":" << _CCODE_RESET;
+    std::cerr << path << ":" << line_num + 1 << ":"<< _CCODE_RESET;
     std::cerr << " " << msg << std::endl;
     std::cerr << "Aborting further compilation." << std::endl;
     exit(EXIT_FAILURE);
@@ -113,7 +113,7 @@ void masm::lexer::Lexer::parse_err_whole_line(std::string msg)
 void masm::lexer::Lexer::parse_err_expected_colon(std::string msg)
 {
     std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
-    std::cerr << path << ":" << line_num + 1 << ":" << col_no - 1 << ":" << _CCODE_RESET;
+    std::cerr << path << ":" << line_num + 1 << ":" << _CCODE_RESET;
     std::cerr << " "
               << "Expected ':'" << msg << std::endl;
     std::cerr << "Aborting further compilation." << std::endl;
@@ -123,7 +123,7 @@ void masm::lexer::Lexer::parse_err_expected_colon(std::string msg)
 void masm::lexer::Lexer::parse_err_previous_token(std::string prev_tok, std::string msg)
 {
     std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
-    std::cerr << path << ":" << line_num + 1 << ":" << col_no - 1 << ":" << _CCODE_RESET;
+    std::cerr << path << ":" << line_num + 1 << ":" << _CCODE_RESET;
     std::cerr << " " << msg << std::endl;
     std::cerr << "Aborting further compilation." << std::endl;
     exit(EXIT_FAILURE);
@@ -132,7 +132,7 @@ void masm::lexer::Lexer::parse_err_previous_token(std::string prev_tok, std::str
 void masm::lexer::Lexer::parse_error(std::string msg)
 {
     std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
-    std::cerr << path << ":" << line_num + 1 << ":" << col_no - 1 << ":" << _CCODE_RESET;
+    std::cerr << path << ":" << line_num + 1 << ":" << _CCODE_RESET;
     std::cerr << " " << msg << std::endl;
     std::cerr << "Aborting further compilation." << std::endl;
     exit(EXIT_FAILURE);

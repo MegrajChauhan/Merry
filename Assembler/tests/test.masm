@@ -5,7 +5,7 @@ strlen: db 13
 
 .text:
 proc main
-proc add
+;; proc add
 
 ;; expect the first number in Ma register and second number in Mb register
 ;; add:
@@ -16,8 +16,14 @@ main:
   mov Ma, 12345
   mov Mb, strlen
   mov Mc, Ma
+  mov Mf, test ;; the declaration of test at the end has not effect here
   ;; call add
   hlt ;; we use halt here because this is what ultimately stops the program so there is no point in having a ret here
+
+;; main:
+
+.data:
+test: db 123
 
 ;; Here is how thing go
 ;; The assembler looks for the main procedure by default
