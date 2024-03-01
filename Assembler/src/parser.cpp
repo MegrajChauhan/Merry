@@ -1,6 +1,6 @@
 #include "../includes/parser.hpp"
 
-masm::parser::Parser::Parser(masm::lexer::Lexer lexer)
+masm::parser::Parser::Parser(masm::lexer::Lexer &lexer)
 {
     this->lexer = lexer; // the lexer needs to be initialized here
     curr_tok = lexer.lex();
@@ -13,7 +13,7 @@ void masm::parser::Parser::setup_lexer(std::string filepath)
     curr_tok = lexer.lex();
 }
 
-void masm::parser::Parser::move_nodes(std::vector<std::unique_ptr<nodes::Node>>& dest)
+void masm::parser::Parser::move_nodes(std::vector<std::unique_ptr<nodes::Node>> &dest)
 {
     dest = std::move(nodes);
 }

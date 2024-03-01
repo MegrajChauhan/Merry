@@ -21,6 +21,7 @@ namespace masm
             std::vector<std::unique_ptr<nodes::Node>> inst_nodes; // the instruction nodes
             symtable::SymTable symtable;                          // the symbol table
             std::filesystem::path filepath;
+            size_t main_proc_index = 0;
 
         public:
             Sema() = default;
@@ -44,6 +45,8 @@ namespace masm
 
             // this makes sure that all the procedures have been defined
             void check_proc_declr();
+
+            size_t get_main_declr_pos() { return main_proc_index; }
         };
     };
 };

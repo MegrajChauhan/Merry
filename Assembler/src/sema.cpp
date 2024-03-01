@@ -32,16 +32,19 @@ void masm::sema::Sema::analysis_error(std::string msg)
 
 void masm::sema::Sema::check_proc_declr()
 {
+    bool found_main = false;
     for (auto x : symtable)
     {
         if (x.second.type == symtable::SymEntryType::_PROC)
         {
             if (x.second.defined != true)
-            {
                 analysis_error(std::string("No definition of declared procedure '") + x.first + "' found.");
-            }
+            if (x.first == "main")
+                found_main = true;
         }
     }
+    if (!found_main)
+        analysis_error(std::string("Expected the definition for the main procedure but found none"));
 }
 
 void masm::sema::Sema::analyse()
@@ -72,9 +75,7 @@ void masm::sema::Sema::analyse()
                 // check if this label already exists
                 // if so then it is not allowed to redefine the same label twice
                 if (symtable.is_invalid(symtable.find_entry(var->byte_name)))
-                {
                     analysis_error(node->line, std::string("The variable '") + var->byte_name + "' already exists; redefining");
-                }
                 symtable.add_entry(var->byte_name, symtable::SymTableEntry(symtable::_VAR, var->byte_val, nodes::_TYPE_BYTE));
                 break;
             }
@@ -110,13 +111,14 @@ void masm::sema::Sema::analyse()
                         break;
                     }
                     else
-                    {
                         analysis_error(node->line, std::string("The label '") + label->label_name + "' already exists; redefining");
-                    }
                 }
                 else
-                {
                     symtable.add_entry(label->label_name, symtable::SymTableEntry(symtable::_LABEL));
+                if (res->first == "main")
+                {
+                    // we need to save the current pos
+                    main_proc_index = inst_nodes.size();
                 }
                 break;
             }
@@ -126,9 +128,7 @@ void masm::sema::Sema::analyse()
                 // check if this label already exists
                 // if so then it is not allowed to redefine the same label twice
                 if (symtable.is_invalid(symtable.find_entry(proc->proc_name)))
-                {
                     analysis_error(node->line, std::string("The procedure '") + proc->proc_name + "' already exists; redefining");
-                }
                 symtable.add_entry(proc->proc_name, symtable::SymTableEntry(symtable::_PROC));
                 break;
             }
@@ -161,9 +161,7 @@ void masm::sema::Sema::analyse()
                 // but we can't do that yet cause we need to keep the ISA's size in mind as well
                 // so for now the best option would be to make the codgen intelligent
                 if (!symtable.is_invalid(symtable.find_entry(node->value)))
-                {
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
-                }
             }
             break;
         }

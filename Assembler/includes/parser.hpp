@@ -32,7 +32,7 @@ namespace masm
         public:
             Parser() = default;
 
-            Parser(lexer::Lexer);
+            Parser(lexer::Lexer&);
 
             // setup by file path
             void setup_lexer(std::string);
