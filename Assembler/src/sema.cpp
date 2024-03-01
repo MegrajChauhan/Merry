@@ -75,7 +75,7 @@ void masm::sema::Sema::analyse()
                 {
                     analysis_error(node->line, std::string("The variable '") + var->byte_name + "' already exists; redefining");
                 }
-                symtable.add_entry(var->byte_name, symtable::SymTableEntry(symtable::_VAR, var->byte_val, nodes::_TYPE_NUM));
+                symtable.add_entry(var->byte_name, symtable::SymTableEntry(symtable::_VAR, var->byte_val, nodes::_TYPE_BYTE));
                 break;
             }
             }

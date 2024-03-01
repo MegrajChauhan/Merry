@@ -27,7 +27,7 @@ namespace masm
 
             SymTableEntry() = default;
 
-            SymTableEntry(SymEntryType t, std::string val = "", nodes::DataType type = nodes::DataType::_TYPE_NUM) : type(t), value(val), dtype(type) {}
+            SymTableEntry(SymEntryType t, std::string val = "", nodes::DataType type = nodes::DataType::_TYPE_BYTE) : type(t), value(val), dtype(type) {}
         };
 
         // the symbol table

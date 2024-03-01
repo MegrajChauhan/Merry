@@ -18,7 +18,7 @@ namespace masm
 
         enum DataType
         {
-            _TYPE_NUM,
+            _TYPE_BYTE, // this represents a byte rather than a number 
         };
 
         enum NodeKind
