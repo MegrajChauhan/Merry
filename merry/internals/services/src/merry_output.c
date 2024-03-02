@@ -1,4 +1,8 @@
+#if defined(_WIN64)
+#include "..\merry_output.h"
+#else
 #include "../merry_output.h"
+#endif
 
 mret_t merry_write_char(MerryDMemory *mem, maddress_t address)
 {

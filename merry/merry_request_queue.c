@@ -1,4 +1,8 @@
+#if defined(_WIN64)
+#include "internals\merry_request_queue.h"
+#else
 #include "internals/merry_request_queue.h"
+#endif
 
 MerryRequestQueue *merry_request_queue_init(msize_t number_of_requests)
 {

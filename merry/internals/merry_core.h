@@ -38,8 +38,12 @@ typedef struct MerryFlagRegister MerryFlagRegister;
 // #include "merry_exec.h"
 // #include "decoder/merry_decode.h"
 #include "merry_exec.h"
-// #include "merry_inst.h"
+
+#if defined(_WIN64)
+#include "..\..\utils\merry_stack.h"
+#else
 #include "../../utils/merry_stack.h"
+#endif
 
 /*
  The behaviour of Unions is very different based on different architectures, endianness and the whim of the compiler as well.

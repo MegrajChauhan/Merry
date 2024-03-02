@@ -1,4 +1,8 @@
+#if defined(_WIN64)
+#include "..\utils\merry_stack.h"
+#else
 #include "../utils/merry_stack.h"
+#endif
 
 MerryStack *merry_init_stack(msize_t len, mbool_t dynamic, msize_t upper_lim, msize_t per_resize)
 {

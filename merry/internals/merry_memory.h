@@ -37,11 +37,19 @@
 */
 
 #include "merry_internals.h"
+
+#if defined(_WIN64)
+#include "..\..\sys\merry_mem.h"
+#include "..\..\sys\merry_thread.h" // memory needs to be thread safe
+#include "..\includes\merry_errors.h"
+#include "..\..\utils\merry_logger.h"
+#else
 #include "../../sys/merry_mem.h"
 #include "../../sys/merry_thread.h" // memory needs to be thread safe
-// #include "../lib/include/merry_memory_allocator.h" <LEGACY>
 #include "../includes/merry_errors.h"
 #include "../../utils/merry_logger.h"
+#endif
+
 #include <stdlib.h>
 #include <stdatomic.h>
 

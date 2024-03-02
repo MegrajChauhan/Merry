@@ -1,4 +1,8 @@
+#if defined(_WIN64)
+#include "..\merry_input.h"
+#else
 #include "../merry_input.h"
+#endif
 
 mret_t merry_read_char(MerryDMemory *mem, maddress_t address)
 {

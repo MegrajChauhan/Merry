@@ -25,7 +25,12 @@
 #ifndef _MERRY_OS_QUEUE_
 #define _MERRY_OS_QUEUE_
 
+#if defined(_WIN64)
+#include "..\lib\includ\merry_queue.h"
+#else
 #include "../lib/include/merry_queue.h"
+#endif
+
 #include "merry_request.h"
 
 typedef struct MerryRequestNode MerryRequestNode;

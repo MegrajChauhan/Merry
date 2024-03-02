@@ -27,15 +27,28 @@
 
 // This module is the backbone of the VM and controls everything
 
+#if defined(_WIN64)
+#include "..\..\utils\merry_config.h"
+#include "..\..\utils\merry_types.h"
+#else
 #include "../../utils/merry_config.h"
 #include "../../utils/merry_types.h"
+#endif
+
 #include "merry_reader.h"
 #include "merry_request_hdlr.h"
 // #include "merry_thread_pool.h"
 #include "merry_core.h"
+
+#if defined(_WIN64)
+#include "services\merry_input.h"
+#include "services\merry_output.h"
+#include "..\..\sys\merry_dynl.h"
+#else
 #include "services/merry_input.h"
 #include "services/merry_output.h"
 #include "../../sys/merry_dynl.h"
+#endif
 
 typedef struct Merry Merry;
 
@@ -44,9 +57,9 @@ struct Merry
   MerryCore **cores;          // the vcores
   MerryThread **core_threads; // the vcore's threads
   // MerryThreadPool *thPool;    // the manager's thread pool
-  MerryMemory *inst_mem;      // the instruction memory that every vcore shares
-  MerryDMemory *data_mem;      // the data memory that every vcore shares
-  MerryMutex *_lock;          // the Manager's lock
+  MerryMemory *inst_mem;  // the instruction memory that every vcore shares
+  MerryDMemory *data_mem; // the data memory that every vcore shares
+  MerryMutex *_lock;      // the Manager's lock
   // MerryMutex *_mem_lock;  // lock for memory read/write
   MerryCond *_cond; // the Manager's cond
   // MerryCond *shared_cond; // this condition is shared among all cores

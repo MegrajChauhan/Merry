@@ -1,5 +1,10 @@
+#if defined(_WIN64)
+#include "internals\merry_core.h"
+#include "internals\merry_os.h"
+#else
 #include "internals/merry_core.h"
 #include "internals/merry_os.h"
+#endif
 
 MerryCore *merry_core_init(MerryMemory *inst_mem, MerryDMemory *data_mem, msize_t id)
 {
@@ -392,6 +397,30 @@ _THRET_T_ merry_runCore(mptr_t core)
             break;
         case OP_STORED:
             merry_execute_stored(c, *current & 0xFFFFFFFFFFFF);
+            break;
+        case OP_ATOMIC_LOAD:
+            merry_execute_atm_load(c, *current & 0xFFFFFFFFFFFF);
+            break;
+        case OP_ATOMIC_STORE:
+            merry_execute_atm_store(c, *current & 0xFFFFFFFFFFFF);
+            break;
+        case OP_ATOMIC_LOADB:
+            merry_execute_atm_loadb(c, *current & 0xFFFFFFFFFFFF);
+            break;
+        case OP_ATOMIC_STOREB:
+            merry_execute_atm_storeb(c, *current & 0xFFFFFFFFFFFF);
+            break;
+        case OP_ATOMIC_LOADW:
+            merry_execute_atm_loadw(c, *current & 0xFFFFFFFFFFFF);
+            break;
+        case OP_ATOMIC_STOREW:
+            merry_execute_atomic_storew(c, *current & 0xFFFFFFFFFFFF);
+            break;
+        case OP_ATOMIC_LOADD:
+            merry_execute_atomic_loadd(c, *current & 0xFFFFFFFFFFFF);
+            break;
+        case OP_ATOMIC_STORED:
+            merry_execute_atm_stored(c, *current & 0xFFFFFFFFFFFF);
             break;
         case OP_LOAD_REG:
             merry_execute_load_reg(c, c->registers[((*current) & 15)]);

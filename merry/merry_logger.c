@@ -1,4 +1,8 @@
+#if defined(_WIN64)
+#include "..\utils\merry_logger.h"
+#else
 #include "../utils/merry_logger.h"
+#endif
 
 mret_t merry_logger_init(mbool_t enable_flag)
 {

@@ -1,13 +1,46 @@
+/*
+ * Configuration for the Merry VM
+ * MIT License
+ *
+ * Copyright (c) 2024 MegrajChauhan
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 #ifndef _MERRY_DMEMORY_
 #define _MERRY_DMEMORY_
 
 #include "merry_internals.h"
+
+#if defined(_WIN64)
+#include "..\..\sys\merry_mem.h"
+#include "..\../sys\merry_thread.h" // memory needs to be thread safe
+#include "..\includes\merry_errors.h"
+#include "..\..\utils\merry_logger.h"
+#else
 #include "../../sys/merry_mem.h"
 #include "../../sys/merry_thread.h" // memory needs to be thread safe
-// #include "../lib/include/merry_memory_allocator.h" <LEGACY>
 #include "../includes/merry_errors.h"
 #include "../../utils/merry_logger.h"
+#endif
+
 #include <stdlib.h>
+#include <stdatomic.h>
 
 typedef struct MerryDMemPage MerryDMemPage; // the memory page
 typedef struct MerryDMemory MerryDMemory;   // the memory that manages these pages
@@ -50,16 +83,24 @@ MerryDMemory *merry_dmemory_init_provided(mqptr_t *mapped_pages, msize_t num_of_
 void merry_dmemory_free(MerryDMemory *memory);
 
 mret_t merry_dmemory_read_byte(MerryDMemory *memory, maddress_t address, mqptr_t _store_in);
+mret_t merry_dmemory_read_byte_atm(MerryDMemory *memory, maddress_t address, mqptr_t _store_in);
 mret_t merry_dmemory_write_byte(MerryDMemory *memory, maddress_t address, mqword_t _to_write);
+mret_t merry_dmemory_write_byte_atm(MerryDMemory *memory, maddress_t address, mqword_t _to_write);
 
 mret_t merry_dmemory_read_word(MerryDMemory *memory, maddress_t address, mqptr_t _store_in);
+mret_t merry_dmemory_read_word_atm(MerryDMemory *memory, maddress_t address, mqptr_t _store_in);
 mret_t merry_dmemory_write_word(MerryDMemory *memory, maddress_t address, mqword_t _to_write);
+mret_t merry_dmemory_write_word_atm(MerryDMemory *memory, maddress_t address, mqword_t _to_write);
 
 mret_t merry_dmemory_read_dword(MerryDMemory *memory, maddress_t address, mqptr_t _store_in);
+mret_t merry_dmemory_read_dword_atm(MerryDMemory *memory, maddress_t address, mqptr_t _store_in);
 mret_t merry_dmemory_write_dword(MerryDMemory *memory, maddress_t address, mqword_t _to_write);
+mret_t merry_dmemory_write_dword_atm(MerryDMemory *memory, maddress_t address, mqword_t _to_write);
 
 mret_t merry_dmemory_read_qword(MerryDMemory *memory, maddress_t address, mqptr_t _store_in);
+mret_t merry_dmemory_read_qword_atm(MerryDMemory *memory, maddress_t address, mqptr_t _store_in);
 mret_t merry_dmemory_write_qword(MerryDMemory *memory, maddress_t address, mqword_t _to_write);
+mret_t merry_dmemory_write_qword_atm(MerryDMemory *memory, maddress_t address, mqword_t _to_write);
 
 // Useless functions for now
 mret_t merry_dmemory_read_lock(MerryDMemory *memory, maddress_t address, mqptr_t _store_in);

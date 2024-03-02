@@ -1,4 +1,8 @@
+#if defined(_WIN64)
+#include "internals\merry_os_exec.h"
+#else
 #include "internals/merry_os_exec.h"
+#endif
 
 _os_exec_(halt)
 {

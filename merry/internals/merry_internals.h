@@ -26,8 +26,14 @@
 #define _MERRY_INTERNALS_
 
 // define the necessary configurations needed for the internal components here
+
+#if defined(_WIN64)
+#include "..\..\utils\merry_config.h"
+#include "..\..\utils\merry_types.h"
+#else
 #include "../../utils/merry_config.h"
 #include "../../utils/merry_types.h"
+#endif
 
 // Configurations for memory
 #define _MERRY_MEMORY_ADDRESSES_PER_PAGE_ 1048576                   // the number of addresses per page[Equal to 1MB]

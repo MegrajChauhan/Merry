@@ -1,5 +1,8 @@
+#if defined(_WIN64)
+#include "internals\merry_os.h"
+#else
 #include "internals/merry_os.h"
-
+#endif
 #include <stdatomic.h>
 
 mret_t merry_os_init(mcstr_t _inp_file)

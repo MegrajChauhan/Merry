@@ -1,6 +1,12 @@
+#if defined(_WIN64)
+#include "internals\merry_exec.h"
+#include "internals\merry_core.h"
+#include "internals\merry_os.h"
+#else
 #include "internals/merry_exec.h"
 #include "internals/merry_core.h"
 #include "internals/merry_os.h"
+#endif
 
 // definitions
 // _MERRY_ALWAYS_INLINE_ _exec_(halt)
@@ -707,4 +713,101 @@ _MERRY_ALWAYS_INLINE_ _exec_(excg)
    register mqword_t reg2 = core->registers[curr & 15];
    core->registers[(curr >> 4) & 15] = reg2;
    core->registers[curr & 15] = reg1;
+}
+
+
+_MERRY_ALWAYS_INLINE_ _lexec_(atm_load, mqword_t address)
+{
+   // read from the given address
+   if (merry_dmemory_read_qword_atm(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be loaded
+}
+
+_MERRY_ALWAYS_INLINE_ _lexec_(atm_store, mqword_t address)
+{
+   // store to the given address from the given register
+   if (merry_dmemory_write_qword_atm(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be stored
+}
+
+_MERRY_ALWAYS_INLINE_ _lexec_(atm_loadw, mqword_t address)
+{
+   // read from the given address
+   if (merry_dmemory_read_word_atm(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be loaded
+}
+
+_MERRY_ALWAYS_INLINE_ _lexec_(atm_storew, mqword_t address)
+{
+   // store to the given address from the given register
+   if (merry_dmemory_write_word_atm(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be stored
+}
+
+_MERRY_ALWAYS_INLINE_ _lexec_(atm_loadd, mqword_t address)
+{
+   // read from the given address
+   if (merry_dmemory_read_dword_atm(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be loaded
+}
+
+_MERRY_ALWAYS_INLINE_ _lexec_(atm_stored, mqword_t address)
+{
+   // store to the given address from the given register
+   if (merry_dmemory_write_dword_atm(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be stored
+}
+
+_MERRY_ALWAYS_INLINE_ _lexec_(atm_loadb, mqword_t address)
+{
+   // read from the given address
+   if (merry_dmemory_read_byte_atm(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be loaded
+}
+
+_MERRY_ALWAYS_INLINE_ _lexec_(atm_storeb, mqword_t address)
+{
+   // store to the given address from the given register
+   if (merry_dmemory_write_byte_atm(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   // the value should be stored
 }

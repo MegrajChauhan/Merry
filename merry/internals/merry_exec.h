@@ -1,9 +1,38 @@
+/*
+ * Configuration for the Merry VM
+ * MIT License
+ *
+ * Copyright (c) 2024 MegrajChauhan
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 #ifndef _MERRY_EXEC_
 #define _MERRY_EXEC_
 
+#if defined(_WIN64)
+#include "..\..\utils\merry_logger.h"
+#else
 #include "../../utils/merry_logger.h"
+#endif
 #include "merry_request.h"
 #include "imp/merry_imp.h"
+
 
 struct MerryCore;
 
@@ -149,6 +178,16 @@ _lexec_(loadw_reg, mqword_t address);
 _lexec_(storew_reg, mqword_t address);
 _lexec_(loadd_reg, mqword_t address);
 _lexec_(stored_reg, mqword_t address);
+
+_lexec_(atm_load, mqword_t address);
+_lexec_(atm_loadb, mqword_t address);
+_lexec_(atm_loadw, mqword_t address);
+_lexec_(atm_loadd, mqword_t address);
+
+_lexec_(atm_store, mqword_t address);
+_lexec_(atm_storeb, mqword_t address);
+_lexec_(atm_storew, mqword_t address);
+_lexec_(atm_stored, mqword_t address);
 
 _exec_(excg);
 _exec_(excg8);

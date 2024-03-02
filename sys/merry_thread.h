@@ -25,8 +25,13 @@
 #ifndef _MERRY_THREADSABS_
 #define _MERRY_THREADSABS_
 
+#if defined(_WIN64)
+#include "..\utils\merry_config.h"
+#include "..\utils\merry_types.h"
+#else
 #include "../utils/merry_config.h"
 #include "../utils/merry_types.h"
+#endif
 
 typedef struct MerryMutex MerryMutex;
 typedef struct MerryCond MerryCond;

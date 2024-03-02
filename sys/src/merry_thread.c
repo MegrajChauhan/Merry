@@ -1,5 +1,8 @@
+#if defined(_WIN64)
+#include "..\merry_thread.h"
+#else
 #include "../merry_thread.h"
-
+#endif
 // NOTE: All the use of windows API is not tested and based on pure research. I don't even know what the API contains but this should give the same results as in Linux
 
 MerryMutex *merry_mutex_init()

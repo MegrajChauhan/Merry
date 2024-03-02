@@ -27,9 +27,15 @@
 
 // Define a request that the OS handles
 
+#if defined(_WIN64)
+#include "..\..\utils\merry_config.h"
+#include "..\..\utils\merry_types.h"
+#include "..\..\sys\merry_thread.h"
+#else
 #include "../../utils/merry_config.h"
 #include "../../utils/merry_types.h"
 #include "../../sys/merry_thread.h"
+#endif
 
 typedef struct MerryOSRequest MerryOSRequest;
 /*
@@ -65,7 +71,7 @@ enum
     _REQ_FREAD,         // read from a file
     _REQ_FWRITE,        // write to a file
     _REQ_FEOF,          // has the EOF been reached?
-    // other functions like fseek, ftell, rewind can be implemented using the above as the base in software
+               // other functions like fseek, ftell, rewind can be implemented using the above as the base in software
 };
 
 #endif

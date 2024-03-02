@@ -35,7 +35,11 @@
  Since we have a lot of possible opcodes, we will not make use of any flags and instead use different variants for the same instruction
 */
 
+#if defined(_WIN64)
+#include "..\..\utils\merry_config.h"
+#else
 #include "../../utils/merry_config.h"
+#endif
 
 enum
 {
@@ -251,7 +255,7 @@ enum
   OP_INF,  // read a 64-bit float
   OP_OUTF, // print a 64-bit float
 
-  OP_INF32, // read a 32-bit float
+  OP_INF32,  // read a 32-bit float
   OP_OUTF32, // print a 32-bit float
 
   OP_OUTR,  // print all register's contents as signed values[takes no operands]
@@ -262,6 +266,15 @@ enum
   OP_FSUB32,
   OP_FMUL32,
   OP_FDIV32,
+
+  OP_ATOMIC_LOAD,   // load 8 bytes atomically
+  OP_ATOMIC_LOADB,  // load byte atomically
+  OP_ATOMIC_LOADW,  // load 2 bytes atomically
+  OP_ATOMIC_LOADD,  // load 4 bytes atomically
+  OP_ATOMIC_STORE,  // store 8 bytes atomically
+  OP_ATOMIC_STOREB, // store byte atomically
+  OP_ATOMIC_STOREW, // store 2 bytes atomically
+  OP_ATOMIC_STORED, // store 4 bytes atomically
 
 };
 

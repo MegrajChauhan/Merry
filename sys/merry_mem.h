@@ -25,8 +25,13 @@
 #ifndef _MERRY_MEM_
 #define _MERRY_MEM_
 
+#if defined(_WIN64)
+#include "..\utils\merry_config.h"
+#include "..\utils\merry_types.h"
+#else
 #include "../utils/merry_config.h"
 #include "../utils/merry_types.h"
+#endif
 
 #if defined(_MERRY_HOST_OS_LINUX_)
 

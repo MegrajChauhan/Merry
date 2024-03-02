@@ -26,7 +26,12 @@
 #define _MERRY_OS_EXEC_
 
 #include "merry_os.h"
+
+#if defined(_WIN64)
+#include "..\..\utils\merry_logger.h"
+#else
 #include "../../utils/merry_logger.h"
+#endif
 
 // an function that executes a requests needs to tell the OS if the request was successfully executed
 

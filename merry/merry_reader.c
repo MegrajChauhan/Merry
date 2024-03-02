@@ -1,4 +1,8 @@
+#if defined(_WIN64)
+#include "internals\merry_reader.h"
+#else
 #include "internals/merry_reader.h"
+#endif
 
 _MERRY_INTERNAL_ void merry_reader_unalloc_pages(MerryInpFile *inp)
 {

@@ -1,4 +1,8 @@
+#if defined(_WIN64)
+#include "..\merry_dynl.h"
+#else
 #include "../merry_dynl.h"
+#endif
 
 mbool_t merry_loader_init(msize_t initial_entry_count)
 {

@@ -23,9 +23,17 @@
  * SOFTWARE.
  */
 #pragma once
+
+#if defined(_WIN64)
+#include "..\..\..\utils\merry_types.h"
+#include "..\..\..\utils\merry_config.h"
+#include "..\..\..\utils\merry_utils.h"
+#else
 #include "../../../utils/merry_types.h"
 #include "../../../utils/merry_config.h"
 #include "../../../utils/merry_utils.h"
+#endif
+
 // #include "merry_memory_allocator.h" <LEGACY>
 #include <stdlib.h>
 
@@ -58,37 +66,37 @@
     } while (0);
 // checking if the pointer was initialized is the caller's job
 
-#define _MERRY_QUEUE_CREATE_NODES_(qptr, node_name, create_node_count, ret, val_type)              \
-    do                                                                                       \
-    {                                                                                        \
-        qptr->node_count = (create_node_count);                                              \
-        qptr->data_count = 0;                                                                \
-        qptr->head = (node_name *)malloc(sizeof(node_name));                                 \
-        if (qptr->head == NULL)                                                              \
-        {                                                                                    \
-            ret = mfalse;                                                                    \
-            break;                                                                           \
-        }                                                                                    \
-        node_name *current = (qptr)->head;                                                   \
-        for (msize_t i = 0; i < (create_node_count); i++)                                    \
-        {                                                                                    \
-            current->value = (val_type*)malloc(sizeof((val_type))); \
-            if (current->value == NULL)                                                      \
-            {                                                                                \
-                (ret) = mfalse;                                                              \
-                break;                                                                       \
-            }                                                                                \
-            current->next = (node_name *)malloc(sizeof(node_name));                          \
-            if (current->next == NULL)                                                       \
-            {                                                                                \
-                (ret) = mfalse;                                                              \
-                break;                                                                       \
-            }                                                                                \
-            current = current->next;                                                         \
-        }                                                                                    \
-        current->next = (qptr)->head;                                                        \
-        (qptr->tail) = (qptr)->head; /*The queue is empty*/                                  \
-        ret = mtrue;                                                                         \
+#define _MERRY_QUEUE_CREATE_NODES_(qptr, node_name, create_node_count, ret, val_type) \
+    do                                                                                \
+    {                                                                                 \
+        qptr->node_count = (create_node_count);                                       \
+        qptr->data_count = 0;                                                         \
+        qptr->head = (node_name *)malloc(sizeof(node_name));                          \
+        if (qptr->head == NULL)                                                       \
+        {                                                                             \
+            ret = mfalse;                                                             \
+            break;                                                                    \
+        }                                                                             \
+        node_name *current = (qptr)->head;                                            \
+        for (msize_t i = 0; i < (create_node_count); i++)                             \
+        {                                                                             \
+            current->value = (val_type *)malloc(sizeof((val_type)));                  \
+            if (current->value == NULL)                                               \
+            {                                                                         \
+                (ret) = mfalse;                                                       \
+                break;                                                                \
+            }                                                                         \
+            current->next = (node_name *)malloc(sizeof(node_name));                   \
+            if (current->next == NULL)                                                \
+            {                                                                         \
+                (ret) = mfalse;                                                       \
+                break;                                                                \
+            }                                                                         \
+            current = current->next;                                                  \
+        }                                                                             \
+        current->next = (qptr)->head;                                                 \
+        (qptr->tail) = (qptr)->head; /*The queue is empty*/                           \
+        ret = mtrue;                                                                  \
     } while (0);
 
 // push a value to the queue
@@ -264,4 +272,3 @@
     { /*This is a emergency push and so it takes top priority*/ \
         (qptr->head->value) = val;                              \
     } while (0);
-    
