@@ -124,6 +124,14 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
     }
     // the file has the signature bytes
     // now get the ilen and dlen from SDT
+
+    // we are going to make good use of the remaining 5 bytes of the first 8 bytes
+    inp->entry_addr = header[3];
+    inp->entry_addr = (inp->entry_addr << 8) | header[4];
+    inp->entry_addr = (inp->entry_addr << 8) | header[5];
+    inp->entry_addr = (inp->entry_addr << 8) | header[6];
+    inp->entry_addr = (inp->entry_addr << 8) | header[7];
+
     inp->ilen = header[8];
     inp->ilen = (inp->ilen << 8) | header[9];
     inp->ilen = (inp->ilen << 8) | header[10];
@@ -151,6 +159,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
     inp->slen = (inp->slen << 8) | header[29];
     inp->slen = (inp->slen << 8) | header[30];
     inp->slen = (inp->slen << 8) | header[31];
+
     // now check if dlen and ilen are within the limits
     if (inp->file_len < (inp->dlen + inp->ilen + inp->slen))
     {
@@ -171,6 +180,12 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
     if (inp->ilen == 0)
     {
         _READ_DIRERROR_("Read Error: The input file has no instructions to read. The input file cannot be empty\n");
+        return RET_FAILURE;
+    }
+    // also check for entry point
+    if ((inp->entry_addr*8) > inp->ilen)
+    {
+        _READ_DIRERROR_("Read Error: The entry point for the program is outside the bounds of the program's size.\n");
         return RET_FAILURE;
     }
     return RET_SUCCESS;

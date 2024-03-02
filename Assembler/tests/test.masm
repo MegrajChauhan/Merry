@@ -5,12 +5,11 @@ strlen: db 13
 
 .text:
 proc main
-;; proc add
+proc add
 
 ;; expect the first number in Ma register and second number in Mb register
-;; add:
-;;  add Ma, Mb
-;;  ret
+add:
+  hlt
  
 main:
   mov Ma, 12345

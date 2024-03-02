@@ -10,26 +10,18 @@ namespace masm
     {
         union Instruction
         {
+            uint64_t whole = 0;
+
             struct
             {
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
                 uint8_t b1, b2, b3, b4, b5, b6, b7, b8;
+#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+                uint8_t b8, b7, b6, b5, b4, b3, b2, b1;
+#endif
             } bytes;
 
-            struct
-            {
-                uint32_t upper_32;
-                uint32_t lower_32;
-            } grp32;
-
-            struct
-            {
-                uint16_t upper_upper_16, upper_lower_16, lower_upper_16, lower_lower_16;
-            } grp16;
-
-            uint64_t grp64;
-
             Instruction() = default;
-            Instruction(uint64_t val) : grp64(val) {}
         };
 
         class Codegen
@@ -57,7 +49,14 @@ namespace masm
             // generate bytes
             void gen();
 
-            void append_zeros(size_t len);
+            size_t get_entry_addr() { return label_addrs["main"]; }
+
+            auto get_instructions() { return inst_bytes; }
+
+            auto get_data() { return data_bytes; }
+
+            // label the labels
+            void label_labels();
 
             void gen_inst_mov_reg_imm(std::unique_ptr<nodes::Node> &);
 

@@ -55,7 +55,7 @@ typedef struct MerryInpFile MerryInpFile;
 #define read_internal_error(msg) _READ_ERROR_("Read Internal Error: %s.\n", msg)
 #define read_msg(message, ...) fprintf(stderr, message, __VA_ARGS__)
 // num is an array of unsigned characters here
-// #define reader_invert_byte_order(num, k) 
+// #define reader_invert_byte_order(num, k)
 
 // the main purpose here is to read the binary input file and then convert it into something the VM can understand
 // The extension for the input file is ".mbin" for "merry binary/bin"
@@ -71,6 +71,7 @@ struct MerryInpFile
     msize_t dlen; // data bytes len
     msize_t ilen; // the instruction bytes len
     msize_t slen; // the string len
+    maddress_t entry_addr;
     // the file results
     msize_t ipage_count;
     msize_t dpage_count;

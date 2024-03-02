@@ -43,6 +43,7 @@ mret_t merry_os_init(mcstr_t _inp_file)
     // don't forget to destory the reader
     if (merry_requestHdlr_init(_MERRY_REQUEST_QUEUE_LEN_, os._cond) == RET_FAILURE)
         goto inp_failure;
+    maddress_t entry_point = input->entry_addr;
     merry_destory_reader(input);
     os.core_count = 1; // we will start with one core
     os.cores = (MerryCore **)malloc(sizeof(MerryCore *));
@@ -52,6 +53,7 @@ mret_t merry_os_init(mcstr_t _inp_file)
     if (os.cores[0] == RET_NULL)
         goto failure;
     os.stop = mfalse;
+    os.cores[0]->pc = entry_point;
     os.core_threads = (MerryThread **)malloc(sizeof(MerryThread *)); // just 1 for now
     if (os.core_threads == RET_NULL)
         goto failure;

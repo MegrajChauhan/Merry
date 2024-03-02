@@ -43,14 +43,6 @@ void masm::codegen::Codegen::gen_data()
     }
 }
 
-void masm::codegen::Codegen::append_zeros(size_t len)
-{
-    for (size_t i = 0; i < len; i++)
-    {
-        inst_bytes.push_back(0);
-    }
-}
-
 void masm::codegen::Codegen::gen_inst_mov_reg_reg(std::unique_ptr<nodes::Node> &node)
 {
     auto n = (nodes::NodeInstMovRegReg *)node->ptr.get();
@@ -64,7 +56,7 @@ void masm::codegen::Codegen::gen_inst_mov_reg_imm(std::unique_ptr<nodes::Node> &
 {
     // based on the situation we need to
     nodes::NodeInstMovRegImm *n = (nodes::NodeInstMovRegImm *)node->ptr.get();
-    Instruction final_inst = 0;
+    Instruction final_inst;
     if (n->is_iden)
     {
         // it is an identifier
@@ -80,7 +72,7 @@ void masm::codegen::Codegen::gen_inst_mov_reg_imm(std::unique_ptr<nodes::Node> &
             // this is a byte type value so we need to use loadb instruction
             final_inst.bytes.b1 = opcodes::OP_LOADB;
             final_inst.bytes.b2 = (n->dest_regr);
-            final_inst.grp32.lower_32 = addr_of_iden; // this is never be too long
+            final_inst.whole |= addr_of_iden;
             // we then need to push the 6 byte address of the
             break;
         }
@@ -93,20 +85,33 @@ void masm::codegen::Codegen::gen_inst_mov_reg_imm(std::unique_ptr<nodes::Node> &
         // for moving 64-bit immdiate, we will have a dedicated instruction but the general move_imm should suffice
         final_inst.bytes.b1 = opcodes::OP_MOVE_IMM;
         final_inst.bytes.b2 = n->dest_regr;
-        final_inst.grp32.lower_32 = std::stoi(n->value);
+        final_inst.whole |= std::stoi(n->value);
     }
     inst_bytes.push_back(final_inst);
+}
+
+void masm::codegen::Codegen::label_labels()
+{
+    // just go through each instruction
+    // see if any label is there
+    // then add it to the label_addrs
+    size_t i = 0;
+    for (auto &x : inst_nodes)
+    {
+        if (x->kind == nodes::NodeKind::_LABEL)
+            label_addrs[((nodes::NodeLabel *)x->ptr.get())->label_name] = i;
+        else if (x->kind != nodes::NodeKind::_PROC_DECLR && x->kind != nodes::NodeKind::_DEF_BYTE)
+            i++;
+    }
 }
 
 void masm::codegen::Codegen::gen()
 {
     gen_data(); // generate data bytes
-    // now generate code based on the instructions
-    // first we need the main procedure
-    // start generating code from the main procedure
+    label_labels();
     size_t count = 0; // the number of instructions; also works as an address
-    std::vector<std::unique_ptr<nodes::Node>>::iterator iter = inst_nodes.begin() + main_proc_ind;
-    // we can be sure that iter will point to the main procedure's definition
+    std::vector<std::unique_ptr<nodes::Node>>::iterator iter = inst_nodes.begin();
+    auto temp = iter;
     while (iter != inst_nodes.end())
     {
         auto inst = iter->get();
@@ -114,7 +119,9 @@ void masm::codegen::Codegen::gen()
         {
         case nodes::NodeKind::_INST_HLT:
         {
-            inst_bytes.push_back(((uint64_t)(opcodes::OP_HALT)) << 56);
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_HALT;
+            inst_bytes.push_back(inst);
             break;
         }
         case nodes::NodeKind::_INST_MOV_REG_IMM:
@@ -129,16 +136,11 @@ void masm::codegen::Codegen::gen()
             gen_inst_mov_reg_reg(*iter);
             break;
         }
-        case nodes::NodeKind::_LABEL:
-        {
-            // we can be sure that the label is only defined once and not more
-            label_addrs[((nodes::NodeLabel *)inst->ptr.get())->label_name] = count;
-            count--; // needs additional checks here
-            break;
+        default:
+            count--;
         }
-            // we don't care about procedure declaration right now
-        }
+        // we don't care about procedure declaration right now
         iter++;
         count++;
-    }
+    }  
 }
