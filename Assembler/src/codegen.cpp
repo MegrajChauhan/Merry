@@ -36,6 +36,44 @@ void masm::codegen::Codegen::gen_data()
                 data_bytes.push_back((unsigned char)std::stoi(data.second.value));
                 break;
             }
+            case nodes::DataType::_TYPE_WORD:
+            {
+                // since the variable names are unique, we won't have to worry about anything here
+                data_addrs[data.first] = start;
+                start += 2;
+                uint16_t val = std::stoi(data.second.value);
+                data_bytes.push_back(val & 255);
+                data_bytes.push_back((val >> 8) & 255);
+                break;
+            }
+            case nodes::DataType::_TYPE_DWORD:
+            {
+                // since the variable names are unique, we won't have to worry about anything here
+                data_addrs[data.first] = start;
+                start += 4;
+                uint32_t val = std::stoi(data.second.value);
+                data_bytes.push_back(val & 255);
+                data_bytes.push_back((val >> 8) & 255);
+                data_bytes.push_back((val >> 16) & 255);
+                data_bytes.push_back((val >> 24) & 255);
+                break;
+            }
+            case nodes::DataType::_TYPE_QWORD:
+            {
+                // since the variable names are unique, we won't have to worry about anything here
+                data_addrs[data.first] = start;
+                start += 8;
+                uint64_t val = std::stoull(data.second.value);
+                data_bytes.push_back(val & 255);
+                data_bytes.push_back((val >> 8) & 255);
+                data_bytes.push_back((val >> 16) & 255);
+                data_bytes.push_back((val >> 24) & 255);
+                data_bytes.push_back((val >> 32) & 255);
+                data_bytes.push_back((val >> 40) & 255);
+                data_bytes.push_back((val >> 48) & 255);
+                data_bytes.push_back((val >> 56) & 255);
+                break;
+            }
             }
             break;
         }
@@ -43,13 +81,45 @@ void masm::codegen::Codegen::gen_data()
     }
 }
 
-void masm::codegen::Codegen::gen_inst_mov_reg_reg(std::unique_ptr<nodes::Node> &node)
+void masm::codegen::Codegen::gen_inst_mov_reg_reg(std::unique_ptr<nodes::Node> &node, size_t bytes)
 {
     auto n = (nodes::NodeInstMovRegReg *)node->ptr.get();
     Instruction inst;
-    inst.bytes.b1 = opcodes::OP_MOVE_REG;
+    inst.bytes.b1 = bytes == 8 ? opcodes::OP_MOVE_REG : bytes == 4 ? opcodes::OP_MOVE_REG32
+                                                    : bytes == 2   ? opcodes::OP_MOVE_REG16
+                                                                   : opcodes::OP_MOVE_REG8;
     inst.bytes.b8 = (n->dest_regr << 4) | n->src_reg;
     inst_bytes.push_back(inst);
+}
+
+void masm::codegen::Codegen::gen_inst_mov_reg_immq(std::unique_ptr<nodes::Node> &node)
+{
+    nodes::NodeInstMovRegImm *n = (nodes::NodeInstMovRegImm *)node->ptr.get();
+    Instruction final_inst;
+    bool imm_needed = false;
+    if (n->is_iden)
+    {
+        size_t addr_of_iden = data_addrs.find(n->value)->second;
+        auto iden_details = table.find_entry(n->value)->second;
+        // movq only accepts 8 bytes long numbers
+        final_inst.bytes.b1 = opcodes::OP_LOAD;
+        final_inst.bytes.b2 = (n->dest_regr);
+        final_inst.whole |= addr_of_iden;
+    }
+    else
+    {
+        final_inst.bytes.b1 = opcodes::OP_MOVE_IMM_64;
+        final_inst.bytes.b8 = n->dest_regr;
+        imm_needed = true;
+    }
+    inst_bytes.push_back(final_inst);
+    // now we need to push the immediate as well
+    if (imm_needed)
+    {
+        Instruction imm;
+        imm.whole = std::stoull(n->value);
+        inst_bytes.push_back(imm);
+    }
 }
 
 void masm::codegen::Codegen::gen_inst_mov_reg_imm(std::unique_ptr<nodes::Node> &node)
@@ -76,6 +146,27 @@ void masm::codegen::Codegen::gen_inst_mov_reg_imm(std::unique_ptr<nodes::Node> &
             // we then need to push the 6 byte address of the
             break;
         }
+        case nodes::DataType::_TYPE_WORD:
+        {
+            final_inst.bytes.b1 = opcodes::OP_LOADW;
+            final_inst.bytes.b2 = (n->dest_regr);
+            final_inst.whole |= addr_of_iden;
+            break;
+        }
+        case nodes::DataType::_TYPE_DWORD:
+        {
+            final_inst.bytes.b1 = opcodes::OP_LOADD;
+            final_inst.bytes.b2 = (n->dest_regr);
+            final_inst.whole |= addr_of_iden;
+            break;
+        }
+        case nodes::DataType::_TYPE_QWORD:
+        {
+            final_inst.bytes.b1 = opcodes::OP_LOAD;
+            final_inst.bytes.b2 = (n->dest_regr);
+            final_inst.whole |= addr_of_iden;
+            break;
+        }
         }
     }
     else
@@ -100,7 +191,7 @@ void masm::codegen::Codegen::label_labels()
     {
         if (x->kind == nodes::NodeKind::_LABEL)
             label_addrs[((nodes::NodeLabel *)x->ptr.get())->label_name] = i;
-        else if (x->kind != nodes::NodeKind::_PROC_DECLR && x->kind != nodes::NodeKind::_DEF_BYTE)
+        else if (x->kind > 4)
             i++;
     }
 }
@@ -124,6 +215,11 @@ void masm::codegen::Codegen::gen()
             inst_bytes.push_back(inst);
             break;
         }
+        case nodes::NodeKind::_INST_MOV_REG_IMMQ:
+        {
+            gen_inst_mov_reg_immq(*iter);
+            break;
+        }
         case nodes::NodeKind::_INST_MOV_REG_IMM:
         {
             // we need to change this to load instruction
@@ -132,8 +228,24 @@ void masm::codegen::Codegen::gen()
             break;
         }
         case nodes::NodeKind::_INST_MOV_REG_REG:
+        case nodes::NodeKind::_INST_MOV_REG_MOVE:
         {
-            gen_inst_mov_reg_reg(*iter);
+            gen_inst_mov_reg_reg(*iter, 8);
+            break;
+        }
+        case nodes::NodeKind::_INST_MOV_REG_REG8:
+        {
+            gen_inst_mov_reg_reg(*iter, 1);
+            break;
+        }
+        case nodes::NodeKind::_INST_MOV_REG_REG16:
+        {
+            gen_inst_mov_reg_reg(*iter, 2);
+            break;
+        }
+        case nodes::NodeKind::_INST_MOV_REG_REG32:
+        {
+            gen_inst_mov_reg_reg(*iter, 4);
             break;
         }
         default:
@@ -142,5 +254,5 @@ void masm::codegen::Codegen::gen()
         // we don't care about procedure declaration right now
         iter++;
         count++;
-    }  
+    }
 }

@@ -41,7 +41,7 @@ void masm::parser::Parser::parse()
                 break; // should not reach this point
             }
             section = _SECTION_DATA;
-            next_token();
+            next_token(); // i can't remember the reason why I moved this line back into each case statements instead of having just one at the end
             break;
         }
         case lexer::_TT_SECTION_TEXT:
@@ -90,6 +90,7 @@ void masm::parser::Parser::parse()
             next_token();
             break;
         }
+        case lexer::_TT_INST_MOVQ:
         case lexer::_TT_INST_MOV:
         {
             if (section != _SECTION_TEXT)
@@ -98,6 +99,20 @@ void masm::parser::Parser::parse()
                 break;
             }
             handle_inst_mov();
+            next_token();
+            break;
+        }
+        case lexer::_TT_INST_MOV_REG:
+        case lexer::_TT_INST_MOV_REG8:
+        case lexer::_TT_INST_MOV_REG16:
+        case lexer::_TT_INST_MOV_REG32:
+        {
+            if (section != _SECTION_TEXT)
+            {
+                lexer.parse_error("Using instructions in the data section is not allowed");
+                break;
+            }
+            handle_inst_mov_reg();
             next_token();
             break;
         }
@@ -115,13 +130,39 @@ void masm::parser::Parser::parse()
     }
 }
 
+void masm::parser::Parser::handle_inst_mov_reg()
+{
+    nodes::NodeKind kind = curr_tok.type == lexer::_TT_INST_MOV_REG ? nodes::NodeKind::_INST_MOV_REG_MOVE : curr_tok.type == lexer::_TT_INST_MOV_REG8 ? nodes::NodeKind::_INST_MOV_REG_REG8
+                                                                                                       : curr_tok.type == lexer::_TT_INST_MOV_REG16  ? nodes::NodeKind::_INST_MOV_REG_REG16
+                                                                                                                                                     : nodes::NodeKind::_INST_MOV_REG_REG32;
+    next_token();
+    auto regr = nodes::_regr_iden_map.find(curr_tok.value);
+    if (regr == nodes::_regr_iden_map.end())
+    {
+        lexer.parse_error("Expected register name after 'mov' instruction.");
+    }
+    next_token();
+    std::unique_ptr<nodes::Base> ptr;
+    auto regr2 = nodes::_regr_iden_map.find(curr_tok.value);
+    if (regr2 == nodes::_regr_iden_map.end())
+    {
+        lexer.parse_error("movX type instructions only accept registers as operands");
+    }
+    ptr = std::make_unique<nodes::NodeInstMovRegReg>();
+    auto temp = (nodes::NodeInstMovRegReg *)ptr.get();
+    temp->dest_regr = regr->second;
+    temp->src_reg = regr2->second;
+    nodes.push_back(std::make_unique<masm::nodes::Node>(nodes::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
+}
+
 void masm::parser::Parser::handle_inst_mov()
 {
     // We have to identify what the variant is
+    bool is_q = (curr_tok.type == lexer::_TT_INST_MOVQ);
     next_token();
     // This must be a register no matter what
     auto regr = nodes::_regr_iden_map.find(curr_tok.value);
-    if (curr_tok.type != lexer::_TT_IDENTIFIER || regr == nodes::_regr_iden_map.end())
+    if (regr == nodes::_regr_iden_map.end())
     {
         lexer.parse_error("Expected register name after 'mov' instruction.");
     }
@@ -145,6 +186,11 @@ void masm::parser::Parser::handle_inst_mov()
         }
         else
         {
+            if (is_q)
+            {
+                // movq only accepts immediates and variables
+                lexer.parse_error("The 'movq' instruction only accepts immediates and variables.");
+            }
             kind = nodes::NodeKind::_INST_MOV_REG_REG;
             ptr = std::make_unique<nodes::NodeInstMovRegReg>();
             auto temp = (nodes::NodeInstMovRegReg *)ptr.get();
@@ -166,6 +212,7 @@ void masm::parser::Parser::handle_inst_mov()
     {
         lexer.parse_error("Expected an immediate value, register or a variable name.");
     }
+    kind = is_q ? nodes::NodeKind::_INST_MOV_REG_IMMQ : kind;
     nodes.push_back(std::make_unique<masm::nodes::Node>(nodes::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
 }
 
@@ -190,6 +237,33 @@ void masm::parser::Parser::handle_identifier()
             lexer.parse_error("Defining variables in the text section is not allowed");
         }
         handle_definebyte(name);
+        break;
+    }
+    case lexer::_TT_KEY_DW:
+    {
+        if (section != _SECTION_DATA)
+        {
+            lexer.parse_error("Defining variables in the text section is not allowed");
+        }
+        handle_defineword(name);
+        break;
+    }
+    case lexer::_TT_KEY_DD:
+    {
+        if (section != _SECTION_DATA)
+        {
+            lexer.parse_error("Defining variables in the text section is not allowed");
+        }
+        handle_definedword(name);
+        break;
+    }
+    case lexer::_TT_KEY_DQ:
+    {
+        if (section != _SECTION_DATA)
+        {
+            lexer.parse_error("Defining variables in the text section is not allowed");
+        }
+        handle_defineqword(name);
         break;
     }
     default:
@@ -226,6 +300,57 @@ void masm::parser::Parser::handle_definebyte(std::string name)
     kind = nodes::_DEF_BYTE;
     ptr = std::make_unique<nodes::NodeDefByte>();
     auto temp = dynamic_cast<nodes::NodeDefByte *>(ptr.get());
+    temp->byte_name = name;
+    temp->byte_val = curr_tok.value;
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_DATA, kind, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_defineword(std::string name)
+{
+    next_token();
+    if (curr_tok.type != lexer::_TT_INT)
+    {
+        lexer.parse_err_previous_token(curr_tok.value, std::string("Expected a number, got ") + curr_tok.value + " instead.");
+    }
+    nodes::NodeKind kind;
+    std::unique_ptr<nodes::Base> ptr;
+    kind = nodes::_DEF_WORD;
+    ptr = std::make_unique<nodes::NodeDefWord>();
+    auto temp = dynamic_cast<nodes::NodeDefWord *>(ptr.get());
+    temp->byte_name = name;
+    temp->byte_val = curr_tok.value;
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_DATA, kind, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_definedword(std::string name)
+{
+    next_token();
+    if (curr_tok.type != lexer::_TT_INT)
+    {
+        lexer.parse_err_previous_token(curr_tok.value, std::string("Expected a number, got ") + curr_tok.value + " instead.");
+    }
+    nodes::NodeKind kind;
+    std::unique_ptr<nodes::Base> ptr;
+    kind = nodes::_DEF_DWORD;
+    ptr = std::make_unique<nodes::NodeDefDword>();
+    auto temp = dynamic_cast<nodes::NodeDefDword *>(ptr.get());
+    temp->byte_name = name;
+    temp->byte_val = curr_tok.value;
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_DATA, kind, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_defineqword(std::string name)
+{
+    next_token();
+    if (curr_tok.type != lexer::_TT_INT)
+    {
+        lexer.parse_err_previous_token(curr_tok.value, std::string("Expected a number, got ") + curr_tok.value + " instead.");
+    }
+    nodes::NodeKind kind;
+    std::unique_ptr<nodes::Base> ptr;
+    kind = nodes::_DEF_QWORD;
+    ptr = std::make_unique<nodes::NodeDefQword>();
+    auto temp = dynamic_cast<nodes::NodeDefQword *>(ptr.get());
     temp->byte_name = name;
     temp->byte_val = curr_tok.value;
     nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_DATA, kind, std::move(ptr), lexer.get_curr_line()));

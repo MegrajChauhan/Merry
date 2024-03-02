@@ -2,21 +2,50 @@
 .data:
 ;; msg: .string "Hello World!", 10 ;; this is a string
 strlen: db 13
+strlen_w: dw 60000
+strlen_d: dd 1000000
+strlen_q: dq 100000000
 
 .text:
 proc main
 proc add
 
 ;; expect the first number in Ma register and second number in Mb register
+;; return in Ma register
 add:
+  ;; add Ma, Mb
+  hlt
+  hlt
+  hlt
+  hlt
+  hlt
   hlt
  
 main:
-  mov Ma, 12345
-  mov Mb, strlen
-  mov Mc, Ma
-  mov Mf, test ;; the declaration of test at the end has not effect here
-  ;; call add
+  ;; mov doesn't have anything like movb, movw, movd
+  nop
+  ;; here is a list of everything that should work
+  mov Ma, 1 ;; just plain mov reg, imm
+  mov Ma, Mb ;; mov reg, reg
+  mov Mb, strlen ;; translates to loadb Mb, strlen
+  mov Mc, strlen_w ;; translates to loadw Mc, strlen_w
+  mov Md, strlen_d ;; translates to loadd Mb, strlen_d
+  mov Me, strlen_q ;; translates to loadq Me, strlen_q
+
+  movq Mf, 123456789 ;; just movq reg, imm
+  movq Mf, strlen_q ;; translates to loadq Mf, strlen_q
+  ;; movq Mf, strlen ;; error, accepts only qwords; same for strlen_d and strlen_w
+
+  ;; mov doesn't have movb, movw, movd as mentioned BUT
+  ;; it DOES have those variants for registers
+  ;; these following instructions only accept registers as operands
+  ;; The way they work will be explained in a future documentation
+  ;; movq above will be modified as move here 
+  movb M1, M2
+  movw M3, M4
+  movd M5, Ma
+  move Mm1, Mm2
+
   hlt ;; we use halt here because this is what ultimately stops the program so there is no point in having a ret here
 
 ;; main:

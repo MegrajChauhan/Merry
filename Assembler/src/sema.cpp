@@ -79,6 +79,30 @@ void masm::sema::Sema::analyse()
                 symtable.add_entry(var->byte_name, symtable::SymTableEntry(symtable::_VAR, var->byte_val, nodes::_TYPE_BYTE));
                 break;
             }
+            case nodes::NodeKind::_DEF_WORD:
+            {
+                auto var = (nodes::NodeDefWord *)node->ptr.get();
+                if (symtable.is_invalid(symtable.find_entry(var->byte_name)))
+                    analysis_error(node->line, std::string("The variable '") + var->byte_name + "' already exists; redefining");
+                symtable.add_entry(var->byte_name, symtable::SymTableEntry(symtable::_VAR, var->byte_val, nodes::_TYPE_WORD));
+                break;
+            }
+            case nodes::NodeKind::_DEF_DWORD:
+            {
+                auto var = (nodes::NodeDefDword *)node->ptr.get();
+                if (symtable.is_invalid(symtable.find_entry(var->byte_name)))
+                    analysis_error(node->line, std::string("The variable '") + var->byte_name + "' already exists; redefining");
+                symtable.add_entry(var->byte_name, symtable::SymTableEntry(symtable::_VAR, var->byte_val, nodes::_TYPE_DWORD));
+                break;
+            }
+            case nodes::NodeKind::_DEF_QWORD:
+            {
+                auto var = (nodes::NodeDefQword *)node->ptr.get();
+                if (symtable.is_invalid(symtable.find_entry(var->byte_name)))
+                    analysis_error(node->line, std::string("The variable '") + var->byte_name + "' already exists; redefining");
+                symtable.add_entry(var->byte_name, symtable::SymTableEntry(symtable::_VAR, var->byte_val, nodes::_TYPE_QWORD));
+                break;
+            }
             }
             break;
         }
@@ -145,6 +169,19 @@ void masm::sema::Sema::analyse()
         // we only check for those instructions that may use variables and symbols
         switch (inst->kind)
         {
+        case nodes::NodeKind::_INST_MOV_REG_IMMQ:
+        {
+            auto node = (nodes::NodeInstMovRegImm *)inst->ptr.get();
+            if (node->is_iden)
+            {
+                auto x = symtable.find_entry(node->value);
+                if (!symtable.is_invalid(symtable.find_entry(node->value)))
+                    analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
+                if (x->second.dtype != nodes::DataType::_TYPE_QWORD)
+                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of QWORD type to be used with 'movq'");
+            }
+            break;
+        }
         case nodes::NodeKind::_INST_MOV_REG_IMM:
         {
             auto node = (nodes::NodeInstMovRegImm *)inst->ptr.get();

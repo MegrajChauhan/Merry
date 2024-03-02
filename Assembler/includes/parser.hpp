@@ -48,12 +48,16 @@ namespace masm
             void handle_identifier();
 
             void handle_definebyte(std::string);
+            void handle_defineword(std::string);
+            void handle_definedword(std::string);
+            void handle_defineqword(std::string);
 
             void handle_proc_declaration();
 
             void handle_label(std::string);
 
             void handle_inst_mov();
+            void handle_inst_mov_reg();
         };
     };
 };

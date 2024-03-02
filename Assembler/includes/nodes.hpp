@@ -18,18 +18,29 @@ namespace masm
 
         enum DataType
         {
-            _TYPE_BYTE, // this represents a byte rather than a number 
+            _TYPE_BYTE,
+            _TYPE_WORD,
+            _TYPE_DWORD,
+            _TYPE_QWORD,
         };
 
         enum NodeKind
         {
             // the kind of node(Not Type but like move, define byte, string etc)
-            _DEF_BYTE,   // defines a byte
-                         // any label that is declared as proc is a procedure while any other are just labels
+            _DEF_BYTE, // defines a byte
+            _DEF_WORD,
+            _DEF_DWORD,
+            _DEF_QWORD,
+            // any label that is declared as proc is a procedure while any other are just labels
             _PROC_DECLR, // procedure declaration
             _LABEL,      // A label[Unless semantically verified even procedure definition is a label]
             _INST_MOV_REG_IMM,
             _INST_MOV_REG_REG,
+            _INST_MOV_REG_IMMQ,
+            _INST_MOV_REG_MOVE,
+            _INST_MOV_REG_REG8,
+            _INST_MOV_REG_REG16,
+            _INST_MOV_REG_REG32,
             _INST_HLT, // this doesn't need its own structure
         };
 
@@ -85,6 +96,16 @@ namespace masm
             std::string byte_name; // the variable name
 
             NodeDefByte() {} // Initialize byte_val to 0 by default
+        };
+
+        struct NodeDefWord : public NodeDefByte
+        {
+        };
+        struct NodeDefDword : public NodeDefByte
+        {
+        };
+        struct NodeDefQword : public NodeDefByte
+        {
         };
 
         struct NodeProcDeclr : public Base

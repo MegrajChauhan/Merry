@@ -25,6 +25,9 @@ namespace masm
             _TT_SECTION_TEXT,
             _TT_KEY_STRING, // the ".string" keyword
             _TT_KEY_DB,     // "db" or define byte
+            _TT_KEY_DW,
+            _TT_KEY_DD,
+            _TT_KEY_DQ,
             _TT_KEY_PROC,
 
             _TT_TYPE_STRING,
@@ -38,16 +41,28 @@ namespace masm
             // for the lexer, even the register names like Ma, Mb are IDENTIFIER, it's interpretation is upto the parser
             _TT_INST_MOV,
             _TT_INST_HLT,
+            _TT_INST_MOVQ,
+            _TT_INST_MOV_REG,
+            _TT_INST_MOV_REG8,
+            _TT_INST_MOV_REG16,
+            _TT_INST_MOV_REG32,
 
             // we ignore commas, they are not absolutely necessary and the assembler won't even complain
             // about not using it. It is just their to provide readability
         };
 
         // the global map to identify the token types
-        static std::unordered_map<std::string, TokenType>
-            _iden_map_ =
-                {
-                    {"data", _TT_SECTION_DATA}, {"text", _TT_SECTION_TEXT}, {"string", _TT_KEY_STRING}, {"db", _TT_KEY_DB}, {"proc", _TT_KEY_PROC}, {":", _TT_OPER_COLON}, {"mov", _TT_INST_MOV}, {"hlt", _TT_INST_HLT}};
+        static std::unordered_map<std::string, TokenType> _iden_map_ =
+        {
+            {"data", _TT_SECTION_DATA}, {"text", _TT_SECTION_TEXT}, 
+            {"string", _TT_KEY_STRING}, {"db", _TT_KEY_DB}, 
+            {"dw", _TT_KEY_DW}, {"dd", _TT_KEY_DD}, {"dq", _TT_KEY_DQ}, 
+            {"proc", _TT_KEY_PROC}, {":", _TT_OPER_COLON}, 
+            {"mov", _TT_INST_MOV}, {"hlt", _TT_INST_HLT}, 
+            {"movq", _TT_INST_MOVQ}, {"move", _TT_INST_MOV_REG}, 
+            {"movb", _TT_INST_MOV_REG8}, {"movw", _TT_INST_MOV_REG16},
+            {"movd", _TT_INST_MOV_REG32}
+        };
 
         struct Token
         {

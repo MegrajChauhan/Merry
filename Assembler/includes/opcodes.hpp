@@ -45,6 +45,7 @@ namespace masm
             OP_FSUB,
             OP_FMUL,
             OP_FDIV,
+
             OP_MOVE_IMM,
             OP_MOVE_IMM_64,
             OP_MOVE_REG,
@@ -57,6 +58,7 @@ namespace masm
             OP_MOVESX_REG8,
             OP_MOVESX_REG16,
             OP_MOVESX_REG32,
+            
             OP_JMP_OFF,
             OP_JMP_ADDR,
             OP_CALL,
