@@ -414,10 +414,10 @@ _THRET_T_ merry_runCore(mptr_t core)
             merry_execute_atm_loadw(c, *current & 0xFFFFFFFFFFFF);
             break;
         case OP_ATOMIC_STOREW:
-            merry_execute_atomic_storew(c, *current & 0xFFFFFFFFFFFF);
+            merry_execute_atm_storew(c, *current & 0xFFFFFFFFFFFF);
             break;
         case OP_ATOMIC_LOADD:
-            merry_execute_atomic_loadd(c, *current & 0xFFFFFFFFFFFF);
+            merry_execute_atm_loadd(c, *current & 0xFFFFFFFFFFFF);
             break;
         case OP_ATOMIC_STORED:
             merry_execute_atm_stored(c, *current & 0xFFFFFFFFFFFF);

@@ -126,6 +126,13 @@ void masm::parser::Parser::parse()
             next_token();
             break;
         }
+        case lexer::_TT_INST_MOVEB:
+        case lexer::_TT_INST_MOVEW:
+        case lexer::_TT_INST_MOVED:
+        {
+
+            break;
+        }
         case lexer::_TT_INST_MOVSXB:
         {
             if (section != _SECTION_TEXT)
@@ -205,6 +212,40 @@ void masm::parser::Parser::handle_inst_movX()
     {
         lexer.parse_error("Expected an immediate value, register or a variable name.");
     }
+    nodes.push_back(std::make_unique<masm::nodes::Node>(nodes::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_inst_moveX()
+{
+    size_t len = curr_tok.type == lexer::_TT_INST_MOVEB ? 1 : curr_tok.type == lexer::_TT_INST_MOVEW ? 2
+                                                                                                     : 4;
+    next_token();
+    nodes::NodeKind kind;
+    auto regr = nodes::_regr_iden_map.find(curr_tok.value);
+    if (regr == nodes::_regr_iden_map.end())
+    {
+        lexer.parse_error("Expected register name after 'movX' instruction.");
+    }
+    next_token();
+    std::unique_ptr<nodes::Base> ptr;
+    auto iden2 = nodes::_regr_iden_map.find(curr_tok.value);
+    if (iden2 == nodes::_regr_iden_map.end())
+    {
+        lexer.parse_error("Expected a source register in 'moveX' instruction.");
+        // kind = len == 1 ? nodes::NodeKind::_INST_MOV_REG_IMM8 : len == 2 ? nodes::NodeKind::_INST_MOV_REG_IMM16
+        //                                                                  : nodes::NodeKind::_INST_MOV_REG_IMM32;
+        // ptr = std::make_unique<nodes::NodeInstMovRegImm>();
+        // auto temp = (nodes::NodeInstMovRegImm *)ptr.get();
+        // temp->is_iden = true;
+        // temp->dest_regr = regr->second;
+        // temp->value = curr_tok.value;
+    }
+    kind = len == 1 ? nodes::NodeKind::_INST_MOV_REG_REG8 : len == 2 ? nodes::NodeKind::_INST_MOV_REG_REG16
+                                                                     : nodes::NodeKind::_INST_MOV_REG_REG32;
+    ptr = std::make_unique<nodes::NodeInstMovRegReg>();
+    auto temp = (nodes::NodeInstMovRegReg *)ptr.get();
+    temp->src_reg = iden2->second;
+    temp->dest_regr = regr->second;
     nodes.push_back(std::make_unique<masm::nodes::Node>(nodes::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
 }
 

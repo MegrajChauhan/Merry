@@ -26,9 +26,7 @@ add:
 ;; But the mov_reg8 instruction moves the byte but the upper bytes are cleared.
 
 main:
-  ;; mov doesn't have anything like movb, movw, movd
   nop
-  ;; here is a list of everything that should work
   mov Ma, 1 ;; just plain mov reg, imm
   mov Ma, Mb ;; mov reg, reg
   mov Mb, strlen ;; translates to loadb Mb, strlen
@@ -53,29 +51,44 @@ main:
   movd M5, Ma
   movd M5, strlen_d
 
-  movsxb Ma, 1
-  movsxb Ma, M1
-  movsxb Ma, strlen
+  ;; the following three moves are restricted to register operands only
+  ;; The above move instructions affect the upper bytes of the destination register
+  ;; zeroing it out but the below will not do that
+  ;; There is no moveq and using variables and immediates is not allowed
+  moveb Ma, Mb
+  movew M1, M2
+  moved Mm1 Mm2
 
-  movsxw Mb, 2
-  movsxw Mb, M2
-  movsxw Mb, strlen_w
+  ;; NOTE: The assembler doesn't strictly require the use of commas
+  ;; in fact, the assembler ignores all the commas
+  ;; They are just their to increase readability
+  ;; So the following line is completely valid as well
 
-  movsxd Mc, 3
-  movsxd Mc, M3
-  movsxd Mc, strlen_w
+  ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,, ;; ignored by assembler
 
-  moveb M1, 1
-  moveb M1, M2
-  moveb M1, strlen
-
-  movew M3, 2
-  movew M3, M4
-  movew M3, strlen_w
-
-  moved M5, 3
-  moved M5, Ma
-  moved M5, strlen_d
+ ;; movsxb Ma, 1
+ ;; movsxb Ma, M1
+ ;; movsxb Ma, strlen
+;;
+ ;; movsxw Mb, 2
+ ;; movsxw Mb, M2
+ ;; movsxw Mb, strlen_w
+;;
+ ;; movsxd Mc, 3
+ ;; movsxd Mc, M3
+ ;; movsxd Mc, strlen_w
+;;
+ ;; moveb M1, 1
+ ;; moveb M1, M2
+ ;; moveb M1, strlen
+;;
+ ;; movew M3, 2
+ ;; movew M3, M4
+ ;; movew M3, strlen_w
+;;
+ ;; moved M5, 3
+ ;; moved M5, Ma
+ ;; moved M5, strlen_d
 
   hlt ;; we use halt here because this is what ultimately stops the program so there is no point in having a ret here
 

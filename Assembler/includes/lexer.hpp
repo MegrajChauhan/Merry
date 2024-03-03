@@ -46,10 +46,9 @@ namespace masm
             _TT_INST_MOVB,
             _TT_INST_MOVW,
             _TT_INST_MOVD,
-            _TT_INST_MOV_REG,
-            _TT_INST_MOV_REG8,
-            _TT_INST_MOV_REG16,
-            _TT_INST_MOV_REG32,
+            _TT_INST_MOVEB,
+            _TT_INST_MOVEW,
+            _TT_INST_MOVED,
             _TT_INST_MOVSXB,
             _TT_INST_MOVSXW,
             _TT_INST_MOVSXD,
@@ -63,18 +62,32 @@ namespace masm
 
         // the global map to identify the token types
         static std::unordered_map<std::string, TokenType> _iden_map_ =
-        {
-            {"data", _TT_SECTION_DATA}, {"text", _TT_SECTION_TEXT}, 
-            {"string", _TT_KEY_STRING}, {"db", _TT_KEY_DB}, 
-            {"dw", _TT_KEY_DW}, {"dd", _TT_KEY_DD}, {"dq", _TT_KEY_DQ}, 
-            {"proc", _TT_KEY_PROC}, {":", _TT_OPER_COLON}, 
-            {"mov", _TT_INST_MOV}, {"hlt", _TT_INST_HLT}, 
-            {"movq", _TT_INST_MOVQ},{"movb", _TT_INST_MOVB}, 
-            {"movw", _TT_INST_MOVW},{"movd", _TT_INST_MOVD},
-            {"movsxb", _TT_INST_MOVSXB},{"movsxw", _TT_INST_MOVSXW},
-            {"movsxd", _TT_INST_MOVSXD},{"movesxb", _TT_INST_MOVESXB},
-            {"movesxw", _TT_INST_MOVESXW},{"movesxd", _TT_INST_MOVESXD},
-            {"nop", _TT_INST_NOP},
+            {
+                {"data", _TT_SECTION_DATA},
+                {"text", _TT_SECTION_TEXT},
+                {"string", _TT_KEY_STRING},
+                {"db", _TT_KEY_DB},
+                {"dw", _TT_KEY_DW},
+                {"dd", _TT_KEY_DD},
+                {"dq", _TT_KEY_DQ},
+                {"proc", _TT_KEY_PROC},
+                {":", _TT_OPER_COLON},
+                {"mov", _TT_INST_MOV},
+                {"hlt", _TT_INST_HLT},
+                {"movq", _TT_INST_MOVQ},
+                {"movb", _TT_INST_MOVB},
+                {"movw", _TT_INST_MOVW},
+                {"movd", _TT_INST_MOVD},
+                {"moveb", _TT_INST_MOVEB},
+                {"movew", _TT_INST_MOVEW},
+                {"moved", _TT_INST_MOVED},
+                {"movsxb", _TT_INST_MOVSXB},
+                {"movsxw", _TT_INST_MOVSXW},
+                {"movsxd", _TT_INST_MOVSXD},
+                {"movesxb", _TT_INST_MOVESXB},
+                {"movesxw", _TT_INST_MOVESXW},
+                {"movesxd", _TT_INST_MOVESXD},
+                {"nop", _TT_INST_NOP},
         };
 
         struct Token
@@ -163,7 +176,7 @@ namespace masm
             {
                 Token token;
                 std::string iden_or_keyword;
-                while (is_alpha(*curr_char) || *curr_char == '_')
+                while (((*curr_char != ' ' && (is_alpha(*curr_char) || is_num(*curr_char) && !is_oper(*curr_char))) || *curr_char == '_'))
                 {
                     iden_or_keyword.push_back(*curr_char);
                     consume();

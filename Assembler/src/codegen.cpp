@@ -200,7 +200,7 @@ void masm::codegen::Codegen::gen()
 {
     gen_data(); // generate data bytes
     label_labels();
-    size_t count = 0; // the number of instructions; also works as an address
+    // size_t count = 0; // the number of instructions; also works as an address
     std::vector<std::unique_ptr<nodes::Node>>::iterator iter = inst_nodes.begin();
     auto temp = iter;
     while (iter != inst_nodes.end())
@@ -208,6 +208,11 @@ void masm::codegen::Codegen::gen()
         auto inst = iter->get();
         switch (inst->kind)
         {
+        case nodes::NodeKind::_INST_NOP:
+        {
+            inst_bytes.push_back(Instruction());
+            break;
+        }
         case nodes::NodeKind::_INST_HLT:
         {
             Instruction inst;
@@ -250,11 +255,11 @@ void masm::codegen::Codegen::gen()
             gen_inst_mov_reg_reg(*iter, 4);
             break;
         }
-        default:
-            count--;
+        // default:
+        //     count--;
         }
         // we don't care about procedure declaration right now
         iter++;
-        count++;
+        // count++;
     }
 }

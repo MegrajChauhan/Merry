@@ -715,7 +715,6 @@ _MERRY_ALWAYS_INLINE_ _exec_(excg)
    core->registers[curr & 15] = reg1;
 }
 
-
 _MERRY_ALWAYS_INLINE_ _lexec_(atm_load, mqword_t address)
 {
    // read from the given address
