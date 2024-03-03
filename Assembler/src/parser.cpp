@@ -79,6 +79,17 @@ void masm::parser::Parser::parse()
             next_token();
             break;
         }
+        case lexer::_TT_INST_NOP:
+        {
+            if (section != _SECTION_TEXT)
+            {
+                lexer.parse_error("Using instructions in the data section is not allowed");
+                break;
+            }
+            nodes.push_back(std::make_unique<nodes::Node>(nodes::Node(nodes::_TYPE_INST, nodes::_INST_NOP, std::make_unique<nodes::Base>())));
+            next_token();
+            break;
+        }
         case lexer::_TT_INST_HLT:
         {
             if (section != _SECTION_TEXT)
@@ -102,18 +113,26 @@ void masm::parser::Parser::parse()
             next_token();
             break;
         }
-        case lexer::_TT_INST_MOV_REG:
-        case lexer::_TT_INST_MOV_REG8:
-        case lexer::_TT_INST_MOV_REG16:
-        case lexer::_TT_INST_MOV_REG32:
+        case lexer::_TT_INST_MOVB:
+        case lexer::_TT_INST_MOVW:
+        case lexer::_TT_INST_MOVD:
         {
             if (section != _SECTION_TEXT)
             {
                 lexer.parse_error("Using instructions in the data section is not allowed");
                 break;
             }
-            handle_inst_mov_reg();
+            handle_inst_movX();
             next_token();
+            break;
+        }
+        case lexer::_TT_INST_MOVSXB:
+        {
+            if (section != _SECTION_TEXT)
+            {
+                lexer.parse_error("Using instructions in the data section is not allowed");
+                break;
+            }
             break;
         }
         default:
@@ -130,28 +149,62 @@ void masm::parser::Parser::parse()
     }
 }
 
-void masm::parser::Parser::handle_inst_mov_reg()
+void masm::parser::Parser::handle_inst_movsx(size_t bytes)
 {
-    nodes::NodeKind kind = curr_tok.type == lexer::_TT_INST_MOV_REG ? nodes::NodeKind::_INST_MOV_REG_MOVE : curr_tok.type == lexer::_TT_INST_MOV_REG8 ? nodes::NodeKind::_INST_MOV_REG_REG8
-                                                                                                       : curr_tok.type == lexer::_TT_INST_MOV_REG16  ? nodes::NodeKind::_INST_MOV_REG_REG16
-                                                                                                                                                     : nodes::NodeKind::_INST_MOV_REG_REG32;
+}
+
+void masm::parser::Parser::handle_inst_movX()
+{
+    size_t len = curr_tok.type == lexer::_TT_INST_MOVB ? 1 : curr_tok.type == lexer::_TT_INST_MOVW ? 2
+                                                                                                   : 4;
     next_token();
+    nodes::NodeKind kind;
     auto regr = nodes::_regr_iden_map.find(curr_tok.value);
     if (regr == nodes::_regr_iden_map.end())
     {
-        lexer.parse_error("Expected register name after 'mov' instruction.");
+        lexer.parse_error("Expected register name after 'movX' instruction.");
     }
     next_token();
     std::unique_ptr<nodes::Base> ptr;
-    auto regr2 = nodes::_regr_iden_map.find(curr_tok.value);
-    if (regr2 == nodes::_regr_iden_map.end())
+    if (curr_tok.type == lexer::_TT_IDENTIFIER)
     {
-        lexer.parse_error("movX type instructions only accept registers as operands");
+        auto iden2 = nodes::_regr_iden_map.find(curr_tok.value);
+        if (iden2 == nodes::_regr_iden_map.end())
+        {
+            // it is a variable name
+            kind = len == 1 ? nodes::NodeKind::_INST_MOV_REG_IMM8 : len == 2 ? nodes::NodeKind::_INST_MOV_REG_IMM16
+                                                                             : nodes::NodeKind::_INST_MOV_REG_IMM32;
+            ptr = std::make_unique<nodes::NodeInstMovRegImm>();
+            auto temp = (nodes::NodeInstMovRegImm *)ptr.get();
+            temp->is_iden = true;
+            temp->dest_regr = regr->second;
+            temp->value = curr_tok.value;
+        }
+        else
+        {
+            kind = len == 1 ? nodes::NodeKind::_INST_MOV_REG_REG8 : len == 2 ? nodes::NodeKind::_INST_MOV_REG_REG16
+                                                                             : nodes::NodeKind::_INST_MOV_REG_REG32;
+            ptr = std::make_unique<nodes::NodeInstMovRegReg>();
+            auto temp = (nodes::NodeInstMovRegReg *)ptr.get();
+            temp->src_reg = iden2->second;
+            temp->dest_regr = regr->second;
+        }
     }
-    ptr = std::make_unique<nodes::NodeInstMovRegReg>();
-    auto temp = (nodes::NodeInstMovRegReg *)ptr.get();
-    temp->dest_regr = regr->second;
-    temp->src_reg = regr2->second;
+    else if (curr_tok.type == lexer::_TT_INT)
+    {
+        // then we have an immediate here
+        // in future based on the size of the number, we could encode mov64 instruction
+        kind = len == 1 ? nodes::NodeKind::_INST_MOV_REG_IMM8 : len == 2 ? nodes::NodeKind::_INST_MOV_REG_IMM16
+                                                                         : nodes::NodeKind::_INST_MOV_REG_IMM32;
+        ptr = std::make_unique<nodes::NodeInstMovRegImm>();
+        auto temp = (nodes::NodeInstMovRegImm *)ptr.get();
+        temp->dest_regr = regr->second;
+        temp->value = curr_tok.value;
+    }
+    else
+    {
+        lexer.parse_error("Expected an immediate value, register or a variable name.");
+    }
     nodes.push_back(std::make_unique<masm::nodes::Node>(nodes::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
 }
 
@@ -186,16 +239,12 @@ void masm::parser::Parser::handle_inst_mov()
         }
         else
         {
-            if (is_q)
-            {
-                // movq only accepts immediates and variables
-                lexer.parse_error("The 'movq' instruction only accepts immediates and variables.");
-            }
             kind = nodes::NodeKind::_INST_MOV_REG_REG;
             ptr = std::make_unique<nodes::NodeInstMovRegReg>();
             auto temp = (nodes::NodeInstMovRegReg *)ptr.get();
             temp->src_reg = iden2->second;
             temp->dest_regr = regr->second;
+            is_q = false;
         }
     }
     else if (curr_tok.type == lexer::_TT_INT)

@@ -39,13 +39,23 @@ namespace masm
             _TT_IDENTIFIER,
 
             // for the lexer, even the register names like Ma, Mb are IDENTIFIER, it's interpretation is upto the parser
+            _TT_INST_NOP,
             _TT_INST_MOV,
             _TT_INST_HLT,
             _TT_INST_MOVQ,
+            _TT_INST_MOVB,
+            _TT_INST_MOVW,
+            _TT_INST_MOVD,
             _TT_INST_MOV_REG,
             _TT_INST_MOV_REG8,
             _TT_INST_MOV_REG16,
             _TT_INST_MOV_REG32,
+            _TT_INST_MOVSXB,
+            _TT_INST_MOVSXW,
+            _TT_INST_MOVSXD,
+            _TT_INST_MOVESXB,
+            _TT_INST_MOVESXW,
+            _TT_INST_MOVESXD,
 
             // we ignore commas, they are not absolutely necessary and the assembler won't even complain
             // about not using it. It is just their to provide readability
@@ -59,9 +69,12 @@ namespace masm
             {"dw", _TT_KEY_DW}, {"dd", _TT_KEY_DD}, {"dq", _TT_KEY_DQ}, 
             {"proc", _TT_KEY_PROC}, {":", _TT_OPER_COLON}, 
             {"mov", _TT_INST_MOV}, {"hlt", _TT_INST_HLT}, 
-            {"movq", _TT_INST_MOVQ}, {"move", _TT_INST_MOV_REG}, 
-            {"movb", _TT_INST_MOV_REG8}, {"movw", _TT_INST_MOV_REG16},
-            {"movd", _TT_INST_MOV_REG32}
+            {"movq", _TT_INST_MOVQ},{"movb", _TT_INST_MOVB}, 
+            {"movw", _TT_INST_MOVW},{"movd", _TT_INST_MOVD},
+            {"movsxb", _TT_INST_MOVSXB},{"movsxw", _TT_INST_MOVSXW},
+            {"movsxd", _TT_INST_MOVSXD},{"movesxb", _TT_INST_MOVESXB},
+            {"movesxw", _TT_INST_MOVESXW},{"movesxd", _TT_INST_MOVESXD},
+            {"nop", _TT_INST_NOP},
         };
 
         struct Token

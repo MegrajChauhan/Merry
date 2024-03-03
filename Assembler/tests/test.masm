@@ -20,7 +20,11 @@ add:
   hlt
   hlt
   hlt
- 
+
+;; The mov instruction has generally two types.
+;; For eg: mov8 instruction moves the byte without affecting the other bytes in the register
+;; But the mov_reg8 instruction moves the byte but the upper bytes are cleared.
+
 main:
   ;; mov doesn't have anything like movb, movw, movd
   nop
@@ -33,18 +37,45 @@ main:
   mov Me, strlen_q ;; translates to loadq Me, strlen_q
 
   movq Mf, 123456789 ;; just movq reg, imm
+  movq Mm1, Mm2 ;; translates to mov reg, reg
   movq Mf, strlen_q ;; translates to loadq Mf, strlen_q
   ;; movq Mf, strlen ;; error, accepts only qwords; same for strlen_d and strlen_w
 
-  ;; mov doesn't have movb, movw, movd as mentioned BUT
-  ;; it DOES have those variants for registers
-  ;; these following instructions only accept registers as operands
-  ;; The way they work will be explained in a future documentation
-  ;; movq above will be modified as move here 
+  movb M1, 1 
   movb M1, M2
+  movb M1, strlen 
+
+  movw M3, 2
   movw M3, M4
+  movw M3, strlen_w
+
+  movd M5, 3
   movd M5, Ma
-  move Mm1, Mm2
+  movd M5, strlen_d
+
+  movsxb Ma, 1
+  movsxb Ma, M1
+  movsxb Ma, strlen
+
+  movsxw Mb, 2
+  movsxw Mb, M2
+  movsxw Mb, strlen_w
+
+  movsxd Mc, 3
+  movsxd Mc, M3
+  movsxd Mc, strlen_w
+
+  moveb M1, 1
+  moveb M1, M2
+  moveb M1, strlen
+
+  movew M3, 2
+  movew M3, M4
+  movew M3, strlen_w
+
+  moved M5, 3
+  moved M5, Ma
+  moved M5, strlen_d
 
   hlt ;; we use halt here because this is what ultimately stops the program so there is no point in having a ret here
 

@@ -57,7 +57,10 @@ namespace masm
             void handle_label(std::string);
 
             void handle_inst_mov();
-            void handle_inst_mov_reg();
+            void handle_inst_movX();
+
+            void handle_inst_movsx(size_t);
+            void handle_inst_movesx(size_t);
         };
     };
 };

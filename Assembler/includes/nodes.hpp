@@ -34,6 +34,7 @@ namespace masm
             // any label that is declared as proc is a procedure while any other are just labels
             _PROC_DECLR, // procedure declaration
             _LABEL,      // A label[Unless semantically verified even procedure definition is a label]
+            _INST_NOP,
             _INST_MOV_REG_IMM,
             _INST_MOV_REG_REG,
             _INST_MOV_REG_IMMQ,
@@ -41,6 +42,9 @@ namespace masm
             _INST_MOV_REG_REG8,
             _INST_MOV_REG_REG16,
             _INST_MOV_REG_REG32,
+            _INST_MOV_REG_IMM8,
+            _INST_MOV_REG_IMM16,
+            _INST_MOV_REG_IMM32,
             _INST_HLT, // this doesn't need its own structure
         };
 
@@ -88,6 +92,10 @@ namespace masm
         {
             virtual ~Base() {} // Make the base class polymorphic with a virtual destructor
         };
+
+        // we need this so
+        struct NodeNop: public Base
+        {};
 
         // Define derived classes for each node type
         struct NodeDefByte : public Base

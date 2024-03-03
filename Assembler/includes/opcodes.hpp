@@ -90,9 +90,11 @@ namespace masm
             OP_EXCG16,
             OP_EXCG32,
             OP_EXCG,
+
             OP_MOV8,
             OP_MOV16,
             OP_MOV32,
+            
             OP_CFLAGS,
             OP_RESET,
             OP_CLZ,

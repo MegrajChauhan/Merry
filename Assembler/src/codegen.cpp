@@ -221,6 +221,9 @@ void masm::codegen::Codegen::gen()
             break;
         }
         case nodes::NodeKind::_INST_MOV_REG_IMM:
+        case nodes::NodeKind::_INST_MOV_REG_IMM8:
+        case nodes::NodeKind::_INST_MOV_REG_IMM16:
+        case nodes::NodeKind::_INST_MOV_REG_IMM32:
         {
             // we need to change this to load instruction
             // based on the operands
@@ -228,7 +231,6 @@ void masm::codegen::Codegen::gen()
             break;
         }
         case nodes::NodeKind::_INST_MOV_REG_REG:
-        case nodes::NodeKind::_INST_MOV_REG_MOVE:
         {
             gen_inst_mov_reg_reg(*iter, 8);
             break;
