@@ -191,6 +191,77 @@ void masm::codegen::Codegen::gen_inst_mov_reg_imm(std::unique_ptr<nodes::Node> &
     inst_bytes.push_back(final_inst);
 }
 
+void masm::codegen::Codegen::gen_inst_movsx_reg_reg(std::unique_ptr<nodes::Node> &node, size_t bytes)
+{
+    auto n = (nodes::NodeInstMovRegReg *)node->ptr.get();
+    Instruction inst;
+    inst.bytes.b1 = bytes == 4 ? opcodes::OP_MOVESX_REG32 : bytes == 2 ? opcodes::OP_MOVESX_REG16
+                                                                       : opcodes::OP_MOVESX_REG8;
+    inst.bytes.b8 = (n->dest_regr << 4) | n->src_reg;
+    inst_bytes.push_back(inst);
+}
+
+void masm::codegen::Codegen::gen_inst_movsx_reg_imm(std::unique_ptr<nodes::Node> &node)
+{
+    nodes::NodeInstMovRegImm *n = (nodes::NodeInstMovRegImm *)node->ptr.get();
+    Instruction final_inst;
+    if (n->is_iden)
+    {
+        size_t addr_of_iden = data_addrs.find(n->value)->second;
+        auto iden_details = table.find_entry(n->value)->second;
+        switch (iden_details.dtype)
+        {
+        case nodes::DataType::_TYPE_BYTE:
+        {
+            final_inst.bytes.b1 = opcodes::OP_LOADB;
+            final_inst.bytes.b2 = (n->dest_regr);
+            final_inst.whole |= addr_of_iden;
+            inst_bytes.push_back(final_inst);
+            final_inst.bytes.b1 = opcodes::OP_MOVESX_REG8;
+            final_inst.bytes.b8 = (n->dest_regr);
+            final_inst.bytes.b8 <<= 4;
+            final_inst.bytes.b8 |= n->dest_regr;
+            // we then need to push the 6 byte address of the
+            break;
+        }
+        case nodes::DataType::_TYPE_WORD:
+        {
+            final_inst.bytes.b1 = opcodes::OP_LOADW;
+            final_inst.bytes.b2 = (n->dest_regr);
+            final_inst.whole |= addr_of_iden;
+            inst_bytes.push_back(final_inst);
+            final_inst.bytes.b1 = opcodes::OP_MOVESX_REG16;
+            final_inst.bytes.b8 = (n->dest_regr);
+            final_inst.bytes.b8 <<= 4;
+            final_inst.bytes.b8 |= n->dest_regr;
+            break;
+        }
+        case nodes::DataType::_TYPE_DWORD:
+        {
+            final_inst.bytes.b1 = opcodes::OP_LOADD;
+            final_inst.bytes.b2 = (n->dest_regr);
+            final_inst.whole |= addr_of_iden;
+            inst_bytes.push_back(final_inst);
+            final_inst.bytes.b1 = opcodes::OP_MOVESX_REG32;
+            final_inst.bytes.b8 = (n->dest_regr);
+            final_inst.bytes.b8 <<= 4;
+            final_inst.bytes.b8 |= n->dest_regr;
+            break;
+        }
+        }
+    }
+    else
+    {
+        // we just have a plain immediate
+        // but we still need to know the size of the immediate
+        // for moving 64-bit immdiate, we will have a dedicated instruction but the general move_imm should suffice
+        final_inst.bytes.b1 = opcodes::OP_MOVESX_REG32; // this is 32-bit by default
+        final_inst.bytes.b2 = n->dest_regr;
+        final_inst.whole |= std::stoi(n->value);
+    }
+    inst_bytes.push_back(final_inst);
+}
+
 void masm::codegen::Codegen::label_labels()
 {
     // just go through each instruction
@@ -263,6 +334,28 @@ void masm::codegen::Codegen::gen()
         case nodes::NodeKind::_INST_MOV_REG_REG32:
         {
             gen_inst_mov_reg_reg(*iter, 4);
+            break;
+        }
+        case nodes::NodeKind::_INST_MOVSX_REG_IMM8:
+        case nodes::NodeKind::_INST_MOVSX_REG_IMM16:
+        case nodes::NodeKind::_INST_MOVSX_REG_IMM32:
+        {
+            gen_inst_movsx_reg_imm(*iter);
+            break;
+        }
+        case nodes::NodeKind::_INST_MOVSX_REG_REG8:
+        {
+            gen_inst_movsx_reg_reg(*iter, 1);
+            break;
+        }
+        case nodes::NodeKind::_INST_MOVSX_REG_REG16:
+        {
+            gen_inst_movsx_reg_reg(*iter, 2);
+            break;
+        }
+        case nodes::NodeKind::_INST_MOVSX_REG_REG32:
+        {
+            gen_inst_movsx_reg_reg(*iter, 4);
             break;
         }
         case nodes::NodeKind::_INST_MOV_REG_MOVEB:

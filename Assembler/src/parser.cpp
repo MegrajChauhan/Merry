@@ -140,6 +140,8 @@ void masm::parser::Parser::parse()
             break;
         }
         case lexer::_TT_INST_MOVSXB:
+        case lexer::_TT_INST_MOVSXW:
+        case lexer::_TT_INST_MOVSXD:
         {
             if (section != _SECTION_TEXT)
             {
@@ -147,6 +149,7 @@ void masm::parser::Parser::parse()
                 break;
             }
             handle_inst_movsx();
+            next_token();
             break;
         }
         default:
@@ -191,8 +194,8 @@ void masm::parser::Parser::handle_inst_movsx()
         }
         else
         {
-            kind = len == 1 ? nodes::NodeKind::_INST_MOVSX_REG_IMM8 : len == 2 ? nodes::NodeKind::_INST_MOVSX_REG_IMM16
-                                                                               : nodes::NodeKind::_INST_MOVSX_REG_IMM32;
+            kind = len == 1 ? nodes::NodeKind::_INST_MOVSX_REG_REG8 : len == 2 ? nodes::NodeKind::_INST_MOVSX_REG_REG16
+                                                                               : nodes::NodeKind::_INST_MOVSX_REG_REG32;
             ptr = std::make_unique<nodes::NodeInstMovRegReg>();
             auto temp = (nodes::NodeInstMovRegReg *)ptr.get();
             temp->src_reg = iden2->second;
