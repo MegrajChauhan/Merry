@@ -38,13 +38,22 @@ namespace masm
             _INST_MOV_REG_IMM,
             _INST_MOV_REG_REG,
             _INST_MOV_REG_IMMQ,
-            _INST_MOV_REG_MOVE,
+            _INST_MOV_REG_MOVEB,
+            _INST_MOV_REG_MOVEW,
+            _INST_MOV_REG_MOVED,
             _INST_MOV_REG_REG8,
             _INST_MOV_REG_REG16,
             _INST_MOV_REG_REG32,
             _INST_MOV_REG_IMM8,
             _INST_MOV_REG_IMM16,
             _INST_MOV_REG_IMM32,
+
+            _INST_MOVSX_REG_REG8,
+            _INST_MOVSX_REG_REG16,
+            _INST_MOVSX_REG_REG32,
+            _INST_MOVSX_REG_IMM8,
+            _INST_MOVSX_REG_IMM16,
+            _INST_MOVSX_REG_IMM32,
             _INST_HLT, // this doesn't need its own structure
         };
 

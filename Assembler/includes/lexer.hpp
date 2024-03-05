@@ -42,19 +42,20 @@ namespace masm
             _TT_INST_NOP,
             _TT_INST_MOV,
             _TT_INST_HLT,
+
             _TT_INST_MOVQ,
+            
             _TT_INST_MOVB,
             _TT_INST_MOVW,
             _TT_INST_MOVD,
+            
             _TT_INST_MOVEB,
             _TT_INST_MOVEW,
             _TT_INST_MOVED,
+            
             _TT_INST_MOVSXB,
             _TT_INST_MOVSXW,
             _TT_INST_MOVSXD,
-            _TT_INST_MOVESXB,
-            _TT_INST_MOVESXW,
-            _TT_INST_MOVESXD,
 
             // we ignore commas, they are not absolutely necessary and the assembler won't even complain
             // about not using it. It is just their to provide readability
@@ -84,9 +85,6 @@ namespace masm
                 {"movsxb", _TT_INST_MOVSXB},
                 {"movsxw", _TT_INST_MOVSXW},
                 {"movsxd", _TT_INST_MOVSXD},
-                {"movesxb", _TT_INST_MOVESXB},
-                {"movesxw", _TT_INST_MOVESXW},
-                {"movesxd", _TT_INST_MOVESXD},
                 {"nop", _TT_INST_NOP},
         };
 

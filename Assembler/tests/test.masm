@@ -66,29 +66,17 @@ main:
 
   ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,, ;; ignored by assembler
 
- ;; movsxb Ma, 1
- ;; movsxb Ma, M1
- ;; movsxb Ma, strlen
+ movsxb Ma, 1
+ movsxb Ma, M1
+ movsxb Ma, strlen
 ;;
- ;; movsxw Mb, 2
- ;; movsxw Mb, M2
- ;; movsxw Mb, strlen_w
+ movsxw Mb, 2
+ movsxw Mb, M2
+ movsxw Mb, strlen_w
 ;;
- ;; movsxd Mc, 3
- ;; movsxd Mc, M3
- ;; movsxd Mc, strlen_w
-;;
- ;; moveb M1, 1
- ;; moveb M1, M2
- ;; moveb M1, strlen
-;;
- ;; movew M3, 2
- ;; movew M3, M4
- ;; movew M3, strlen_w
-;;
- ;; moved M5, 3
- ;; moved M5, Ma
- ;; moved M5, strlen_d
+ movsxd Mc, 3
+ movsxd Mc, M3
+ movsxd Mc, strlen_w
 
   hlt ;; we use halt here because this is what ultimately stops the program so there is no point in having a ret here
 

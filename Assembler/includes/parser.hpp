@@ -60,7 +60,7 @@ namespace masm
             void handle_inst_movX();
             void handle_inst_moveX();
 
-            void handle_inst_movsx(size_t);
+            void handle_inst_movsx();
             // void handle_inst_movesx(size_t);
         };
     };

@@ -92,6 +92,16 @@ void masm::codegen::Codegen::gen_inst_mov_reg_reg(std::unique_ptr<nodes::Node> &
     inst_bytes.push_back(inst);
 }
 
+void masm::codegen::Codegen::gen_inst_move(std::unique_ptr<nodes::Node> &node, size_t bytes)
+{
+    auto n = (nodes::NodeInstMovRegReg *)node->ptr.get();
+    Instruction inst;
+    inst.bytes.b1 = bytes == 4 ? opcodes::OP_MOV32 : bytes == 2 ? opcodes::OP_MOV16
+                                                                : opcodes::OP_MOV8;
+    inst.bytes.b8 = (n->dest_regr << 4) | n->src_reg;
+    inst_bytes.push_back(inst);
+}
+
 void masm::codegen::Codegen::gen_inst_mov_reg_immq(std::unique_ptr<nodes::Node> &node)
 {
     nodes::NodeInstMovRegImm *n = (nodes::NodeInstMovRegImm *)node->ptr.get();
@@ -255,8 +265,24 @@ void masm::codegen::Codegen::gen()
             gen_inst_mov_reg_reg(*iter, 4);
             break;
         }
-        // default:
-        //     count--;
+        case nodes::NodeKind::_INST_MOV_REG_MOVEB:
+        {
+            gen_inst_move(*iter, 1);
+            break;
+        }
+        case nodes::NodeKind::_INST_MOV_REG_MOVEW:
+        {
+            gen_inst_move(*iter, 2);
+            break;
+        }
+        case nodes::NodeKind::_INST_MOV_REG_MOVED:
+        {
+            gen_inst_move(*iter, 4);
+            break;
+        }
+
+            // default:
+            //     count--;
         }
         // we don't care about procedure declaration right now
         iter++;

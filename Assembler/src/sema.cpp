@@ -221,6 +221,45 @@ void masm::sema::Sema::analyse()
             }
             break;
         }
+        case nodes::NodeKind::_INST_MOVSX_REG_IMM8:
+        {
+            auto node = (nodes::NodeInstMovRegImm *)inst->ptr.get();
+            if (node->is_iden)
+            {
+                auto x = symtable.find_entry(node->value);
+                if (!symtable.is_invalid(symtable.find_entry(node->value)))
+                    analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
+                if (x->second.dtype != nodes::DataType::_TYPE_BYTE)
+                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of BYTE type to be used with 'movq'");
+            }
+            break;
+        }
+        case nodes::NodeKind::_INST_MOVSX_REG_IMM16:
+        {
+            auto node = (nodes::NodeInstMovRegImm *)inst->ptr.get();
+            if (node->is_iden)
+            {
+                auto x = symtable.find_entry(node->value);
+                if (!symtable.is_invalid(symtable.find_entry(node->value)))
+                    analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
+                if (x->second.dtype != nodes::DataType::_TYPE_WORD)
+                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of WORD type to be used with 'movq'");
+            }
+            break;
+        }
+        case nodes::NodeKind::_INST_MOVSX_REG_IMM32:
+        {
+            auto node = (nodes::NodeInstMovRegImm *)inst->ptr.get();
+            if (node->is_iden)
+            {
+                auto x = symtable.find_entry(node->value);
+                if (!symtable.is_invalid(symtable.find_entry(node->value)))
+                    analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
+                if (x->second.dtype != nodes::DataType::_TYPE_DWORD)
+                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of DWORD type to be used with 'movq'");
+            }
+            break;
+        }
         case nodes::NodeKind::_INST_MOV_REG_IMM:
         {
             auto node = (nodes::NodeInstMovRegImm *)inst->ptr.get();

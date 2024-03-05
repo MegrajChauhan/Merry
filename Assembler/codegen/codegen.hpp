@@ -63,6 +63,11 @@ namespace masm
             void gen_inst_mov_reg_immq(std::unique_ptr<nodes::Node> &);
 
             void gen_inst_mov_reg_reg(std::unique_ptr<nodes::Node> &, size_t);
+            
+            void gen_inst_move(std::unique_ptr<nodes::Node>& , size_t);
+
+            void gen_inst_movsx_reg_reg(std::unique_ptr<nodes::Node>&, size_t);
+            void gen_inst_movsx_reg_imm(std::unique_ptr<nodes::Node> &, size_t);
         };
     };
 };
