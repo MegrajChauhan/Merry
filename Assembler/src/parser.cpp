@@ -152,6 +152,28 @@ void masm::parser::Parser::parse()
             next_token();
             break;
         }
+        case lexer::_TT_INST_OUTR:
+        {
+            if (section != _SECTION_TEXT)
+            {
+                lexer.parse_error("Using instructions in the data section is not allowed");
+                break;
+            }
+            nodes.push_back(std::make_unique<nodes::Node>(nodes::NodeType::_TYPE_INST, nodes::NodeKind::_INST_OUTR, std::move(std::make_unique<nodes::Base>()), lexer.get_curr_line()));
+            next_token();
+            break;
+        }
+        case lexer::_TT_INST_UOUTR:
+        {
+            if (section != _SECTION_TEXT)
+            {
+                lexer.parse_error("Using instructions in the data section is not allowed");
+                break;
+            }
+            nodes.push_back(std::make_unique<nodes::Node>(nodes::NodeType::_TYPE_INST, nodes::NodeKind::_INST_UOUTR, std::move(std::make_unique<nodes::Base>()), lexer.get_curr_line()));
+            next_token();
+            break;
+        }
         default:
         {
             lexer.parse_error(

@@ -54,6 +54,10 @@ namespace masm
             _INST_MOVSX_REG_IMM8,
             _INST_MOVSX_REG_IMM16,
             _INST_MOVSX_REG_IMM32,
+
+            _INST_OUTR,
+            _INST_UOUTR,
+
             _INST_HLT, // this doesn't need its own structure
         };
 

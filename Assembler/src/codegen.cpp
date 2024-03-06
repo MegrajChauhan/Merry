@@ -272,7 +272,7 @@ void masm::codegen::Codegen::label_labels()
     {
         if (x->kind == nodes::NodeKind::_LABEL)
             label_addrs[((nodes::NodeLabel *)x->ptr.get())->label_name] = i;
-        else if (x->kind > 4)
+        else if (x->kind > 5)
             i++;
     }
 }
@@ -373,6 +373,20 @@ void masm::codegen::Codegen::gen()
             gen_inst_move(*iter, 4);
             break;
         }
+        case nodes::NodeKind::_INST_OUTR:
+        {
+            Instruction i;
+            i.bytes.b1 = opcodes::OP_OUTR;
+            inst_bytes.push_back(i);
+            break;
+        }
+        case nodes::NodeKind::_INST_UOUTR:
+        {
+            Instruction i;
+            i.bytes.b1 = opcodes::OP_UOUTR;
+            inst_bytes.push_back(i);
+            break;
+        }
 
             // default:
             //     count--;
@@ -380,5 +394,11 @@ void masm::codegen::Codegen::gen()
         // we don't care about procedure declaration right now
         iter++;
         // count++;
+    }
+    // make sure that data bytes is a multiple of 8
+    if ((data_bytes.size() % 8) != 0)
+    {
+        while ((data_bytes.size() % 8) != 0)
+            data_bytes.push_back(0);
     }
 }

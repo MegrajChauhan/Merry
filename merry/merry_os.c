@@ -175,7 +175,7 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
     // _log_(_OS_, "Starting Manager", "Manager thread running");
     // Merry *x = &os; // temp
     // _log_(_OS_, "STARTING CORE 0", "Attempting to start core 0");
-    if (merry_os_boot_core(0, 0) != RET_SUCCESS)
+    if (merry_os_boot_core(0, os.cores[0]->pc) != RET_SUCCESS)
         return (mptr_t)RET_FAILURE;
     // Core 0 is now up and running
     // The OS should be ready to handle requests

@@ -107,8 +107,8 @@ void merry_print_help()
             "-v, --v, -v, --v       --> Display the current version\n"
             "-f                     --> Provide the path to the input file\n"
             "-l                     --> Enable logging of the VM[Disabled for now. Doesn't work]"
-            "                           Enabling logging doesn't ensure that a log file will be generated."
-            "                           The performance will be affected.");
+            "\n                           Enabling logging doesn't ensure that a log file will be generated."
+            "                           The performance will be affected.\n");
 }
 
 void merry_destroy_parser(MerryCLP *clp)

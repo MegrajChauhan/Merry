@@ -57,6 +57,9 @@ namespace masm
             _TT_INST_MOVSXW,
             _TT_INST_MOVSXD,
 
+            _TT_INST_OUTR,
+            _TT_INST_UOUTR,
+
             // we ignore commas, they are not absolutely necessary and the assembler won't even complain
             // about not using it. It is just their to provide readability
         };
@@ -86,6 +89,8 @@ namespace masm
                 {"movsxw", _TT_INST_MOVSXW},
                 {"movsxd", _TT_INST_MOVSXD},
                 {"nop", _TT_INST_NOP},
+                {"outr", _TT_INST_OUTR},
+                {"uoutr", _TT_INST_UOUTR},
         };
 
         struct Token

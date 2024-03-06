@@ -28,36 +28,36 @@ add:
 main:
   nop
   mov Ma, 1 ;; just plain mov reg, imm
-  mov Ma, Mb ;; mov reg, reg
-  mov Mb, strlen ;; translates to loadb Mb, strlen
-  mov Mc, strlen_w ;; translates to loadw Mc, strlen_w
-  mov Md, strlen_d ;; translates to loadd Mb, strlen_d
-  mov Me, strlen_q ;; translates to loadq Me, strlen_q
+  mov Mb, Ma ;; mov reg, reg
+  mov Mc, strlen ;; translates to loadb Mb, strlen
+  mov Md, strlen_w ;; translates to loadw Mc, strlen_w
+  mov Me, strlen_d ;; translates to loadd Mb, strlen_d
+  mov Mf, strlen_q ;; translates to loadq Me, strlen_q
 
-  movq Mf, 123456789 ;; just movq reg, imm
-  movq Mm1, Mm2 ;; translates to mov reg, reg
-  movq Mf, strlen_q ;; translates to loadq Mf, strlen_q
+  movq M1, 123456789 ;; just movq reg, imm
+  movq M2, M3 ;; translates to mov reg, reg
+  movq M4, strlen_q ;; translates to loadq Mf, strlen_q
   ;; movq Mf, strlen ;; error, accepts only qwords; same for strlen_d and strlen_w
 
-  movb M1, 1 
-  movb M1, M2
-  movb M1, strlen 
+  movb M5, 1 
+  movb Mm1, Mm2
+  movb Mm3, strlen 
 
-  movw M3, 2
-  movw M3, M4
-  movw M3, strlen_w
+  movw Mm4, 2
+  movw Mm5, Mm4
+  ;;movw M3, strlen_w
 
-  movd M5, 3
-  movd M5, Ma
-  movd M5, strlen_d
+  ;;movd M5, 3
+  ;;movd M5, Ma
+  ;;movd M5, strlen_d
 
   ;; the following three moves are restricted to register operands only
   ;; The above move instructions affect the upper bytes of the destination register
   ;; zeroing it out but the below will not do that
   ;; There is no moveq and using variables and immediates is not allowed
-  moveb Ma, Mb
-  movew M1, M2
-  moved Mm1 Mm2
+  ;;moveb Ma, Mb
+  ;;movew M1, M2
+  ;;moved Mm1 Mm2
 
   ;; NOTE: The assembler doesn't strictly require the use of commas
   ;; in fact, the assembler ignores all the commas
@@ -66,17 +66,20 @@ main:
 
   ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,, ;; ignored by assembler
 
- movsxb Ma, 1
- movsxb Ma, M1
- movsxb Ma, strlen
-;;
- movsxw Mb, 2
- movsxw Mb, M2
- movsxw Mb, strlen_w
-;;
- movsxd Mc, 3
- movsxd Mc, M3
- movsxd Mc, strlen_d
+  ;;movsxb Ma, 1
+  ;;movsxb Ma, M1
+  ;;movsxb Ma, strlen
+ ;;
+  ;;movsxw Mb, 2
+  ;;movsxw Mb, M2
+  ;;movsxw Mb, strlen_w
+ ;;
+  ;;movsxd Mc, 3
+  ;;movsxd Mc, M3
+  ;;movsxd Mc, strlen_d
+
+  outr ;; print the contents of all the registers
+  uoutr ;; print all as unsigned
 
   hlt ;; we use halt here because this is what ultimately stops the program so there is no point in having a ret here
 
