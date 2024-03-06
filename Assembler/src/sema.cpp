@@ -4,6 +4,7 @@ masm::sema::Sema::Sema(parser::Parser &parser)
 {
     parser.parse();
     // nodes = parser.get_nodes();
+    filepath = parser.get_path();
     parser.move_nodes(nodes);
 }
 
@@ -103,6 +104,14 @@ void masm::sema::Sema::analyse()
                 symtable.add_entry(var->byte_name, symtable::SymTableEntry(symtable::_VAR, var->byte_val, nodes::_TYPE_QWORD));
                 break;
             }
+            case nodes::NodeKind::_DEF_STRING:
+            {
+                auto var = (nodes::NodeDefByte *)node->ptr.get();
+                if (symtable.is_invalid(symtable.find_entry(var->byte_name)))
+                    analysis_error(node->line, std::string("The variable '") + var->byte_name + "' already exists; redefining");
+                symtable.add_entry(var->byte_name, symtable::SymTableEntry(symtable::_VAR, var->byte_val, nodes::_TYPE_STRING));
+                break;
+            }
             }
             break;
         }
@@ -190,8 +199,8 @@ void masm::sema::Sema::analyse()
                 auto x = symtable.find_entry(node->value);
                 if (!symtable.is_invalid(symtable.find_entry(node->value)))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
-                if (x->second.dtype != nodes::DataType::_TYPE_BYTE)
-                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of BYTE type to be used with 'movq'");
+                if (x->second.dtype != nodes::DataType::_TYPE_BYTE && x->second.dtype != nodes::DataType::_TYPE_STRING)
+                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of BYTE type as expected by the instruction.");
             }
             break;
         }
@@ -204,7 +213,7 @@ void masm::sema::Sema::analyse()
                 if (!symtable.is_invalid(symtable.find_entry(node->value)))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
                 if (x->second.dtype != nodes::DataType::_TYPE_WORD)
-                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of WORD type to be used with 'movq'");
+                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of WORD type as expected by the instruction.");
             }
             break;
         }
@@ -217,7 +226,7 @@ void masm::sema::Sema::analyse()
                 if (!symtable.is_invalid(symtable.find_entry(node->value)))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
                 if (x->second.dtype != nodes::DataType::_TYPE_DWORD)
-                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of DWORD type to be used with 'movq'");
+                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of DWORD type as expected by the instruction.");
             }
             break;
         }
@@ -230,7 +239,7 @@ void masm::sema::Sema::analyse()
                 if (!symtable.is_invalid(symtable.find_entry(node->value)))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
                 if (x->second.dtype != nodes::DataType::_TYPE_BYTE)
-                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of BYTE type to be used with 'movq'");
+                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of BYTE type as expected by the instruction.");
             }
             break;
         }
@@ -243,7 +252,7 @@ void masm::sema::Sema::analyse()
                 if (!symtable.is_invalid(symtable.find_entry(node->value)))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
                 if (x->second.dtype != nodes::DataType::_TYPE_WORD)
-                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of WORD type to be used with 'movq'");
+                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of WORD type as expected by the instruction.");
             }
             break;
         }
@@ -256,7 +265,7 @@ void masm::sema::Sema::analyse()
                 if (!symtable.is_invalid(symtable.find_entry(node->value)))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
                 if (x->second.dtype != nodes::DataType::_TYPE_DWORD)
-                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of DWORD type to be used with 'movq'");
+                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of DWORD type as expected by the instruction.");
             }
             break;
         }

@@ -32,8 +32,9 @@ void masm::codegen::Codegen::gen_data()
             {
                 // since the variable names are unique, we won't have to worry about anything here
                 data_addrs[data.first] = start;
-                start++; // just 1 byte
+                start += 2; // just 1 byte but for alignment issues recently encountered, we will have to do this
                 data_bytes.push_back((unsigned char)std::stoi(data.second.value));
+                data_bytes.push_back(0);
                 break;
             }
             case nodes::DataType::_TYPE_WORD:
@@ -76,6 +77,27 @@ void masm::codegen::Codegen::gen_data()
             }
             }
             break;
+        }
+        }
+    }
+    // we need to do double loop since the strings go at last
+    for (auto data : table)
+    {
+        switch (data.second.type)
+        {
+        case symtable::SymEntryType::_VAR:
+        {
+        case nodes::DataType::_TYPE_STRING:
+        {
+            data_addrs[data.first] = start;
+            start += data.second.value.length();
+            for (auto c : data.second.value)
+            {
+                data_bytes.push_back(c);
+                str_start_len++;
+            }
+            break;
+        }
         }
         }
     }
@@ -147,6 +169,7 @@ void masm::codegen::Codegen::gen_inst_mov_reg_imm(std::unique_ptr<nodes::Node> &
         auto iden_details = table.find_entry(n->value)->second;
         switch (iden_details.dtype)
         {
+        case nodes::DataType::_TYPE_STRING:
         case nodes::DataType::_TYPE_BYTE:
         {
             // this is a byte type value so we need to use loadb instruction

@@ -6,6 +6,7 @@ masm::emit::Emit::Emit(masm::codegen::Codegen &codegen)
     instructions = codegen.get_instructions();
     data = codegen.get_data();
     entry = codegen.get_entry_addr();
+    str_len = codegen.get_str_len();
 }
 
 void masm::emit::Emit::emit()
@@ -46,6 +47,15 @@ void masm::emit::Emit::emit()
     header[21] = (data_len >> 16) & 255;
     header[22] = (data_len >> 8) & 255;
     header[23] = (data_len) & 255;
+
+    header[24] = (str_len >> 56) & 255;
+    header[25] = (str_len >> 48) & 255;
+    header[26] = (str_len >> 40) & 255;
+    header[27] = (str_len >> 32) & 255;
+    header[28] = (str_len >> 24) & 255;
+    header[29] = (str_len >> 16) & 255;
+    header[30] = (str_len >> 8) & 255;
+    header[31] = (str_len) & 255;
 
     // for now we will leave the remaining 8 bytes as is since we are yet to implement strings
     for (auto h : header)

@@ -13,6 +13,7 @@ namespace masm
             std::vector<codegen::Instruction> instructions;
             std::vector<unsigned char> data;
             size_t entry;
+            size_t str_len = 0;
             public:
             Emit() = default;
 

@@ -51,6 +51,7 @@ namespace masm
             void handle_defineword(std::string);
             void handle_definedword(std::string);
             void handle_defineqword(std::string);
+            void handle_string(std::string);
 
             void handle_proc_declaration();
 

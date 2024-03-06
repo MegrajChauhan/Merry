@@ -33,6 +33,7 @@ namespace masm
             std::unordered_map<std::string, size_t> data_addrs;
             std::unordered_map<std::string, size_t> label_addrs;
             size_t main_proc_ind = 0;
+            size_t str_start_len = 0;
 
         public:
             Codegen() = default;
@@ -51,6 +52,8 @@ namespace masm
 
             size_t get_entry_addr() { return label_addrs["main"]; }
 
+            size_t get_str_len() { return str_start_len; }
+
             auto get_instructions() { return inst_bytes; }
 
             auto get_data() { return data_bytes; }
@@ -63,10 +66,10 @@ namespace masm
             void gen_inst_mov_reg_immq(std::unique_ptr<nodes::Node> &);
 
             void gen_inst_mov_reg_reg(std::unique_ptr<nodes::Node> &, size_t);
-            
-            void gen_inst_move(std::unique_ptr<nodes::Node>& , size_t);
 
-            void gen_inst_movsx_reg_reg(std::unique_ptr<nodes::Node>&, size_t);
+            void gen_inst_move(std::unique_ptr<nodes::Node> &, size_t);
+
+            void gen_inst_movsx_reg_reg(std::unique_ptr<nodes::Node> &, size_t);
             void gen_inst_movsx_reg_imm(std::unique_ptr<nodes::Node> &);
         };
     };

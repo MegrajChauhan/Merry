@@ -445,6 +445,15 @@ void masm::parser::Parser::handle_identifier()
         handle_defineqword(name);
         break;
     }
+    case lexer::_TT_KEY_STRING:
+    {
+        if (section != _SECTION_DATA)
+        {
+            lexer.parse_error("Defining variables in the text section is not allowed");
+        }
+        handle_string(name);
+        break;
+    }
     default:
     {
         // this is a label
@@ -535,6 +544,23 @@ void masm::parser::Parser::handle_defineqword(std::string name)
     nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_DATA, kind, std::move(ptr), lexer.get_curr_line()));
 }
 
+void masm::parser::Parser::handle_string(std::string name)
+{
+    next_token();
+    if (curr_tok.type != lexer::_TT_STRING)
+    {
+        lexer.parse_err_previous_token(curr_tok.value, std::string("Expected a string, got ") + curr_tok.value + " instead.");
+    }
+    nodes::NodeKind kind;
+    std::unique_ptr<nodes::Base> ptr;
+    kind = nodes::_DEF_STRING;
+    ptr = std::make_unique<nodes::NodeDefByte>();
+    auto temp = dynamic_cast<nodes::NodeDefByte *>(ptr.get());
+    temp->byte_name = name;
+    temp->byte_val = curr_tok.value;
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_DATA, kind, std::move(ptr), lexer.get_curr_line()));
+}
+
 void masm::parser::Parser::handle_proc_declaration()
 {
     next_token();
@@ -550,3 +576,4 @@ void masm::parser::Parser::handle_proc_declaration()
     temp->proc_name = curr_tok.value;
     nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
 }
+

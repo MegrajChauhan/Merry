@@ -55,6 +55,12 @@ masm::lexer::Token masm::lexer::Lexer::lex()
     {
         token = get_number();
     }
+    else if (*curr_char == '\"' || *curr_char == '\'')
+    {
+        // get the string
+        token.type = _TT_STRING;
+        token.value = get_string();
+    }
     else
     {
         invalid_token();
@@ -101,10 +107,26 @@ void masm::lexer::Lexer::invalid_token()
     exit(EXIT_FAILURE); // this is a failure
 }
 
+void masm::lexer::Lexer::lex_error(std::string msg)
+{
+    std::cerr << "While " << _CCODE_BOLD << "Lexing:\n";
+    std::cerr << path << ":" << line_num + 1 << ":" << col_no << ":" << _CCODE_RESET;
+    std::cerr << " " << msg << ":\n";
+    std::cerr << "  " << line_num + 1 << "| " << get_current_line() << "\n";
+    std::cerr << "    ";
+    for (size_t i = 0; i <= (col_no); i++)
+    {
+        std::cerr << " ";
+    }
+    std::cerr << "^";
+    std::cerr << "\nAborting further compilation." << std::endl;
+    exit(EXIT_FAILURE); // this is a failure
+}
+
 void masm::lexer::Lexer::parse_err_whole_line(std::string msg)
 {
     std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
-    std::cerr << path << ":" << line_num + 1 << ":"<< _CCODE_RESET;
+    std::cerr << path << ":" << line_num + 1 << ":" << _CCODE_RESET;
     std::cerr << " " << msg << std::endl;
     std::cerr << "Aborting further compilation." << std::endl;
     exit(EXIT_FAILURE);

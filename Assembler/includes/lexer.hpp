@@ -30,7 +30,7 @@ namespace masm
             _TT_KEY_DQ,
             _TT_KEY_PROC,
 
-            _TT_TYPE_STRING,
+            _TT_STRING,
             _TT_INT,
             _TT_FLOAT,
 
@@ -44,15 +44,15 @@ namespace masm
             _TT_INST_HLT,
 
             _TT_INST_MOVQ,
-            
+
             _TT_INST_MOVB,
             _TT_INST_MOVW,
             _TT_INST_MOVD,
-            
+
             _TT_INST_MOVEB,
             _TT_INST_MOVEW,
             _TT_INST_MOVED,
-            
+
             _TT_INST_MOVSXB,
             _TT_INST_MOVSXW,
             _TT_INST_MOVSXD,
@@ -232,6 +232,49 @@ namespace masm
                 return line;
             }
 
+            std::string get_string()
+            {
+                char starting_quote = *curr_char;
+                std::string string;
+                consume();
+                while (*curr_char != starting_quote && curr_char != end)
+                {
+                    if (*curr_char == '\\')
+                    {
+                        consume(); // The next character will be added
+                        if (curr_char == end)
+                        {
+                            lex_error("The string was never terminated. Reached EOF");
+                        }
+                        string += *curr_char;
+                        consume();
+                    }
+                    else
+                    {
+                        string += *curr_char;
+                        consume();
+                    }
+                }
+                if (*curr_char == starting_quote)
+                {
+                    // the string was indeed terminated
+                    // we also need to check if there is another '.'
+                    consume();
+                    if (*curr_char == '.')
+                    {
+                        consume();
+                        clear_unnecessary();
+                        consume_comment();
+                        string += get_string(); // a recursive function call to get all the needed strings
+                    }
+                }
+                else
+                {
+                    lex_error("The string was never terminated. Reached EOF");
+                }
+                return string;
+            }
+
         public:
             Lexer() = default;
 
@@ -247,6 +290,8 @@ namespace masm
 
             void invalid_token(std::string);
             void invalid_token();
+
+            void lex_error(std::string);
 
             void parse_err_whole_line(std::string);
             void parse_err_expected_colon(std::string);

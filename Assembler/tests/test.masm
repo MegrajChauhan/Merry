@@ -1,6 +1,17 @@
-;; This is a comment
 .data:
-;; msg: .string "Hello World!", 10 ;; this is a string
+msg: .string "Hello World!" ;; this is a string, unlike Nasm, using the ",10" at last is not valid
+                            ;; every character must be inside the quotes
+                            ;; Single quotes and double quotes don't really matter
+                            ;; Since the assembler reads until it finds the pairing quote, this 
+                            ;; allows for multi-line strings
+msg2: .string "This is another". ;; the use of '.' without space right after the ending quote 
+              " message"         ;; allows for something like this
+                                 ;; The assembler will just automatically concatenate the two strings 
+
+;; Not all mov instructions will work for strings
+;; only those with the 'b' suffix will work
+;; But not the movsx one, they won't work
+
 strlen: db 13
 strlen_w: dw 60000
 strlen_d: dd 1000000
@@ -8,15 +19,9 @@ strlen_q: dq 100000000
 
 .text:
 proc main
-proc add
+proc what
 
-;; expect the first number in Ma register and second number in Mb register
-;; return in Ma register
-add:
-  ;; add Ma, Mb
-  hlt
-  hlt
-  hlt
+what:
   hlt
   hlt
   hlt
@@ -33,31 +38,27 @@ main:
   mov Md, strlen_w ;; translates to loadw Mc, strlen_w
   mov Me, strlen_d ;; translates to loadd Mb, strlen_d
   mov Mf, strlen_q ;; translates to loadq Me, strlen_q
-
   movq M1, 123456789 ;; just movq reg, imm
   movq M2, M3 ;; translates to mov reg, reg
   movq M4, strlen_q ;; translates to loadq Mf, strlen_q
-  ;; movq Mf, strlen ;; error, accepts only qwords; same for strlen_d and strlen_w
-
+  movq Mf, strlen ;; error, accepts only qwords; same for strlen_d and strlen_w
   movb M5, 1 
   movb Mm1, Mm2
   movb Mm3, strlen 
-
   movw Mm4, 2
   movw Mm5, Mm4
-  ;;movw M3, strlen_w
-
-  ;;movd M5, 3
-  ;;movd M5, Ma
-  ;;movd M5, strlen_d
+  movw M3, strlen_w
+  movd M5, 3
+  movd M5, Ma
+  movd M5, strlen_d
 
   ;; the following three moves are restricted to register operands only
   ;; The above move instructions affect the upper bytes of the destination register
   ;; zeroing it out but the below will not do that
   ;; There is no moveq and using variables and immediates is not allowed
-  ;;moveb Ma, Mb
-  ;;movew M1, M2
-  ;;moved Mm1 Mm2
+  moveb Ma, Mb
+  movew M1, M2
+  moved Mm1 Mm2
 
   ;; NOTE: The assembler doesn't strictly require the use of commas
   ;; in fact, the assembler ignores all the commas
@@ -66,38 +67,20 @@ main:
 
   ,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,, ;; ignored by assembler
 
-  ;;movsxb Ma, 1
-  ;;movsxb Ma, M1
-  ;;movsxb Ma, strlen
- ;;
-  ;;movsxw Mb, 2
-  ;;movsxw Mb, M2
-  ;;movsxw Mb, strlen_w
- ;;
-  ;;movsxd Mc, 3
-  ;;movsxd Mc, M3
-  ;;movsxd Mc, strlen_d
-
+  movsxb Ma, 1
+  movsxb Ma, M1
+  movsxb Ma, strlen
+  movsxw Mb, 2
+  movsxw Mb, M2
+  movsxw Mb, strlen_w
+  movsxd Mc, 3
+  movsxd Mc, M3
+  movsxd Mc, strlen_d
   outr ;; print the contents of all the registers
   uoutr ;; print all as unsigned
-
+  mov Ma, msg ;; should be loadb
   hlt ;; we use halt here because this is what ultimately stops the program so there is no point in having a ret here
-
 ;; main:
 
 .data:
 test: db 123
-
-;; Here is how thing go
-;; The assembler looks for the main procedure by default
-;; The first instruction in the main procedure is the very first instruction that will be executed
-;; What if there are more procedures before the main procedure?
-;; In this case, the procedures will be moved to the very end
-;; They will still be callable
-;; The same for labels as well
-
-;; In the given example, even though add is before main, in the final binary, it will be at
-;; the very last. Merry doesn't support anything like providing entry point.
-;; Though it could be added, it introduces problems and new ways for people to exploit 
-;; the programs and so the very first instruction at address 0 is the very first instruction executed.
-;; If no branches are present then the execution is straightforward

@@ -22,6 +22,7 @@ namespace masm
             _TYPE_WORD,
             _TYPE_DWORD,
             _TYPE_QWORD,
+            _TYPE_STRING,
         };
 
         enum NodeKind
@@ -31,6 +32,7 @@ namespace masm
             _DEF_WORD,
             _DEF_DWORD,
             _DEF_QWORD,
+            _DEF_STRING,
             // any label that is declared as proc is a procedure while any other are just labels
             _PROC_DECLR, // procedure declaration
             _LABEL,      // A label[Unless semantically verified even procedure definition is a label]
