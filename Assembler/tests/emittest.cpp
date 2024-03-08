@@ -5,7 +5,7 @@ using namespace masm;
 int main()
 {
     masm::parser::Parser parser;
-    parser.setup_lexer("test.masm");
+    parser.setup_lexer("../../example/run/helloWorld.masm");
     masm::sema::Sema sema(parser);
     masm::codegen::Codegen codegen(sema);
     emit::Emit emit(codegen);

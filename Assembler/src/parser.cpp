@@ -198,7 +198,18 @@ void masm::parser::Parser::parse()
                 lexer.parse_error("Using instructions in the data section is not allowed");
                 break;
             }
-            handle_inst_Xin();
+            handle_inst_cin();
+            next_token();
+            break;
+        }
+        case lexer::_TT_INST_SIN:
+        {
+            if (section != _SECTION_TEXT)
+            {
+                lexer.parse_error("Using instructions in the data section is not allowed");
+                break;
+            }
+            handle_inst_sin();
             next_token();
             break;
         }
@@ -209,7 +220,18 @@ void masm::parser::Parser::parse()
                 lexer.parse_error("Using instructions in the data section is not allowed");
                 break;
             }
-            handle_inst_Xout();
+            handle_inst_cout();
+            next_token();
+            break;
+        }
+        case lexer::_TT_INST_SOUT:
+        {
+            if (section != _SECTION_TEXT)
+            {
+                lexer.parse_error("Using instructions in the data section is not allowed");
+                break;
+            }
+            handle_inst_sout();
             next_token();
             break;
         }
@@ -446,34 +468,40 @@ void masm::parser::Parser::handle_identifier()
     }
     next_token();
 
-    if (section != _SECTION_DATA)
-    {
-        lexer.parse_error("Defining variables in the text section is not allowed");
-    }
     switch (curr_tok.type)
     {
     case lexer::_TT_KEY_DB:
     {
+        if (section != _SECTION_DATA)
+            lexer.parse_error("Defining variables in the text section is not allowed");
         handle_definebyte(name);
         break;
     }
     case lexer::_TT_KEY_DW:
     {
+        if (section != _SECTION_DATA)
+            lexer.parse_error("Defining variables in the text section is not allowed");
         handle_defineword(name);
         break;
     }
     case lexer::_TT_KEY_DD:
     {
+        if (section != _SECTION_DATA)
+            lexer.parse_error("Defining variables in the text section is not allowed");
         handle_definedword(name);
         break;
     }
     case lexer::_TT_KEY_DQ:
     {
+        if (section != _SECTION_DATA)
+            lexer.parse_error("Defining variables in the text section is not allowed");
         handle_defineqword(name);
         break;
     }
     case lexer::_TT_KEY_STRING:
     {
+        if (section != _SECTION_DATA)
+            lexer.parse_error("Defining variables in the text section is not allowed");
         handle_string(name);
         break;
     }
@@ -482,11 +510,17 @@ void masm::parser::Parser::handle_identifier()
     case lexer::_TT_KEY_RESD:
     case lexer::_TT_KEY_RESQ:
     {
+        if (section != _SECTION_DATA)
+            lexer.parse_error("Defining variables in the text section is not allowed");
         handle_resX(name);
         break;
     }
     default:
     {
+        if (section == _SECTION_DATA)
+        {
+            lexer.parse_error("Defining labels in the data section is not allowed");
+        }
         // this is a label
         handle_label(name);
         break;
@@ -626,32 +660,60 @@ void masm::parser::Parser::handle_proc_declaration()
     nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
 }
 
-void masm::parser::Parser::handle_inst_Xin()
+void masm::parser::Parser::handle_inst_cin()
 {
-    auto kind = curr_tok.type == lexer::_TT_INST_CIN ? nodes::NodeKind::_INST_CIN : nodes::NodeKind::_INST_CIN;
+    auto kind = nodes::NodeKind::_INST_CIN;
     next_token();
     if (curr_tok.type != lexer::_TT_IDENTIFIER)
-        lexer.parse_error("Expected a register after 'Xin'.");
+        lexer.parse_error("Expected a register after 'cin'.");
     auto regr = nodes::_regr_iden_map.find(curr_tok.value);
     if (regr == nodes::_regr_iden_map.end())
-        lexer.parse_error("Expected a register after 'Xin'.");
+        lexer.parse_error("Expected a register after 'cin'.");
     std::unique_ptr<nodes::Base> ptr;
     ptr = std::make_unique<nodes::NodeOneRegrOperands>();
     ((nodes::NodeOneRegrOperands *)(ptr.get()))->oper_rger = regr->second;
     nodes.push_back(std::make_unique<nodes::Node>(nodes::NodeType::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
 }
 
-void masm::parser::Parser::handle_inst_Xout()
+void masm::parser::Parser::handle_inst_cout()
 {
-    auto kind = curr_tok.type == lexer::_TT_INST_COUT ? nodes::NodeKind::_INST_COUT : nodes::NodeKind::_INST_COUT;
+    auto kind = nodes::NodeKind::_INST_COUT;
     next_token();
     if (curr_tok.type != lexer::_TT_IDENTIFIER)
-        lexer.parse_error("Expected a register after 'Xout'.");
+        lexer.parse_error("Expected a register after 'cout'.");
     auto regr = nodes::_regr_iden_map.find(curr_tok.value);
     if (regr == nodes::_regr_iden_map.end())
-        lexer.parse_error("Expected a register after 'Xout'.");
+        lexer.parse_error("Expected a register after 'cout'.");
     std::unique_ptr<nodes::Base> ptr;
     ptr = std::make_unique<nodes::NodeOneRegrOperands>();
     ((nodes::NodeOneRegrOperands *)(ptr.get()))->oper_rger = regr->second;
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::NodeType::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_inst_sin()
+{
+    next_token();
+    if (curr_tok.type != lexer::_TT_IDENTIFIER)
+        lexer.parse_error("Expected an identifier after 'sin'.");
+    if (nodes::_regr_iden_map.find(curr_tok.value) != nodes::_regr_iden_map.end())
+        lexer.parse_error("The 'sin' instruction doesn't take registers as operands.");
+    nodes::NodeKind kind = nodes::NodeKind::_INST_SIN;
+    std::unique_ptr<nodes::Base> ptr = std::make_unique<nodes::NodeOneImmOperand>();
+    auto temp = (nodes::NodeOneImmOperand *)ptr.get();
+    temp->imm = curr_tok.value;
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::NodeType::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_inst_sout()
+{
+    next_token();
+    if (curr_tok.type != lexer::_TT_IDENTIFIER)
+        lexer.parse_error("Expected an identifier after 'sout'.");
+    if (nodes::_regr_iden_map.find(curr_tok.value) != nodes::_regr_iden_map.end())
+        lexer.parse_error("The 'sout' instruction doesn't take registers as operands.");
+    nodes::NodeKind kind = nodes::NodeKind::_INST_SOUT;
+    std::unique_ptr<nodes::Base> ptr = std::make_unique<nodes::NodeOneImmOperand>();
+    auto temp = (nodes::NodeOneImmOperand *)ptr.get();
+    temp->imm = curr_tok.value;
     nodes.push_back(std::make_unique<nodes::Node>(nodes::NodeType::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
 }

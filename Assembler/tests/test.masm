@@ -82,6 +82,9 @@ main:
   cin Ma ;; read a character into Ma
   cout Ma ;; write a character of Ma
   hlt ;; we use halt here because this is what ultimately stops the program so there is no point in having a ret here
+  mov Mc, 4
+  sin resb1 ;; read 4 characters and store them in resb1 variable
+  sout resb1
 ;; main:
 
 .data:

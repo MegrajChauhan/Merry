@@ -332,7 +332,7 @@ void masm::codegen::Codegen::label_labels()
     }
 }
 
-void masm::codegen::Codegen::gen_inst_Xin(std::unique_ptr<nodes::Node> &node)
+void masm::codegen::Codegen::gen_inst_cin(std::unique_ptr<nodes::Node> &node)
 {
     nodes::NodeOneRegrOperands *inst = (nodes::NodeOneRegrOperands *)node->ptr.get();
     Instruction i;
@@ -341,13 +341,39 @@ void masm::codegen::Codegen::gen_inst_Xin(std::unique_ptr<nodes::Node> &node)
     inst_bytes.push_back(i);
 }
 
-void masm::codegen::Codegen::gen_inst_Xout(std::unique_ptr<nodes::Node> &node)
+void masm::codegen::Codegen::gen_inst_cout(std::unique_ptr<nodes::Node> &node)
 {
     nodes::NodeOneRegrOperands *inst = (nodes::NodeOneRegrOperands *)node->ptr.get();
     Instruction i;
     i.bytes.b1 = node->kind == nodes::NodeKind::_INST_COUT ? opcodes::OP_COUT : opcodes::OP_COUT;
     i.bytes.b8 = inst->oper_rger;
     inst_bytes.push_back(i);
+}
+
+void masm::codegen::Codegen::gen_inst_sin(size_t address)
+{
+    Instruction inst;
+    inst.bytes.b1 = opcodes::OP_SIN;
+    inst.bytes.b3 = (address >> 40) & 255;
+    inst.bytes.b4 = (address >> 32) & 255;
+    inst.bytes.b5 = (address >> 24) & 255;
+    inst.bytes.b6 = (address >> 16) & 255;
+    inst.bytes.b7 = (address >> 8) & 255;
+    inst.bytes.b8 = (address) & 255;
+    inst_bytes.push_back(inst);
+}
+
+void masm::codegen::Codegen::gen_inst_sout(size_t address)
+{
+    Instruction inst;
+    inst.bytes.b1 = opcodes::OP_SOUT;
+    inst.bytes.b3 = (address >> 40) & 255;
+    inst.bytes.b4 = (address >> 32) & 255;
+    inst.bytes.b5 = (address >> 24) & 255;
+    inst.bytes.b6 = (address >> 16) & 255;
+    inst.bytes.b7 = (address >> 8) & 255;
+    inst.bytes.b8 = (address) & 255;
+    inst_bytes.push_back(inst);
 }
 
 void masm::codegen::Codegen::gen()
@@ -462,12 +488,22 @@ void masm::codegen::Codegen::gen()
         }
         case nodes::NodeKind::_INST_CIN:
         {
-            gen_inst_Xin(*iter);
+            gen_inst_cin(*iter);
             break;
         }
         case nodes::NodeKind::_INST_COUT:
         {
-            gen_inst_Xout(*iter);
+            gen_inst_cout(*iter);
+            break;
+        }
+        case nodes::NodeKind::_INST_SIN:
+        {
+            gen_inst_sin(data_addrs[((nodes::NodeOneImmOperand *)(inst->ptr.get()))->imm]);
+            break;
+        }
+        case nodes::NodeKind::_INST_SOUT:
+        {
+            gen_inst_sout(data_addrs[((nodes::NodeOneImmOperand *)(inst->ptr.get()))->imm]);
             break;
         }
 

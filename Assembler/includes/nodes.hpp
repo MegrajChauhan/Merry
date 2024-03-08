@@ -69,7 +69,9 @@ namespace masm
             _INST_UOUTR,
 
             _INST_CIN,
+            _INST_SIN,
             _INST_COUT,
+            _INST_SOUT,
 
             _INST_HLT, // this doesn't need its own structure
         };
@@ -120,8 +122,9 @@ namespace masm
         };
 
         // we need this so
-        struct NodeNop: public Base
-        {};
+        struct NodeNop : public Base
+        {
+        };
 
         // Define derived classes for each node type
         struct NodeDefByte : public Base
@@ -176,12 +179,17 @@ namespace masm
         };
 
         // this struct is for any instruction that uses just one register operand
-        struct NodeOneRegrOperands: public Base
+        struct NodeOneRegrOperands : public Base
         {
             Registers oper_rger;
         };
 
-        struct NodeRes: public Base
+        struct NodeOneImmOperand : public Base
+        {
+            std::string imm;
+        };
+
+        struct NodeRes : public Base
         {
             std::string name;
             size_t number;

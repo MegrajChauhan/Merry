@@ -64,8 +64,11 @@ namespace masm
             void handle_inst_movsx();
             // void handle_inst_movesx(size_t);
 
-            void handle_inst_Xin();
-            void handle_inst_Xout();
+            void handle_inst_cin();
+            void handle_inst_cout();
+
+            void handle_inst_sin();
+            void handle_inst_sout();
 
             void handle_resX(std::string);
         };

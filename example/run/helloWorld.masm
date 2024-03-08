@@ -1,0 +1,11 @@
+.data:
+msg: .string "Hello World!\n"
+msg_len: db 12
+
+.text:
+proc main
+
+main:
+  mov Mc, msg_len ;; load the length of the message
+  sout msg        ;; display the contents of the message
+  hlt             ;; stop the program

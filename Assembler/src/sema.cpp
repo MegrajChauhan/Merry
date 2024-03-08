@@ -198,7 +198,7 @@ void masm::sema::Sema::analyse()
                 break;
             }
             }
-            // inst_nodes.push_back(std::move(node));
+            inst_nodes.push_back(std::move(node));
         }
     }
     // check if all the procedures have been correctly called
@@ -210,13 +210,29 @@ void masm::sema::Sema::analyse()
         // we only check for those instructions that may use variables and symbols
         switch (inst->kind)
         {
+        case nodes::NodeKind::_INST_SIN:
+        {
+            auto node = (nodes::NodeOneImmOperand *)inst->ptr.get();
+            auto x = symtable.find_entry(node->imm);
+            if (!symtable.is_invalid(x))
+                analysis_error(inst->line, std::string("The operand '") + node->imm + "' in the sin instruction is not a valid identifier.");
+            break;
+        }
+        case nodes::NodeKind::_INST_SOUT:
+        {
+            auto node = (nodes::NodeOneImmOperand *)inst->ptr.get();
+            auto x = symtable.find_entry(node->imm);
+            if (!symtable.is_invalid(x))
+                analysis_error(inst->line, std::string("The operand '") + node->imm + "' in the sout instruction is not a valid identifier.");
+            break;
+        }
         case nodes::NodeKind::_INST_MOV_REG_IMMQ:
         {
             auto node = (nodes::NodeInstMovRegImm *)inst->ptr.get();
             if (node->is_iden)
             {
                 auto x = symtable.find_entry(node->value);
-                if (!symtable.is_invalid(symtable.find_entry(node->value)))
+                if (!symtable.is_invalid(x))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
                 if (x->second.dtype != nodes::DataType::_TYPE_QWORD && x->second.dtype != nodes::DataType::_TYPE_RESQ)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of QWORD type to be used with 'movq'");
@@ -229,7 +245,7 @@ void masm::sema::Sema::analyse()
             if (node->is_iden)
             {
                 auto x = symtable.find_entry(node->value);
-                if (!symtable.is_invalid(symtable.find_entry(node->value)))
+                if (!symtable.is_invalid(x))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
                 if (x->second.dtype != nodes::DataType::_TYPE_BYTE && x->second.dtype != nodes::DataType::_TYPE_STRING && x->second.dtype != nodes::DataType::_TYPE_RESB)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of BYTE type as expected by the instruction.");
@@ -242,7 +258,7 @@ void masm::sema::Sema::analyse()
             if (node->is_iden)
             {
                 auto x = symtable.find_entry(node->value);
-                if (!symtable.is_invalid(symtable.find_entry(node->value)))
+                if (!symtable.is_invalid(x))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
                 if (x->second.dtype != nodes::DataType::_TYPE_WORD && x->second.dtype != nodes::DataType::_TYPE_RESW)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of WORD type as expected by the instruction.");
@@ -255,7 +271,7 @@ void masm::sema::Sema::analyse()
             if (node->is_iden)
             {
                 auto x = symtable.find_entry(node->value);
-                if (!symtable.is_invalid(symtable.find_entry(node->value)))
+                if (!symtable.is_invalid(x))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
                 if (x->second.dtype != nodes::DataType::_TYPE_DWORD && x->second.dtype != nodes::DataType::_TYPE_RESD)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of DWORD type as expected by the instruction.");
@@ -268,7 +284,7 @@ void masm::sema::Sema::analyse()
             if (node->is_iden)
             {
                 auto x = symtable.find_entry(node->value);
-                if (!symtable.is_invalid(symtable.find_entry(node->value)))
+                if (!symtable.is_invalid(x))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
                 if (x->second.dtype != nodes::DataType::_TYPE_BYTE && x->second.dtype != nodes::DataType::_TYPE_RESB)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of BYTE type as expected by the instruction.");
@@ -281,7 +297,7 @@ void masm::sema::Sema::analyse()
             if (node->is_iden)
             {
                 auto x = symtable.find_entry(node->value);
-                if (!symtable.is_invalid(symtable.find_entry(node->value)))
+                if (!symtable.is_invalid(x))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
                 if (x->second.dtype != nodes::DataType::_TYPE_WORD && x->second.dtype != nodes::DataType::_TYPE_RESW)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of WORD type as expected by the instruction.");
@@ -294,7 +310,7 @@ void masm::sema::Sema::analyse()
             if (node->is_iden)
             {
                 auto x = symtable.find_entry(node->value);
-                if (!symtable.is_invalid(symtable.find_entry(node->value)))
+                if (!symtable.is_invalid(x))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
                 if (x->second.dtype != nodes::DataType::_TYPE_DWORD && x->second.dtype != nodes::DataType::_TYPE_RESD)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of DWORD type as expected by the instruction.");

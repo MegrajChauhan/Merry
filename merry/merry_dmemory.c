@@ -243,7 +243,13 @@ mret_t merry_dmemory_read_word(MerryDMemory *memory, maddress_t address, mqptr_t
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    *_store_in = memory->pages[addr.page]->address_wspace[addr.offset / 2];
+#if (_MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_)
+    *_store_in = memory->pages[addr.page]->address_space[addr.offset + 1];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset];
+#else
+    *_store_in = memory->pages[addr.page]->address_space[addr.offset];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset + 1];
+#endif
     return RET_SUCCESS;
 }
 
@@ -264,7 +270,13 @@ mret_t merry_dmemory_read_word_atm(MerryDMemory *memory, maddress_t address, mqp
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    *_store_in = atomic_load(&memory->pages[addr.page]->address_wspace[addr.offset / 2]);
+#if (_MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_)
+    *_store_in = atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 1]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset]);
+#else
+    *_store_in = atomic_load(&memory->pages[addr.page]->address_space[addr.offset]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 1]);
+#endif
     // *_store_in = memory->pages[addr.page]->address_wspace[addr.offset / 2];
     return RET_SUCCESS;
 }
@@ -285,7 +297,13 @@ mret_t merry_dmemory_write_word(MerryDMemory *memory, maddress_t address, mqword
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    memory->pages[addr.page]->address_wspace[addr.offset / 2] = _to_write & 0xFFFF;
+#if (_MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_)
+    memory->pages[addr.page]->address_space[addr.offset] = (_to_write) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 1] = (_to_write >> 8) & 255;
+#else
+    memory->pages[addr.page]->address_space[addr.offset] = (_to_write >> 8) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 1] = (_to_write) & 255;
+#endif
     return RET_SUCCESS;
 }
 
@@ -305,8 +323,13 @@ mret_t merry_dmemory_write_word_atm(MerryDMemory *memory, maddress_t address, mq
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    atomic_store(&memory->pages[addr.page]->address_wspace[addr.offset / 2], _to_write & 0xFFFF);
-    // memory->pages[addr.page]->address_wspace[addr.offset / 2] = _to_write & 0xFFFF;
+#if (_MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_)
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset], _to_write & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 1], (_to_write >> 8) & 255);
+#else
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 1], _to_write & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset], (_to_write >> 8) & 255);
+#endif
     return RET_SUCCESS;
 }
 
@@ -327,7 +350,17 @@ mret_t merry_dmemory_read_dword(MerryDMemory *memory, maddress_t address, mqptr_
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    *_store_in = memory->pages[addr.page]->address_dspace[addr.offset / 4];
+#if (_MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_)
+    *_store_in = memory->pages[addr.page]->address_space[addr.offset + 3];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset + 2];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset + 1];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset];
+#else
+    *_store_in = memory->pages[addr.page]->address_space[addr.offset];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset + 1];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset + 2];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset + 3];
+#endif
     return RET_SUCCESS;
 }
 
@@ -348,7 +381,17 @@ mret_t merry_dmemory_read_dword_atm(MerryDMemory *memory, maddress_t address, mq
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    *_store_in = atomic_load(&memory->pages[addr.page]->address_dspace[addr.offset / 4]);
+#if (_MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_)
+    *_store_in = atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 3]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 2]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 1]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset]);
+#else
+    *_store_in = atomic_load(&memory->pages[addr.page]->address_space[addr.offset]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 1]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 2]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 3]);
+#endif
     // *_store_in = memory->pages[addr.page]->address_dspace[addr.offset / 4];
     return RET_SUCCESS;
 }
@@ -369,7 +412,17 @@ mret_t merry_dmemory_write_dword(MerryDMemory *memory, maddress_t address, mqwor
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    memory->pages[addr.page]->address_wspace[addr.offset / 4] = _to_write & 0xFFFFFFFF;
+#if (_MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_)
+    memory->pages[addr.page]->address_space[addr.offset] = (_to_write) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 1] = (_to_write >> 8) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 2] = (_to_write >> 16) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 3] = (_to_write >> 24) & 255;
+#else
+    memory->pages[addr.page]->address_space[addr.offset] = (_to_write >> 24) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 1] = (_to_write >> 16) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 2] = (_to_write >> 8) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 3] = (_to_write) & 255;
+#endif
     return RET_SUCCESS;
 }
 
@@ -390,7 +443,17 @@ mret_t merry_dmemory_write_dword_atm(MerryDMemory *memory, maddress_t address, m
         return RET_FAILURE;
     }
     // memory->pages[addr.page]->address_wspace[addr.offset / 4] = _to_write & 0xFFFFFFFF;
-    atomic_store(&memory->pages[addr.page]->address_wspace[addr.offset / 4], _to_write & 0xFFFFFFFF);
+#if (_MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_)
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset], _to_write & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 1], (_to_write >> 8) & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 2], (_to_write >> 16) & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 3], (_to_write >> 24) & 255);
+#else
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 3], _to_write & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 2], (_to_write >> 8) & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 1], (_to_write >> 16) & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset], (_to_write >> 24) & 255);
+#endif
     return RET_SUCCESS;
 }
 
@@ -411,7 +474,25 @@ mret_t merry_dmemory_read_qword(MerryDMemory *memory, maddress_t address, mqptr_
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    *_store_in = memory->pages[addr.page]->address_qspace[addr.offset / 8];
+#if (_MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_)
+    *_store_in = memory->pages[addr.page]->address_space[addr.offset + 7];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset + 6];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset + 5];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset + 4];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset + 3];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset + 2];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset + 1];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset];
+#else
+    *_store_in = memory->pages[addr.page]->address_space[addr.offset];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset + 1];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset + 2];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset + 3];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset + 4];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset + 5];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset + 6];
+    (*_store_in <<= 8) | memory->pages[addr.page]->address_space[addr.offset + 7];
+#endif
     return RET_SUCCESS;
 }
 
@@ -433,7 +514,25 @@ mret_t merry_dmemory_read_qword_atm(MerryDMemory *memory, maddress_t address, mq
         return RET_FAILURE;
     }
     // *_store_in = memory->pages[addr.page]->address_qspace[addr.offset / 8];
-    *_store_in = atomic_load(&memory->pages[addr.page]->address_qspace[addr.offset / 8]);
+#if (_MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_)
+    *_store_in = atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 7]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 6]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 5]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 4]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 3]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 2]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 1]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset]);
+#else
+    *_store_in = atomic_load(&memory->pages[addr.page]->address_space[addr.offset]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 1]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 2]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 3]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 4]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 5]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 6]);
+    (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 7]);
+#endif
     return RET_SUCCESS;
 }
 
@@ -453,7 +552,25 @@ mret_t merry_dmemory_write_qword(MerryDMemory *memory, maddress_t address, mqwor
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    memory->pages[addr.page]->address_qspace[addr.offset / 8] = _to_write;
+#if (_MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_)
+    memory->pages[addr.page]->address_space[addr.offset] = (_to_write) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 1] = (_to_write >> 8) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 2] = (_to_write >> 16) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 3] = (_to_write >> 24) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 4] = (_to_write >> 32) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 5] = (_to_write >> 40) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 6] = (_to_write >> 48) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 7] = (_to_write >> 56) & 255;
+#else
+    memory->pages[addr.page]->address_space[addr.offset] = (_to_write >> 56) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 1] = (_to_write >> 48) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 2] = (_to_write >> 40) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 3] = (_to_write >> 32) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 4] = (_to_write >> 24) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 5] = (_to_write >> 16) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 6] = (_to_write >> 8) & 255;
+    memory->pages[addr.page]->address_space[addr.offset + 7] = (_to_write) & 255;
+#endif
     return RET_SUCCESS;
 }
 
@@ -473,8 +590,25 @@ mret_t merry_dmemory_write_qword_atm(MerryDMemory *memory, maddress_t address, m
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    memory->pages[addr.page]->address_wspace[addr.offset / 8] = _to_write;
-    atomic_store(&memory->pages[addr.page]->address_qspace[addr.offset / 8], _to_write);
+#if (_MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_)
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset], _to_write & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 1], (_to_write >> 8) & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 2], (_to_write >> 16) & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 3], (_to_write >> 24) & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 4], (_to_write >> 32) & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 5], (_to_write >> 40) & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 6], (_to_write >> 48) & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 7], (_to_write >> 56) & 255);
+#else
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 7], _to_write & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 6], (_to_write >> 8) & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 5], (_to_write >> 16) & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 4], (_to_write >> 24) & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 3], (_to_write >> 32) & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 2], (_to_write >> 40) & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 1], (_to_write >> 48) & 255);
+    atomic_store(&memory->pages[addr.page]->address_space[addr.offset], (_to_write >> 56) & 255);
+#endif
     return RET_SUCCESS;
 }
 
