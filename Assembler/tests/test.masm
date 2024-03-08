@@ -41,7 +41,7 @@ main:
   movq M1, 123456789 ;; just movq reg, imm
   movq M2, M3 ;; translates to mov reg, reg
   movq M4, strlen_q ;; translates to loadq Mf, strlen_q
-  movq Mf, strlen ;; error, accepts only qwords; same for strlen_d and strlen_w
+  ;; movq Mf, strlen ;; error, accepts only qwords; same for strlen_d and strlen_w
   movb M5, 1 
   movb Mm1, Mm2
   movb Mm3, strlen 

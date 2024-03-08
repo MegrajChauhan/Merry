@@ -9,7 +9,7 @@ namespace masm
     {
         class Emit
         {
-            std::string out_file_name = "a.mbin"; // default name
+            std::string out_file_name;
             std::vector<codegen::Instruction> instructions;
             std::vector<unsigned char> data;
             size_t entry;
@@ -18,6 +18,11 @@ namespace masm
             Emit() = default;
 
             Emit(codegen::Codegen&);
+
+            void set_output_filename(std::string name)
+            {
+                out_file_name = name == ""? "a.mbin": name;
+            }
 
             void emit();
         };

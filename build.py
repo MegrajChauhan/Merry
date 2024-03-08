@@ -8,6 +8,7 @@
 import os
 import sys
 import platform
+from time import sleep
 # from cpuinfo import cpuinfo
 
 # def has_fpu():
@@ -71,15 +72,18 @@ def main():
     else:
         print(f"Compilation failed with a return value of {result}")
         quit(result)
-    
-    # print("Compiling assembler (not finished!)")
-    # result = os.system("c++ -ggdb -fsanitize=address -O2 -std=c++23 -o ./build/asm ./MerryAssembler/src/*.cc -Wall -Wextra -Wswitch-enum")
-    # if result == 0:
-    #     print(f"Compilation successful with return value of {result}")
-    # else:
-    #     print(f"Compilation failed with a return value of {result}")
-    #     quit(result)
-    # print("Done building all!")
+    print("Finished compiling Merry")
+    print("Compiling the assembler:")
+    print("Compiler messages if any: ")
+    sleep(2);
+    result = os.system("g++ -O3 -std=c++23 -o build/masm Assembler/src/*.cpp Assembler/main.cpp")
+    if result == 0:
+        print(f"Compilation successful with return value of {result}")
+    else:
+        print(f"Compilation failed with a return value of {result}")
+        quit(result)
+    print("Done building all!")
+    print(f"Result:\nBUILT: The VM: {output_file_name}\nThe Assembler: masm")
 
 if __name__ == "__main__":
     main()
