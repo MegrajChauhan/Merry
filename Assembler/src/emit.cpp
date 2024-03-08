@@ -38,7 +38,7 @@ void masm::emit::Emit::emit()
     header[14] = (inst_len >> 8) & 255;
     header[15] = (inst_len) & 255;
 
-    size_t data_len = data.size();
+    size_t data_len = data.size() - str_len;
     header[16] = (data_len >> 56) & 255;
     header[17] = (data_len >> 48) & 255;
     header[18] = (data_len >> 40) & 255;

@@ -9,5 +9,6 @@ int main()
     masm::sema::Sema sema(parser);
     masm::codegen::Codegen codegen(sema);
     emit::Emit emit(codegen);
+    emit.set_output_filename("a.mbin");
     emit.emit();
 }

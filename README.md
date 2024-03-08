@@ -20,23 +20,29 @@ Merry is  a 64-bit Virtual Machine that emulates a non-existsent CPU. Merry has 
 11. File IO(Not fully tested)
 and comming soon....
 
-# Some Important Notes:
-Merry is not fully tested right now and so it may not work as expected. Hence any help in finding and solving the issues is appreciated. For starters, you may run the **FirstProgram.c** program which should work. Compile it and build the VM first and then run it accordingly. The building process will be explained soon. The VM hasn't been tested in Windows, Mac or any other operating systems. Also the use of **gcc** as the compiler would be recommended.
+# Updates:
+A basic functioning assembler has been added to make the easier. And here when I say basic, I mean it. Expect for a few instructions, it can't really do anything right now.
 
-# Building the VM:
+# Some Important Notes:
+Merry is not fully tested right now and so it may not work as expected. Hence any help in finding and solving the issues is appreciated. The building process will be explained soon. The VM hasn't been tested in Windows, Mac or any other operating systems. Also the use of **gcc** as the compiler would be recommended.
+
+# Building the VM and the Assembler:
 Due to my lack of knowledge in build systems, I have had to use a script written in Python for building. For building the project, here is the command to run:
 ```bash
-python build.py <Destination Folder> <Final Name of the executable; For now it can be anything>
+python build.py <Destination Folder> merry
 ```
-Note that the above command must be ran in the root directory of the project. If the directory doesn't exist already, create one first. The name of the executable can be anything for now but using **merry** is recommended.
+Note that the above command must be ran in the root directory of the project. If the directory doesn't exist already, create one first. Running this command will build the Assembler as well.
 
 # Running Programs:
 In order to make merry run any program, first go into the directory where the compiled executable resides and type the following command:
 ```bash
-./<exe name> -f <input file path>
+./merry -f <input file path>
 ```
-
 This will make merry read the input file and start executing it. 
+But before running a program, you would need one and for that you can use the assembler to write the program and then assemble it with the command:
+```bash
+./masm <path_to_input_file>
+```
 
 # Things to know:
 Merry is still in development and hence it is appreciated for feedback on test failures. Many features are yet to be implemented. 

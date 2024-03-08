@@ -239,21 +239,8 @@ namespace masm
                 consume();
                 while (*curr_char != starting_quote && curr_char != end)
                 {
-                    if (*curr_char == '\\')
-                    {
-                        consume(); // The next character will be added
-                        if (curr_char == end)
-                        {
-                            lex_error("The string was never terminated. Reached EOF");
-                        }
-                        string += *curr_char;
-                        consume();
-                    }
-                    else
-                    {
-                        string += *curr_char;
-                        consume();
-                    }
+                    string += *curr_char;
+                    consume();
                 }
                 if (*curr_char == starting_quote)
                 {
