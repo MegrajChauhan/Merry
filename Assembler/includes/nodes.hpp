@@ -23,6 +23,10 @@ namespace masm
             _TYPE_DWORD,
             _TYPE_QWORD,
             _TYPE_STRING,
+            _TYPE_RESB,
+            _TYPE_RESW,
+            _TYPE_RESD,
+            _TYPE_RESQ,
         };
 
         enum NodeKind
@@ -33,6 +37,10 @@ namespace masm
             _DEF_DWORD,
             _DEF_QWORD,
             _DEF_STRING,
+            _DEF_RESB,
+            _DEF_RESW,
+            _DEF_RESD,
+            _DEF_RESQ,
             // any label that is declared as proc is a procedure while any other are just labels
             _PROC_DECLR, // procedure declaration
             _LABEL,      // A label[Unless semantically verified even procedure definition is a label]
@@ -59,6 +67,9 @@ namespace masm
 
             _INST_OUTR,
             _INST_UOUTR,
+
+            _INST_CIN,
+            _INST_COUT,
 
             _INST_HLT, // this doesn't need its own structure
         };
@@ -162,6 +173,18 @@ namespace masm
             // the data type is most likely INT or NUM
 
             NodeInstMovRegReg() {} // Default constructor
+        };
+
+        // this struct is for any instruction that uses just one register operand
+        struct NodeOneRegrOperands: public Base
+        {
+            Registers oper_rger;
+        };
+
+        struct NodeRes: public Base
+        {
+            std::string name;
+            size_t number;
         };
 
         // Define struct Node to hold a pointer to Base

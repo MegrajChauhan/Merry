@@ -79,8 +79,17 @@ main:
   outr ;; print the contents of all the registers
   uoutr ;; print all as unsigned
   mov Ma, msg ;; should be loadb
+  cin Ma ;; read a character into Ma
+  cout Ma ;; write a character of Ma
   hlt ;; we use halt here because this is what ultimately stops the program so there is no point in having a ret here
 ;; main:
 
 .data:
 test: db 123
+
+;; Unlike Nasm and other assemblers, masm will not have separate bss section
+;; instead we will make use of the data section
+resb1: .resb 4 ;; reserve 4 bytes
+resb2: .resw 4 ;; reserve 4 words
+resb2: .resd 4 ;; reserve 4 dwords
+resb3: .resq 4 ;; reserve 4 qwords

@@ -28,6 +28,10 @@ namespace masm
             _TT_KEY_DW,
             _TT_KEY_DD,
             _TT_KEY_DQ,
+            _TT_KEY_RESB,
+            _TT_KEY_RESW,
+            _TT_KEY_RESD,
+            _TT_KEY_RESQ,
             _TT_KEY_PROC,
 
             _TT_STRING,
@@ -60,6 +64,9 @@ namespace masm
             _TT_INST_OUTR,
             _TT_INST_UOUTR,
 
+            _TT_INST_CIN,
+            _TT_INST_COUT,
+
             // we ignore commas, they are not absolutely necessary and the assembler won't even complain
             // about not using it. It is just their to provide readability
         };
@@ -91,6 +98,12 @@ namespace masm
                 {"nop", _TT_INST_NOP},
                 {"outr", _TT_INST_OUTR},
                 {"uoutr", _TT_INST_UOUTR},
+                {"cin", _TT_INST_CIN},
+                {"cout", _TT_INST_COUT},
+                {"resb", _TT_KEY_RESB},
+                {"resw", _TT_KEY_RESW},
+                {"resd", _TT_KEY_RESD},
+                {"resq", _TT_KEY_RESQ},
         };
 
         struct Token

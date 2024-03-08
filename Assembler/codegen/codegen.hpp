@@ -71,6 +71,9 @@ namespace masm
 
             void gen_inst_movsx_reg_reg(std::unique_ptr<nodes::Node> &, size_t);
             void gen_inst_movsx_reg_imm(std::unique_ptr<nodes::Node> &);
+
+            void gen_inst_Xin(std::unique_ptr<nodes::Node>&);
+            void gen_inst_Xout(std::unique_ptr<nodes::Node>&);
         };
     };
 };

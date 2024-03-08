@@ -112,6 +112,38 @@ void masm::sema::Sema::analyse()
                 symtable.add_entry(var->byte_name, symtable::SymTableEntry(symtable::_VAR, var->byte_val, nodes::_TYPE_STRING));
                 break;
             }
+            case nodes::NodeKind::_DEF_RESB:
+            {
+                auto var = (nodes::NodeRes *)node->ptr.get();
+                if (symtable.is_invalid(symtable.find_entry(var->name)))
+                    analysis_error(node->line, std::string("The variable '") + var->name + "' already exists as reserved; redefining");
+                symtable.add_entry(var->name, symtable::SymTableEntry(symtable::_VAR, "", nodes::_TYPE_RESB, var->number));
+                break;
+            }
+            case nodes::NodeKind::_DEF_RESW:
+            {
+                auto var = (nodes::NodeRes *)node->ptr.get();
+                if (symtable.is_invalid(symtable.find_entry(var->name)))
+                    analysis_error(node->line, std::string("The variable '") + var->name + "' already exists as reserved; redefining");
+                symtable.add_entry(var->name, symtable::SymTableEntry(symtable::_VAR, "", nodes::_TYPE_RESW, var->number));
+                break;
+            }
+            case nodes::NodeKind::_DEF_RESD:
+            {
+                auto var = (nodes::NodeRes *)node->ptr.get();
+                if (symtable.is_invalid(symtable.find_entry(var->name)))
+                    analysis_error(node->line, std::string("The variable '") + var->name + "' already exists as reserved; redefining");
+                symtable.add_entry(var->name, symtable::SymTableEntry(symtable::_VAR, "", nodes::_TYPE_RESD, var->number));
+                break;
+            }
+            case nodes::NodeKind::_DEF_RESQ:
+            {
+                auto var = (nodes::NodeRes *)node->ptr.get();
+                if (symtable.is_invalid(symtable.find_entry(var->name)))
+                    analysis_error(node->line, std::string("The variable '") + var->name + "' already exists as reserved; redefining");
+                symtable.add_entry(var->name, symtable::SymTableEntry(symtable::_VAR, "", nodes::_TYPE_RESQ, var->number));
+                break;
+            }
             }
             break;
         }
@@ -166,7 +198,7 @@ void masm::sema::Sema::analyse()
                 break;
             }
             }
-            inst_nodes.push_back(std::move(node));
+            // inst_nodes.push_back(std::move(node));
         }
     }
     // check if all the procedures have been correctly called
@@ -186,7 +218,7 @@ void masm::sema::Sema::analyse()
                 auto x = symtable.find_entry(node->value);
                 if (!symtable.is_invalid(symtable.find_entry(node->value)))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
-                if (x->second.dtype != nodes::DataType::_TYPE_QWORD)
+                if (x->second.dtype != nodes::DataType::_TYPE_QWORD && x->second.dtype != nodes::DataType::_TYPE_RESQ)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of QWORD type to be used with 'movq'");
             }
             break;
@@ -199,7 +231,7 @@ void masm::sema::Sema::analyse()
                 auto x = symtable.find_entry(node->value);
                 if (!symtable.is_invalid(symtable.find_entry(node->value)))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
-                if (x->second.dtype != nodes::DataType::_TYPE_BYTE && x->second.dtype != nodes::DataType::_TYPE_STRING)
+                if (x->second.dtype != nodes::DataType::_TYPE_BYTE && x->second.dtype != nodes::DataType::_TYPE_STRING && x->second.dtype != nodes::DataType::_TYPE_RESB)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of BYTE type as expected by the instruction.");
             }
             break;
@@ -212,7 +244,7 @@ void masm::sema::Sema::analyse()
                 auto x = symtable.find_entry(node->value);
                 if (!symtable.is_invalid(symtable.find_entry(node->value)))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
-                if (x->second.dtype != nodes::DataType::_TYPE_WORD)
+                if (x->second.dtype != nodes::DataType::_TYPE_WORD && x->second.dtype != nodes::DataType::_TYPE_RESW)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of WORD type as expected by the instruction.");
             }
             break;
@@ -225,7 +257,7 @@ void masm::sema::Sema::analyse()
                 auto x = symtable.find_entry(node->value);
                 if (!symtable.is_invalid(symtable.find_entry(node->value)))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
-                if (x->second.dtype != nodes::DataType::_TYPE_DWORD)
+                if (x->second.dtype != nodes::DataType::_TYPE_DWORD && x->second.dtype != nodes::DataType::_TYPE_RESD)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of DWORD type as expected by the instruction.");
             }
             break;
@@ -238,7 +270,7 @@ void masm::sema::Sema::analyse()
                 auto x = symtable.find_entry(node->value);
                 if (!symtable.is_invalid(symtable.find_entry(node->value)))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
-                if (x->second.dtype != nodes::DataType::_TYPE_BYTE)
+                if (x->second.dtype != nodes::DataType::_TYPE_BYTE && x->second.dtype != nodes::DataType::_TYPE_RESB)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of BYTE type as expected by the instruction.");
             }
             break;
@@ -251,7 +283,7 @@ void masm::sema::Sema::analyse()
                 auto x = symtable.find_entry(node->value);
                 if (!symtable.is_invalid(symtable.find_entry(node->value)))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
-                if (x->second.dtype != nodes::DataType::_TYPE_WORD)
+                if (x->second.dtype != nodes::DataType::_TYPE_WORD && x->second.dtype != nodes::DataType::_TYPE_RESW)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of WORD type as expected by the instruction.");
             }
             break;
@@ -264,7 +296,7 @@ void masm::sema::Sema::analyse()
                 auto x = symtable.find_entry(node->value);
                 if (!symtable.is_invalid(symtable.find_entry(node->value)))
                     analysis_error(inst->line, std::string("The operand '") + node->value + "' in the move instruction is not a valid identifier.");
-                if (x->second.dtype != nodes::DataType::_TYPE_DWORD)
+                if (x->second.dtype != nodes::DataType::_TYPE_DWORD && x->second.dtype != nodes::DataType::_TYPE_RESD)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of DWORD type as expected by the instruction.");
             }
             break;

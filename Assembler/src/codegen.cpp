@@ -28,6 +28,38 @@ void masm::codegen::Codegen::gen_data()
             // don't care about procedures and labels here
             switch (data.second.dtype)
             {
+            case nodes::DataType::_TYPE_RESB:
+            {
+                data_addrs[data.first] = start;
+                start += data.second.len; // just 1 byte but for alignment issues recently encountered, we will have to do this
+                unsigned char x = 0;
+                data_bytes.insert(data_bytes.end(), data.second.len, x);
+                break;
+            }
+            case nodes::DataType::_TYPE_RESW:
+            {
+                data_addrs[data.first] = start;
+                start += data.second.len * 2; // just 1 byte but for alignment issues recently encountered, we will have to do this
+                unsigned char x = 0;
+                data_bytes.insert(data_bytes.end(), data.second.len * 2, x);
+                break;
+            }
+            case nodes::DataType::_TYPE_RESD:
+            {
+                data_addrs[data.first] = start;
+                start += data.second.len * 4; // just 1 byte but for alignment issues recently encountered, we will have to do this
+                unsigned char x = 0;
+                data_bytes.insert(data_bytes.end(), data.second.len * 4, x);
+                break;
+            }
+            case nodes::DataType::_TYPE_RESQ:
+            {
+                data_addrs[data.first] = start;
+                start += data.second.len * 8; // just 1 byte but for alignment issues recently encountered, we will have to do this
+                unsigned char x = 0;
+                data_bytes.insert(data_bytes.end(), data.second.len * 8, x);
+                break;
+            }
             case nodes::DataType::_TYPE_BYTE:
             {
                 // since the variable names are unique, we won't have to worry about anything here
@@ -295,9 +327,27 @@ void masm::codegen::Codegen::label_labels()
     {
         if (x->kind == nodes::NodeKind::_LABEL)
             label_addrs[((nodes::NodeLabel *)x->ptr.get())->label_name] = i;
-        else if (x->kind > 5)
+        else if (x->kind > nodes::NodeKind::_LABEL)
             i++;
     }
+}
+
+void masm::codegen::Codegen::gen_inst_Xin(std::unique_ptr<nodes::Node> &node)
+{
+    nodes::NodeOneRegrOperands *inst = (nodes::NodeOneRegrOperands *)node->ptr.get();
+    Instruction i;
+    i.bytes.b1 = node->kind == nodes::NodeKind::_INST_CIN ? opcodes::OP_CIN : opcodes::OP_CIN;
+    i.bytes.b8 = inst->oper_rger;
+    inst_bytes.push_back(i);
+}
+
+void masm::codegen::Codegen::gen_inst_Xout(std::unique_ptr<nodes::Node> &node)
+{
+    nodes::NodeOneRegrOperands *inst = (nodes::NodeOneRegrOperands *)node->ptr.get();
+    Instruction i;
+    i.bytes.b1 = node->kind == nodes::NodeKind::_INST_COUT ? opcodes::OP_COUT : opcodes::OP_COUT;
+    i.bytes.b8 = inst->oper_rger;
+    inst_bytes.push_back(i);
 }
 
 void masm::codegen::Codegen::gen()
@@ -408,6 +458,16 @@ void masm::codegen::Codegen::gen()
             Instruction i;
             i.bytes.b1 = opcodes::OP_UOUTR;
             inst_bytes.push_back(i);
+            break;
+        }
+        case nodes::NodeKind::_INST_CIN:
+        {
+            gen_inst_Xin(*iter);
+            break;
+        }
+        case nodes::NodeKind::_INST_COUT:
+        {
+            gen_inst_Xout(*iter);
             break;
         }
 

@@ -21,13 +21,14 @@ namespace masm
         {
             SymEntryType type;
             std::string value;     // if variable, hold the value of the variable
+            size_t len = 0;
             nodes::DataType dtype; // the data's type[for variables]
             bool defined = false;  // only for some type of entries
             // [in future: for procedures, they could be private to a single file or to multiple file]
 
             SymTableEntry() = default;
 
-            SymTableEntry(SymEntryType t, std::string val = "", nodes::DataType type = nodes::DataType::_TYPE_BYTE) : type(t), value(val), dtype(type) {}
+            SymTableEntry(SymEntryType t, std::string val = "", nodes::DataType type = nodes::DataType::_TYPE_BYTE, size_t len = 0) : type(t), value(val), dtype(type), len{len} {}
         };
 
         // the symbol table
