@@ -36,7 +36,9 @@ namespace masm
 
             _TT_STRING,
             _TT_INT,
+            _TT_NINT,
             _TT_FLOAT,
+            _TT_NFLOAT,
 
             _TT_OPER_COLON,
 
@@ -68,6 +70,23 @@ namespace masm
             _TT_INST_COUT,
             _TT_INST_SIN,
             _TT_INST_SOUT,
+            _TT_INST_IN,
+            _TT_INST_OUT,
+            _TT_INST_INW,
+            _TT_INST_OUTW,
+            _TT_INST_IND,
+            _TT_INST_OUTD,
+            _TT_INST_INQ,
+            _TT_INST_OUTQ,
+
+            _TT_INST_UIN,
+            _TT_INST_UOUT,
+            _TT_INST_UINW,
+            _TT_INST_UOUTW,
+            _TT_INST_UIND,
+            _TT_INST_UOUTD,
+            _TT_INST_UINQ,
+            _TT_INST_UOUTQ,
 
             // we ignore commas, they are not absolutely necessary and the assembler won't even complain
             // about not using it. It is just their to provide readability
@@ -108,6 +127,22 @@ namespace masm
                 {"resq", _TT_KEY_RESQ},
                 {"sin", _TT_INST_SIN},
                 {"sout", _TT_INST_SOUT},
+                {"in", _TT_INST_IN},
+                {"out", _TT_INST_OUT},
+                {"inw", _TT_INST_INW},
+                {"outw", _TT_INST_OUTW},
+                {"ind", _TT_INST_IND},
+                {"outd", _TT_INST_OUTD},
+                {"inq", _TT_INST_INQ},
+                {"outq", _TT_INST_OUTQ},
+                {"uin", _TT_INST_UIN},
+                {"uout", _TT_INST_UOUT},
+                {"uinw", _TT_INST_UINW},
+                {"uoutw", _TT_INST_UOUTW},
+                {"uind", _TT_INST_UIND},
+                {"uoutd", _TT_INST_UOUTD},
+                {"uinq", _TT_INST_UINQ},
+                {"uoutq", _TT_INST_UOUTQ},
         };
 
         struct Token

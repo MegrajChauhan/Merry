@@ -35,7 +35,7 @@
 #define _MERRY_OPTIMIZE_
 
 #define _MERRY_VERSION_ "0.0.0"
-#define _MERRY_VERSION_STATE_ "no_state" // beta, alpha, etc
+#define _MERRY_VERSION_STATE_ "alpha-1" // beta, alpha, etc
 
 
 /*

@@ -72,6 +72,22 @@ namespace masm
             _INST_SIN,
             _INST_COUT,
             _INST_SOUT,
+            _INST_IN,
+            _INST_OUT,
+            _INST_INW,
+            _INST_OUTW,
+            _INST_IND,
+            _INST_OUTD,
+            _INST_INQ,
+            _INST_OUTQ,
+            _INST_UIN,
+            _INST_UOUT,
+            _INST_UINW,
+            _INST_UOUTW,
+            _INST_UIND,
+            _INST_UOUTD,
+            _INST_UINQ,
+            _INST_UOUTQ,
 
             _INST_HLT, // this doesn't need its own structure
         };

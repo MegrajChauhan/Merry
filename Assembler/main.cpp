@@ -1,7 +1,7 @@
 #include "includes/asm.hpp"
 #include "codegen/emit.hpp"
 
-#define VERSION "0.0.0 -no-state"
+#define VERSION "Masm- v0.0.0-alpha.1"
 
 int main(int argv, char **argc)
 {

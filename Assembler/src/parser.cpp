@@ -37,56 +37,23 @@ void masm::parser::Parser::move_nodes(std::vector<std::unique_ptr<nodes::Node>> 
 
 void masm::parser::Parser::parse()
 {
-    while (true)
+    while (curr_tok.type != lexer::_TT_EOF)
     {
-        if (curr_tok.type == lexer::_TT_EOF)
-            break;
         switch (curr_tok.type)
         {
         case lexer::_TT_SECTION_DATA:
-        {
-            // we are currently entering the data section
-            // if we are already in the data section, throw error
-            next_token();
-            if (curr_tok.type != lexer::_TT_OPER_COLON)
-            {
-                lexer.parse_err_expected_colon("after \'.data\'");
-            }
-            if (section == _SECTION_DATA)
-            {
-                lexer.parse_err_whole_line("Data section redefintiion when already in the data section.");
-                break; // should not reach this point
-            }
-            section = _SECTION_DATA;
-            next_token(); // i can't remember the reason why I moved this line back into each case statements instead of having just one at the end
+            parseDataSection();
             break;
-        }
         case lexer::_TT_SECTION_TEXT:
-        {
-            next_token();
-            if (curr_tok.type != lexer::_TT_OPER_COLON)
-            {
-                lexer.parse_err_expected_colon("after \'.text\'");
-            }
-            if (section == _SECTION_TEXT)
-            {
-                lexer.parse_err_whole_line("Text section redefintiion when already in the text section.");
-                break; // should not reach this point
-            }
-            section = _SECTION_TEXT;
-            encountered_text = true;
-            next_token();
+            parseTextSection();
             break;
-        }
         case lexer::_TT_IDENTIFIER:
-        {
             handle_identifier();
             if (nodes.back()->kind != nodes::NodeKind::_LABEL)
                 next_token();
             break;
-        }
+            break;
         case lexer::_TT_KEY_PROC:
-        {
             if (section != _SECTION_TEXT)
             {
                 lexer.parse_error("Declaring a procedure in the data section is not allowed");
@@ -95,151 +62,44 @@ void masm::parser::Parser::parse()
             handle_proc_declaration();
             next_token();
             break;
-        }
         case lexer::_TT_INST_NOP:
-        {
-            if (section != _SECTION_TEXT)
-            {
-                lexer.parse_error("Using instructions in the data section is not allowed");
-                break;
-            }
-            nodes.push_back(std::make_unique<nodes::Node>(nodes::Node(nodes::_TYPE_INST, nodes::_INST_NOP, std::make_unique<nodes::Base>())));
-            next_token();
-            break;
-        }
         case lexer::_TT_INST_HLT:
-        {
-            if (section != _SECTION_TEXT)
-            {
-                lexer.parse_error("Using instructions in the data section is not allowed");
-                break;
-            }
-            nodes.push_back(std::make_unique<nodes::Node>(nodes::Node(nodes::_TYPE_INST, nodes::_INST_HLT, std::make_unique<nodes::Base>())));
-            next_token();
-            break;
-        }
         case lexer::_TT_INST_MOVQ:
         case lexer::_TT_INST_MOV:
-        {
-            if (section != _SECTION_TEXT)
-            {
-                lexer.parse_error("Using instructions in the data section is not allowed");
-                break;
-            }
-            handle_inst_mov();
-            next_token();
-            break;
-        }
         case lexer::_TT_INST_MOVB:
         case lexer::_TT_INST_MOVW:
         case lexer::_TT_INST_MOVD:
-        {
-            if (section != _SECTION_TEXT)
-            {
-                lexer.parse_error("Using instructions in the data section is not allowed");
-                break;
-            }
-            handle_inst_movX();
-            next_token();
-            break;
-        }
         case lexer::_TT_INST_MOVEB:
         case lexer::_TT_INST_MOVEW:
         case lexer::_TT_INST_MOVED:
-        {
-            if (section != _SECTION_TEXT)
-            {
-                lexer.parse_error("Using instructions in the data section is not allowed");
-                break;
-            }
-            handle_inst_moveX();
-            next_token();
-            break;
-        }
         case lexer::_TT_INST_MOVSXB:
         case lexer::_TT_INST_MOVSXW:
         case lexer::_TT_INST_MOVSXD:
-        {
-            if (section != _SECTION_TEXT)
-            {
-                lexer.parse_error("Using instructions in the data section is not allowed");
-                break;
-            }
-            handle_inst_movsx();
-            next_token();
-            break;
-        }
         case lexer::_TT_INST_OUTR:
-        {
-            if (section != _SECTION_TEXT)
-            {
-                lexer.parse_error("Using instructions in the data section is not allowed");
-                break;
-            }
-            nodes.push_back(std::make_unique<nodes::Node>(nodes::NodeType::_TYPE_INST, nodes::NodeKind::_INST_OUTR, std::move(std::make_unique<nodes::Base>()), lexer.get_curr_line()));
-            next_token();
-            break;
-        }
         case lexer::_TT_INST_UOUTR:
-        {
-            if (section != _SECTION_TEXT)
-            {
-                lexer.parse_error("Using instructions in the data section is not allowed");
-                break;
-            }
-            nodes.push_back(std::make_unique<nodes::Node>(nodes::NodeType::_TYPE_INST, nodes::NodeKind::_INST_UOUTR, std::move(std::make_unique<nodes::Base>()), lexer.get_curr_line()));
-            next_token();
-            break;
-        }
         case lexer::_TT_INST_CIN:
-        {
-            if (section != _SECTION_TEXT)
-            {
-                lexer.parse_error("Using instructions in the data section is not allowed");
-                break;
-            }
-            handle_inst_cin();
-            next_token();
-            break;
-        }
         case lexer::_TT_INST_SIN:
-        {
-            if (section != _SECTION_TEXT)
-            {
-                lexer.parse_error("Using instructions in the data section is not allowed");
-                break;
-            }
-            handle_inst_sin();
-            next_token();
-            break;
-        }
+        case lexer::_TT_INST_IN:
         case lexer::_TT_INST_COUT:
-        {
-            if (section != _SECTION_TEXT)
-            {
-                lexer.parse_error("Using instructions in the data section is not allowed");
-                break;
-            }
-            handle_inst_cout();
-            next_token();
-            break;
-        }
+        case lexer::_TT_INST_OUT:
         case lexer::_TT_INST_SOUT:
-        {
-            if (section != _SECTION_TEXT)
-            {
-                lexer.parse_error("Using instructions in the data section is not allowed");
-                break;
-            }
-            handle_inst_sout();
-            next_token();
+        case lexer::_TT_INST_INW:
+        case lexer::_TT_INST_OUTW:
+        case lexer::_TT_INST_IND:
+        case lexer::_TT_INST_OUTD:
+        case lexer::_TT_INST_INQ:
+        case lexer::_TT_INST_OUTQ:
+        case lexer::_TT_INST_UIN:
+        case lexer::_TT_INST_UOUT:
+        case lexer::_TT_INST_UINW:
+        case lexer::_TT_INST_UOUTW:
+        case lexer::_TT_INST_UIND:
+        case lexer::_TT_INST_UOUTD:
+        case lexer::_TT_INST_UINQ:
+            handleInstruction();
             break;
-        }
         default:
-        {
-            lexer.parse_error(
-                "Expected an identifier name or a keyword");
-        }
+            lexer.parse_error("Expected an identifier name or a keyword");
         }
     }
     if (!encountered_text)
@@ -247,6 +107,140 @@ void masm::parser::Parser::parse()
         std::cerr << "Parse Error: The input contains no text section which is not allowed." << std::endl;
         exit(EXIT_FAILURE);
     }
+}
+
+void masm::parser::Parser::handleInstruction()
+{
+    if (section != _SECTION_TEXT)
+    {
+        lexer.parse_error("Using instructions in the data section is not allowed");
+    }
+    switch (curr_tok.type)
+    {
+    case lexer::_TT_INST_NOP:
+        nodes.push_back(std::make_unique<nodes::Node>(nodes::Node(nodes::_TYPE_INST, nodes::_INST_NOP, std::make_unique<nodes::Base>())));
+        break;
+    case lexer::_TT_INST_HLT:
+        nodes.push_back(std::make_unique<nodes::Node>(nodes::Node(nodes::_TYPE_INST, nodes::_INST_HLT, std::make_unique<nodes::Base>())));
+        break;
+    case lexer::_TT_INST_MOVQ:
+    case lexer::_TT_INST_MOV:
+        handle_inst_mov();
+        break;
+    case lexer::_TT_INST_MOVB:
+    case lexer::_TT_INST_MOVW:
+    case lexer::_TT_INST_MOVD:
+        handle_inst_movX();
+        break;
+    case lexer::_TT_INST_MOVEB:
+    case lexer::_TT_INST_MOVEW:
+    case lexer::_TT_INST_MOVED:
+        handle_inst_moveX();
+        break;
+    case lexer::_TT_INST_MOVSXB:
+    case lexer::_TT_INST_MOVSXW:
+    case lexer::_TT_INST_MOVSXD:
+        handle_inst_movsx();
+        break;
+    case lexer::_TT_INST_OUTR:
+        nodes.push_back(std::make_unique<nodes::Node>(nodes::NodeType::_TYPE_INST, nodes::NodeKind::_INST_OUTR, std::move(std::make_unique<nodes::Base>()), lexer.get_curr_line()));
+        break;
+    case lexer::_TT_INST_UOUTR:
+        nodes.push_back(std::make_unique<nodes::Node>(nodes::NodeType::_TYPE_INST, nodes::NodeKind::_INST_UOUTR, std::move(std::make_unique<nodes::Base>()), lexer.get_curr_line()));
+        break;
+    case lexer::_TT_INST_CIN:
+        handle_inst_Xin(nodes::NodeKind::_INST_CIN);
+        break;
+    case lexer::_TT_INST_SIN:
+        handle_inst_sin();
+        break;
+    case lexer::_TT_INST_IN:
+        handle_inst_Xin(nodes::NodeKind::_INST_IN);
+        break;
+    case lexer::_TT_INST_COUT:
+        handle_inst_Xout(nodes::NodeKind::_INST_COUT);
+        break;
+    case lexer::_TT_INST_OUT:
+        handle_inst_Xout(nodes::NodeKind::_INST_OUT);
+        break;
+    case lexer::_TT_INST_SOUT:
+        handle_inst_sout();
+        break;
+    case lexer::_TT_INST_INW:
+        handle_inst_Xin(nodes::NodeKind::_INST_INW);
+        break;
+    case lexer::_TT_INST_OUTW:
+        handle_inst_Xout(nodes::NodeKind::_INST_OUTW);
+        break;
+    case lexer::_TT_INST_IND:
+        handle_inst_Xin(nodes::NodeKind::_INST_IND);
+        break;
+    case lexer::_TT_INST_OUTD:
+        handle_inst_Xout(nodes::NodeKind::_INST_OUTD);
+        break;
+    case lexer::_TT_INST_INQ:
+        handle_inst_Xin(nodes::NodeKind::_INST_INQ);
+        break;
+    case lexer::_TT_INST_OUTQ:
+        handle_inst_Xout(nodes::NodeKind::_INST_OUTQ);
+        break;
+    case lexer::_TT_INST_UIN:
+        handle_inst_Xin(nodes::NodeKind::_INST_UIN);
+        break;
+    case lexer::_TT_INST_UOUT:
+        handle_inst_Xout(nodes::NodeKind::_INST_UOUT);
+        break;
+    case lexer::_TT_INST_UINW:
+        handle_inst_Xin(nodes::NodeKind::_INST_UINW);
+        break;
+    case lexer::_TT_INST_UOUTW:
+        handle_inst_Xout(nodes::NodeKind::_INST_UOUTW);
+        break;
+    case lexer::_TT_INST_UIND:
+        handle_inst_Xin(nodes::NodeKind::_INST_UIND);
+        break;
+    case lexer::_TT_INST_UOUTD:
+        handle_inst_Xout(nodes::NodeKind::_INST_UOUTD);
+        break;
+    case lexer::_TT_INST_UINQ:
+        handle_inst_Xin(nodes::NodeKind::_INST_UINQ);
+        break;
+    case lexer::_TT_INST_UOUTQ:
+        handle_inst_Xout(nodes::NodeKind::_INST_UOUTQ);
+        break;
+    }
+    next_token();
+}
+
+void masm::parser::Parser::parseDataSection()
+{
+    next_token();
+    if (curr_tok.type != lexer::_TT_OPER_COLON)
+    {
+        lexer.parse_err_expected_colon("after \'.data\'");
+    }
+    if (section == _SECTION_DATA)
+    {
+        lexer.parse_err_whole_line("Data section redefintiion when already in the data section.");
+    }
+    section = _SECTION_DATA;
+    next_token(); // i can't remember the reason why I moved this line back into each case statements instead of having just one at the end
+}
+
+void masm::parser::Parser::parseTextSection()
+{
+    next_token();
+    if (curr_tok.type != lexer::_TT_OPER_COLON)
+    {
+        lexer.parse_err_expected_colon("after \'.text\'");
+    }
+    if (section == _SECTION_TEXT)
+    {
+        lexer.parse_err_whole_line("Text section redefintiion when already in the text section.");
+    }
+    section = _SECTION_TEXT;
+    encountered_text = true;
+    next_token();
 }
 
 void masm::parser::Parser::handle_inst_movsx()
@@ -285,7 +279,7 @@ void masm::parser::Parser::handle_inst_movsx()
             temp->dest_regr = regr->second;
         }
     }
-    else if (curr_tok.type == lexer::_TT_INT)
+    else if (curr_tok.type == lexer::_TT_INT || curr_tok.type == lexer::_TT_NINT)
     {
         // then we have an immediate here
         // in future based on the size of the number, we could encode mov64 instruction
@@ -340,7 +334,7 @@ void masm::parser::Parser::handle_inst_movX()
             temp->dest_regr = regr->second;
         }
     }
-    else if (curr_tok.type == lexer::_TT_INT)
+    else if (curr_tok.type == lexer::_TT_INT || curr_tok.type == lexer::_TT_NINT)
     {
         // then we have an immediate here
         // in future based on the size of the number, we could encode mov64 instruction
@@ -388,7 +382,7 @@ void masm::parser::Parser::handle_inst_moveX()
             temp->dest_regr = regr->second;
         }
     }
-    else if (curr_tok.type == lexer::_TT_INT)
+    else if (curr_tok.type == lexer::_TT_INT || curr_tok.type == lexer::_TT_NINT)
     {
         lexer.parse_error("The moveX instruction expects registers as it's only operands not immediates.");
     }
@@ -438,7 +432,7 @@ void masm::parser::Parser::handle_inst_mov()
             is_q = false;
         }
     }
-    else if (curr_tok.type == lexer::_TT_INT)
+    else if (curr_tok.type == lexer::_TT_INT || curr_tok.type == lexer::_TT_NINT)
     {
         // then we have an immediate here
         // in future based on the size of the number, we could encode mov64 instruction
@@ -535,7 +529,7 @@ void masm::parser::Parser::handle_resX(std::string name)
                                                                                                                : nodes::_DEF_RESQ;
     next_token();
     if (curr_tok.type != lexer::_TT_INT)
-        lexer.parse_error("Expected a number after 'resX'.");
+        lexer.parse_error("Expected a positive number after 'resX'.");
     if (curr_tok.value == "0")
         lexer.parse_error("Cannot reserve 0 bytes.");
     std::unique_ptr<nodes::Base> ptr;
@@ -660,30 +654,30 @@ void masm::parser::Parser::handle_proc_declaration()
     nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
 }
 
-void masm::parser::Parser::handle_inst_cin()
+void masm::parser::Parser::handle_inst_Xin(nodes::NodeKind k)
 {
-    auto kind = nodes::NodeKind::_INST_CIN;
+    auto kind = k;
     next_token();
     if (curr_tok.type != lexer::_TT_IDENTIFIER)
-        lexer.parse_error("Expected a register after 'cin'.");
+        lexer.parse_error("Expected a register after 'Xin'.");
     auto regr = nodes::_regr_iden_map.find(curr_tok.value);
     if (regr == nodes::_regr_iden_map.end())
-        lexer.parse_error("Expected a register after 'cin'.");
+        lexer.parse_error("Expected a register after 'Xin'.");
     std::unique_ptr<nodes::Base> ptr;
     ptr = std::make_unique<nodes::NodeOneRegrOperands>();
     ((nodes::NodeOneRegrOperands *)(ptr.get()))->oper_rger = regr->second;
     nodes.push_back(std::make_unique<nodes::Node>(nodes::NodeType::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
 }
 
-void masm::parser::Parser::handle_inst_cout()
+void masm::parser::Parser::handle_inst_Xout(nodes::NodeKind k)
 {
-    auto kind = nodes::NodeKind::_INST_COUT;
+    auto kind = k;
     next_token();
     if (curr_tok.type != lexer::_TT_IDENTIFIER)
-        lexer.parse_error("Expected a register after 'cout'.");
+        lexer.parse_error("Expected a register after 'Xout'.");
     auto regr = nodes::_regr_iden_map.find(curr_tok.value);
     if (regr == nodes::_regr_iden_map.end())
-        lexer.parse_error("Expected a register after 'cout'.");
+        lexer.parse_error("Expected a register after 'Xout'.");
     std::unique_ptr<nodes::Base> ptr;
     ptr = std::make_unique<nodes::NodeOneRegrOperands>();
     ((nodes::NodeOneRegrOperands *)(ptr.get()))->oper_rger = regr->second;

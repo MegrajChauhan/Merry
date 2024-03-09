@@ -522,6 +522,134 @@ void masm::codegen::Codegen::gen()
             gen_inst_sout(data_addrs[((nodes::NodeOneImmOperand *)(inst->ptr.get()))->imm]);
             break;
         }
+        case nodes::NodeKind::_INST_IN:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_IN;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_OUT:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_OUT;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_INW:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_INW;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_OUTW:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_OUTW;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_IND:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_IND;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_OUTD:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_OUTD;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_INQ:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_INQ;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_OUTQ:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_OUTQ;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_UIN:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_UIN;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_UOUT:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_UOUT;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_UINW:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_UINW;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_UOUTW:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_UOUTW;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_UIND:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_UIND;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_UOUTD:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_UOUTD;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_UINQ:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_UINQ;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_UOUTQ:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_UOUTQ;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
 
             // default:
             //     count--;

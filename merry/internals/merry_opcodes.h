@@ -275,7 +275,6 @@ enum
   OP_ATOMIC_STOREB, // store byte atomically
   OP_ATOMIC_STOREW, // store 2 bytes atomically
   OP_ATOMIC_STORED, // store 4 bytes atomically
-
 };
 
 /*

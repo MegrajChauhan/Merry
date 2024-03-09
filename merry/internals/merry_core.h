@@ -34,6 +34,8 @@
 typedef struct MerryCore MerryCore;
 // typedef union MerryRegister MerryRegister;
 typedef struct MerryFlagRegister MerryFlagRegister;
+// typedef union MerryFloat32 MerryFloat32;
+// typedef union MerryFloat64 MerryFloat64;
 
 // #include "merry_exec.h"
 // #include "decoder/merry_decode.h"
@@ -85,6 +87,42 @@ struct MerryFlagRegister
     flags_res(top_32, 32);
 #endif
 };
+
+// union MerryFloat32
+// {
+//     struct
+//     {
+// #if _MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_
+//         unsigned int mantissa : 23;
+//         unsigned int expo : 8;
+//         unsigned int sign : 1;
+// #else
+//         unsigned int sign : 1;
+//         unsigned int expo : 8;
+//         unsigned int mantissa : 23;
+// #endif
+//     } in_bits;
+//     float whole;
+//     mdword_t in_int;
+// };
+
+// union MerryFloat64
+// {
+//     struct
+//     {
+// #if _MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_
+//         unsigned long mantissa : 52;
+//         unsigned int expo : 11;
+//         unsigned int sign : 1;
+// #else
+//         unsigned int sign : 1;
+//         unsigned int expo : 11;
+//         unsigned int mantissa : 52;
+// #endif
+//     } in_bits;
+//     double whole;
+//     mqword_t in_int;
+// };
 
 enum
 {

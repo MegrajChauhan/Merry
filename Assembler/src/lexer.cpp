@@ -51,6 +51,12 @@ masm::lexer::Token masm::lexer::Lexer::lex()
         }
         token = get_iden_or_keyword();
     }
+    else if (*curr_char == '-')
+    {
+        consume();
+        token = get_number();
+        token.type = (TokenType)((size_t)token.type + 1);
+    }
     else if (is_num(*curr_char))
     {
         token = get_number();

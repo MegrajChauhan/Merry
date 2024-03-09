@@ -219,6 +219,12 @@ _THRET_T_ merry_runCore(mptr_t core)
         case OP_FDIV32:
             merry_execute_fdiv32(c);
             break;
+        // case OP_MOVF_32:
+        //     c->registers[(*current >> 48) & 15] = *current & 0xFFFFFFFF;
+        //     break;
+        // case OP_MOVF_64:
+        //     c->registers[(*current >> 48) & 15] = merry_core_get_immediate(c);
+        //     break;
         case OP_MOVE_IMM: // just 32 bits immediates
             curr = *current;
             c->registers[(curr >> 48) & 15] = (curr) & 0xFFFFFFFF;

@@ -21,6 +21,7 @@ namespace masm
         {
             OP_NOP,
             OP_HALT,
+         
             OP_ADD_IMM,
             OP_ADD_REG,
             OP_SUB_IMM,
@@ -45,7 +46,8 @@ namespace masm
             OP_FSUB,
             OP_FMUL,
             OP_FDIV,
-
+            
+            // ----------------- DONE
             OP_MOVE_IMM,
             OP_MOVE_IMM_64,
             OP_MOVE_REG,
@@ -58,6 +60,7 @@ namespace masm
             OP_MOVESX_REG8,
             OP_MOVESX_REG16,
             OP_MOVESX_REG32,
+            // -------------------- DONE
             
             OP_JMP_OFF,
             OP_JMP_ADDR,
@@ -91,9 +94,11 @@ namespace masm
             OP_EXCG32,
             OP_EXCG,
 
+            // ------------------------ DONE
             OP_MOV8,
             OP_MOV16,
             OP_MOV32,
+            // ------------------------ DONE
             
             OP_CFLAGS,
             OP_RESET,
@@ -134,6 +139,8 @@ namespace masm
             OP_LOADD_REG,
             OP_STORED_REG,
             OP_CMPXCHG,
+
+            // ------------------------ DONE
             OP_CIN,
             OP_COUT,
             OP_SIN,
@@ -154,6 +161,8 @@ namespace masm
             OP_UOUTD,
             OP_UINQ,
             OP_UOUTQ,
+            // ------------------------ DONE
+
             OP_INF,
             OP_OUTF,
             OP_INF32,
