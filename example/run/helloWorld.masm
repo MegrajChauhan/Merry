@@ -1,6 +1,6 @@
 .data:
 msg: .string "Hello World!\n"
-msg_len: db 12
+msg_len: db 13
 
 .text:
 proc main

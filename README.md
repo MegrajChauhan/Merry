@@ -46,3 +46,6 @@ But before running a program, you would need one and for that you can use the as
 
 # Things to know:
 Merry is still in development and hence it is appreciated for feedback on test failures. Many features are yet to be implemented. 
+
+# Run Tests:
+Goto **_example/run_** to look at example programs involving the assembly language. 

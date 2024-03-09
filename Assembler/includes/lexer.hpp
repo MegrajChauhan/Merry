@@ -256,8 +256,35 @@ namespace masm
                 consume();
                 while (*curr_char != starting_quote && curr_char != end)
                 {
-                    string += *curr_char;
-                    consume();
+                    if (*curr_char == '\\')
+                    {
+                        consume();
+                        if (curr_char == end)
+                            lex_error("The string was never terminated.");
+                        switch (*curr_char)
+                        {
+                        case 'n':
+                            string += '\n';
+                            break;
+                        case 't':
+                            string += '\t';
+                            break;
+                        case 'r':
+                            string += '\r';
+                            break;
+                        case '0':
+                            string += '\0';
+                            break;
+                        default:
+                            string += *curr_char;
+                        }
+                        consume();
+                    }
+                    else
+                    {
+                        string += *curr_char;
+                        consume();
+                    }
                 }
                 if (*curr_char == starting_quote)
                 {

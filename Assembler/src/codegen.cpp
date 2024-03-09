@@ -65,7 +65,7 @@ void masm::codegen::Codegen::gen_data()
                 // since the variable names are unique, we won't have to worry about anything here
                 data_addrs[data.first] = start;
                 start += 2; // just 1 byte but for alignment issues recently encountered, we will have to do this
-                data_bytes.push_back((unsigned char)std::stoi(data.second.value));
+                data_bytes.push_back(std::stoi(data.second.value) & 0xFF);
                 data_bytes.push_back(0);
                 break;
             }
@@ -113,24 +113,40 @@ void masm::codegen::Codegen::gen_data()
         }
     }
     // we need to do double loop since the strings go at last
+    if ((data_bytes.size() % 8) != 0)
+    {
+        while ((data_bytes.size() % 8) != 0)
+        {
+            data_bytes.push_back(0);
+            start++;
+        }
+    }
     for (auto data : table)
     {
         switch (data.second.type)
         {
         case symtable::SymEntryType::_VAR:
         {
-        case nodes::DataType::_TYPE_STRING:
-        {
-            data_addrs[data.first] = start;
-            start += data.second.value.length();
-            for (auto c : data.second.value)
+            if (data.second.dtype == nodes::DataType::_TYPE_STRING)
             {
-                data_bytes.push_back(c);
-                str_start_len++;
+                data_addrs[data.first] = start;
+                start += data.second.value.length();
+                for (auto c : data.second.value)
+                {
+                    data_bytes.push_back(c);
+                    str_start_len++;
+                }
             }
             break;
         }
         }
+    }
+    if ((data_bytes.size() % 8) != 0)
+    {
+        while ((data_bytes.size() % 8) != 0)
+        {
+            data_bytes.push_back(0);
+            str_start_len++;
         }
     }
 }
@@ -513,11 +529,5 @@ void masm::codegen::Codegen::gen()
         // we don't care about procedure declaration right now
         iter++;
         // count++;
-    }
-    // make sure that data bytes is a multiple of 8
-    if ((data_bytes.size() % 8) != 0)
-    {
-        while ((data_bytes.size() % 8) != 0)
-            data_bytes.push_back(0);
     }
 }
