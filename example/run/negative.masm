@@ -1,0 +1,49 @@
+.data:
+negative_num: db -123
+
+.text:
+proc main
+
+main:
+  movq Ma, -1
+  out Ma    ;; print the value of the register
+  mov Mb, 10 ;; 10 is the same as '\n'
+  cout Mb
+  
+  uout Ma
+
+  cout Mb
+  
+  outq Ma
+  
+  cout Mb
+  
+  uoutq Ma
+  
+  cout Mb
+  cout Mb
+
+  movsxb M1, -1
+  out M1 ;; print the value of the register
+  cout Mb
+  uout M1
+  cout Mb
+  outq M1
+  cout Mb
+  uoutq M1
+  cout Mb
+  
+  cout Mb
+
+  ;; check if negative numbers also work perfectly when defined as variable
+  mov Ma, negative_num
+  out Ma
+  cout Mb
+  uout Ma
+  cout Mb
+  outq Ma
+  cout Mb
+  uoutq Ma
+  cout Mb
+
+  hlt

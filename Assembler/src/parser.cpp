@@ -52,7 +52,6 @@ void masm::parser::Parser::parse()
             if (nodes.back()->kind != nodes::NodeKind::_LABEL)
                 next_token();
             break;
-            break;
         case lexer::_TT_KEY_PROC:
             if (section != _SECTION_TEXT)
             {
@@ -64,8 +63,8 @@ void masm::parser::Parser::parse()
             break;
         case lexer::_TT_INST_NOP:
         case lexer::_TT_INST_HLT:
-        case lexer::_TT_INST_MOVQ:
         case lexer::_TT_INST_MOV:
+        case lexer::_TT_INST_MOVQ:
         case lexer::_TT_INST_MOVB:
         case lexer::_TT_INST_MOVW:
         case lexer::_TT_INST_MOVD:
@@ -78,11 +77,11 @@ void masm::parser::Parser::parse()
         case lexer::_TT_INST_OUTR:
         case lexer::_TT_INST_UOUTR:
         case lexer::_TT_INST_CIN:
-        case lexer::_TT_INST_SIN:
-        case lexer::_TT_INST_IN:
         case lexer::_TT_INST_COUT:
-        case lexer::_TT_INST_OUT:
+        case lexer::_TT_INST_SIN:
         case lexer::_TT_INST_SOUT:
+        case lexer::_TT_INST_IN:
+        case lexer::_TT_INST_OUT:
         case lexer::_TT_INST_INW:
         case lexer::_TT_INST_OUTW:
         case lexer::_TT_INST_IND:
@@ -96,6 +95,7 @@ void masm::parser::Parser::parse()
         case lexer::_TT_INST_UIND:
         case lexer::_TT_INST_UOUTD:
         case lexer::_TT_INST_UINQ:
+        case lexer::_TT_INST_UOUTQ:
             handleInstruction();
             break;
         default:
@@ -555,7 +555,7 @@ void masm::parser::Parser::handle_definebyte(std::string name)
 {
     next_token();
 
-    if (curr_tok.type != lexer::_TT_INT)
+    if (curr_tok.type != lexer::_TT_INT && curr_tok.type != lexer::_TT_NINT)
     {
         lexer.parse_err_previous_token(curr_tok.value, std::string("Expected a number, got ") + curr_tok.value + " instead.");
     }
@@ -573,7 +573,7 @@ void masm::parser::Parser::handle_definebyte(std::string name)
 void masm::parser::Parser::handle_defineword(std::string name)
 {
     next_token();
-    if (curr_tok.type != lexer::_TT_INT)
+    if (curr_tok.type != lexer::_TT_INT && curr_tok.type != lexer::_TT_NINT)
     {
         lexer.parse_err_previous_token(curr_tok.value, std::string("Expected a number, got ") + curr_tok.value + " instead.");
     }
@@ -590,7 +590,7 @@ void masm::parser::Parser::handle_defineword(std::string name)
 void masm::parser::Parser::handle_definedword(std::string name)
 {
     next_token();
-    if (curr_tok.type != lexer::_TT_INT)
+    if (curr_tok.type != lexer::_TT_INT && curr_tok.type != lexer::_TT_NINT)
     {
         lexer.parse_err_previous_token(curr_tok.value, std::string("Expected a number, got ") + curr_tok.value + " instead.");
     }
@@ -607,7 +607,7 @@ void masm::parser::Parser::handle_definedword(std::string name)
 void masm::parser::Parser::handle_defineqword(std::string name)
 {
     next_token();
-    if (curr_tok.type != lexer::_TT_INT)
+    if (curr_tok.type != lexer::_TT_INT && curr_tok.type != lexer::_TT_NINT)
     {
         lexer.parse_err_previous_token(curr_tok.value, std::string("Expected a number, got ") + curr_tok.value + " instead.");
     }

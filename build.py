@@ -29,23 +29,17 @@ from time import sleep
 #         return False
 
 def print_usage():
-    print("python build.py <Destination Directory> <Output Name> <Extra flags>")
+    print("python build.py <Destination Directory> <Extra flags> <masm/vm/all>")
     print("The path to the files to be compiled should be in compile.txt in the order in which it needs to be compiled")
 
-def main():
-    if len(sys.argv) < 3:
-        print_usage()
-        sys.exit(1)
-    avai = False
-    if len(sys.argv) == 4:
-        avai = True
+def compile_merry():
     destination_directory = sys.argv[1].rstrip("/")
     output_file_name = sys.argv[2]
     if not os.path.exists(destination_directory):
         os.makedirs(destination_directory)
 
     if platform.system() == 'Windows':
-      with open(".\compilewindows.txt", "r") as read:
+      with open(".\\compilewindows.txt", "r") as read:
          files_to_compile = read.readlines()
     else:
       with open("./compile.txt", "r") as read:
@@ -61,7 +55,7 @@ def main():
         else:
             print(f"Warning: File not found - {file_path}")
     destination = os.path.join(destination_directory, output_file_name)
-    compile_command = f"gcc -O3  {sys.argv[3] if avai == True else ' '} {final_file} -o {destination}"
+    compile_command = f"gcc -O3 {final_file} -o {destination}"
     print("Compiling the source files...")
     print(f"Command run: '{compile_command}'")
     print("\nCOMPILER MESSAGES IF ANY:")
@@ -73,6 +67,8 @@ def main():
         print(f"Compilation failed with a return value of {result}")
         quit(result)
     print("Finished compiling Merry")
+
+def compile_asm():
     print("Compiling the assembler:")
     print("Compiler messages if any: ")
     sleep(2);
@@ -82,9 +78,27 @@ def main():
     else:
         print(f"Compilation failed with a return value of {result}")
         quit(result)
-    print("Done building all!")
-    print(f"Result:\nBUILT: The VM: {output_file_name}\nThe Assembler: masm")
+    
 
+def main():
+    if len(sys.argv) < 2:
+        print_usage()
+        sys.exit(1)
+    build_lim_avai = False
+    if len(sys.argv) >= 3:
+        build_lim_avai = True
+    if build_lim_avai:
+      if sys.argv[2] == "all":
+          compile_merry()
+          compile_asm()
+      elif sys.argv[2] == 'vm':
+          compile_merry()
+      else:
+          compile_asm()
+    else:
+        compile_merry()
+        compile_asm()
+    
 if __name__ == "__main__":
     main()
             

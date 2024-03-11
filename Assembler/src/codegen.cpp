@@ -257,7 +257,7 @@ void masm::codegen::Codegen::gen_inst_mov_reg_imm(std::unique_ptr<nodes::Node> &
         // for moving 64-bit immdiate, we will have a dedicated instruction but the general move_imm should suffice
         final_inst.bytes.b1 = opcodes::OP_MOVE_IMM;
         final_inst.bytes.b2 = n->dest_regr;
-        final_inst.whole |= std::stoi(n->value);
+        final_inst.whole |= std::stoull(n->value) & 0xFFFFFFFF;
     }
     inst_bytes.push_back(final_inst);
 }
@@ -272,7 +272,7 @@ void masm::codegen::Codegen::gen_inst_movsx_reg_reg(std::unique_ptr<nodes::Node>
     inst_bytes.push_back(inst);
 }
 
-void masm::codegen::Codegen::gen_inst_movsx_reg_imm(std::unique_ptr<nodes::Node> &node)
+void masm::codegen::Codegen::gen_inst_movsx_reg_imm(std::unique_ptr<nodes::Node> &node, size_t size)
 {
     nodes::NodeInstMovRegImm *n = (nodes::NodeInstMovRegImm *)node->ptr.get();
     Instruction final_inst;
@@ -326,9 +326,10 @@ void masm::codegen::Codegen::gen_inst_movsx_reg_imm(std::unique_ptr<nodes::Node>
         // we just have a plain immediate
         // but we still need to know the size of the immediate
         // for moving 64-bit immdiate, we will have a dedicated instruction but the general move_imm should suffice
-        final_inst.bytes.b1 = opcodes::OP_MOVESX_REG32; // this is 32-bit by default
+        final_inst.bytes.b1 = size == 4 ? opcodes::OP_MOVESX_REG32 : size == 2 ? opcodes::OP_MOVESX_IMM16
+                                                                               : opcodes::OP_MOVESX_IMM8; // this is 32-bit by default
         final_inst.bytes.b2 = n->dest_regr;
-        final_inst.whole |= std::stoi(n->value);
+        final_inst.whole |= (std::stoull(n->value) & 0xFFFFFFFF);
     }
     inst_bytes.push_back(final_inst);
 }
@@ -452,10 +453,18 @@ void masm::codegen::Codegen::gen()
             break;
         }
         case nodes::NodeKind::_INST_MOVSX_REG_IMM8:
+        {
+            gen_inst_movsx_reg_imm(*iter, 1);
+            break;
+        }
         case nodes::NodeKind::_INST_MOVSX_REG_IMM16:
+        {
+            gen_inst_movsx_reg_imm(*iter, 2);
+            break;
+        }
         case nodes::NodeKind::_INST_MOVSX_REG_IMM32:
         {
-            gen_inst_movsx_reg_imm(*iter);
+            gen_inst_movsx_reg_imm(*iter, 4);
             break;
         }
         case nodes::NodeKind::_INST_MOVSX_REG_REG8:
