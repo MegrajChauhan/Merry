@@ -27,6 +27,8 @@ namespace masm
             _TYPE_RESW,
             _TYPE_RESD,
             _TYPE_RESQ,
+            _TYPE_FLOAT,
+            _TYPE_LFLOAT,
         };
 
         enum NodeKind
@@ -41,6 +43,8 @@ namespace masm
             _DEF_RESW,
             _DEF_RESD,
             _DEF_RESQ,
+            _DEF_FLOAT,
+            _DEF_LFLOAT,
             // any label that is declared as proc is a procedure while any other are just labels
             _PROC_DECLR, // procedure declaration
             _LABEL,      // A label[Unless semantically verified even procedure definition is a label]
@@ -57,6 +61,8 @@ namespace masm
             _INST_MOV_REG_IMM8,
             _INST_MOV_REG_IMM16,
             _INST_MOV_REG_IMM32,
+            _INST_MOVF,
+            _INST_MOVLF,
 
             _INST_MOVSX_REG_REG8,
             _INST_MOVSX_REG_REG16,
@@ -88,6 +94,13 @@ namespace masm
             _INST_UOUTD,
             _INST_UINQ,
             _INST_UOUTQ,
+            _INST_INF,
+            _INST_OUTF,
+            _INST_INLF,
+            _INST_OUTLF,
+
+            _INST_ADD_IMM,
+            _INST_ADD_REG,
 
             _INST_HLT, // this doesn't need its own structure
         };
@@ -158,6 +171,12 @@ namespace masm
         {
         };
         struct NodeDefQword : public NodeDefByte
+        {
+        };
+        struct NodeDefFloat : public NodeDefByte
+        {
+        };
+        struct NodeDefLFloat : public NodeDefByte
         {
         };
 

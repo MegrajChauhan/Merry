@@ -24,6 +24,52 @@ namespace masm
             Instruction() = default;
         };
 
+        union FLoat32
+        {
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+            uint8_t b1, b2, b3, b4;
+            struct
+            {
+                unsigned long sign : 1;
+                unsigned long expo : 8;
+                unsigned long mantissa : 23;
+            } in_grps;
+#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+            uint8_t b4, b3, b2, b1;
+            struct
+            {
+                unsigned long mantissa : 23;
+                unsigned long expo : 8;
+                unsigned long sign : 1;
+            } in_grps;
+#endif
+            uint32_t in_int;
+            float whole;
+        };
+
+        union FLoat64
+        {
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+            uint8_t b1, b2, b3, b4, b5, b6, b7, b8;
+            struct
+            {
+                unsigned long sign : 1;
+                unsigned long expo : 11;
+                unsigned long mantissa : 52;
+            } in_grps;
+#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+            uint8_t b8, b7, b6, b5, b4, b3, b2, b1;
+            struct
+            {
+                unsigned long mantissa : 52;
+                unsigned long expo : 11;
+                unsigned long sign : 1;
+            } in_grps;
+#endif
+            uint64_t in_int;
+            double whole;
+        };
+
         class Codegen
         {
             symtable::SymTable table;
@@ -72,11 +118,13 @@ namespace masm
             void gen_inst_movsx_reg_reg(std::unique_ptr<nodes::Node> &, size_t);
             void gen_inst_movsx_reg_imm(std::unique_ptr<nodes::Node> &, size_t);
 
-            void gen_inst_cin(std::unique_ptr<nodes::Node>&);
-            void gen_inst_cout(std::unique_ptr<nodes::Node>&);
+            void gen_inst_cin(std::unique_ptr<nodes::Node> &);
+            void gen_inst_cout(std::unique_ptr<nodes::Node> &);
 
             void gen_inst_sin(size_t);
             void gen_inst_sout(size_t);
+
+            void gen_inst_movf(std::unique_ptr<nodes::Node> &);
         };
     };
 };

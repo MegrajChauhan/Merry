@@ -96,6 +96,22 @@ void masm::sema::Sema::analyse()
                 symtable.add_entry(var->byte_name, symtable::SymTableEntry(symtable::_VAR, var->byte_val, nodes::_TYPE_DWORD));
                 break;
             }
+            case nodes::NodeKind::_DEF_FLOAT:
+            {
+                auto var = (nodes::NodeDefFloat *)node->ptr.get();
+                if (symtable.is_invalid(symtable.find_entry(var->byte_name)))
+                    analysis_error(node->line, std::string("The variable '") + var->byte_name + "' already exists; redefining");
+                symtable.add_entry(var->byte_name, symtable::SymTableEntry(symtable::_VAR, var->byte_val, nodes::_TYPE_FLOAT));
+                break;
+            }
+            case nodes::NodeKind::_DEF_LFLOAT:
+            {
+                auto var = (nodes::NodeDefLFloat *)node->ptr.get();
+                if (symtable.is_invalid(symtable.find_entry(var->byte_name)))
+                    analysis_error(node->line, std::string("The variable '") + var->byte_name + "' already exists; redefining");
+                symtable.add_entry(var->byte_name, symtable::SymTableEntry(symtable::_VAR, var->byte_val, nodes::_TYPE_LFLOAT));
+                break;
+            }
             case nodes::NodeKind::_DEF_QWORD:
             {
                 auto var = (nodes::NodeDefQword *)node->ptr.get();
@@ -210,6 +226,21 @@ void masm::sema::Sema::analyse()
         // we only check for those instructions that may use variables and symbols
         switch (inst->kind)
         {
+        case nodes::NodeKind::_INST_MOVF:
+        case nodes::NodeKind::_INST_MOVLF:
+        {
+            // these instructions are different in the sense that they both accept variables of type df and dlf
+            auto node = (nodes::NodeInstMovRegImm *)inst->ptr.get();
+            if (node->is_iden)
+            {
+                auto x = symtable.find_entry(node->value);
+                if (!symtable.is_invalid(x))
+                    analysis_error(inst->line, std::string("The operand '") + node->value + "' in the movF instruction is not a valid identifier.");
+                if (x->second.dtype != nodes::DataType::_TYPE_FLOAT && x->second.dtype != nodes::DataType::_TYPE_LFLOAT)
+                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of FLOAT type to be used with 'movF'");
+            }
+            break;
+        }
         case nodes::NodeKind::_INST_SIN:
         {
             auto node = (nodes::NodeOneImmOperand *)inst->ptr.get();

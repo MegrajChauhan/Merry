@@ -28,6 +28,8 @@ namespace masm
             _TT_KEY_DW,
             _TT_KEY_DD,
             _TT_KEY_DQ,
+            _TT_KEY_DF,
+            _TT_KEY_DLF,
             _TT_KEY_RESB,
             _TT_KEY_RESW,
             _TT_KEY_RESD,
@@ -59,6 +61,9 @@ namespace masm
             _TT_INST_MOVEW,
             _TT_INST_MOVED,
 
+            _TT_INST_MOVF,
+            _TT_INST_MOVLF,
+
             _TT_INST_MOVSXB,
             _TT_INST_MOVSXW,
             _TT_INST_MOVSXD,
@@ -88,6 +93,13 @@ namespace masm
             _TT_INST_UINQ,
             _TT_INST_UOUTQ,
 
+            _TT_INST_OUTF,
+            _TT_INST_OUTLF,
+            _TT_INST_INF,
+            _TT_INST_INLF,
+
+            _TT_INST_ADD,
+
             // we ignore commas, they are not absolutely necessary and the assembler won't even complain
             // about not using it. It is just their to provide readability
         };
@@ -102,6 +114,8 @@ namespace masm
                 {"dw", _TT_KEY_DW},
                 {"dd", _TT_KEY_DD},
                 {"dq", _TT_KEY_DQ},
+                {"df", _TT_KEY_DF},
+                {"dlf", _TT_KEY_DLF},
                 {"proc", _TT_KEY_PROC},
                 {":", _TT_OPER_COLON},
                 {"mov", _TT_INST_MOV},
@@ -113,6 +127,8 @@ namespace masm
                 {"moveb", _TT_INST_MOVEB},
                 {"movew", _TT_INST_MOVEW},
                 {"moved", _TT_INST_MOVED},
+                {"movf", _TT_INST_MOVF},
+                {"movlf", _TT_INST_MOVLF},
                 {"movsxb", _TT_INST_MOVSXB},
                 {"movsxw", _TT_INST_MOVSXW},
                 {"movsxd", _TT_INST_MOVSXD},
@@ -143,6 +159,11 @@ namespace masm
                 {"uoutd", _TT_INST_UOUTD},
                 {"uinq", _TT_INST_UINQ},
                 {"uoutq", _TT_INST_UOUTQ},
+                {"outf", _TT_INST_OUTF},
+                {"outlf", _TT_INST_OUTLF},
+                {"inf", _TT_INST_INF},
+                {"inlf", _TT_INST_INLF},
+                {"add", _TT_INST_ADD},
         };
 
         struct Token

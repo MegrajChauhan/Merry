@@ -71,6 +71,8 @@ void masm::parser::Parser::parse()
         case lexer::_TT_INST_MOVEB:
         case lexer::_TT_INST_MOVEW:
         case lexer::_TT_INST_MOVED:
+        case lexer::_TT_INST_MOVF:
+        case lexer::_TT_INST_MOVLF:
         case lexer::_TT_INST_MOVSXB:
         case lexer::_TT_INST_MOVSXW:
         case lexer::_TT_INST_MOVSXD:
@@ -96,6 +98,11 @@ void masm::parser::Parser::parse()
         case lexer::_TT_INST_UOUTD:
         case lexer::_TT_INST_UINQ:
         case lexer::_TT_INST_UOUTQ:
+        case lexer::_TT_INST_OUTF:
+        case lexer::_TT_INST_OUTLF:
+        case lexer::_TT_INST_INLF:
+        case lexer::_TT_INST_INF:
+        case lexer::_TT_INST_ADD:
             handleInstruction();
             break;
         default:
@@ -207,6 +214,22 @@ void masm::parser::Parser::handleInstruction()
         break;
     case lexer::_TT_INST_UOUTQ:
         handle_inst_Xout(nodes::NodeKind::_INST_UOUTQ);
+        break;
+    case lexer::_TT_INST_INF:
+        handle_inst_Xout(nodes::NodeKind::_INST_INF);
+        break;
+    case lexer::_TT_INST_INLF:
+        handle_inst_Xout(nodes::NodeKind::_INST_INLF);
+        break;
+    case lexer::_TT_INST_OUTF:
+        handle_inst_Xout(nodes::NodeKind::_INST_OUTF);
+        break;
+    case lexer::_TT_INST_OUTLF:
+        handle_inst_Xout(nodes::NodeKind::_INST_OUTLF);
+        break;
+    case lexer::_TT_INST_MOVF:
+    case lexer::_TT_INST_MOVLF:
+        handle_inst_movf();
         break;
     }
     next_token();
@@ -659,10 +682,10 @@ void masm::parser::Parser::handle_inst_Xin(nodes::NodeKind k)
     auto kind = k;
     next_token();
     if (curr_tok.type != lexer::_TT_IDENTIFIER)
-        lexer.parse_error("Expected a register after 'Xin'.");
+        lexer.parse_error("Expected a register after " + (k == nodes::_INST_INF || k == nodes::_INST_INLF) ? "inF." : "Xin.");
     auto regr = nodes::_regr_iden_map.find(curr_tok.value);
     if (regr == nodes::_regr_iden_map.end())
-        lexer.parse_error("Expected a register after 'Xin'.");
+        lexer.parse_error("Expected a register after " + (k == nodes::_INST_INF || k == nodes::_INST_INLF) ? "inF." : "Xin.");
     std::unique_ptr<nodes::Base> ptr;
     ptr = std::make_unique<nodes::NodeOneRegrOperands>();
     ((nodes::NodeOneRegrOperands *)(ptr.get()))->oper_rger = regr->second;
@@ -674,10 +697,10 @@ void masm::parser::Parser::handle_inst_Xout(nodes::NodeKind k)
     auto kind = k;
     next_token();
     if (curr_tok.type != lexer::_TT_IDENTIFIER)
-        lexer.parse_error("Expected a register after 'Xout'.");
+        lexer.parse_error("Expected a register after " + (k == nodes::_INST_OUTF || k == nodes::_INST_OUTLF) ? "outF." : "Xin.");
     auto regr = nodes::_regr_iden_map.find(curr_tok.value);
     if (regr == nodes::_regr_iden_map.end())
-        lexer.parse_error("Expected a register after 'Xout'.");
+        lexer.parse_error("Expected a register after " + (k == nodes::_INST_OUTF || k == nodes::_INST_OUTLF) ? "outF." : "Xin.");
     std::unique_ptr<nodes::Base> ptr;
     ptr = std::make_unique<nodes::NodeOneRegrOperands>();
     ((nodes::NodeOneRegrOperands *)(ptr.get()))->oper_rger = regr->second;
@@ -710,4 +733,55 @@ void masm::parser::Parser::handle_inst_sout()
     auto temp = (nodes::NodeOneImmOperand *)ptr.get();
     temp->imm = curr_tok.value;
     nodes.push_back(std::make_unique<nodes::Node>(nodes::NodeType::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_inst_movf()
+{
+    nodes::NodeKind kind = curr_tok.type == lexer::_TT_INST_MOVF ? nodes::_INST_MOVF : nodes::_INST_MOVLF;
+    next_token();
+    auto dest_regr = nodes::_regr_iden_map.find(curr_tok.value);
+    if (dest_regr == nodes::_regr_iden_map.end())
+        lexer.parse_error("Expected a destination register is the movF instruction.");
+    next_token();
+    auto src_oper = nodes::_regr_iden_map.find(curr_tok.value);
+    std::unique_ptr<nodes::Base> node = std::make_unique<nodes::NodeInstMovRegImm>();
+    auto temp = (nodes::NodeInstMovRegImm *)node.get();
+    temp->dest_regr = dest_regr->second;
+    if (src_oper == nodes::_regr_iden_map.end())
+    {
+        // this is not a register
+        // check if it is a number or a variable
+        if (curr_tok.type == lexer::_TT_FLOAT || curr_tok.type == lexer::_TT_NFLOAT)
+            temp->value = curr_tok.value;
+        else if (curr_tok.type == lexer::_TT_IDENTIFIER)
+        {
+            temp->is_iden = true;
+            temp->value = curr_tok.value;
+        }
+        else
+            lexer.parse_error("Expected a variable name or a floating point number.");
+    }
+    else
+    {
+        // this instruction doesn't expect a register
+        // there is no particular reason for this but still I DO IT BECAUSE I CAN
+        lexer.parse_error("The floating point move instructions do not accept registers as the source.");
+    }
+    nodes.push_back(std::make_unique<masm::nodes::Node>(nodes::_TYPE_INST, kind, std::move(node), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_definefloats(std::string name)
+{
+    nodes::NodeKind kind = curr_tok.type == lexer::_TT_KEY_DF ? nodes::_DEF_FLOAT : nodes::_DEF_LFLOAT;
+    next_token();
+    if (curr_tok.type != lexer::_TT_FLOAT && curr_tok.type != lexer::_TT_NFLOAT)
+    {
+        lexer.parse_err_previous_token(curr_tok.value, std::string("Expected a float, got ") + curr_tok.value + " instead.");
+    }
+    std::unique_ptr<nodes::Base> ptr;
+    ptr = std::make_unique<nodes::NodeDefFloat>();
+    auto temp = dynamic_cast<nodes::NodeDefFloat *>(ptr.get());
+    temp->byte_name = name;
+    temp->byte_val = curr_tok.value;
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_DATA, kind, std::move(ptr), lexer.get_curr_line()));
 }

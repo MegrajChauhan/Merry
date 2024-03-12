@@ -161,14 +161,14 @@ namespace masm
             OP_UOUTD,
             OP_UINQ,
             OP_UOUTQ,
-            // ------------------------ DONE
-
             OP_INF,
             OP_OUTF,
             OP_INF32,
             OP_OUTF32,
             OP_OUTR,
             OP_UOUTR,
+            // ------------------------ DONE
+            
             OP_FADD32,
             OP_FSUB32,
             OP_FMUL32,

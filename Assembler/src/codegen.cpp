@@ -107,6 +107,36 @@ void masm::codegen::Codegen::gen_data()
                 data_bytes.push_back((val >> 56) & 255);
                 break;
             }
+            case nodes::DataType::_TYPE_FLOAT:
+            {
+                // 32-bit floats
+                FLoat32 f32;
+                data_addrs[data.first] = start;
+                start += 4;
+                f32.whole = std::stof(data.second.value);
+                data_bytes.push_back(f32.b4);
+                data_bytes.push_back(f32.b3);
+                data_bytes.push_back(f32.b2);
+                data_bytes.push_back(f32.b1);
+                break;
+            }
+            case nodes::DataType::_TYPE_LFLOAT:
+            {
+                // 64-bit floats
+                FLoat64 f64;
+                data_addrs[data.first] = start;
+                start += 8;
+                f64.whole = std::stod(data.second.value);
+                data_bytes.push_back(f64.b8);
+                data_bytes.push_back(f64.b7);
+                data_bytes.push_back(f64.b6);
+                data_bytes.push_back(f64.b5);
+                data_bytes.push_back(f64.b4);
+                data_bytes.push_back(f64.b3);
+                data_bytes.push_back(f64.b2);
+                data_bytes.push_back(f64.b1);
+                break;
+            }
             }
             break;
         }
@@ -393,6 +423,60 @@ void masm::codegen::Codegen::gen_inst_sout(size_t address)
     inst_bytes.push_back(inst);
 }
 
+void masm::codegen::Codegen::gen_inst_movf(std::unique_ptr<nodes::Node> &node)
+{
+    Instruction inst;
+    auto i = (nodes::NodeInstMovRegImm *)node->ptr.get();
+    bool imm_needed = false;
+    if (i->is_iden)
+    {
+        size_t addr_of_iden = data_addrs.find(i->value)->second;
+        auto iden_details = table.find_entry(i->value)->second;
+        switch (iden_details.dtype)
+        {
+        case nodes::DataType::_TYPE_FLOAT:
+        {
+            inst.bytes.b1 = opcodes::OP_LOADD;
+            inst.bytes.b2 = (i->dest_regr);
+            inst.whole |= addr_of_iden;
+            break;
+        }
+        case nodes::DataType::_TYPE_LFLOAT:
+        {
+            inst.bytes.b1 = opcodes::OP_LOAD;
+            inst.bytes.b2 = (i->dest_regr);
+            inst.whole |= addr_of_iden;
+            break;
+        }
+        }
+    }
+    else
+    {
+        if (node->kind == nodes::NodeKind::_INST_MOVF)
+            inst.bytes.b1 = opcodes::OP_MOVE_IMM;
+        else
+        {
+            inst.bytes.b1 = opcodes::OP_MOVE_IMM_64;
+            imm_needed = true;
+        }
+        inst.bytes.b2 = i->dest_regr;
+        if (!imm_needed)
+        {
+            FLoat32 f32;
+            f32.whole = std::stof(i->value);
+            inst.whole |= f32.in_int;
+        }
+    }
+    inst_bytes.push_back(inst);
+    if (imm_needed)
+    {
+        FLoat64 f64;
+        f64.whole = std::stod(i->value);
+        inst.whole = f64.in_int;
+        inst_bytes.push_back(inst);
+    }
+}
+
 void masm::codegen::Codegen::gen()
 {
     gen_data(); // generate data bytes
@@ -547,6 +631,38 @@ void masm::codegen::Codegen::gen()
             inst_bytes.push_back(inst);
             break;
         }
+        case nodes::NodeKind::_INST_INF:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_INF32;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_OUTF:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_OUTF32;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_INLF:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_INF;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_OUTLF:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_OUTF;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
         case nodes::NodeKind::_INST_INW:
         {
             Instruction inst;
@@ -657,6 +773,12 @@ void masm::codegen::Codegen::gen()
             inst.bytes.b1 = opcodes::OP_UOUTQ;
             inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)iter->get()->ptr.get())->oper_rger;
             inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_MOVF:
+        case nodes::NodeKind::_INST_MOVLF:
+        {
+            gen_inst_movf(*iter);
             break;
         }
 

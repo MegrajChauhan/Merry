@@ -34,7 +34,7 @@ def print_usage():
 
 def compile_merry():
     destination_directory = sys.argv[1].rstrip("/")
-    output_file_name = sys.argv[2]
+    output_file_name = "merry"
     if not os.path.exists(destination_directory):
         os.makedirs(destination_directory)
 

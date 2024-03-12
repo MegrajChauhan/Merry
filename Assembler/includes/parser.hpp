@@ -51,6 +51,7 @@ namespace masm
             void handle_defineword(std::string);
             void handle_definedword(std::string);
             void handle_defineqword(std::string);
+            void handle_definefloats(std::string);
             void handle_string(std::string);
 
             void handle_proc_declaration();
@@ -74,6 +75,10 @@ namespace masm
             void parseDataSection();
             void parseTextSection();
             void handleInstruction();
+
+            void handle_inst_movf();
+
+            void handle_inst_add();
         };
     };
 };

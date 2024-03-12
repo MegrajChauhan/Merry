@@ -154,7 +154,7 @@ mret_t merry_create_detached_thread(MerryThread *thread, ThreadExecFunc func, vo
     }
     pthread_attr_destroy(&attr);
 #elif defined(_MERRY_THREADS_WIN_)
-    thread->thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)func, thread, 0, NULL);
+    thread->thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)func, arg, 0, NULL);
     if (thread->thread == NULL)
         return RET_FAILURE;
 #endif
