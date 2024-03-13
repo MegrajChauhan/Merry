@@ -101,6 +101,9 @@ main:
   inf Mm4 ;; take a 32-bit floating point number as input 
   inlf Mm5 ;; take a 64-bit floating point number as input
 
+  add Ma, Mb  ;; add two registers together
+  add Mc, test ;; add a variable to a register
+
   hlt ;; we use halt here because this is what ultimately stops the program so there is no point in having a ret here
 ;; main:
 

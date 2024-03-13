@@ -231,6 +231,9 @@ void masm::parser::Parser::handleInstruction()
     case lexer::_TT_INST_MOVLF:
         handle_inst_movf();
         break;
+    case lexer::_TT_INST_ADD:
+        handle_inst_add();
+        break;
     }
     next_token();
 }
@@ -784,4 +787,47 @@ void masm::parser::Parser::handle_definefloats(std::string name)
     temp->byte_name = name;
     temp->byte_val = curr_tok.value;
     nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_DATA, kind, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_inst_add()
+{
+    nodes::NodeKind kind;
+    std::unique_ptr<nodes::Base> ptr;
+    next_token(); // goto the next token
+    if (curr_tok.type == lexer::_TT_IDENTIFIER)
+    {
+        // must be a register
+        auto dest_regr = nodes::_regr_iden_map.find(curr_tok.value);
+        if (dest_regr == nodes::_regr_iden_map.end())
+            lexer.parse_err_previous_token(curr_tok.value, "Expected a destination register.");
+        next_token();
+        if (curr_tok.type != lexer::_TT_IDENTIFIER && curr_tok.type != lexer::_TT_INT && curr_tok.type != lexer::_TT_NINT)
+            lexer.parse_err_previous_token(curr_tok.value, "Expected a source register, immediate or a source register.");
+        auto src = nodes::_regr_iden_map.find(curr_tok.value);
+        if (src == nodes::_regr_iden_map.end())
+        {
+            // this is an add_imm instruction
+            ptr = std::make_unique<nodes::NodeAddRegImm>();
+            auto temp = (nodes::NodeAddRegImm *)ptr.get();
+            temp->dest_regr = dest_regr->second;
+            if (curr_tok.type == lexer::_TT_INT && curr_tok.type == lexer::_TT_NINT)
+                temp->is_iden = false;
+            else
+                temp->is_iden = true;
+            temp->value = curr_tok.value;
+            kind = nodes::_INST_ADD_IMM;
+        }
+        else
+        {
+            // this is an add_reg instruction
+            ptr = std::make_unique<nodes::NodeAddRegReg>();
+            auto temp = (nodes::NodeAddRegReg *)ptr.get();
+            temp->dest_regr = dest_regr->second;
+            temp->src_reg = src->second;
+            kind = nodes::_INST_ADD_REG;
+        }
+    }
+    else
+        lexer.parse_error("Expected a destination register.");
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
 }

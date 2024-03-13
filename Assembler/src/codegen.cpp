@@ -477,6 +477,68 @@ void masm::codegen::Codegen::gen_inst_movf(std::unique_ptr<nodes::Node> &node)
     }
 }
 
+void masm::codegen::Codegen::gen_inst_add(std::unique_ptr<nodes::Node> &node)
+{
+    Instruction inst;
+    if (node->kind == nodes::_INST_ADD_IMM)
+    {
+        auto i = (nodes::NodeAddRegImm *)node->ptr.get();
+        if (i->is_iden)
+        {
+            size_t addr_of_iden = data_addrs.find(i->value)->second;
+            auto iden_details = table.find_entry(i->value)->second;
+            switch (iden_details.dtype)
+            {
+            // in case of identifiers, we need to perform two operations
+            // first load the variable and then add it
+            case nodes::DataType::_TYPE_BYTE:
+            {
+                // this is a byte type value so we need to use loadb instruction
+                /// TODO: A Dilema
+                inst.bytes.b1 = opcodes::OP_LOADB;
+                // inst.bytes.b2 = (n->dest_regr);
+                inst.whole |= addr_of_iden;
+                // we then need to push the 6 byte address of the
+                break;
+            }
+            // case nodes::DataType::_TYPE_WORD:
+            // {
+            //     final_inst.bytes.b1 = opcodes::OP_LOADW;
+            //     final_inst.bytes.b2 = (n->dest_regr);
+            //     final_inst.whole |= addr_of_iden;
+            //     break;
+            // }
+            // case nodes::DataType::_TYPE_DWORD:
+            // {
+            //     final_inst.bytes.b1 = opcodes::OP_LOADD;
+            //     final_inst.bytes.b2 = (n->dest_regr);
+            //     final_inst.whole |= addr_of_iden;
+            //     break;
+            // }
+            // case nodes::DataType::_TYPE_QWORD:
+            // {
+            //     final_inst.bytes.b1 = opcodes::OP_LOAD;
+            //     final_inst.bytes.b2 = (n->dest_regr);
+            //     final_inst.whole |= addr_of_iden;
+            //     break;
+            // }
+            }
+        }
+        else
+        {
+        }
+    }
+    else
+    {
+        // must be a add_regr
+        auto i = (nodes::NodeAddRegReg *)node->ptr.get();
+        inst.bytes.b1 = opcodes::OP_ADD_REG;
+        inst.bytes.b8 = i->dest_regr;
+        (inst.bytes.b8 <<= 4) | i->src_reg;
+    }
+    inst_bytes.push_back(inst);
+}
+
 void masm::codegen::Codegen::gen()
 {
     gen_data(); // generate data bytes
@@ -779,6 +841,12 @@ void masm::codegen::Codegen::gen()
         case nodes::NodeKind::_INST_MOVLF:
         {
             gen_inst_movf(*iter);
+            break;
+        }
+        case nodes::NodeKind::_INST_ADD_IMM:
+        case nodes::NodeKind::_INST_ADD_REG:
+        {
+            gen_inst_add(*iter);
             break;
         }
 

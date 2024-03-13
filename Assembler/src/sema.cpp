@@ -368,6 +368,18 @@ void masm::sema::Sema::analyse()
             }
             break;
         }
+        case nodes::NodeKind::_INST_ADD_IMM:
+        {
+            auto node = (nodes::NodeAddRegImm *)inst->ptr.get();
+            if (node->is_iden)
+            {
+                auto x = symtable.find_entry(node->value);
+                if (!symtable.is_invalid(x))
+                    analysis_error(inst->line, std::string("The operand '") + node->value + "' in the add instruction is not a valid identifier.");
+                if (x->second.dtype == nodes::DataType::_TYPE_STRING || x->second.dtype == nodes::DataType::_TYPE_FLOAT || x->second.dtype == nodes::DataType::_TYPE_LFLOAT)
+                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of NUM type as expected by the instruction.");
+            }
+        }
         }
     }
 }

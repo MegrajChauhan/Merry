@@ -230,6 +230,14 @@ namespace masm
             size_t number;
         };
 
+        struct NodeAddRegReg: public NodeInstMovRegReg
+        {
+        };
+
+        struct NodeAddRegImm: public NodeInstMovRegImm
+        {
+        };
+
         // Define struct Node to hold a pointer to Base
         struct Node
         {
