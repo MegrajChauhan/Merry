@@ -100,7 +100,7 @@ static Merry os;
 // #define merry_manager_mem_write_data(address, _value_to_write) merry_memory_write_lock(os.data_mem, address, _value_to_write)
 
 mret_t merry_os_init(mcstr_t _inp_file);
-mptr_t merry_os_start_vm(mptr_t some_arg);
+_THRET_T_ merry_os_start_vm(mptr_t some_arg);
 
 mret_t merry_os_add_core();
 mret_t merry_os_boot_core(msize_t core_id, maddress_t start_addr);

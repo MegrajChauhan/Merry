@@ -102,6 +102,18 @@ namespace masm
             _INST_ADD_IMM,
             _INST_ADD_REG,
 
+            _INST_SUB_IMM,
+            _INST_SUB_REG,
+
+            _INST_MUL_IMM,
+            _INST_MUL_REG,
+
+            _INST_DIV_IMM,
+            _INST_DIV_REG,
+
+            _INST_MOD_IMM,
+            _INST_MOD_REG,
+
             _INST_HLT, // this doesn't need its own structure
         };
 
@@ -230,11 +242,43 @@ namespace masm
             size_t number;
         };
 
-        struct NodeAddRegReg: public NodeInstMovRegReg
+        struct NodeAddRegReg : public NodeInstMovRegReg
         {
         };
 
-        struct NodeAddRegImm: public NodeInstMovRegImm
+        struct NodeAddRegImm : public NodeInstMovRegImm
+        {
+        };
+
+        struct NodeSubRegReg : public NodeInstMovRegReg
+        {
+        };
+
+        struct NodeSubRegImm : public NodeInstMovRegImm
+        {
+        };
+
+        struct NodeMulRegReg : public NodeInstMovRegReg
+        {
+        };
+
+        struct NodeMulRegImm : public NodeInstMovRegImm
+        {
+        };
+
+        struct NodeDivRegReg : public NodeInstMovRegReg
+        {
+        };
+
+        struct NodeDivRegImm : public NodeInstMovRegImm
+        {
+        };
+
+        struct NodeModRegReg : public NodeInstMovRegReg
+        {
+        };
+
+        struct NodeModRegImm : public NodeInstMovRegImm
         {
         };
 

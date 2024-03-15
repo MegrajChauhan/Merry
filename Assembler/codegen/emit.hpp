@@ -21,7 +21,7 @@ namespace masm
 
             void set_output_filename(std::string name)
             {
-                out_file_name = name == ""? "a.mbin": name;
+                out_file_name = name == ""? "a.mbin": name.ends_with(".mbin")? name: (name+=".mbin");
             }
 
             void emit();

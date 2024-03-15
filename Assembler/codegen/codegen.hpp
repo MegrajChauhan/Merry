@@ -127,6 +127,10 @@ namespace masm
             void gen_inst_movf(std::unique_ptr<nodes::Node> &);
 
             void gen_inst_add(std::unique_ptr<nodes::Node> &);
+            void gen_inst_sub(std::unique_ptr<nodes::Node> &);
+            void gen_inst_mul(std::unique_ptr<nodes::Node> &);
+            void gen_inst_div(std::unique_ptr<nodes::Node> &);
+            void gen_inst_mod(std::unique_ptr<nodes::Node> &);
         };
     };
 };

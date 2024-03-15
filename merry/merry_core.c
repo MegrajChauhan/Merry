@@ -695,6 +695,66 @@ _THRET_T_ merry_runCore(mptr_t core)
             for (msize_t i = 0; i < REGR_COUNT; i++)
                 fprintf(stdout, "%llu\n", c->registers[i]);
             break;
+        case OP_ADD_MEMB:
+            merry_execute_add_mem(c, &merry_dmemory_read_byte);
+            break;
+        case OP_ADD_MEMW:
+            merry_execute_add_mem(c, &merry_dmemory_read_word);
+            break;
+        case OP_ADD_MEMD:
+            merry_execute_add_mem(c, &merry_dmemory_read_dword);
+            break;
+        case OP_ADD_MEMQ:
+            merry_execute_add_mem(c, &merry_dmemory_read_qword);
+            break;
+        case OP_SUB_MEMB:
+            merry_execute_sub_mem(c, &merry_dmemory_read_byte);
+            break;
+        case OP_SUB_MEMW:
+            merry_execute_sub_mem(c, &merry_dmemory_read_word);
+            break;
+        case OP_SUB_MEMD:
+            merry_execute_sub_mem(c, &merry_dmemory_read_dword);
+            break;
+        case OP_SUB_MEMQ:
+            merry_execute_sub_mem(c, &merry_dmemory_read_qword);
+            break;
+        case OP_MUL_MEMB:
+            merry_execute_mul_mem(c, &merry_dmemory_read_byte);
+            break;
+        case OP_MUL_MEMW:
+            merry_execute_mul_mem(c, &merry_dmemory_read_word);
+            break;
+        case OP_MUL_MEMD:
+            merry_execute_mul_mem(c, &merry_dmemory_read_dword);
+            break;
+        case OP_MUL_MEMQ:
+            merry_execute_mul_mem(c, &merry_dmemory_read_qword);
+            break;
+        case OP_DIV_MEMB:
+            merry_execute_div_mem(c, &merry_dmemory_read_byte);
+            break;
+        case OP_DIV_MEMW:
+            merry_execute_div_mem(c, &merry_dmemory_read_word);
+            break;
+        case OP_DIV_MEMD:
+            merry_execute_div_mem(c, &merry_dmemory_read_dword);
+            break;
+        case OP_DIV_MEMQ:
+            merry_execute_div_mem(c, &merry_dmemory_read_qword);
+            break;
+        case OP_MOD_MEMB:
+            merry_execute_mod_mem(c, &merry_dmemory_read_byte);
+            break;
+        case OP_MOD_MEMW:
+            merry_execute_mod_mem(c, &merry_dmemory_read_word);
+            break;
+        case OP_MOD_MEMD:
+            merry_execute_mod_mem(c, &merry_dmemory_read_dword);
+            break;
+        case OP_MOD_MEMQ:
+            merry_execute_mod_mem(c, &merry_dmemory_read_qword);
+            break;
         }
         c->pc++;
     }

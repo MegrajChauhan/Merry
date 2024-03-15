@@ -489,43 +489,43 @@ void masm::codegen::Codegen::gen_inst_add(std::unique_ptr<nodes::Node> &node)
             auto iden_details = table.find_entry(i->value)->second;
             switch (iden_details.dtype)
             {
-            // in case of identifiers, we need to perform two operations
-            // first load the variable and then add it
             case nodes::DataType::_TYPE_BYTE:
             {
-                // this is a byte type value so we need to use loadb instruction
-                /// TODO: A Dilema
-                inst.bytes.b1 = opcodes::OP_LOADB;
-                // inst.bytes.b2 = (n->dest_regr);
+                inst.bytes.b1 = opcodes::OP_ADD_MEMB;
+                inst.bytes.b2 = i->dest_regr;
                 inst.whole |= addr_of_iden;
-                // we then need to push the 6 byte address of the
                 break;
             }
-            // case nodes::DataType::_TYPE_WORD:
-            // {
-            //     final_inst.bytes.b1 = opcodes::OP_LOADW;
-            //     final_inst.bytes.b2 = (n->dest_regr);
-            //     final_inst.whole |= addr_of_iden;
-            //     break;
-            // }
-            // case nodes::DataType::_TYPE_DWORD:
-            // {
-            //     final_inst.bytes.b1 = opcodes::OP_LOADD;
-            //     final_inst.bytes.b2 = (n->dest_regr);
-            //     final_inst.whole |= addr_of_iden;
-            //     break;
-            // }
-            // case nodes::DataType::_TYPE_QWORD:
-            // {
-            //     final_inst.bytes.b1 = opcodes::OP_LOAD;
-            //     final_inst.bytes.b2 = (n->dest_regr);
-            //     final_inst.whole |= addr_of_iden;
-            //     break;
-            // }
+            case nodes::DataType::_TYPE_WORD:
+            {
+                inst.bytes.b1 = opcodes::OP_ADD_MEMW;
+                inst.bytes.b2 = i->dest_regr;
+                inst.whole |= addr_of_iden;
+                break;
+            }
+            case nodes::DataType::_TYPE_DWORD:
+            {
+                inst.bytes.b1 = opcodes::OP_ADD_MEMD;
+                inst.bytes.b2 = i->dest_regr;
+                inst.whole |= addr_of_iden;
+                break;
+            }
+            case nodes::DataType::_TYPE_QWORD:
+            {
+                inst.bytes.b1 = opcodes::OP_ADD_MEMQ;
+                inst.bytes.b2 = i->dest_regr;
+                inst.whole |= addr_of_iden;
+                break;
+            }
             }
         }
         else
         {
+            // it is an immediate number
+            // it must be an integer which is confirmed by sema
+            inst.bytes.b1 = opcodes::OP_ADD_IMM;
+            inst.bytes.b2 = i->dest_regr;
+            inst.whole |= std::stoi(i->value);
         }
     }
     else
@@ -533,6 +533,242 @@ void masm::codegen::Codegen::gen_inst_add(std::unique_ptr<nodes::Node> &node)
         // must be a add_regr
         auto i = (nodes::NodeAddRegReg *)node->ptr.get();
         inst.bytes.b1 = opcodes::OP_ADD_REG;
+        inst.bytes.b8 = i->dest_regr;
+        (inst.bytes.b8 <<= 4) | i->src_reg;
+    }
+    inst_bytes.push_back(inst);
+}
+
+void masm::codegen::Codegen::gen_inst_sub(std::unique_ptr<nodes::Node> &node)
+{
+    Instruction inst;
+    if (node->kind == nodes::_INST_SUB_IMM)
+    {
+        auto i = (nodes::NodeSubRegImm *)node->ptr.get();
+        if (i->is_iden)
+        {
+            size_t addr_of_iden = data_addrs.find(i->value)->second;
+            auto iden_details = table.find_entry(i->value)->second;
+            switch (iden_details.dtype)
+            {
+            case nodes::DataType::_TYPE_BYTE:
+            {
+                inst.bytes.b1 = opcodes::OP_SUB_MEMB;
+                inst.bytes.b2 = i->dest_regr;
+                inst.whole |= addr_of_iden;
+                break;
+            }
+            case nodes::DataType::_TYPE_WORD:
+            {
+                inst.bytes.b1 = opcodes::OP_SUB_MEMW;
+                inst.bytes.b2 = i->dest_regr;
+                inst.whole |= addr_of_iden;
+                break;
+            }
+            case nodes::DataType::_TYPE_DWORD:
+            {
+                inst.bytes.b1 = opcodes::OP_SUB_MEMD;
+                inst.bytes.b2 = i->dest_regr;
+                inst.whole |= addr_of_iden;
+                break;
+            }
+            case nodes::DataType::_TYPE_QWORD:
+            {
+                inst.bytes.b1 = opcodes::OP_SUB_MEMQ;
+                inst.bytes.b2 = i->dest_regr;
+                inst.whole |= addr_of_iden;
+                break;
+            }
+            }
+        }
+        else
+        {
+            inst.bytes.b1 = opcodes::OP_SUB_IMM;
+            inst.bytes.b2 = i->dest_regr;
+            inst.whole |= std::stoi(i->value);
+        }
+    }
+    else
+    {
+        auto i = (nodes::NodeSubRegReg *)node->ptr.get();
+        inst.bytes.b1 = opcodes::OP_SUB_REG;
+        inst.bytes.b8 = i->dest_regr;
+        (inst.bytes.b8 <<= 4) | i->src_reg;
+    }
+    inst_bytes.push_back(inst);
+}
+
+void masm::codegen::Codegen::gen_inst_mul(std::unique_ptr<nodes::Node> &node)
+{
+    Instruction inst;
+    if (node->kind == nodes::_INST_MUL_IMM)
+    {
+        auto i = (nodes::NodeMulRegImm *)node->ptr.get();
+        if (i->is_iden)
+        {
+            size_t addr_of_iden = data_addrs.find(i->value)->second;
+            auto iden_details = table.find_entry(i->value)->second;
+            switch (iden_details.dtype)
+            {
+            case nodes::DataType::_TYPE_BYTE:
+            {
+                inst.bytes.b1 = opcodes::OP_MUL_MEMB;
+                inst.bytes.b2 = i->dest_regr;
+                inst.whole |= addr_of_iden;
+                break;
+            }
+            case nodes::DataType::_TYPE_WORD:
+            {
+                inst.bytes.b1 = opcodes::OP_MUL_MEMW;
+                inst.bytes.b2 = i->dest_regr;
+                inst.whole |= addr_of_iden;
+                break;
+            }
+            case nodes::DataType::_TYPE_DWORD:
+            {
+                inst.bytes.b1 = opcodes::OP_MUL_MEMD;
+                inst.bytes.b2 = i->dest_regr;
+                inst.whole |= addr_of_iden;
+                break;
+            }
+            case nodes::DataType::_TYPE_QWORD:
+            {
+                inst.bytes.b1 = opcodes::OP_MUL_MEMQ;
+                inst.bytes.b2 = i->dest_regr;
+                inst.whole |= addr_of_iden;
+                break;
+            }
+            }
+        }
+        else
+        {
+            inst.bytes.b1 = opcodes::OP_MUL_IMM;
+            inst.bytes.b2 = i->dest_regr;
+            inst.whole |= std::stoi(i->value);
+        }
+    }
+    else
+    {
+        auto i = (nodes::NodeMulRegReg *)node->ptr.get();
+        inst.bytes.b1 = opcodes::OP_MUL_REG;
+        inst.bytes.b8 = i->dest_regr;
+        (inst.bytes.b8 <<= 4) | i->src_reg;
+    }
+    inst_bytes.push_back(inst);
+}
+
+void masm::codegen::Codegen::gen_inst_div(std::unique_ptr<nodes::Node> &node)
+{
+    Instruction inst;
+    if (node->kind == nodes::_INST_DIV_IMM)
+    {
+        auto i = (nodes::NodeDivRegImm *)node->ptr.get();
+        if (i->is_iden)
+        {
+            size_t addr_of_iden = data_addrs.find(i->value)->second;
+            auto iden_details = table.find_entry(i->value)->second;
+            switch (iden_details.dtype)
+            {
+            case nodes::DataType::_TYPE_BYTE:
+            {
+                inst.bytes.b1 = opcodes::OP_DIV_MEMB;
+                inst.bytes.b2 = i->dest_regr;
+                inst.whole |= addr_of_iden;
+                break;
+            }
+            case nodes::DataType::_TYPE_WORD:
+            {
+                inst.bytes.b1 = opcodes::OP_DIV_MEMW;
+                inst.bytes.b2 = i->dest_regr;
+                inst.whole |= addr_of_iden;
+                break;
+            }
+            case nodes::DataType::_TYPE_DWORD:
+            {
+                inst.bytes.b1 = opcodes::OP_DIV_MEMD;
+                inst.bytes.b2 = i->dest_regr;
+                inst.whole |= addr_of_iden;
+                break;
+            }
+            case nodes::DataType::_TYPE_QWORD:
+            {
+                inst.bytes.b1 = opcodes::OP_DIV_MEMQ;
+                inst.bytes.b2 = i->dest_regr;
+                inst.whole |= addr_of_iden;
+                break;
+            }
+            }
+        }
+        else
+        {
+            inst.bytes.b1 = opcodes::OP_DIV_IMM;
+            inst.bytes.b2 = i->dest_regr;
+            inst.whole |= std::stoi(i->value);
+        }
+    }
+    else
+    {
+        auto i = (nodes::NodeDivRegReg *)node->ptr.get();
+        inst.bytes.b1 = opcodes::OP_DIV_REG;
+        inst.bytes.b8 = i->dest_regr;
+        (inst.bytes.b8 <<= 4) | i->src_reg;
+    }
+    inst_bytes.push_back(inst);
+}
+
+void masm::codegen::Codegen::gen_inst_mod(std::unique_ptr<nodes::Node> &node)
+{
+    Instruction inst;
+    if (node->kind == nodes::_INST_MOD_IMM)
+    {
+        auto i = (nodes::NodeModRegImm *)node->ptr.get();
+        if (i->is_iden)
+        {
+            size_t addr_of_iden = data_addrs.find(i->value)->second;
+            auto iden_details = table.find_entry(i->value)->second;
+            switch (iden_details.dtype)
+            {
+            case nodes::DataType::_TYPE_BYTE:
+            {
+                inst.bytes.b1 = opcodes::OP_MOD_MEMB;
+                inst.bytes.b2 = i->dest_regr;
+                inst.whole |= addr_of_iden;
+                break;
+            }
+            case nodes::DataType::_TYPE_WORD:
+            {
+                inst.bytes.b1 = opcodes::OP_MOD_MEMW;
+                inst.bytes.b2 = i->dest_regr;
+                inst.whole |= addr_of_iden;
+                break;
+            }
+            case nodes::DataType::_TYPE_DWORD:
+            {
+                inst.bytes.b1 = opcodes::OP_MOD_MEMD;
+                inst.bytes.b2 = i->dest_regr;
+                inst.whole |= addr_of_iden;
+                break;
+            }
+            case nodes::DataType::_TYPE_QWORD:
+            {
+                inst.bytes.b1 = opcodes::OP_MOD_MEMQ;
+                inst.bytes.b2 = i->dest_regr;
+                inst.whole |= addr_of_iden;
+                break;
+            }
+            }
+        }
+        else
+        {
+            inst.bytes.b1 = opcodes::OP_MOD_IMM;
+            inst.bytes.b2 = i->dest_regr;
+            inst.whole |= std::stoi(i->value);
+        }
+    }
+    else
+    {
+        auto i = (nodes::NodeModRegReg *)node->ptr.get();
+        inst.bytes.b1 = opcodes::OP_MOD_REG;
         inst.bytes.b8 = i->dest_regr;
         (inst.bytes.b8 <<= 4) | i->src_reg;
     }
@@ -847,6 +1083,30 @@ void masm::codegen::Codegen::gen()
         case nodes::NodeKind::_INST_ADD_REG:
         {
             gen_inst_add(*iter);
+            break;
+        }
+        case nodes::NodeKind::_INST_SUB_IMM:
+        case nodes::NodeKind::_INST_SUB_REG:
+        {
+            gen_inst_sub(*iter);
+            break;
+        }
+        case nodes::NodeKind::_INST_MUL_IMM:
+        case nodes::NodeKind::_INST_MUL_REG:
+        {
+            gen_inst_mul(*iter);
+            break;
+        }
+        case nodes::NodeKind::_INST_DIV_IMM:
+        case nodes::NodeKind::_INST_DIV_REG:
+        {
+            gen_inst_div(*iter);
+            break;
+        }
+        case nodes::NodeKind::_INST_MOD_IMM:
+        case nodes::NodeKind::_INST_MOD_REG:
+        {
+            gen_inst_mod(*iter);
             break;
         }
 

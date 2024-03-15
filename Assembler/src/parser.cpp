@@ -103,6 +103,10 @@ void masm::parser::Parser::parse()
         case lexer::_TT_INST_INLF:
         case lexer::_TT_INST_INF:
         case lexer::_TT_INST_ADD:
+        case lexer::_TT_INST_SUB:
+        case lexer::_TT_INST_MUL:
+        case lexer::_TT_INST_DIV:
+        case lexer::_TT_INST_MOD:
             handleInstruction();
             break;
         default:
@@ -233,6 +237,18 @@ void masm::parser::Parser::handleInstruction()
         break;
     case lexer::_TT_INST_ADD:
         handle_inst_add();
+        break;
+    case lexer::_TT_INST_SUB:
+        handle_inst_sub();
+        break;
+    case lexer::_TT_INST_DIV:
+        handle_inst_div();
+        break;
+    case lexer::_TT_INST_MUL:
+        handle_inst_mul();
+        break;
+    case lexer::_TT_INST_MOD:
+        handle_inst_mod();
         break;
     }
     next_token();
@@ -516,6 +532,14 @@ void masm::parser::Parser::handle_identifier()
         if (section != _SECTION_DATA)
             lexer.parse_error("Defining variables in the text section is not allowed");
         handle_defineqword(name);
+        break;
+    }
+    case lexer::_TT_KEY_DF:
+    case lexer::_TT_KEY_DLF:
+    {
+        if (section != _SECTION_DATA)
+            lexer.parse_error("Defining variables in the text section is not allowed");
+        handle_definefloats(name);
         break;
     }
     case lexer::_TT_KEY_STRING:
@@ -810,7 +834,7 @@ void masm::parser::Parser::handle_inst_add()
             ptr = std::make_unique<nodes::NodeAddRegImm>();
             auto temp = (nodes::NodeAddRegImm *)ptr.get();
             temp->dest_regr = dest_regr->second;
-            if (curr_tok.type == lexer::_TT_INT && curr_tok.type == lexer::_TT_NINT)
+            if (curr_tok.type == lexer::_TT_INT || curr_tok.type == lexer::_TT_NINT)
                 temp->is_iden = false;
             else
                 temp->is_iden = true;
@@ -825,6 +849,166 @@ void masm::parser::Parser::handle_inst_add()
             temp->dest_regr = dest_regr->second;
             temp->src_reg = src->second;
             kind = nodes::_INST_ADD_REG;
+        }
+    }
+    else
+        lexer.parse_error("Expected a destination register.");
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_inst_sub()
+{
+    nodes::NodeKind kind;
+    std::unique_ptr<nodes::Base> ptr;
+    next_token(); // goto the next token
+    if (curr_tok.type == lexer::_TT_IDENTIFIER)
+    {
+        auto dest_regr = nodes::_regr_iden_map.find(curr_tok.value);
+        if (dest_regr == nodes::_regr_iden_map.end())
+            lexer.parse_err_previous_token(curr_tok.value, "Expected a destination register.");
+        next_token();
+        if (curr_tok.type != lexer::_TT_IDENTIFIER && curr_tok.type != lexer::_TT_INT && curr_tok.type != lexer::_TT_NINT)
+            lexer.parse_err_previous_token(curr_tok.value, "Expected a source register, immediate or a source register.");
+        auto src = nodes::_regr_iden_map.find(curr_tok.value);
+        if (src == nodes::_regr_iden_map.end())
+        {
+            ptr = std::make_unique<nodes::NodeSubRegImm>();
+            auto temp = (nodes::NodeSubRegImm *)ptr.get();
+            temp->dest_regr = dest_regr->second;
+            if (curr_tok.type == lexer::_TT_INT || curr_tok.type == lexer::_TT_NINT)
+                temp->is_iden = false;
+            else
+                temp->is_iden = true;
+            temp->value = curr_tok.value;
+            kind = nodes::_INST_SUB_IMM;
+        }
+        else
+        {
+            ptr = std::make_unique<nodes::NodeSubRegReg>();
+            auto temp = (nodes::NodeSubRegReg *)ptr.get();
+            temp->dest_regr = dest_regr->second;
+            temp->src_reg = src->second;
+            kind = nodes::_INST_SUB_REG;
+        }
+    }
+    else
+        lexer.parse_error("Expected a destination register.");
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_inst_mul()
+{
+    nodes::NodeKind kind;
+    std::unique_ptr<nodes::Base> ptr;
+    next_token(); // goto the next token
+    if (curr_tok.type == lexer::_TT_IDENTIFIER)
+    {
+        auto dest_regr = nodes::_regr_iden_map.find(curr_tok.value);
+        if (dest_regr == nodes::_regr_iden_map.end())
+            lexer.parse_err_previous_token(curr_tok.value, "Expected a destination register.");
+        next_token();
+        if (curr_tok.type != lexer::_TT_IDENTIFIER && curr_tok.type != lexer::_TT_INT && curr_tok.type != lexer::_TT_NINT)
+            lexer.parse_err_previous_token(curr_tok.value, "Expected a source register, immediate or a source register.");
+        auto src = nodes::_regr_iden_map.find(curr_tok.value);
+        if (src == nodes::_regr_iden_map.end())
+        {
+            ptr = std::make_unique<nodes::NodeMulRegImm>();
+            auto temp = (nodes::NodeMulRegImm *)ptr.get();
+            temp->dest_regr = dest_regr->second;
+            if (curr_tok.type == lexer::_TT_INT || curr_tok.type == lexer::_TT_NINT)
+                temp->is_iden = false;
+            else
+                temp->is_iden = true;
+            temp->value = curr_tok.value;
+            kind = nodes::_INST_MUL_IMM;
+        }
+        else
+        {
+            ptr = std::make_unique<nodes::NodeMulRegReg>();
+            auto temp = (nodes::NodeMulRegReg *)ptr.get();
+            temp->dest_regr = dest_regr->second;
+            temp->src_reg = src->second;
+            kind = nodes::_INST_MUL_REG;
+        }
+    }
+    else
+        lexer.parse_error("Expected a destination register.");
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_inst_div()
+{
+    nodes::NodeKind kind;
+    std::unique_ptr<nodes::Base> ptr;
+    next_token(); // goto the next token
+    if (curr_tok.type == lexer::_TT_IDENTIFIER)
+    {
+        auto dest_regr = nodes::_regr_iden_map.find(curr_tok.value);
+        if (dest_regr == nodes::_regr_iden_map.end())
+            lexer.parse_err_previous_token(curr_tok.value, "Expected a destination register.");
+        next_token();
+        if (curr_tok.type != lexer::_TT_IDENTIFIER && curr_tok.type != lexer::_TT_INT && curr_tok.type != lexer::_TT_NINT)
+            lexer.parse_err_previous_token(curr_tok.value, "Expected a source register, immediate or a source register.");
+        auto src = nodes::_regr_iden_map.find(curr_tok.value);
+        if (src == nodes::_regr_iden_map.end())
+        {
+            ptr = std::make_unique<nodes::NodeDivRegImm>();
+            auto temp = (nodes::NodeDivRegImm *)ptr.get();
+            temp->dest_regr = dest_regr->second;
+            if (curr_tok.type == lexer::_TT_INT || curr_tok.type == lexer::_TT_NINT)
+                temp->is_iden = false;
+            else
+                temp->is_iden = true;
+            temp->value = curr_tok.value;
+            kind = nodes::_INST_DIV_IMM;
+        }
+        else
+        {
+            ptr = std::make_unique<nodes::NodeDivRegReg>();
+            auto temp = (nodes::NodeDivRegReg *)ptr.get();
+            temp->dest_regr = dest_regr->second;
+            temp->src_reg = src->second;
+            kind = nodes::_INST_DIV_REG;
+        }
+    }
+    else
+        lexer.parse_error("Expected a destination register.");
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_inst_mod()
+{
+    nodes::NodeKind kind;
+    std::unique_ptr<nodes::Base> ptr;
+    next_token(); // goto the next token
+    if (curr_tok.type == lexer::_TT_IDENTIFIER)
+    {
+        auto dest_regr = nodes::_regr_iden_map.find(curr_tok.value);
+        if (dest_regr == nodes::_regr_iden_map.end())
+            lexer.parse_err_previous_token(curr_tok.value, "Expected a destination register.");
+        next_token();
+        if (curr_tok.type != lexer::_TT_IDENTIFIER && curr_tok.type != lexer::_TT_INT && curr_tok.type != lexer::_TT_NINT)
+            lexer.parse_err_previous_token(curr_tok.value, "Expected a source register, immediate or a source register.");
+        auto src = nodes::_regr_iden_map.find(curr_tok.value);
+        if (src == nodes::_regr_iden_map.end())
+        {
+            ptr = std::make_unique<nodes::NodeModRegImm>();
+            auto temp = (nodes::NodeModRegImm *)ptr.get();
+            temp->dest_regr = dest_regr->second;
+            if (curr_tok.type == lexer::_TT_INT || curr_tok.type == lexer::_TT_NINT)
+                temp->is_iden = false;
+            else
+                temp->is_iden = true;
+            temp->value = curr_tok.value;
+            kind = nodes::_INST_DIV_IMM;
+        }
+        else
+        {
+            ptr = std::make_unique<nodes::NodeModRegReg>();
+            auto temp = (nodes::NodeModRegReg *)ptr.get();
+            temp->dest_regr = dest_regr->second;
+            temp->src_reg = src->second;
+            kind = nodes::_INST_MOD_REG;
         }
     }
     else

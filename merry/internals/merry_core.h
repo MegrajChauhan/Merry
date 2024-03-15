@@ -194,6 +194,6 @@ MerryCore *merry_core_init(MerryMemory *inst_mem, MerryDMemory *data_mem, msize_
 
 void merry_core_destroy(MerryCore *core);
 
-mptr_t merry_runCore(mptr_t core);
+_THRET_T_ merry_runCore(mptr_t core);
 
 #endif

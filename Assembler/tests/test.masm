@@ -103,6 +103,23 @@ main:
 
   add Ma, Mb  ;; add two registers together
   add Mc, test ;; add a variable to a register
+  add Md, 1234
+
+  sub Ma, Mb  
+  sub Mc, test
+  sub Md, 1234
+
+  mul Ma, Mb  
+  mul Mc, test
+  mul Md, 1234
+
+  div Ma, Mb  
+  div Mc, test
+  div Md, 1234
+
+  mod Ma, Mb  
+  mod Mc, test
+  mod Md, 1234
 
   hlt ;; we use halt here because this is what ultimately stops the program so there is no point in having a ret here
 ;; main:
@@ -114,8 +131,8 @@ test: db 123
 ;; instead we will make use of the data section
 resb1: .resb 4 ;; reserve 4 bytes
 resb2: .resw 4 ;; reserve 4 words
-resb2: .resd 4 ;; reserve 4 dwords
-resb3: .resq 4 ;; reserve 4 qwords
+resb3: .resd 4 ;; reserve 4 dwords
+resb4: .resq 4 ;; reserve 4 qwords
 
 ;; for floating point values
 float1: df 12345.54321

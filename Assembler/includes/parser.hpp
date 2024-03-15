@@ -79,6 +79,10 @@ namespace masm
             void handle_inst_movf();
 
             void handle_inst_add();
+            void handle_inst_sub();
+            void handle_inst_mul();
+            void handle_inst_div();
+            void handle_inst_mod();
         };
     };
 };

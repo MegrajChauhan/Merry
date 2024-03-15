@@ -29,7 +29,7 @@ from time import sleep
 #         return False
 
 def print_usage():
-    print("python build.py <Destination Directory> <Extra flags> <masm/vm/all>")
+    print("python build.py <Destination Directory> <masm/vm/all>")
     print("The path to the files to be compiled should be in compile.txt in the order in which it needs to be compiled")
 
 def compile_merry():

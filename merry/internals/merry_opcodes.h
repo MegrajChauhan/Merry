@@ -275,6 +275,32 @@ enum
   OP_ATOMIC_STOREB, // store byte atomically
   OP_ATOMIC_STOREW, // store 2 bytes atomically
   OP_ATOMIC_STORED, // store 4 bytes atomically
+
+  OP_ADD_MEMB,
+  OP_ADD_MEMW,
+  OP_ADD_MEMD,
+  OP_ADD_MEMQ,
+
+  OP_SUB_MEMB,
+  OP_SUB_MEMW,
+  OP_SUB_MEMD,
+  OP_SUB_MEMQ,
+
+  OP_MUL_MEMB,
+  OP_MUL_MEMW,
+  OP_MUL_MEMD,
+  OP_MUL_MEMQ,
+  
+  OP_DIV_MEMB,
+  OP_DIV_MEMW,
+  OP_DIV_MEMD,
+  OP_DIV_MEMQ,
+  
+  OP_MOD_MEMB,
+  OP_MOD_MEMW,
+  OP_MOD_MEMD,
+  OP_MOD_MEMQ,
+
 };
 
 /*

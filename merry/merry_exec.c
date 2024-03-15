@@ -132,6 +132,98 @@ _MERRY_ALWAYS_INLINE_ _exec_(mod_reg)
    _update_flags_(&core->flag);
 }
 
+_MERRY_ALWAYS_INLINE_ _lexec_(add_mem, mem_read func)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg = (current >> 52) & 15;
+   register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+   mqword_t temp = 0;
+   if (func(core->data_mem, addr, &temp) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
+      core->stop_running = mtrue;
+      return;
+   }
+   core->registers[(current >> 48) & 15] += temp;
+   _update_flags_(&core->flag);
+}
+
+_MERRY_ALWAYS_INLINE_ _lexec_(sub_mem, mem_read func)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg = (current >> 52) & 15;
+   register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+   mqword_t temp = 0;
+   if (func(core->data_mem, addr, &temp) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
+      core->stop_running = mtrue;
+      return;
+   }
+   core->registers[(current >> 48) & 15] -= temp;
+   _update_flags_(&core->flag);
+}
+
+_MERRY_ALWAYS_INLINE_ _lexec_(mul_mem, mem_read func)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg = (current >> 52) & 15;
+   register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+   mqword_t temp = 0;
+   if (func(core->data_mem, addr, &temp) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
+      core->stop_running = mtrue;
+      return;
+   }
+   core->registers[(current >> 48) & 15] *= temp;
+   _update_flags_(&core->flag);
+}
+
+_MERRY_ALWAYS_INLINE_ _lexec_(div_mem, mem_read func)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg = (current >> 52) & 15;
+   register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+   mqword_t temp = 0;
+   if (func(core->data_mem, addr, &temp) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
+      core->stop_running = mtrue;
+      return;
+   }
+   if (temp == 0)
+   {
+      merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
+      core->stop_running = mtrue;
+      return;
+   }
+   core->registers[(current >> 48) & 15] /= temp;
+   _update_flags_(&core->flag);
+}
+
+_MERRY_ALWAYS_INLINE_ _lexec_(mod_mem, mem_read func)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg = (current >> 52) & 15;
+   register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+   mqword_t temp = 0;
+   if (func(core->data_mem, addr, &temp) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
+      core->stop_running = mtrue;
+      return;
+   }
+   if (temp == 0)
+   {
+      merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
+      core->stop_running = mtrue;
+      return;
+   }
+   core->registers[(current >> 48) & 15] %= temp;
+   _update_flags_(&core->flag);
+}
+
 _MERRY_ALWAYS_INLINE_ _exec_(iadd_imm){
     // The processor will treat op1 and op2 as signed values
     // Since we will get a result that is also signed, we don't have to worry about anything

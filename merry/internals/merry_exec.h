@@ -81,6 +81,8 @@ struct MerryCore;
 // execute the halt instruction
 // _exec_(halt);
 
+_MERRY_DEFINE_FUNC_PTR_(mret_t, mem_read, MerryDMemory*, maddress_t, mqptr_t);
+
 // arithmetic instructions
 _exec_(add_imm);
 _exec_(add_reg);
@@ -90,6 +92,13 @@ _exec_(mul_imm);
 _exec_(mul_reg);
 _exec_(div_imm);
 _exec_(div_reg);
+
+_lexec_(add_mem, mem_read func);
+_lexec_(sub_mem, mem_read func);
+_lexec_(mul_mem, mem_read func);
+_lexec_(div_mem, mem_read func);
+_lexec_(mod_mem, mem_read func);
+
 _exec_(mod_imm);
 _exec_(mod_reg);
 

@@ -99,6 +99,10 @@ namespace masm
             _TT_INST_INLF,
 
             _TT_INST_ADD,
+            _TT_INST_SUB,
+            _TT_INST_MUL,
+            _TT_INST_DIV,
+            _TT_INST_MOD,
 
             // we ignore commas, they are not absolutely necessary and the assembler won't even complain
             // about not using it. It is just their to provide readability
@@ -164,6 +168,10 @@ namespace masm
                 {"inf", _TT_INST_INF},
                 {"inlf", _TT_INST_INLF},
                 {"add", _TT_INST_ADD},
+                {"sub", _TT_INST_SUB},
+                {"mul", _TT_INST_MUL},
+                {"div", _TT_INST_DIV},
+                {"mod", _TT_INST_MOD},
         };
 
         struct Token
@@ -369,7 +377,7 @@ namespace masm
 
             Token lex();
 
-            size_t get_curr_line() { return line_num; }
+            size_t get_curr_line() { return line_num + 1; }
 
             auto get_path() { return path; }
 

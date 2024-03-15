@@ -21,7 +21,7 @@ namespace masm
         {
             OP_NOP,
             OP_HALT,
-         
+
             OP_ADD_IMM,
             OP_ADD_REG,
             OP_SUB_IMM,
@@ -46,7 +46,7 @@ namespace masm
             OP_FSUB,
             OP_FMUL,
             OP_FDIV,
-            
+
             // ----------------- DONE
             OP_MOVE_IMM,
             OP_MOVE_IMM_64,
@@ -61,7 +61,7 @@ namespace masm
             OP_MOVESX_REG16,
             OP_MOVESX_REG32,
             // -------------------- DONE
-            
+
             OP_JMP_OFF,
             OP_JMP_ADDR,
             OP_CALL,
@@ -99,7 +99,7 @@ namespace masm
             OP_MOV16,
             OP_MOV32,
             // ------------------------ DONE
-            
+
             OP_CFLAGS,
             OP_RESET,
             OP_CLZ,
@@ -168,11 +168,45 @@ namespace masm
             OP_OUTR,
             OP_UOUTR,
             // ------------------------ DONE
-            
+
             OP_FADD32,
             OP_FSUB32,
             OP_FMUL32,
             OP_FDIV32,
+            OP_ATOMIC_LOAD,
+            OP_ATOMIC_LOADB,
+            OP_ATOMIC_LOADW,
+            OP_ATOMIC_LOADD,
+            OP_ATOMIC_STORE,
+            OP_ATOMIC_STOREB,
+            OP_ATOMIC_STOREW,
+            OP_ATOMIC_STORED,
+
+            OP_ADD_MEMB,
+            OP_ADD_MEMW,
+            OP_ADD_MEMD,
+            OP_ADD_MEMQ,
+
+            OP_SUB_MEMB,
+            OP_SUB_MEMW,
+            OP_SUB_MEMD,
+            OP_SUB_MEMQ,
+
+            OP_MUL_MEMB,
+            OP_MUL_MEMW,
+            OP_MUL_MEMD,
+            OP_MUL_MEMQ,
+
+            OP_DIV_MEMB,
+            OP_DIV_MEMW,
+            OP_DIV_MEMD,
+            OP_DIV_MEMQ,
+
+            OP_MOD_MEMB,
+            OP_MOD_MEMW,
+            OP_MOD_MEMD,
+            OP_MOD_MEMQ,
+
         };
     };
 };
