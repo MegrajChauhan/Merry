@@ -22,6 +22,7 @@ namespace masm
             OP_NOP,
             OP_HALT,
 
+            // ------------------------ DONE
             OP_ADD_IMM,
             OP_ADD_REG,
             OP_SUB_IMM,
@@ -42,6 +43,8 @@ namespace masm
             OP_IDIV_REG,
             OP_IMOD_IMM,
             OP_IMOD_REG,
+            // ------------------------ DONE
+
             OP_FADD,
             OP_FSUB,
             OP_FMUL,
@@ -182,6 +185,7 @@ namespace masm
             OP_ATOMIC_STOREW,
             OP_ATOMIC_STORED,
 
+            // ------------------------ DONE
             OP_ADD_MEMB,
             OP_ADD_MEMW,
             OP_ADD_MEMD,
@@ -206,6 +210,7 @@ namespace masm
             OP_MOD_MEMW,
             OP_MOD_MEMD,
             OP_MOD_MEMQ,
+            // ------------------------ DONE
 
         };
     };

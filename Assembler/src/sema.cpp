@@ -428,6 +428,66 @@ void masm::sema::Sema::analyse()
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of NUM type as expected by the instruction.");
             }
         }
+        case nodes::NodeKind::_INST_IADD_IMM:
+        {
+            auto node = (nodes::NodeAddRegImm *)inst->ptr.get();
+            if (node->is_iden)
+            {
+                auto x = symtable.find_entry(node->value);
+                if (!symtable.is_invalid(x))
+                    analysis_error(inst->line, std::string("The operand '") + node->value + "' in the iadd instruction is not a valid identifier.");
+                if (x->second.dtype == nodes::DataType::_TYPE_STRING || x->second.dtype == nodes::DataType::_TYPE_FLOAT || x->second.dtype == nodes::DataType::_TYPE_LFLOAT)
+                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of NUM type as expected by the instruction.");
+            }
+        }
+        case nodes::NodeKind::_INST_ISUB_IMM:
+        {
+            auto node = (nodes::NodeSubRegImm *)inst->ptr.get();
+            if (node->is_iden)
+            {
+                auto x = symtable.find_entry(node->value);
+                if (!symtable.is_invalid(x))
+                    analysis_error(inst->line, std::string("The operand '") + node->value + "' in the isub instruction is not a valid identifier.");
+                if (x->second.dtype == nodes::DataType::_TYPE_STRING || x->second.dtype == nodes::DataType::_TYPE_FLOAT || x->second.dtype == nodes::DataType::_TYPE_LFLOAT)
+                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of NUM type as expected by the instruction.");
+            }
+        }
+        case nodes::NodeKind::_INST_IMUL_IMM:
+        {
+            auto node = (nodes::NodeMulRegImm *)inst->ptr.get();
+            if (node->is_iden)
+            {
+                auto x = symtable.find_entry(node->value);
+                if (!symtable.is_invalid(x))
+                    analysis_error(inst->line, std::string("The operand '") + node->value + "' in the imul instruction is not a valid identifier.");
+                if (x->second.dtype == nodes::DataType::_TYPE_STRING || x->second.dtype == nodes::DataType::_TYPE_FLOAT || x->second.dtype == nodes::DataType::_TYPE_LFLOAT)
+                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of NUM type as expected by the instruction.");
+            }
+        }
+        case nodes::NodeKind::_INST_IDIV_IMM:
+        {
+            auto node = (nodes::NodeDivRegImm *)inst->ptr.get();
+            if (node->is_iden)
+            {
+                auto x = symtable.find_entry(node->value);
+                if (!symtable.is_invalid(x))
+                    analysis_error(inst->line, std::string("The operand '") + node->value + "' in the idiv instruction is not a valid identifier.");
+                if (x->second.dtype == nodes::DataType::_TYPE_STRING || x->second.dtype == nodes::DataType::_TYPE_FLOAT || x->second.dtype == nodes::DataType::_TYPE_LFLOAT)
+                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of NUM type as expected by the instruction.");
+            }
+        }
+        case nodes::NodeKind::_INST_IMOD_IMM:
+        {
+            auto node = (nodes::NodeModRegImm *)inst->ptr.get();
+            if (node->is_iden)
+            {
+                auto x = symtable.find_entry(node->value);
+                if (!symtable.is_invalid(x))
+                    analysis_error(inst->line, std::string("The operand '") + node->value + "' in the imod instruction is not a valid identifier.");
+                if (x->second.dtype == nodes::DataType::_TYPE_STRING || x->second.dtype == nodes::DataType::_TYPE_FLOAT || x->second.dtype == nodes::DataType::_TYPE_LFLOAT)
+                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of NUM type as expected by the instruction.");
+            }
+        }
         }
     }
 }

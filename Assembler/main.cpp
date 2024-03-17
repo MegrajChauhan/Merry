@@ -1,7 +1,10 @@
 #include "includes/asm.hpp"
 #include "codegen/emit.hpp"
 
-#define VERSION "Masm- v0.0.0-alpha.1"
+#define VERSION "Masm- v0.0.0-alpha.1a"
+
+static std::string version_message = "Masm: An Assembler for the Merry Virtual Machine.\n"
+                                     "Latest version: ";
 
 int main(int argv, char **argc)
 {
@@ -17,7 +20,7 @@ int main(int argv, char **argc)
     }
     else if (_asm.get_option("version").first)
     {
-        std::cout << VERSION << std::endl;
+        std::cout << version_message + VERSION << std::endl;
         return 0;
     }
     if (!_asm.get_option("input").first)

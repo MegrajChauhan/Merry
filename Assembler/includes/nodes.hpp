@@ -101,18 +101,28 @@ namespace masm
 
             _INST_ADD_IMM,
             _INST_ADD_REG,
+            _INST_IADD_IMM,
+            _INST_IADD_REG,
 
             _INST_SUB_IMM,
             _INST_SUB_REG,
+            _INST_ISUB_IMM,
+            _INST_ISUB_REG,
 
             _INST_MUL_IMM,
             _INST_MUL_REG,
+            _INST_IMUL_IMM,
+            _INST_IMUL_REG,
 
             _INST_DIV_IMM,
             _INST_DIV_REG,
+            _INST_IDIV_IMM,
+            _INST_IDIV_REG,
 
             _INST_MOD_IMM,
             _INST_MOD_REG,
+            _INST_IMOD_IMM,
+            _INST_IMOD_REG,
 
             _INST_HLT, // this doesn't need its own structure
         };

@@ -107,6 +107,11 @@ void masm::parser::Parser::parse()
         case lexer::_TT_INST_MUL:
         case lexer::_TT_INST_DIV:
         case lexer::_TT_INST_MOD:
+        case lexer::_TT_INST_IADD:
+        case lexer::_TT_INST_ISUB:
+        case lexer::_TT_INST_IMUL:
+        case lexer::_TT_INST_IDIV:
+        case lexer::_TT_INST_IMOD:
             handleInstruction();
             break;
         default:
@@ -236,18 +241,23 @@ void masm::parser::Parser::handleInstruction()
         handle_inst_movf();
         break;
     case lexer::_TT_INST_ADD:
+    case lexer::_TT_INST_IADD:
         handle_inst_add();
         break;
     case lexer::_TT_INST_SUB:
+    case lexer::_TT_INST_ISUB:
         handle_inst_sub();
         break;
     case lexer::_TT_INST_DIV:
+    case lexer::_TT_INST_IDIV:
         handle_inst_div();
         break;
     case lexer::_TT_INST_MUL:
+    case lexer::_TT_INST_IMUL:
         handle_inst_mul();
         break;
     case lexer::_TT_INST_MOD:
+    case lexer::_TT_INST_IMOD:
         handle_inst_mod();
         break;
     }
@@ -816,6 +826,7 @@ void masm::parser::Parser::handle_definefloats(std::string name)
 void masm::parser::Parser::handle_inst_add()
 {
     nodes::NodeKind kind;
+    auto temp_curr = curr_tok;
     std::unique_ptr<nodes::Base> ptr;
     next_token(); // goto the next token
     if (curr_tok.type == lexer::_TT_IDENTIFIER)
@@ -839,7 +850,7 @@ void masm::parser::Parser::handle_inst_add()
             else
                 temp->is_iden = true;
             temp->value = curr_tok.value;
-            kind = nodes::_INST_ADD_IMM;
+            kind = temp_curr.type == lexer::_TT_INST_ADD ? nodes::_INST_ADD_IMM : nodes::_INST_IADD_IMM;
         }
         else
         {
@@ -848,7 +859,7 @@ void masm::parser::Parser::handle_inst_add()
             auto temp = (nodes::NodeAddRegReg *)ptr.get();
             temp->dest_regr = dest_regr->second;
             temp->src_reg = src->second;
-            kind = nodes::_INST_ADD_REG;
+            kind = temp_curr.type == lexer::_TT_INST_ADD ? nodes::_INST_ADD_REG : nodes::_INST_IADD_REG;
         }
     }
     else
@@ -858,6 +869,7 @@ void masm::parser::Parser::handle_inst_add()
 
 void masm::parser::Parser::handle_inst_sub()
 {
+    auto temp_curr = curr_tok;
     nodes::NodeKind kind;
     std::unique_ptr<nodes::Base> ptr;
     next_token(); // goto the next token
@@ -880,7 +892,7 @@ void masm::parser::Parser::handle_inst_sub()
             else
                 temp->is_iden = true;
             temp->value = curr_tok.value;
-            kind = nodes::_INST_SUB_IMM;
+            kind = temp_curr.type == lexer::_TT_INST_SUB ? nodes::_INST_SUB_IMM : nodes::_INST_ISUB_IMM;
         }
         else
         {
@@ -888,7 +900,7 @@ void masm::parser::Parser::handle_inst_sub()
             auto temp = (nodes::NodeSubRegReg *)ptr.get();
             temp->dest_regr = dest_regr->second;
             temp->src_reg = src->second;
-            kind = nodes::_INST_SUB_REG;
+            kind = temp_curr.type == lexer::_TT_INST_SUB ? nodes::_INST_SUB_REG : nodes::_INST_ISUB_REG;
         }
     }
     else
@@ -898,6 +910,7 @@ void masm::parser::Parser::handle_inst_sub()
 
 void masm::parser::Parser::handle_inst_mul()
 {
+    auto temp_curr = curr_tok;
     nodes::NodeKind kind;
     std::unique_ptr<nodes::Base> ptr;
     next_token(); // goto the next token
@@ -920,7 +933,7 @@ void masm::parser::Parser::handle_inst_mul()
             else
                 temp->is_iden = true;
             temp->value = curr_tok.value;
-            kind = nodes::_INST_MUL_IMM;
+            kind = temp_curr.type == lexer::_TT_INST_MUL ? nodes::_INST_MUL_IMM : nodes::_INST_IMUL_IMM;
         }
         else
         {
@@ -928,7 +941,7 @@ void masm::parser::Parser::handle_inst_mul()
             auto temp = (nodes::NodeMulRegReg *)ptr.get();
             temp->dest_regr = dest_regr->second;
             temp->src_reg = src->second;
-            kind = nodes::_INST_MUL_REG;
+            kind = temp_curr.type == lexer::_TT_INST_MUL ? nodes::_INST_MUL_REG : nodes::_INST_IMUL_REG;
         }
     }
     else
@@ -939,6 +952,7 @@ void masm::parser::Parser::handle_inst_mul()
 void masm::parser::Parser::handle_inst_div()
 {
     nodes::NodeKind kind;
+    auto temp_curr = curr_tok;
     std::unique_ptr<nodes::Base> ptr;
     next_token(); // goto the next token
     if (curr_tok.type == lexer::_TT_IDENTIFIER)
@@ -960,7 +974,7 @@ void masm::parser::Parser::handle_inst_div()
             else
                 temp->is_iden = true;
             temp->value = curr_tok.value;
-            kind = nodes::_INST_DIV_IMM;
+            kind = temp_curr.type == lexer::_TT_INST_DIV ? nodes::_INST_DIV_IMM : nodes::_INST_IDIV_IMM;
         }
         else
         {
@@ -968,7 +982,7 @@ void masm::parser::Parser::handle_inst_div()
             auto temp = (nodes::NodeDivRegReg *)ptr.get();
             temp->dest_regr = dest_regr->second;
             temp->src_reg = src->second;
-            kind = nodes::_INST_DIV_REG;
+            kind = temp_curr.type == lexer::_TT_INST_DIV ? nodes::_INST_DIV_REG : nodes::_INST_IDIV_REG;
         }
     }
     else
@@ -979,6 +993,7 @@ void masm::parser::Parser::handle_inst_div()
 void masm::parser::Parser::handle_inst_mod()
 {
     nodes::NodeKind kind;
+    auto temp_curr = curr_tok;
     std::unique_ptr<nodes::Base> ptr;
     next_token(); // goto the next token
     if (curr_tok.type == lexer::_TT_IDENTIFIER)
@@ -1000,7 +1015,7 @@ void masm::parser::Parser::handle_inst_mod()
             else
                 temp->is_iden = true;
             temp->value = curr_tok.value;
-            kind = nodes::_INST_DIV_IMM;
+            kind = temp_curr.type == lexer::_TT_INST_DIV ? nodes::_INST_MOD_IMM : nodes::_INST_IMOD_IMM;
         }
         else
         {
@@ -1008,7 +1023,7 @@ void masm::parser::Parser::handle_inst_mod()
             auto temp = (nodes::NodeModRegReg *)ptr.get();
             temp->dest_regr = dest_regr->second;
             temp->src_reg = src->second;
-            kind = nodes::_INST_MOD_REG;
+            kind = temp_curr.type == lexer::_TT_INST_DIV ? nodes::_INST_MOD_REG : nodes::_INST_IMOD_REG;
         }
     }
     else

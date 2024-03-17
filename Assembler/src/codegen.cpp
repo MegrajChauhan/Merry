@@ -480,7 +480,7 @@ void masm::codegen::Codegen::gen_inst_movf(std::unique_ptr<nodes::Node> &node)
 void masm::codegen::Codegen::gen_inst_add(std::unique_ptr<nodes::Node> &node)
 {
     Instruction inst;
-    if (node->kind == nodes::_INST_ADD_IMM)
+    if (node->kind == nodes::_INST_ADD_IMM || node->kind == nodes::_INST_IADD_IMM)
     {
         auto i = (nodes::NodeAddRegImm *)node->ptr.get();
         if (i->is_iden)
@@ -523,7 +523,7 @@ void masm::codegen::Codegen::gen_inst_add(std::unique_ptr<nodes::Node> &node)
         {
             // it is an immediate number
             // it must be an integer which is confirmed by sema
-            inst.bytes.b1 = opcodes::OP_ADD_IMM;
+            inst.bytes.b1 = node->kind == nodes::_INST_ADD_IMM ? opcodes::OP_ADD_IMM : opcodes::OP_IADD_IMM;
             inst.bytes.b2 = i->dest_regr;
             inst.whole |= std::stoi(i->value);
         }
@@ -532,7 +532,7 @@ void masm::codegen::Codegen::gen_inst_add(std::unique_ptr<nodes::Node> &node)
     {
         // must be a add_regr
         auto i = (nodes::NodeAddRegReg *)node->ptr.get();
-        inst.bytes.b1 = opcodes::OP_ADD_REG;
+        inst.bytes.b1 = node->kind == nodes::_INST_ADD_IMM ? opcodes::OP_ADD_REG : opcodes::OP_IADD_REG;
         inst.bytes.b8 = i->dest_regr;
         (inst.bytes.b8 <<= 4) | i->src_reg;
     }
@@ -542,7 +542,7 @@ void masm::codegen::Codegen::gen_inst_add(std::unique_ptr<nodes::Node> &node)
 void masm::codegen::Codegen::gen_inst_sub(std::unique_ptr<nodes::Node> &node)
 {
     Instruction inst;
-    if (node->kind == nodes::_INST_SUB_IMM)
+    if (node->kind == nodes::_INST_SUB_IMM || node->kind == nodes::_INST_ISUB_IMM)
     {
         auto i = (nodes::NodeSubRegImm *)node->ptr.get();
         if (i->is_iden)
@@ -583,7 +583,7 @@ void masm::codegen::Codegen::gen_inst_sub(std::unique_ptr<nodes::Node> &node)
         }
         else
         {
-            inst.bytes.b1 = opcodes::OP_SUB_IMM;
+            inst.bytes.b1 = node->kind == nodes::_INST_SUB_IMM ? opcodes::OP_SUB_IMM : opcodes::OP_ISUB_IMM;
             inst.bytes.b2 = i->dest_regr;
             inst.whole |= std::stoi(i->value);
         }
@@ -591,7 +591,7 @@ void masm::codegen::Codegen::gen_inst_sub(std::unique_ptr<nodes::Node> &node)
     else
     {
         auto i = (nodes::NodeSubRegReg *)node->ptr.get();
-        inst.bytes.b1 = opcodes::OP_SUB_REG;
+        inst.bytes.b1 = node->kind == nodes::_INST_SUB_REG ? opcodes::OP_SUB_REG : opcodes::OP_ISUB_REG;
         inst.bytes.b8 = i->dest_regr;
         (inst.bytes.b8 <<= 4) | i->src_reg;
     }
@@ -601,7 +601,7 @@ void masm::codegen::Codegen::gen_inst_sub(std::unique_ptr<nodes::Node> &node)
 void masm::codegen::Codegen::gen_inst_mul(std::unique_ptr<nodes::Node> &node)
 {
     Instruction inst;
-    if (node->kind == nodes::_INST_MUL_IMM)
+    if (node->kind == nodes::_INST_MUL_IMM || node->kind == nodes::_INST_IMUL_IMM)
     {
         auto i = (nodes::NodeMulRegImm *)node->ptr.get();
         if (i->is_iden)
@@ -642,7 +642,7 @@ void masm::codegen::Codegen::gen_inst_mul(std::unique_ptr<nodes::Node> &node)
         }
         else
         {
-            inst.bytes.b1 = opcodes::OP_MUL_IMM;
+            inst.bytes.b1 = node->kind == nodes::_INST_MUL_IMM ? opcodes::OP_MUL_IMM : opcodes::OP_IMUL_IMM;
             inst.bytes.b2 = i->dest_regr;
             inst.whole |= std::stoi(i->value);
         }
@@ -650,7 +650,7 @@ void masm::codegen::Codegen::gen_inst_mul(std::unique_ptr<nodes::Node> &node)
     else
     {
         auto i = (nodes::NodeMulRegReg *)node->ptr.get();
-        inst.bytes.b1 = opcodes::OP_MUL_REG;
+        inst.bytes.b1 = node->kind == nodes::_INST_MUL_REG ? opcodes::OP_MUL_REG : opcodes::OP_IMUL_REG;
         inst.bytes.b8 = i->dest_regr;
         (inst.bytes.b8 <<= 4) | i->src_reg;
     }
@@ -660,7 +660,7 @@ void masm::codegen::Codegen::gen_inst_mul(std::unique_ptr<nodes::Node> &node)
 void masm::codegen::Codegen::gen_inst_div(std::unique_ptr<nodes::Node> &node)
 {
     Instruction inst;
-    if (node->kind == nodes::_INST_DIV_IMM)
+    if (node->kind == nodes::_INST_DIV_IMM || node->kind == nodes::_INST_IDIV_IMM)
     {
         auto i = (nodes::NodeDivRegImm *)node->ptr.get();
         if (i->is_iden)
@@ -701,7 +701,7 @@ void masm::codegen::Codegen::gen_inst_div(std::unique_ptr<nodes::Node> &node)
         }
         else
         {
-            inst.bytes.b1 = opcodes::OP_DIV_IMM;
+            inst.bytes.b1 = node->kind == nodes::_INST_DIV_IMM ? opcodes::OP_DIV_IMM : opcodes::OP_IDIV_IMM;
             inst.bytes.b2 = i->dest_regr;
             inst.whole |= std::stoi(i->value);
         }
@@ -709,7 +709,7 @@ void masm::codegen::Codegen::gen_inst_div(std::unique_ptr<nodes::Node> &node)
     else
     {
         auto i = (nodes::NodeDivRegReg *)node->ptr.get();
-        inst.bytes.b1 = opcodes::OP_DIV_REG;
+        inst.bytes.b1 = node->kind == nodes::_INST_DIV_REG ? opcodes::OP_DIV_REG : opcodes::OP_IDIV_REG;
         inst.bytes.b8 = i->dest_regr;
         (inst.bytes.b8 <<= 4) | i->src_reg;
     }
@@ -719,7 +719,7 @@ void masm::codegen::Codegen::gen_inst_div(std::unique_ptr<nodes::Node> &node)
 void masm::codegen::Codegen::gen_inst_mod(std::unique_ptr<nodes::Node> &node)
 {
     Instruction inst;
-    if (node->kind == nodes::_INST_MOD_IMM)
+    if (node->kind == nodes::_INST_MOD_IMM || node->kind == nodes::_INST_IMOD_IMM)
     {
         auto i = (nodes::NodeModRegImm *)node->ptr.get();
         if (i->is_iden)
@@ -760,7 +760,7 @@ void masm::codegen::Codegen::gen_inst_mod(std::unique_ptr<nodes::Node> &node)
         }
         else
         {
-            inst.bytes.b1 = opcodes::OP_MOD_IMM;
+            inst.bytes.b1 = node->kind == nodes::_INST_MOD_IMM ? opcodes::OP_MOD_IMM : opcodes::OP_IMOD_IMM;
             inst.bytes.b2 = i->dest_regr;
             inst.whole |= std::stoi(i->value);
         }
@@ -768,7 +768,7 @@ void masm::codegen::Codegen::gen_inst_mod(std::unique_ptr<nodes::Node> &node)
     else
     {
         auto i = (nodes::NodeModRegReg *)node->ptr.get();
-        inst.bytes.b1 = opcodes::OP_MOD_REG;
+        inst.bytes.b1 = node->kind == nodes::_INST_MOD_REG ? opcodes::OP_MOD_REG : opcodes::OP_IMOD_REG;
         inst.bytes.b8 = i->dest_regr;
         (inst.bytes.b8 <<= 4) | i->src_reg;
     }
@@ -1081,35 +1081,44 @@ void masm::codegen::Codegen::gen()
         }
         case nodes::NodeKind::_INST_ADD_IMM:
         case nodes::NodeKind::_INST_ADD_REG:
+        case nodes::NodeKind::_INST_IADD_IMM:
+        case nodes::NodeKind::_INST_IADD_REG:
         {
             gen_inst_add(*iter);
             break;
         }
         case nodes::NodeKind::_INST_SUB_IMM:
         case nodes::NodeKind::_INST_SUB_REG:
+        case nodes::NodeKind::_INST_ISUB_IMM:
+        case nodes::NodeKind::_INST_ISUB_REG:
         {
             gen_inst_sub(*iter);
             break;
         }
         case nodes::NodeKind::_INST_MUL_IMM:
         case nodes::NodeKind::_INST_MUL_REG:
+        case nodes::NodeKind::_INST_IMUL_IMM:
+        case nodes::NodeKind::_INST_IMUL_REG:
         {
             gen_inst_mul(*iter);
             break;
         }
         case nodes::NodeKind::_INST_DIV_IMM:
         case nodes::NodeKind::_INST_DIV_REG:
+        case nodes::NodeKind::_INST_IDIV_IMM:
+        case nodes::NodeKind::_INST_IDIV_REG:
         {
             gen_inst_div(*iter);
             break;
         }
         case nodes::NodeKind::_INST_MOD_IMM:
         case nodes::NodeKind::_INST_MOD_REG:
+        case nodes::NodeKind::_INST_IMOD_REG:
+        case nodes::NodeKind::_INST_IMOD_IMM:
         {
             gen_inst_mod(*iter);
             break;
         }
-
             // default:
             //     count--;
         }

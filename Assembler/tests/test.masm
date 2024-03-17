@@ -121,6 +121,26 @@ main:
   mod Mc, test
   mod Md, 1234
 
+  iadd Ma, Mb  
+  iadd Mc, test
+  iadd Md, 1234
+
+  isub Ma, Mb  
+  isub Mc, test
+  isub Md, 1234
+
+  imul Ma, Mb  
+  imul Mc, test
+  imul Md, 1234
+
+  idiv Ma, Mb  
+  idiv Mc, test
+  idiv Md, 1234
+
+  imod Ma, Mb  
+  imod Mc, test
+  imod Md, 1234
+
   hlt ;; we use halt here because this is what ultimately stops the program so there is no point in having a ret here
 ;; main:
 

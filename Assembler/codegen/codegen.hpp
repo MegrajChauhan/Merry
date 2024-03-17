@@ -131,6 +131,12 @@ namespace masm
             void gen_inst_mul(std::unique_ptr<nodes::Node> &);
             void gen_inst_div(std::unique_ptr<nodes::Node> &);
             void gen_inst_mod(std::unique_ptr<nodes::Node> &);
+
+            void gen_inst_iadd(std::unique_ptr<nodes::Node> &);
+            void gen_inst_isub(std::unique_ptr<nodes::Node> &);
+            void gen_inst_imul(std::unique_ptr<nodes::Node> &);
+            void gen_inst_idiv(std::unique_ptr<nodes::Node> &);
+            void gen_inst_imod(std::unique_ptr<nodes::Node> &);
         };
     };
 };

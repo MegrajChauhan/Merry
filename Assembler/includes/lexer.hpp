@@ -104,6 +104,12 @@ namespace masm
             _TT_INST_DIV,
             _TT_INST_MOD,
 
+            _TT_INST_IADD,
+            _TT_INST_ISUB,
+            _TT_INST_IMUL,
+            _TT_INST_IDIV,
+            _TT_INST_IMOD,
+
             // we ignore commas, they are not absolutely necessary and the assembler won't even complain
             // about not using it. It is just their to provide readability
         };
@@ -172,6 +178,11 @@ namespace masm
                 {"mul", _TT_INST_MUL},
                 {"div", _TT_INST_DIV},
                 {"mod", _TT_INST_MOD},
+                {"iadd", _TT_INST_IADD},
+                {"isub", _TT_INST_ISUB},
+                {"imul", _TT_INST_IMUL},
+                {"idiv", _TT_INST_IDIV},
+                {"imod", _TT_INST_IMOD},
         };
 
         struct Token
