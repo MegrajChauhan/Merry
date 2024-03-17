@@ -1,18 +1,10 @@
 /*
-
-
-
-
 Big apologies to experienced C++ programmers for writing such code in C++.
 Forgive the absurd redundancy.
 Logical errors.
 The utterly wrong use of the standard library
 Ignoring the better ways for doing this
 I am in a rush so this has to be messy
-
-
-
-
 */
 
 #include "../includes/parser.hpp"
@@ -112,6 +104,14 @@ void masm::parser::Parser::parse()
         case lexer::_TT_INST_IMUL:
         case lexer::_TT_INST_IDIV:
         case lexer::_TT_INST_IMOD:
+        case lexer::_TT_INST_FADD:
+        case lexer::_TT_INST_LFADD:
+        case lexer::_TT_INST_FSUB:
+        case lexer::_TT_INST_LFSUB:
+        case lexer::_TT_INST_FMUL:
+        case lexer::_TT_INST_LFMUL:
+        case lexer::_TT_INST_FDIV:
+        case lexer::_TT_INST_LFDIV:
             handleInstruction();
             break;
         default:
@@ -259,6 +259,23 @@ void masm::parser::Parser::handleInstruction()
     case lexer::_TT_INST_MOD:
     case lexer::_TT_INST_IMOD:
         handle_inst_mod();
+        break;
+    case lexer::_TT_INST_FADD:
+    case lexer::_TT_INST_LFADD:
+        handle_inst_fadd();
+        break;
+    case lexer::_TT_INST_FSUB:
+    case lexer::_TT_INST_LFSUB:
+        handle_inst_fsub();
+        break;
+    case lexer::_TT_INST_FMUL:
+    case lexer::_TT_INST_LFMUL:
+        handle_inst_fmul();
+        break;
+    case lexer::_TT_INST_FDIV:
+    case lexer::_TT_INST_LFDIV:
+        handle_inst_fdiv();
+        break;
         break;
     }
     next_token();
@@ -1028,5 +1045,200 @@ void masm::parser::Parser::handle_inst_mod()
     }
     else
         lexer.parse_error("Expected a destination register.");
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_inst_fadd()
+{
+    auto temp_curr_tok = curr_tok;
+    nodes::NodeKind kind;
+    std::unique_ptr<nodes::Base> ptr;
+    // either it must be fadd or lfadd
+    next_token();
+    // must be a register
+    if (curr_tok.type == lexer::_TT_IDENTIFIER)
+    {
+        auto dest_regr = nodes::_regr_iden_map.find(curr_tok.value);
+        if (dest_regr == nodes::_regr_iden_map.end())
+            lexer.parse_err_previous_token(curr_tok.value, "Expected a destination register.");
+        next_token();
+        // now it must either be an identifier or a floating point number
+        if (curr_tok.type == lexer::_TT_IDENTIFIER)
+        {
+            // it could either be a register or a variable
+            auto temp = nodes::_regr_iden_map.find(curr_tok.value);
+            if (temp == nodes::_regr_iden_map.end())
+            {
+                // this is a variable
+                kind = temp_curr_tok.type == lexer::_TT_INST_FADD ? nodes::_INST_FADD_IMM : nodes::_INST_LFADD_IMM;
+                ptr = std::make_unique<nodes::NodeAddRegImm>();
+                auto x = (nodes::NodeAddRegImm *)ptr.get();
+                x->dest_regr = dest_regr->second;
+                x->is_iden = true;
+                x->value = curr_tok.value;
+            }
+            else
+            {
+                // then it is a register
+                // this is the one we expect
+                kind = temp_curr_tok.type == lexer::_TT_INST_FADD ? nodes::_INST_FADD_REG : nodes::_INST_LFADD_REG;
+                ptr = std::make_unique<nodes::NodeAddRegReg>();
+                auto x = (nodes::NodeAddRegReg *)ptr.get();
+                x->dest_regr = dest_regr->second;
+                x->src_reg = temp->second;
+            }
+        }
+        else if (curr_tok.type == lexer::_TT_FLOAT || curr_tok.type == lexer::_TT_NFLOAT)
+        {
+            kind = temp_curr_tok.type == lexer::_TT_INST_FADD ? nodes::_INST_FADD_IMM : nodes::_INST_LFADD_IMM;
+            ptr = std::make_unique<nodes::NodeAddRegImm>();
+            auto x = (nodes::NodeAddRegImm *)ptr.get();
+            x->dest_regr = dest_regr->second;
+            x->value = curr_tok.value;
+        }
+        else
+            lexer.parse_error("Expected a floating point number in floating point instruction.");
+    }
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_inst_fsub()
+{
+    auto temp_curr_tok = curr_tok;
+    nodes::NodeKind kind;
+    std::unique_ptr<nodes::Base> ptr;
+    next_token();
+    if (curr_tok.type == lexer::_TT_IDENTIFIER)
+    {
+        auto dest_regr = nodes::_regr_iden_map.find(curr_tok.value);
+        if (dest_regr == nodes::_regr_iden_map.end())
+            lexer.parse_err_previous_token(curr_tok.value, "Expected a destination register.");
+        next_token();
+        if (curr_tok.type == lexer::_TT_IDENTIFIER)
+        {
+            auto temp = nodes::_regr_iden_map.find(curr_tok.value);
+            if (temp == nodes::_regr_iden_map.end())
+            {
+                kind = temp_curr_tok.type == lexer::_TT_INST_FSUB ? nodes::_INST_FSUB_IMM : nodes::_INST_LFSUB_IMM;
+                ptr = std::make_unique<nodes::NodeSubRegImm>();
+                auto x = (nodes::NodeSubRegImm *)ptr.get();
+                x->dest_regr = dest_regr->second;
+                x->is_iden = true;
+                x->value = curr_tok.value;
+            }
+            else
+            {
+                kind = temp_curr_tok.type == lexer::_TT_INST_FSUB ? nodes::_INST_FSUB_REG : nodes::_INST_LFSUB_REG;
+                ptr = std::make_unique<nodes::NodeSubRegReg>();
+                auto x = (nodes::NodeSubRegReg *)ptr.get();
+                x->dest_regr = dest_regr->second;
+                x->src_reg = temp->second;
+            }
+        }
+        else if (curr_tok.type == lexer::_TT_FLOAT || curr_tok.type == lexer::_TT_NFLOAT)
+        {
+            kind = temp_curr_tok.type == lexer::_TT_INST_FSUB ? nodes::_INST_FSUB_IMM : nodes::_INST_LFSUB_IMM;
+            ptr = std::make_unique<nodes::NodeSubRegImm>();
+            auto x = (nodes::NodeSubRegImm *)ptr.get();
+            x->dest_regr = dest_regr->second;
+            x->value = curr_tok.value;
+        }
+        else
+            lexer.parse_error("Expected a floating point number in floating point instruction.");
+    }
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_inst_fmul()
+{
+    auto temp_curr_tok = curr_tok;
+    nodes::NodeKind kind;
+    std::unique_ptr<nodes::Base> ptr;
+    next_token();
+    if (curr_tok.type == lexer::_TT_IDENTIFIER)
+    {
+        auto dest_regr = nodes::_regr_iden_map.find(curr_tok.value);
+        if (dest_regr == nodes::_regr_iden_map.end())
+            lexer.parse_err_previous_token(curr_tok.value, "Expected a destination register.");
+        next_token();
+        if (curr_tok.type == lexer::_TT_IDENTIFIER)
+        {
+            auto temp = nodes::_regr_iden_map.find(curr_tok.value);
+            if (temp == nodes::_regr_iden_map.end())
+            {
+                kind = temp_curr_tok.type == lexer::_TT_INST_FMUL ? nodes::_INST_FMUL_IMM : nodes::_INST_LFMUL_IMM;
+                ptr = std::make_unique<nodes::NodeMulRegImm>();
+                auto x = (nodes::NodeMulRegImm *)ptr.get();
+                x->dest_regr = dest_regr->second;
+                x->is_iden = true;
+                x->value = curr_tok.value;
+            }
+            else
+            {
+                kind = temp_curr_tok.type == lexer::_TT_INST_FMUL ? nodes::_INST_FMUL_REG : nodes::_INST_LFMUL_REG;
+                ptr = std::make_unique<nodes::NodeMulRegReg>();
+                auto x = (nodes::NodeMulRegReg *)ptr.get();
+                x->dest_regr = dest_regr->second;
+                x->src_reg = temp->second;
+            }
+        }
+        else if (curr_tok.type == lexer::_TT_FLOAT || curr_tok.type == lexer::_TT_NFLOAT)
+        {
+            kind = temp_curr_tok.type == lexer::_TT_INST_FMUL ? nodes::_INST_FMUL_IMM : nodes::_INST_LFMUL_IMM;
+            ptr = std::make_unique<nodes::NodeMulRegImm>();
+            auto x = (nodes::NodeMulRegImm *)ptr.get();
+            x->dest_regr = dest_regr->second;
+            x->value = curr_tok.value;
+        }
+        else
+            lexer.parse_error("Expected a floating point number in floating point instruction.");
+    }
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_inst_fdiv()
+{
+    auto temp_curr_tok = curr_tok;
+    nodes::NodeKind kind;
+    std::unique_ptr<nodes::Base> ptr;
+    next_token();
+    if (curr_tok.type == lexer::_TT_IDENTIFIER)
+    {
+        auto dest_regr = nodes::_regr_iden_map.find(curr_tok.value);
+        if (dest_regr == nodes::_regr_iden_map.end())
+            lexer.parse_err_previous_token(curr_tok.value, "Expected a destination register.");
+        next_token();
+        if (curr_tok.type == lexer::_TT_IDENTIFIER)
+        {
+            auto temp = nodes::_regr_iden_map.find(curr_tok.value);
+            if (temp == nodes::_regr_iden_map.end())
+            {
+                kind = temp_curr_tok.type == lexer::_TT_INST_FDIV ? nodes::_INST_FDIV_IMM : nodes::_INST_LFDIV_IMM;
+                ptr = std::make_unique<nodes::NodeDivRegImm>();
+                auto x = (nodes::NodeDivRegImm *)ptr.get();
+                x->dest_regr = dest_regr->second;
+                x->is_iden = true;
+                x->value = curr_tok.value;
+            }
+            else
+            {
+                kind = temp_curr_tok.type == lexer::_TT_INST_FDIV ? nodes::_INST_FDIV_REG : nodes::_INST_LFDIV_REG;
+                ptr = std::make_unique<nodes::NodeMulRegReg>();
+                auto x = (nodes::NodeMulRegReg *)ptr.get();
+                x->dest_regr = dest_regr->second;
+                x->src_reg = temp->second;
+            }
+        }
+        else if (curr_tok.type == lexer::_TT_FLOAT || curr_tok.type == lexer::_TT_NFLOAT)
+        {
+            kind = temp_curr_tok.type == lexer::_TT_INST_FDIV ? nodes::_INST_FDIV_IMM : nodes::_INST_LFDIV_IMM;
+            ptr = std::make_unique<nodes::NodeDivRegImm>();
+            auto x = (nodes::NodeDivRegImm *)ptr.get();
+            x->dest_regr = dest_regr->second;
+            x->value = curr_tok.value;
+        }
+        else
+            lexer.parse_error("Expected a floating point number in floating point instruction.");
+    }
     nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
 }

@@ -33,7 +33,6 @@
 #include "merry_request.h"
 #include "imp/merry_imp.h"
 
-
 struct MerryCore;
 
 // The function structure
@@ -81,7 +80,7 @@ struct MerryCore;
 // execute the halt instruction
 // _exec_(halt);
 
-_MERRY_DEFINE_FUNC_PTR_(mret_t, mem_read, MerryDMemory*, maddress_t, mqptr_t);
+_MERRY_DEFINE_FUNC_PTR_(mret_t, mem_read, MerryDMemory *, maddress_t, mqptr_t);
 
 // arithmetic instructions
 _exec_(add_imm);
@@ -98,6 +97,16 @@ _lexec_(sub_mem, mem_read func);
 _lexec_(mul_mem, mem_read func);
 _lexec_(div_mem, mem_read func);
 _lexec_(mod_mem, mem_read func);
+
+_exec_(fadd64_mem);
+_exec_(fsub64_mem);
+_exec_(fmul64_mem);
+_exec_(fdiv64_mem);
+
+_exec_(fadd32_mem);
+_exec_(fsub32_mem);
+_exec_(fmul32_mem);
+_exec_(fdiv32_mem);
 
 _exec_(mod_imm);
 _exec_(mod_reg);

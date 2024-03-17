@@ -124,6 +124,24 @@ namespace masm
             _INST_IMOD_IMM,
             _INST_IMOD_REG,
 
+            _INST_FADD_REG,
+            _INST_FSUB_REG,
+            _INST_FMUL_REG,
+            _INST_FDIV_REG,
+            _INST_FADD_IMM,
+            _INST_FSUB_IMM,
+            _INST_FMUL_IMM,
+            _INST_FDIV_IMM,
+
+            _INST_LFADD_REG,
+            _INST_LFSUB_REG,
+            _INST_LFMUL_REG,
+            _INST_LFDIV_REG,
+            _INST_LFADD_IMM,
+            _INST_LFSUB_IMM,
+            _INST_LFMUL_IMM,
+            _INST_LFDIV_IMM,
+
             _INST_HLT, // this doesn't need its own structure
         };
 

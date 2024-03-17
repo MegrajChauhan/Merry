@@ -488,6 +488,25 @@ void masm::sema::Sema::analyse()
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of NUM type as expected by the instruction.");
             }
         }
+        case nodes::NodeKind::_INST_FADD_IMM:
+        case nodes::NodeKind::_INST_LFADD_IMM:
+        case nodes::NodeKind::_INST_FSUB_IMM:
+        case nodes::NodeKind::_INST_LFSUB_IMM:
+        case nodes::NodeKind::_INST_FMUL_IMM:
+        case nodes::NodeKind::_INST_LFMUL_IMM:
+        case nodes::NodeKind::_INST_FDIV_IMM:
+        case nodes::NodeKind::_INST_LFDIV_IMM:
+        {
+            auto node = (nodes::NodeAddRegImm *)inst->ptr.get();
+            if (node->is_iden)
+            {
+                auto x = symtable.find_entry(node->value);
+                if (!symtable.is_invalid(x))
+                    analysis_error(inst->line, std::string("The operand '") + node->value + "' in the floating-point instruction is not a valid identifier.");
+                if (x->second.dtype != nodes::DataType::_TYPE_LFLOAT && x->second.dtype != nodes::DataType::_TYPE_FLOAT)
+                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of FLOAT type as expected by the instruction.");
+            }
+        }
         }
     }
 }

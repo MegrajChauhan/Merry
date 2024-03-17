@@ -212,6 +212,15 @@ namespace masm
             OP_MOD_MEMQ,
             // ------------------------ DONE
 
+            OP_FADD_MEM,
+            OP_FSUB_MEM,
+            OP_FMUL_MEM,
+            OP_FDIV_MEM,
+
+            OP_FADD32_MEM,
+            OP_FSUB32_MEM,
+            OP_FMUL32_MEM,
+            OP_FDIV32_MEM,
         };
     };
 };

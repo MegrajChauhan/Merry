@@ -135,49 +135,145 @@ _MERRY_ALWAYS_INLINE_ _exec_(mod_reg)
 _MERRY_ALWAYS_INLINE_ _lexec_(add_mem, mem_read func)
 {
    register mqword_t current = core->current_inst;
-   register mqword_t reg = (current >> 52) & 15;
+   register mqword_t reg = (current >> 48) & 15;
    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
    mqword_t temp = 0;
    if (func(core->data_mem, addr, &temp) == RET_FAILURE)
    {
-      merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
+      merry_requestHdlr_panic(core->data_mem->error);
       core->stop_running = mtrue;
       return;
    }
-   core->registers[(current >> 48) & 15] += temp;
+   core->registers[reg] += temp;
    _update_flags_(&core->flag);
+}
+
+_MERRY_ALWAYS_INLINE_ _exec_(fadd32_mem)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg = (current >> 48) & 15;
+   register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+   mdword_t temp = 0;
+   if (merry_dmemory_read_dword(core->data_mem, addr, &temp) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return;
+   }
+   core->registers[reg] = ((float)core->registers[(current >> 48) & 15] + (float)temp);
+   merry_cmp_floats32(core, (float)core->registers[reg], (float)temp);
+}
+
+_MERRY_ALWAYS_INLINE_ _exec_(fadd64_mem)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg = (current >> 48) & 15;
+   register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+   mdword_t temp = 0;
+   if (merry_dmemory_read_qword(core->data_mem, addr, &temp) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return;
+   }
+   core->registers[reg] = ((double)core->registers[reg] + (double)temp);
+   merry_cmp_floats32(core, (double)core->registers[reg], (double)temp);
 }
 
 _MERRY_ALWAYS_INLINE_ _lexec_(sub_mem, mem_read func)
 {
    register mqword_t current = core->current_inst;
-   register mqword_t reg = (current >> 52) & 15;
+   register mqword_t reg = (current >> 48) & 15;
    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
    mqword_t temp = 0;
    if (func(core->data_mem, addr, &temp) == RET_FAILURE)
    {
-      merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
+      merry_requestHdlr_panic(core->data_mem->error);
       core->stop_running = mtrue;
       return;
    }
-   core->registers[(current >> 48) & 15] -= temp;
+   core->registers[reg] -= temp;
    _update_flags_(&core->flag);
+}
+
+_MERRY_ALWAYS_INLINE_ _exec_(fsub32_mem)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg = (current >> 48) & 15;
+   register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+   mdword_t temp = 0;
+   if (merry_dmemory_read_dword(core->data_mem, addr, &temp) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return;
+   }
+   core->registers[reg] = ((float)core->registers[reg] - (float)temp);
+   merry_cmp_floats32(core, (float)core->registers[reg], (float)temp);
+}
+
+_MERRY_ALWAYS_INLINE_ _exec_(fsub64_mem)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg = (current >> 48) & 15;
+   register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+   mdword_t temp = 0;
+   if (merry_dmemory_read_qword(core->data_mem, addr, &temp) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return;
+   }
+   core->registers[reg] = ((double)core->registers[reg] - (double)temp);
+   merry_cmp_floats64(core, (double)core->registers[reg], (double)temp);
 }
 
 _MERRY_ALWAYS_INLINE_ _lexec_(mul_mem, mem_read func)
 {
    register mqword_t current = core->current_inst;
-   register mqword_t reg = (current >> 52) & 15;
+   register mqword_t reg = (current >> 48) & 15;
    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
    mqword_t temp = 0;
    if (func(core->data_mem, addr, &temp) == RET_FAILURE)
    {
-      merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
+      merry_requestHdlr_panic(core->data_mem->error);
       core->stop_running = mtrue;
       return;
    }
-   core->registers[(current >> 48) & 15] *= temp;
+   core->registers[reg] *= temp;
    _update_flags_(&core->flag);
+}
+
+_MERRY_ALWAYS_INLINE_ _exec_(fmul32_mem)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg = (current >> 48) & 15;
+   register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+   mqword_t temp = 0;
+   if (merry_dmemory_read_dword(core->data_mem, addr, &temp) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return;
+   }
+   core->registers[reg] = ((float)core->registers[reg] * (float)temp);
+   merry_cmp_floats32(core, (float)core->registers[reg], (float)temp);
+}
+
+_MERRY_ALWAYS_INLINE_ _exec_(fmul64_mem)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg = (current >> 48) & 15;
+   register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+   mqword_t temp = 0;
+   if (merry_dmemory_read_qword(core->data_mem, addr, &temp) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return;
+   }
+   core->registers[reg] = ((double)core->registers[reg] * (double)temp);
+   merry_cmp_floats64(core, (double)core->registers[reg], (double)temp);
 }
 
 _MERRY_ALWAYS_INLINE_ _lexec_(div_mem, mem_read func)
@@ -188,7 +284,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(div_mem, mem_read func)
    mqword_t temp = 0;
    if (func(core->data_mem, addr, &temp) == RET_FAILURE)
    {
-      merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
+      merry_requestHdlr_panic(core->data_mem->error);
       core->stop_running = mtrue;
       return;
    }
@@ -202,6 +298,50 @@ _MERRY_ALWAYS_INLINE_ _lexec_(div_mem, mem_read func)
    _update_flags_(&core->flag);
 }
 
+_MERRY_ALWAYS_INLINE_ _exec_(fdiv32_mem)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg = (current >> 48) & 15;
+   register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+   mqword_t temp = 0;
+   if (merry_dmemory_read_dword(core->data_mem, addr, &temp) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return;
+   }
+   if ((float)temp == 0.0)
+   {
+      merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
+      core->stop_running = mtrue;
+      return;
+   }
+   core->registers[reg] = ((float)core->registers[(current >> 48) & 15] * (float)temp);
+   merry_cmp_floats32(core, (float)core->registers[reg], (float)temp);
+}
+
+_MERRY_ALWAYS_INLINE_ _exec_(fdiv64_mem)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t reg = (current >> 48) & 15;
+   register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+   mqword_t temp = 0;
+   if (merry_dmemory_read_qword(core->data_mem, addr, &temp) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return;
+   }
+   if ((double)temp == 0.0)
+   {
+      merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
+      core->stop_running = mtrue;
+      return;
+   }
+   core->registers[reg] = ((double)core->registers[reg] * (double)temp);
+   merry_cmp_floats64(core, (double)core->registers[reg], (double)temp);
+}
+
 _MERRY_ALWAYS_INLINE_ _lexec_(mod_mem, mem_read func)
 {
    register mqword_t current = core->current_inst;
@@ -210,7 +350,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(mod_mem, mem_read func)
    mqword_t temp = 0;
    if (func(core->data_mem, addr, &temp) == RET_FAILURE)
    {
-      merry_requestHdlr_panic(MERRY_DIV_BY_ZERO);
+      merry_requestHdlr_panic(core->data_mem->error);
       core->stop_running = mtrue;
       return;
    }

@@ -755,6 +755,30 @@ _THRET_T_ merry_runCore(mptr_t core)
         case OP_MOD_MEMQ:
             merry_execute_mod_mem(c, &merry_dmemory_read_qword);
             break;
+        case OP_FADD32_MEM:
+            merry_execute_fadd32_mem(c);
+            break;
+        case OP_FADD_MEM:
+            merry_execute_fadd64_mem(c);
+            break;
+        case OP_FSUB32_MEM:
+            merry_execute_fsub32_mem(c);
+            break;
+        case OP_FSUB_MEM:
+            merry_execute_fsub64_mem(c);
+            break;
+        case OP_FMUL32_MEM:
+            merry_execute_fmul32_mem(c);
+            break;
+        case OP_FMUL_MEM:
+            merry_execute_fmul64_mem(c);
+            break;
+        case OP_FDIV32_MEM:
+            merry_execute_fdiv32_mem(c);
+            break;
+        case OP_FDIV_MEM:
+            merry_execute_fdiv64_mem(c);
+            break;
         }
         c->pc++;
     }

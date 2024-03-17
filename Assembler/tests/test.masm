@@ -141,6 +141,44 @@ main:
   imod Mc, test
   imod Md, 1234
 
+  ;; fadd and lfadd should only take registers as operands
+  ;; but to make things easier for the programmer, the assembler will
+  ;; generate extra code for performing the operation
+  fadd Ma, -11.3
+  fadd Mb, float1
+  fadd Ma, Ma
+
+  ;; 64-bit floating point arithmetic instructions
+  lfadd Ma, -11.3
+  lfadd Mb, float2
+  lfadd Ma, Ma
+
+  fsub Ma, -11.3
+  fsub Mb, float1
+  fsub Ma, Ma
+
+  lfsub Ma, -11.3
+  lfsub Mb, float2
+  lfsub Ma, Ma
+
+  fmul Ma, -11.3
+  fmul Mb, float1
+  fmul Ma, Ma
+
+  lfmul Ma, -11.3
+  lfmul Mb, float2
+  lfmul Ma, Ma
+
+  fdiv Ma, -11.3
+  fdiv Mb, float1
+  fdiv Ma, Ma
+
+  lfdiv Ma, -11.3
+  lfdiv Mb, float2
+  lfdiv Ma, Ma
+
+  ;; floating point numbers don't have mod instruction
+
   hlt ;; we use halt here because this is what ultimately stops the program so there is no point in having a ret here
 ;; main:
 

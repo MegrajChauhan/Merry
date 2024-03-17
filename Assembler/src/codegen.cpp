@@ -775,6 +775,35 @@ void masm::codegen::Codegen::gen_inst_mod(std::unique_ptr<nodes::Node> &node)
     inst_bytes.push_back(inst);
 }
 
+void masm::codegen::Codegen::gen_inst_fadd(std::unique_ptr<nodes::Node> &node)
+{
+    Instruction inst;
+    if (node->kind == nodes::NodeKind::_INST_FADD_IMM)
+    {
+        auto temp = (nodes::NodeAddRegImm *)node->ptr.get();
+        if (temp->is_iden)
+        {
+            // we have a variable here
+            // we need to get the variable from the memory first
+            size_t addr_of_iden = data_addrs.find(temp->value)->second;
+            auto iden_details = table.find_entry(temp->value)->second;
+            if (iden_details.dtype == nodes::DataType::_TYPE_FLOAT)
+            {
+                // added new instructions for this purpose
+            }
+        }
+    }
+    else
+    {
+        // we have two registers here
+        auto temp = (nodes::NodeAddRegReg *)node->ptr.get();
+        inst.bytes.b1 = opcodes::OP_FADD32;
+        inst.bytes.b8 = temp->dest_regr;
+        (inst.bytes.b8 << 4) | temp->src_reg;
+    }
+    inst_bytes.push_back(inst);
+}
+
 void masm::codegen::Codegen::gen()
 {
     gen_data(); // generate data bytes
@@ -1119,6 +1148,23 @@ void masm::codegen::Codegen::gen()
             gen_inst_mod(*iter);
             break;
         }
+        case nodes::NodeKind::_INST_FADD_IMM:
+        case nodes::NodeKind::_INST_FADD_REG:
+            gen_inst_fadd(*iter);
+            break;
+        case nodes::NodeKind::_INST_FSUB_IMM:
+        case nodes::NodeKind::_INST_FSUB_REG:
+            gen_inst_fsub(*iter);
+            break;
+        case nodes::NodeKind::_INST_FMUL_IMM:
+        case nodes::NodeKind::_INST_FMUL_REG:
+            gen_inst_fmul(*iter);
+            break;
+        case nodes::NodeKind::_INST_FDIV_IMM:
+        case nodes::NodeKind::_INST_FDIV_REG:
+            gen_inst_fdiv(*iter);
+            break;
+
             // default:
             //     count--;
         }

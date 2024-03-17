@@ -110,6 +110,16 @@ namespace masm
             _TT_INST_IDIV,
             _TT_INST_IMOD,
 
+            _TT_INST_FADD,
+            _TT_INST_FSUB,
+            _TT_INST_FMUL,
+            _TT_INST_FDIV,
+
+            _TT_INST_LFADD,
+            _TT_INST_LFSUB,
+            _TT_INST_LFMUL,
+            _TT_INST_LFDIV,
+
             // we ignore commas, they are not absolutely necessary and the assembler won't even complain
             // about not using it. It is just their to provide readability
         };
@@ -183,6 +193,14 @@ namespace masm
                 {"imul", _TT_INST_IMUL},
                 {"idiv", _TT_INST_IDIV},
                 {"imod", _TT_INST_IMOD},
+                {"fadd", _TT_INST_FADD},
+                {"lfadd", _TT_INST_LFADD},
+                {"fsub", _TT_INST_FSUB},
+                {"lfsub", _TT_INST_LFSUB},
+                {"fmul", _TT_INST_FMUL},
+                {"lfmul", _TT_INST_LFMUL},
+                {"fdiv", _TT_INST_FDIV},
+                {"lfdiv", _TT_INST_LFDIV},
         };
 
         struct Token

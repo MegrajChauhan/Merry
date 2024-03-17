@@ -32,7 +32,7 @@ namespace masm
         public:
             Parser() = default;
 
-            Parser(lexer::Lexer&);
+            Parser(lexer::Lexer &);
 
             // setup by file path
             void setup_lexer(std::string);
@@ -41,9 +41,9 @@ namespace masm
             // if error, terminate else keep parsing
             void parse();
 
-            void move_nodes(std::vector<std::unique_ptr<nodes::Node>>&);
+            void move_nodes(std::vector<std::unique_ptr<nodes::Node>> &);
 
-            auto get_path(){return lexer.get_path();}
+            auto get_path() { return lexer.get_path(); }
 
             void handle_identifier();
 
@@ -83,6 +83,11 @@ namespace masm
             void handle_inst_mul();
             void handle_inst_div();
             void handle_inst_mod();
+
+            void handle_inst_fadd();
+            void handle_inst_fsub();
+            void handle_inst_fmul();
+            void handle_inst_fdiv();
         };
     };
 };
