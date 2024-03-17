@@ -29,7 +29,9 @@ Merry is not fully tested right now and so it may not work as expected. Hence an
 # Building the VM and the Assembler:
 Due to my lack of knowledge in build systems, I have had to use a script written in Python for building. For building the project, here is the command to run:
 ```bash
-python build.py <Destination Folder> merry
+python build.py <Destination Folder> all # for building everything
+python build.py <Destination Folder> vm # for building the vm only
+python build.py <Destination Folder> asm # for building the assembler
 ```
 Note that the above command must be ran in the root directory of the project. If the directory doesn't exist already, create one first. Running this command will build the Assembler as well.
 
