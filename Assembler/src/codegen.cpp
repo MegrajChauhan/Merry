@@ -778,26 +778,96 @@ void masm::codegen::Codegen::gen_inst_mod(std::unique_ptr<nodes::Node> &node)
 void masm::codegen::Codegen::gen_inst_fadd(std::unique_ptr<nodes::Node> &node)
 {
     Instruction inst;
-    if (node->kind == nodes::NodeKind::_INST_FADD_IMM)
+    if (node->kind == nodes::NodeKind::_INST_FADD_IMM || node->kind == nodes::NodeKind::_INST_LFADD_IMM)
     {
         auto temp = (nodes::NodeAddRegImm *)node->ptr.get();
-        if (temp->is_iden)
-        {
-            // we have a variable here
-            // we need to get the variable from the memory first
-            size_t addr_of_iden = data_addrs.find(temp->value)->second;
-            auto iden_details = table.find_entry(temp->value)->second;
-            if (iden_details.dtype == nodes::DataType::_TYPE_FLOAT)
-            {
-                // added new instructions for this purpose
-            }
-        }
+        // we need to get the variable from the memory first
+        size_t addr_of_iden = data_addrs.find(temp->value)->second;
+        auto iden_details = table.find_entry(temp->value)->second;
+        // added new instructions for this purpose
+        if (iden_details.dtype == nodes::DataType::_TYPE_FLOAT)
+            inst.bytes.b1 = opcodes::OP_FADD32_MEM;
+        else
+            inst.bytes.b1 = opcodes::OP_FADD_MEM;
+        inst.whole |= addr_of_iden;
     }
     else
     {
         // we have two registers here
         auto temp = (nodes::NodeAddRegReg *)node->ptr.get();
-        inst.bytes.b1 = opcodes::OP_FADD32;
+        inst.bytes.b1 = node->kind == nodes::NodeKind::_INST_FADD_REG ? opcodes::OP_FADD32 : opcodes::OP_FADD;
+        inst.bytes.b8 = temp->dest_regr;
+        (inst.bytes.b8 << 4) | temp->src_reg;
+    }
+    inst_bytes.push_back(inst);
+}
+
+void masm::codegen::Codegen::gen_inst_fsub(std::unique_ptr<nodes::Node> &node)
+{
+    Instruction inst;
+    if (node->kind == nodes::NodeKind::_INST_FSUB_IMM || node->kind == nodes::NodeKind::_INST_LFSUB_IMM)
+    {
+        auto temp = (nodes::NodeSubRegImm *)node->ptr.get();
+        size_t addr_of_iden = data_addrs.find(temp->value)->second;
+        auto iden_details = table.find_entry(temp->value)->second;
+        if (iden_details.dtype == nodes::DataType::_TYPE_FLOAT)
+            inst.bytes.b1 = opcodes::OP_FSUB32_MEM;
+        else
+            inst.bytes.b1 = opcodes::OP_FSUB_MEM;
+        inst.whole |= addr_of_iden;
+    }
+    else
+    {
+        auto temp = (nodes::NodeSubRegReg *)node->ptr.get();
+        inst.bytes.b1 = node->kind == nodes::NodeKind::_INST_FSUB_REG ? opcodes::OP_FSUB32 : opcodes::OP_FSUB;
+        inst.bytes.b8 = temp->dest_regr;
+        (inst.bytes.b8 << 4) | temp->src_reg;
+    }
+    inst_bytes.push_back(inst);
+}
+
+void masm::codegen::Codegen::gen_inst_fmul(std::unique_ptr<nodes::Node> &node)
+{
+    Instruction inst;
+    if (node->kind == nodes::NodeKind::_INST_FMUL_IMM || node->kind == nodes::NodeKind::_INST_LFMUL_IMM)
+    {
+        auto temp = (nodes::NodeMulRegImm *)node->ptr.get();
+        size_t addr_of_iden = data_addrs.find(temp->value)->second;
+        auto iden_details = table.find_entry(temp->value)->second;
+        if (iden_details.dtype == nodes::DataType::_TYPE_FLOAT)
+            inst.bytes.b1 = opcodes::OP_FMUL32_MEM;
+        else
+            inst.bytes.b1 = opcodes::OP_FMUL_MEM;
+        inst.whole |= addr_of_iden;
+    }
+    else
+    {
+        auto temp = (nodes::NodeMulRegReg *)node->ptr.get();
+        inst.bytes.b1 = node->kind == nodes::NodeKind::_INST_FMUL_REG ? opcodes::OP_FMUL32 : opcodes::OP_FMUL;
+        inst.bytes.b8 = temp->dest_regr;
+        (inst.bytes.b8 << 4) | temp->src_reg;
+    }
+    inst_bytes.push_back(inst);
+}
+
+void masm::codegen::Codegen::gen_inst_fdiv(std::unique_ptr<nodes::Node> &node)
+{
+    Instruction inst;
+    if (node->kind == nodes::NodeKind::_INST_FDIV_IMM || node->kind == nodes::NodeKind::_INST_LFDIV_IMM)
+    {
+        auto temp = (nodes::NodeDivRegImm *)node->ptr.get();
+        size_t addr_of_iden = data_addrs.find(temp->value)->second;
+        auto iden_details = table.find_entry(temp->value)->second;
+        if (iden_details.dtype == nodes::DataType::_TYPE_FLOAT)
+            inst.bytes.b1 = opcodes::OP_FDIV32_MEM;
+        else
+            inst.bytes.b1 = opcodes::OP_FDIV_MEM;
+        inst.whole |= addr_of_iden;
+    }
+    else
+    {
+        auto temp = (nodes::NodeDivRegReg *)node->ptr.get();
+        inst.bytes.b1 = node->kind == nodes::NodeKind::_INST_FDIV_REG ? opcodes::OP_FDIV32 : opcodes::OP_FDIV;
         inst.bytes.b8 = temp->dest_regr;
         (inst.bytes.b8 << 4) | temp->src_reg;
     }

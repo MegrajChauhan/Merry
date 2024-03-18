@@ -43,14 +43,10 @@ namespace masm
             OP_IDIV_REG,
             OP_IMOD_IMM,
             OP_IMOD_REG,
-            // ------------------------ DONE
-
             OP_FADD,
             OP_FSUB,
             OP_FMUL,
             OP_FDIV,
-
-            // ----------------- DONE
             OP_MOVE_IMM,
             OP_MOVE_IMM_64,
             OP_MOVE_REG,
@@ -170,12 +166,12 @@ namespace masm
             OP_OUTF32,
             OP_OUTR,
             OP_UOUTR,
-            // ------------------------ DONE
-
             OP_FADD32,
             OP_FSUB32,
             OP_FMUL32,
             OP_FDIV32,
+            // ------------------------ DONE
+
             OP_ATOMIC_LOAD,
             OP_ATOMIC_LOADB,
             OP_ATOMIC_LOADW,
@@ -190,37 +186,32 @@ namespace masm
             OP_ADD_MEMW,
             OP_ADD_MEMD,
             OP_ADD_MEMQ,
-
             OP_SUB_MEMB,
             OP_SUB_MEMW,
             OP_SUB_MEMD,
             OP_SUB_MEMQ,
-
             OP_MUL_MEMB,
             OP_MUL_MEMW,
             OP_MUL_MEMD,
             OP_MUL_MEMQ,
-
             OP_DIV_MEMB,
             OP_DIV_MEMW,
             OP_DIV_MEMD,
             OP_DIV_MEMQ,
-
             OP_MOD_MEMB,
             OP_MOD_MEMW,
             OP_MOD_MEMD,
             OP_MOD_MEMQ,
-            // ------------------------ DONE
-
             OP_FADD_MEM,
             OP_FSUB_MEM,
             OP_FMUL_MEM,
             OP_FDIV_MEM,
-
             OP_FADD32_MEM,
             OP_FSUB32_MEM,
             OP_FMUL32_MEM,
             OP_FDIV32_MEM,
+            // ------------------------ DONE
+
         };
     };
 };

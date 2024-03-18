@@ -34,6 +34,7 @@
 #include "imp/merry_imp.h"
 
 struct MerryCore;
+struct MerryDMemory;
 
 // The function structure
 #define _exec_(name) void merry_execute_##name(struct MerryCore *core)
@@ -80,7 +81,7 @@ struct MerryCore;
 // execute the halt instruction
 // _exec_(halt);
 
-_MERRY_DEFINE_FUNC_PTR_(mret_t, mem_read, MerryDMemory *, maddress_t, mqptr_t);
+_MERRY_DEFINE_FUNC_PTR_(mret_t, mem_read, struct MerryDMemory *, maddress_t, mqptr_t);
 
 // arithmetic instructions
 _exec_(add_imm);

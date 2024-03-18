@@ -379,6 +379,7 @@ void masm::sema::Sema::analyse()
                 if (x->second.dtype == nodes::DataType::_TYPE_STRING || x->second.dtype == nodes::DataType::_TYPE_FLOAT || x->second.dtype == nodes::DataType::_TYPE_LFLOAT)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of NUM type as expected by the instruction.");
             }
+            break;
         }
         case nodes::NodeKind::_INST_SUB_IMM:
         {
@@ -391,6 +392,7 @@ void masm::sema::Sema::analyse()
                 if (x->second.dtype == nodes::DataType::_TYPE_STRING || x->second.dtype == nodes::DataType::_TYPE_FLOAT || x->second.dtype == nodes::DataType::_TYPE_LFLOAT)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of NUM type as expected by the instruction.");
             }
+            break;
         }
         case nodes::NodeKind::_INST_MUL_IMM:
         {
@@ -403,6 +405,7 @@ void masm::sema::Sema::analyse()
                 if (x->second.dtype == nodes::DataType::_TYPE_STRING || x->second.dtype == nodes::DataType::_TYPE_FLOAT || x->second.dtype == nodes::DataType::_TYPE_LFLOAT)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of NUM type as expected by the instruction.");
             }
+            break;
         }
         case nodes::NodeKind::_INST_DIV_IMM:
         {
@@ -415,6 +418,7 @@ void masm::sema::Sema::analyse()
                 if (x->second.dtype == nodes::DataType::_TYPE_STRING || x->second.dtype == nodes::DataType::_TYPE_FLOAT || x->second.dtype == nodes::DataType::_TYPE_LFLOAT)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of NUM type as expected by the instruction.");
             }
+            break;
         }
         case nodes::NodeKind::_INST_MOD_IMM:
         {
@@ -427,6 +431,7 @@ void masm::sema::Sema::analyse()
                 if (x->second.dtype == nodes::DataType::_TYPE_STRING || x->second.dtype == nodes::DataType::_TYPE_FLOAT || x->second.dtype == nodes::DataType::_TYPE_LFLOAT)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of NUM type as expected by the instruction.");
             }
+            break;
         }
         case nodes::NodeKind::_INST_IADD_IMM:
         {
@@ -439,6 +444,7 @@ void masm::sema::Sema::analyse()
                 if (x->second.dtype == nodes::DataType::_TYPE_STRING || x->second.dtype == nodes::DataType::_TYPE_FLOAT || x->second.dtype == nodes::DataType::_TYPE_LFLOAT)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of NUM type as expected by the instruction.");
             }
+            break;
         }
         case nodes::NodeKind::_INST_ISUB_IMM:
         {
@@ -451,6 +457,7 @@ void masm::sema::Sema::analyse()
                 if (x->second.dtype == nodes::DataType::_TYPE_STRING || x->second.dtype == nodes::DataType::_TYPE_FLOAT || x->second.dtype == nodes::DataType::_TYPE_LFLOAT)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of NUM type as expected by the instruction.");
             }
+            break;
         }
         case nodes::NodeKind::_INST_IMUL_IMM:
         {
@@ -463,6 +470,7 @@ void masm::sema::Sema::analyse()
                 if (x->second.dtype == nodes::DataType::_TYPE_STRING || x->second.dtype == nodes::DataType::_TYPE_FLOAT || x->second.dtype == nodes::DataType::_TYPE_LFLOAT)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of NUM type as expected by the instruction.");
             }
+            break;
         }
         case nodes::NodeKind::_INST_IDIV_IMM:
         {
@@ -475,6 +483,7 @@ void masm::sema::Sema::analyse()
                 if (x->second.dtype == nodes::DataType::_TYPE_STRING || x->second.dtype == nodes::DataType::_TYPE_FLOAT || x->second.dtype == nodes::DataType::_TYPE_LFLOAT)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of NUM type as expected by the instruction.");
             }
+            break;
         }
         case nodes::NodeKind::_INST_IMOD_IMM:
         {
@@ -487,6 +496,7 @@ void masm::sema::Sema::analyse()
                 if (x->second.dtype == nodes::DataType::_TYPE_STRING || x->second.dtype == nodes::DataType::_TYPE_FLOAT || x->second.dtype == nodes::DataType::_TYPE_LFLOAT)
                     analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of NUM type as expected by the instruction.");
             }
+            break;
         }
         case nodes::NodeKind::_INST_FADD_IMM:
         case nodes::NodeKind::_INST_LFADD_IMM:
@@ -498,14 +508,12 @@ void masm::sema::Sema::analyse()
         case nodes::NodeKind::_INST_LFDIV_IMM:
         {
             auto node = (nodes::NodeAddRegImm *)inst->ptr.get();
-            if (node->is_iden)
-            {
-                auto x = symtable.find_entry(node->value);
-                if (!symtable.is_invalid(x))
-                    analysis_error(inst->line, std::string("The operand '") + node->value + "' in the floating-point instruction is not a valid identifier.");
-                if (x->second.dtype != nodes::DataType::_TYPE_LFLOAT && x->second.dtype != nodes::DataType::_TYPE_FLOAT)
-                    analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of FLOAT type as expected by the instruction.");
-            }
+            auto x = symtable.find_entry(node->value);
+            if (!symtable.is_invalid(x))
+                analysis_error(inst->line, std::string("The operand '") + node->value + "' in the floating-point instruction is not a valid identifier.");
+            if (x->second.dtype != nodes::DataType::_TYPE_LFLOAT && x->second.dtype != nodes::DataType::_TYPE_FLOAT)
+                analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of FLOAT type as expected by the instruction.");
+            break;
         }
         }
     }
