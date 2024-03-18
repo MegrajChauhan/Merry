@@ -19,10 +19,9 @@ namespace masm
     {
         enum opcodes
         {
+            // ------------------------ DONE
             OP_NOP,
             OP_HALT,
-
-            // ------------------------ DONE
             OP_ADD_IMM,
             OP_ADD_REG,
             OP_SUB_IMM,

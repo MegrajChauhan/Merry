@@ -88,6 +88,8 @@ namespace masm
             void handle_inst_fsub();
             void handle_inst_fmul();
             void handle_inst_fdiv();
+
+            void handle_inst_jmp();
         };
     };
 };

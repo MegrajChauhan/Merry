@@ -120,6 +120,8 @@ namespace masm
             _TT_INST_LFMUL,
             _TT_INST_LFDIV,
 
+            _TT_INST_JMP,
+
             // we ignore commas, they are not absolutely necessary and the assembler won't even complain
             // about not using it. It is just their to provide readability
         };
@@ -201,6 +203,7 @@ namespace masm
                 {"lfmul", _TT_INST_LFMUL},
                 {"fdiv", _TT_INST_FDIV},
                 {"lfdiv", _TT_INST_LFDIV},
+                {"jmp", _TT_INST_JMP},
         };
 
         struct Token

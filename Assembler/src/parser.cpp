@@ -1210,3 +1210,14 @@ void masm::parser::Parser::handle_inst_fdiv()
     }
     nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, kind, std::move(ptr), lexer.get_curr_line()));
 }
+
+void masm::parser::Parser::handle_inst_jmp()
+{
+    // handle the jump instruction here
+    /// TODO: COMPLETE AFTER EXAMS
+    /*
+     NOTES FOR WHEN I CONTINUE MY WORK SO THAT I DON'T FORGET WHAT I WAS DOING
+     I WAS IMPLEMENTING THE JMP INSTRUCTION
+
+    */
+}

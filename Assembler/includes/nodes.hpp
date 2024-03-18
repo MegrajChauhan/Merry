@@ -142,6 +142,10 @@ namespace masm
             _INST_LFMUL_IMM,
             _INST_LFDIV_IMM,
 
+            // even though we have two kinds of jumps, the jmp_off won't be used
+            // instead the jmp_addr variant will be used
+            _INST_JMP,
+
             _INST_HLT, // this doesn't need its own structure
         };
 
@@ -218,6 +222,11 @@ namespace masm
         };
         struct NodeDefLFloat : public NodeDefByte
         {
+        };
+
+        struct NodeJmp : public Base
+        {
+            std::string _jmp_label_; // the label to jump to
         };
 
         struct NodeProcDeclr : public Base
