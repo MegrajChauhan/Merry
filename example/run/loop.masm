@@ -1,0 +1,28 @@
+;; This program right here demonstrates the JMP instruction
+;; Firstly the program prints msg to the screen
+;; followed by msg2
+;; This utilitzes the JMP instruction as shown below
+
+.data:
+msg: .string "Hello World!\n"
+msg_len: db 13
+msg2: .string "Hey!\n"
+msg2_len: .db 5
+
+.text:
+
+proc main
+
+main:
+  ;; first jmp to jmp_here
+  jmp jmp_here
+
+next:
+  mov Mc, msg2_len
+  sout msg2
+  hlt
+
+jmp_here:
+  mov Mc, msg_len
+  sout msg
+  jmp next 

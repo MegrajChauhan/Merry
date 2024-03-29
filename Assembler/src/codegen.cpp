@@ -874,6 +874,18 @@ void masm::codegen::Codegen::gen_inst_fdiv(std::unique_ptr<nodes::Node> &node)
     inst_bytes.push_back(inst);
 }
 
+void masm::codegen::Codegen::gen_inst_jmp(std::unique_ptr<nodes::Node> &node)
+{
+    Instruction inst;
+    auto temp = (nodes::NodeJmp *)node->ptr.get();
+    size_t address = label_addrs.find(temp->_jmp_label_)->second;
+    // since the label exists and we have made sure that it does
+    // we can continue without problems
+    inst.bytes.b1 = opcodes::OP_JMP_ADDR;
+    inst.whole |= address;
+    inst_bytes.push_back(inst);
+}
+
 void masm::codegen::Codegen::gen()
 {
     gen_data(); // generate data bytes
@@ -1234,7 +1246,9 @@ void masm::codegen::Codegen::gen()
         case nodes::NodeKind::_INST_FDIV_REG:
             gen_inst_fdiv(*iter);
             break;
-
+        case nodes::NodeKind::_INST_JMP:
+            gen_inst_jmp(*iter);
+            break;
             // default:
             //     count--;
         }

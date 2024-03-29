@@ -112,6 +112,7 @@ void masm::parser::Parser::parse()
         case lexer::_TT_INST_LFMUL:
         case lexer::_TT_INST_FDIV:
         case lexer::_TT_INST_LFDIV:
+        case lexer::_TT_INST_JMP:
             handleInstruction();
             break;
         default:
@@ -276,6 +277,8 @@ void masm::parser::Parser::handleInstruction()
     case lexer::_TT_INST_LFDIV:
         handle_inst_fdiv();
         break;
+    case lexer::_TT_INST_JMP:
+        handle_inst_jmp();
         break;
     }
     next_token();
@@ -1218,6 +1221,22 @@ void masm::parser::Parser::handle_inst_jmp()
     /*
      NOTES FOR WHEN I CONTINUE MY WORK SO THAT I DON'T FORGET WHAT I WAS DOING
      I WAS IMPLEMENTING THE JMP INSTRUCTION
-
     */
+    next_token();
+    if (curr_tok.type != lexer::_TT_IDENTIFIER)
+    {
+        // we expected an identifier as a label
+        lexer.parse_error("Expected a label after the jmp instruction.");
+    }
+    // we also need to make sure that the ID is not a register
+    if (nodes::_regr_iden_map.find(curr_tok.value) != nodes::_regr_iden_map.end())
+    {
+        // we don't need registers either
+        lexer.parse_error("Expected a label as operand, not register");
+    }
+    // we have everything needed
+    std::unique_ptr<nodes::Base> ptr = std::make_unique<nodes::NodeJmp>();
+    auto temp = (nodes::NodeJmp *)ptr.get();
+    temp->_jmp_label_ = curr_tok.value;
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, nodes::NodeKind::_INST_JMP, std::move(ptr), lexer.get_curr_line()));
 }

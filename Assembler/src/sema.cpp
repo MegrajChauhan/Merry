@@ -196,7 +196,10 @@ void masm::sema::Sema::analyse()
                 }
                 else
                     symtable.add_entry(label->label_name, symtable::SymTableEntry(symtable::_LABEL));
-                if (res->first == "main")
+                // since after the above conditional, the label will either be added to the symtable
+                // or the assembling will halt due to error
+                // so we can do the following
+                if (label->label_name == "main")
                 {
                     // we need to save the current pos
                     main_proc_index = inst_nodes.size();
@@ -513,6 +516,17 @@ void masm::sema::Sema::analyse()
                 analysis_error(inst->line, std::string("The operand '") + node->value + "' in the floating-point instruction is not a valid identifier.");
             if (x->second.dtype != nodes::DataType::_TYPE_LFLOAT && x->second.dtype != nodes::DataType::_TYPE_FLOAT)
                 analysis_error(inst->line, std::string("The variable '") + x->first + "' is not of FLOAT type as expected by the instruction.");
+            break;
+        }
+        case nodes::NodeKind::_INST_JMP:
+        {
+            auto node = (nodes::NodeJmp *)inst->ptr.get();
+            auto x = symtable.find_entry(node->_jmp_label_);
+            // WORKING HERE
+            if (!symtable.is_invalid(x))
+                analysis_error(inst->line, std::string("The label ") + node->_jmp_label_ + " doesn't exist.");
+            if (x->second.type != symtable::SymEntryType::_LABEL && x->second.type != symtable::SymEntryType::_PROC)
+                analysis_error(inst->line, std::string("JMP to label ") + node->_jmp_label_ + " is not a label at all.");
             break;
         }
         }

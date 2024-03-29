@@ -168,6 +168,7 @@ main:
   fmul Mb, float1
   fmul Ma, Ma
 
+hello: ;; just a label
   ;; lfmul Ma, -11.3
   lfmul Mb, float2
   lfmul Ma, Ma
@@ -181,7 +182,7 @@ main:
   lfdiv Ma, Ma
 
   ;; floating point numbers don't have mod instruction
-
+  jmp hello ;; infinite loop
   hlt ;; we use halt here because this is what ultimately stops the program so there is no point in having a ret here
 ;; main:
 
