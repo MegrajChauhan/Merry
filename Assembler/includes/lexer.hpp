@@ -122,6 +122,8 @@ namespace masm
 
             _TT_INST_JMP,
 
+            _TT_INST_CMP,
+
             // we ignore commas, they are not absolutely necessary and the assembler won't even complain
             // about not using it. It is just their to provide readability
         };
@@ -204,6 +206,7 @@ namespace masm
                 {"fdiv", _TT_INST_FDIV},
                 {"lfdiv", _TT_INST_LFDIV},
                 {"jmp", _TT_INST_JMP},
+                {"cmp", _TT_INST_CMP},
         };
 
         struct Token

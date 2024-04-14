@@ -145,6 +145,8 @@ namespace masm
             // even though we have two kinds of jumps, the jmp_off won't be used
             // instead the jmp_addr variant will be used
             _INST_JMP,
+            _INST_CMP_REG, // comparing two registers
+            _INST_CMP_IMM, // comparing with immediates
 
             _INST_HLT, // this doesn't need its own structure
         };
@@ -192,6 +194,19 @@ namespace masm
         struct Base
         {
             virtual ~Base() {} // Make the base class polymorphic with a virtual destructor
+        };
+
+        struct NodeCmpRegr : public Base
+        {
+            Registers regr1; // the first operand register
+            Registers regr2; // the second operand register
+        };
+
+        struct NodeCmpImm : public Base
+        {
+            Registers regr; // the register operand
+            std::string val;
+            bool is_iden = false; // if set, val will be treated as a variable name
         };
 
         // we need this so

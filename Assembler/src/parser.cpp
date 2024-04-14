@@ -31,20 +31,18 @@ void masm::parser::Parser::parse()
 {
     while (curr_tok.type != lexer::_TT_EOF)
     {
-        switch (curr_tok.type)
-        {
-        case lexer::_TT_SECTION_DATA:
+        if (curr_tok.type == lexer::_TT_SECTION_DATA)
             parseDataSection();
-            break;
-        case lexer::_TT_SECTION_TEXT:
+        else if (curr_tok.type == lexer::_TT_SECTION_TEXT)
             parseTextSection();
-            break;
-        case lexer::_TT_IDENTIFIER:
+        else if (curr_tok.type == lexer::_TT_IDENTIFIER)
+        {
             handle_identifier();
             if (nodes.back()->kind != nodes::NodeKind::_LABEL)
                 next_token();
-            break;
-        case lexer::_TT_KEY_PROC:
+        }
+        else if (curr_tok.type == lexer::_TT_KEY_PROC)
+        {
             if (section != _SECTION_TEXT)
             {
                 lexer.parse_error("Declaring a procedure in the data section is not allowed");
@@ -52,72 +50,11 @@ void masm::parser::Parser::parse()
             }
             handle_proc_declaration();
             next_token();
-            break;
-        case lexer::_TT_INST_NOP:
-        case lexer::_TT_INST_HLT:
-        case lexer::_TT_INST_MOV:
-        case lexer::_TT_INST_MOVQ:
-        case lexer::_TT_INST_MOVB:
-        case lexer::_TT_INST_MOVW:
-        case lexer::_TT_INST_MOVD:
-        case lexer::_TT_INST_MOVEB:
-        case lexer::_TT_INST_MOVEW:
-        case lexer::_TT_INST_MOVED:
-        case lexer::_TT_INST_MOVF:
-        case lexer::_TT_INST_MOVLF:
-        case lexer::_TT_INST_MOVSXB:
-        case lexer::_TT_INST_MOVSXW:
-        case lexer::_TT_INST_MOVSXD:
-        case lexer::_TT_INST_OUTR:
-        case lexer::_TT_INST_UOUTR:
-        case lexer::_TT_INST_CIN:
-        case lexer::_TT_INST_COUT:
-        case lexer::_TT_INST_SIN:
-        case lexer::_TT_INST_SOUT:
-        case lexer::_TT_INST_IN:
-        case lexer::_TT_INST_OUT:
-        case lexer::_TT_INST_INW:
-        case lexer::_TT_INST_OUTW:
-        case lexer::_TT_INST_IND:
-        case lexer::_TT_INST_OUTD:
-        case lexer::_TT_INST_INQ:
-        case lexer::_TT_INST_OUTQ:
-        case lexer::_TT_INST_UIN:
-        case lexer::_TT_INST_UOUT:
-        case lexer::_TT_INST_UINW:
-        case lexer::_TT_INST_UOUTW:
-        case lexer::_TT_INST_UIND:
-        case lexer::_TT_INST_UOUTD:
-        case lexer::_TT_INST_UINQ:
-        case lexer::_TT_INST_UOUTQ:
-        case lexer::_TT_INST_OUTF:
-        case lexer::_TT_INST_OUTLF:
-        case lexer::_TT_INST_INLF:
-        case lexer::_TT_INST_INF:
-        case lexer::_TT_INST_ADD:
-        case lexer::_TT_INST_SUB:
-        case lexer::_TT_INST_MUL:
-        case lexer::_TT_INST_DIV:
-        case lexer::_TT_INST_MOD:
-        case lexer::_TT_INST_IADD:
-        case lexer::_TT_INST_ISUB:
-        case lexer::_TT_INST_IMUL:
-        case lexer::_TT_INST_IDIV:
-        case lexer::_TT_INST_IMOD:
-        case lexer::_TT_INST_FADD:
-        case lexer::_TT_INST_LFADD:
-        case lexer::_TT_INST_FSUB:
-        case lexer::_TT_INST_LFSUB:
-        case lexer::_TT_INST_FMUL:
-        case lexer::_TT_INST_LFMUL:
-        case lexer::_TT_INST_FDIV:
-        case lexer::_TT_INST_LFDIV:
-        case lexer::_TT_INST_JMP:
-            handleInstruction();
-            break;
-        default:
-            lexer.parse_error("Expected an identifier name or a keyword");
         }
+        else if (curr_tok.type >= lexer::_TT_INST_NOP && curr_tok.type <= lexer::_TT_INST_CMP)
+            handleInstruction();
+        else
+            lexer.parse_error("Expected an identifier name or a keyword");
     }
     if (!encountered_text)
     {
@@ -279,6 +216,9 @@ void masm::parser::Parser::handleInstruction()
         break;
     case lexer::_TT_INST_JMP:
         handle_inst_jmp();
+        break;
+    case lexer::_TT_INST_CMP:
+        handle_inst_cmp();
         break;
     }
     next_token();
@@ -1217,11 +1157,6 @@ void masm::parser::Parser::handle_inst_fdiv()
 void masm::parser::Parser::handle_inst_jmp()
 {
     // handle the jump instruction here
-    /// TODO: COMPLETE AFTER EXAMS
-    /*
-     NOTES FOR WHEN I CONTINUE MY WORK SO THAT I DON'T FORGET WHAT I WAS DOING
-     I WAS IMPLEMENTING THE JMP INSTRUCTION
-    */
     next_token();
     if (curr_tok.type != lexer::_TT_IDENTIFIER)
     {
@@ -1239,4 +1174,50 @@ void masm::parser::Parser::handle_inst_jmp()
     auto temp = (nodes::NodeJmp *)ptr.get();
     temp->_jmp_label_ = curr_tok.value;
     nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, nodes::NodeKind::_INST_JMP, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_inst_cmp()
+{
+    next_token();
+    // we expect a register as the first operand no matter what
+    if (curr_tok.type != lexer::_TT_IDENTIFIER)
+        lexer.parse_error("Compare instruction expects a register as it's first operand. Unknown operand.");
+    auto regr = nodes::_regr_iden_map.find(curr_tok.value);
+    if (regr == nodes::_regr_iden_map.end())
+        lexer.parse_error("Compare instruction expects a register as it's first operand. Unknown operand.");
+    next_token();
+    // now the next token can be either an immediate, variable or a register
+    std::unique_ptr<nodes::Base> node;
+    nodes::NodeKind kind = nodes::_INST_CMP_IMM;
+    if (curr_tok.type == lexer::_TT_INT || curr_tok.type == lexer::_TT_NINT || curr_tok.type == lexer::_TT_FLOAT || curr_tok.type == lexer::_TT_NFLOAT)
+    {
+        // we have an immediate
+        node = std::make_unique<nodes::NodeCmpImm>();
+        auto temp = (nodes::NodeCmpImm *)node.get();
+        temp->regr = regr->second;
+        temp->val = curr_tok.value;
+    }
+    else if (curr_tok.type == lexer::_TT_IDENTIFIER)
+    {
+        // we either have a variable or a register
+        auto regr2 = nodes::_regr_iden_map.find(curr_tok.value);
+        if (regr2 == nodes::_regr_iden_map.end())
+        {
+            // it's a variable
+            node = std::make_unique<nodes::NodeCmpImm>();
+            auto temp = (nodes::NodeCmpImm *)node.get();
+            temp->is_iden = true;
+            temp->regr = regr->second;
+            temp->val = curr_tok.value;
+        }
+        else
+        {
+            node = std::make_unique<nodes::NodeCmpRegr>();
+            auto temp = (nodes::NodeCmpRegr *)node.get();
+            temp->regr1 = regr->second;
+            temp->regr2 = regr2->second;
+            kind = nodes::_INST_CMP_REG;
+        }
+    }
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, kind, std::move(node), lexer.get_curr_line()));
 }

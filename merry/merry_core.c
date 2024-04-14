@@ -362,6 +362,18 @@ _THRET_T_ merry_runCore(mptr_t core)
             if (reg > imm)
                 c->greater = 1;
             break;
+        case OP_CMP_IMM_MEMB:
+            merry_execute_cmp_mem(c, merry_dmemory_get_byte_address);
+            break;
+        case OP_CMP_IMM_MEMW:
+            merry_execute_cmp_mem(c, merry_dmemory_get_word_address);
+            break;
+        case OP_CMP_IMM_MEMD:
+            merry_execute_cmp_mem(c, merry_dmemory_get_dword_address);
+            break;
+        case OP_CMP_IMM_MEMQ:
+            merry_execute_cmp_mem(c, merry_dmemory_get_qword_address);
+            break;
         case OP_CMP_REG:
             register mqword_t reg1 = c->registers[(*current >> 4) & 15];
             register mqword_t reg2 = c->registers[*current & 15];
@@ -592,17 +604,23 @@ _THRET_T_ merry_runCore(mptr_t core)
             // the number of bytes to input is in the Mc register
             {
                 register mqword_t len = c->registers[Mc];
-                mbptr_t _addr_ = merry_dmemory_get_byte_address_bounds(c->data_mem, *current & 0xFFFFFFFFFFFF, len);
-                if (_addr_ == RET_NULL)
+                mbptr_t temp = (mbptr_t *)malloc(len);
+                if (temp == NULL)
                 {
-                    merry_requestHdlr_panic(c->data_mem->error);
+                    merry_requestHdlr_panic(MERRY_INTERNAL_ERROR);
                     c->stop_running = mtrue;
                     break;
                 }
-                for (msize_t i = 0; i < len; i++, _addr_++)
+                for (msize_t i = 0; i < len; i++)
                 {
-                    *_addr_ = getchar();
+                    temp[i] = getchar();
                 }
+                if (merry_dmemory_write_bytes_maybe_over_multiple_pages(c->data_mem, *current & 0xFFFFFFFFFFFF, len, temp) == RET_FAILURE)
+                {
+                    merry_requestHdlr_panic(MERRY_INTERNAL_ERROR);
+                    c->stop_running = mtrue;
+                }
+                free(temp);
             }
             break;
         case OP_SOUT:
@@ -610,17 +628,18 @@ _THRET_T_ merry_runCore(mptr_t core)
             // the number of bytes to output is in the Mc register
             {
                 register mqword_t len = c->registers[Mc];
-                mbptr_t _addr_ = merry_dmemory_get_byte_address_bounds(c->data_mem, *current & 0xFFFFFFFFFFFF, len);
-                if (_addr_ == RET_NULL)
+                mstr_t str = merry_dmemory_get_bytes_maybe_over_multiple_pages(c->data_mem, *current & 0xFFFFFFFFFFFF, len);
+                if (str == RET_NULL)
                 {
                     merry_requestHdlr_panic(c->data_mem->error);
                     c->stop_running = mtrue;
                     break;
                 }
-                for (msize_t i = 0; i < len; i++, _addr_++)
+                for (msize_t i = 0; i < len; i++, str++)
                 {
-                    putchar(*_addr_);
+                    putchar(*str);
                 }
+                free(str);
             }
             break;
         case OP_IN:

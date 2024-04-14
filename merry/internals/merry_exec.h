@@ -99,6 +99,8 @@ _lexec_(mul_mem, mem_read func);
 _lexec_(div_mem, mem_read func);
 _lexec_(mod_mem, mem_read func);
 
+_lexec_(cmp_mem, mem_read func);
+
 _exec_(fadd64_mem);
 _exec_(fsub64_mem);
 _exec_(fmul64_mem);

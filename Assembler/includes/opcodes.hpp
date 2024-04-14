@@ -58,10 +58,10 @@ namespace masm
             OP_MOVESX_REG8,
             OP_MOVESX_REG16,
             OP_MOVESX_REG32,
-            // -------------------- DONE
-
             OP_JMP_OFF,
             OP_JMP_ADDR,
+            // -------------------- DONE
+
             OP_CALL,
             OP_RET,
             OP_SVA,
@@ -209,6 +209,10 @@ namespace masm
             OP_FSUB32_MEM,
             OP_FMUL32_MEM,
             OP_FDIV32_MEM,
+            OP_CMP_IMM_MEMB,
+            OP_CMP_IMM_MEMW,
+            OP_CMP_IMM_MEMD,
+            OP_CMP_IMM_MEMQ,
             // ------------------------ DONE
 
         };

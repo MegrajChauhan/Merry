@@ -529,6 +529,16 @@ void masm::sema::Sema::analyse()
                 analysis_error(inst->line, std::string("JMP to label ") + node->_jmp_label_ + " is not a label at all.");
             break;
         }
+        case nodes::NodeKind::_INST_CMP_IMM:
+        {
+            auto node = (nodes::NodeCmpImm *)inst->ptr.get();
+            if (!node->is_iden)
+                break;
+            auto x = symtable.find_entry(node->val);
+            if (!symtable.is_invalid(x))
+                analysis_error(inst->line, std::string("The variable ") + node->val + " doesn't exist.");
+            break;
+        }
         }
     }
 }

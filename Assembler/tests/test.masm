@@ -185,6 +185,9 @@ hello: ;; just a label
   jmp hello ;; infinite loop
   hlt ;; we use halt here because this is what ultimately stops the program so there is no point in having a ret here
 ;; main:
+  
+  cmp Ma, 12;; implement this
+  cmp Ma, Mb ;; and this next
 
 .data:
 test: db 123

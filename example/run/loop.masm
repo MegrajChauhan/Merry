@@ -1,3 +1,4 @@
+;; OBJECTIVES:
 ;; This program right here demonstrates the JMP instruction
 ;; Firstly the program prints msg to the screen
 ;; followed by msg2

@@ -784,3 +784,101 @@ mqptr_t merry_dmemory_get_qword_address_bounds(MerryDMemory *memory, maddress_t 
     // this just basically returns an actual address to the address that the manager can use
     return &memory->pages[addr.page]->address_qspace[addr.offset / 8];
 }
+
+mstr_t merry_dmemory_get_bytes_maybe_over_multiple_pages(MerryDMemory *memory, maddress_t address, msize_t length)
+{
+    mstr_t array = (mstr_t)malloc(length);
+    mstr_t curr = array;
+    if (array == NULL)
+        return RET_NULL;
+    register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
+    if (surelyF(addr.page >= memory->number_of_pages))
+    {
+        // this implies the request is for a page that doesn't exist
+        memory->error = MERRY_MEM_INVALID_ACCESS;
+        return RET_NULL;
+    }
+    msize_t dist_from_end = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - addr.offset;
+    if (dist_from_end > length)
+    {
+        // the entire array is in this page only
+        // simply copy the memory
+        memcpy(array, memory->pages[addr.page]->address_space + addr.offset, length);
+        return array; // we are entrusting the stdlib to not fail as this should not fail
+    }
+    else
+    {
+        // the array is in multiple pages
+        // first copy whatever part is in this page
+        curr += dist_from_end;
+        memcpy(array, memory->pages[addr.page]->address_space + addr.offset, dist_from_end);
+        length -= dist_from_end;
+        // now until we copy everything, keep doing it
+        register msize_t no_of_pages = length / _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+        register msize_t remaining = length % _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+        if ((addr.page + no_of_pages + (remaining > 0 ? 1 : 0)) >= memory->number_of_pages)
+        {
+            memory->error = MERRY_MEM_INVALID_ACCESS;
+            free(array);
+            return RET_NULL;
+        }
+        addr.page++;
+        for (msize_t i = 0; i < no_of_pages; i++, addr.page++)
+        {
+            memcpy(curr, memory->pages[addr.page]->address_space, _MERRY_MEMORY_ADDRESSES_PER_PAGE_);
+            curr += _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+        }
+        if (remaining > 0)
+        {
+            // addr.page will be correctly pointed
+            memcpy(curr, memory->pages[addr.page]->address_space, remaining);
+        }
+    }
+    return array;
+}
+
+mret_t merry_dmemory_write_bytes_maybe_over_multiple_pages(MerryDMemory *memory, maddress_t address, msize_t length, mbptr_t array)
+{
+    // Exact opposite of the above
+    if (array == NULL)
+        return RET_SUCCESS;
+    mstr_t curr = array;
+    register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
+    if (surelyF(addr.page >= memory->number_of_pages))
+    {
+        memory->error = MERRY_MEM_INVALID_ACCESS;
+        return RET_NULL;
+    }
+    msize_t dist_from_end = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - addr.offset;
+    if (dist_from_end > length)
+    {
+        memcpy(memory->pages[addr.page]->address_space + addr.offset, array, length);
+        return RET_SUCCESS; // we are entrusting the stdlib to not fail as this should not fail
+    }
+    else
+    {
+        curr += dist_from_end;
+        memcpy(memory->pages[addr.page]->address_space + addr.offset, array, dist_from_end);
+        length -= dist_from_end;
+        // now until we copy everything, keep doing it
+        register msize_t no_of_pages = length / _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+        register msize_t remaining = length % _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+        if ((addr.page + no_of_pages + (remaining > 0 ? 1 : 0)) >= memory->number_of_pages)
+        {
+            memory->error = MERRY_MEM_INVALID_ACCESS;
+            return RET_FAILURE;
+        }
+        addr.page++;
+        for (msize_t i = 0; i < no_of_pages; i++, addr.page++)
+        {
+            memcpy(memory->pages[addr.page]->address_space,curr, _MERRY_MEMORY_ADDRESSES_PER_PAGE_);
+            curr += _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+        }
+        if (remaining > 0)
+        {
+            // addr.page will be correctly pointed
+            memcpy(memory->pages[addr.page]->address_space,curr, remaining);
+        }
+    }
+    return RET_SUCCESS;
+}

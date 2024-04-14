@@ -1,3 +1,8 @@
+;; OBJECTIVE:
+;; Test negative numbers
+;; Check if 2's complement works
+;; Check if signed and unsigned printing instructions work
+
 .data:
 negative_num: db -123
 

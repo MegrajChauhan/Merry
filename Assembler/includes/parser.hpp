@@ -90,6 +90,7 @@ namespace masm
             void handle_inst_fdiv();
 
             void handle_inst_jmp();
+            void handle_inst_cmp();
         };
     };
 };

@@ -327,6 +327,9 @@ void merry_os_handle_error(merrot_t error)
     case MERRY_FILEHANDLE_NULL:
         merry_general_error("Failed to perform file operations", "The file handle is NULL and trying to perform operations on a NULL handle is not a good idea.");
         break;
+    case MERRY_INTERNAL_ERROR:
+        merry_general_error("Internal Machine Error", "This isn't your fault most probably, try running the program again.");
+        break;
     default:
         merry_error("Unknown error code: '%llu' is not a valid error code", error);
         break;

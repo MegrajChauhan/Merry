@@ -364,6 +364,22 @@ _MERRY_ALWAYS_INLINE_ _lexec_(mod_mem, mem_read func)
    _update_flags_(&core->flag);
 }
 
+_MERRY_ALWAYS_INLINE_ _lexec_(cmp_mem, mem_read func)
+{
+   register mqword_t reg = core->registers[(core->current_inst >> 48) & 15];
+   register mqword_t addr = (core->current_inst & 0xFFFFFFFFFFFF) & 15;
+   mqword_t temp = 0;
+   if (func(core->data_mem, addr, &temp) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return;
+   }
+   _cmp_inst_(reg, temp, &core->flag);
+   if (reg > temp)
+      core->greater = 1;
+}
+
 _MERRY_ALWAYS_INLINE_ _exec_(iadd_imm){
     // The processor will treat op1 and op2 as signed values
     // Since we will get a result that is also signed, we don't have to worry about anything

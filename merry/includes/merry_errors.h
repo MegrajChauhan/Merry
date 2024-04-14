@@ -34,7 +34,6 @@ enum
 {
     MERRY_ERROR_NONE,
     _PANIC_REQBUFFEROVERFLOW = 1,
-    _PANIC_DECODER_NOT_STARTING,
     MERRY_MEM_ACCESS_ERROR = 51,   // accessing the memory in a wrong way
     MERRY_MEM_INVALID_ACCESS,      // indicating memory access for memory addresses that either do not exist or are invalid
     MERRY_DIV_BY_ZERO,             // dividing by zero
@@ -46,6 +45,7 @@ enum
     MERRY_DYNL_FAILED,             // failed to load library
     MERRY_DYNCALL_FAILED,          // failed to make a function call
     MERRY_FILEHANDLE_NULL,         // performing operations on a NULL file
+    MERRY_INTERNAL_ERROR,          // this error occured such that the requester is unable to deduce the cause
 };
 
 #endif

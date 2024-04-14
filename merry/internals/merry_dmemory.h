@@ -40,6 +40,7 @@
 #endif
 
 #include <stdlib.h>
+#include <string.h>
 #include <stdatomic.h>
 
 typedef struct MerryDMemPage MerryDMemPage; // the memory page
@@ -118,5 +119,16 @@ mdptr_t merry_dmemory_get_dword_address_bounds(MerryDMemory *memory, maddress_t 
 
 mqptr_t merry_dmemory_get_qword_address(MerryDMemory *memory, maddress_t address);
 mqptr_t merry_dmemory_get_qword_address_bounds(MerryDMemory *memory, maddress_t address, msize_t bound);
+
+// Specially added functions for making the job of the VCore easier
+
+/*
+ This function will return an array of bytes of length 'length'
+ It will make the task for the core easier by allowing for strings to cover multiple pages
+ The returned pointer will be freed immediately
+*/
+mstr_t merry_dmemory_get_bytes_maybe_over_multiple_pages(MerryDMemory *memory, maddress_t address, msize_t length);
+
+mret_t merry_dmemory_write_bytes_maybe_over_multiple_pages(MerryDMemory *memory, maddress_t address, msize_t length, mbptr_t array);
 
 #endif

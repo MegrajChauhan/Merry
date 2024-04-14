@@ -886,6 +886,64 @@ void masm::codegen::Codegen::gen_inst_jmp(std::unique_ptr<nodes::Node> &node)
     inst_bytes.push_back(inst);
 }
 
+void masm::codegen::Codegen::gen_inst_cmp(std::unique_ptr<nodes::Node> &node)
+{
+    Instruction inst;
+    if (node->kind == nodes::_INST_CMP_REG)
+    {
+        auto x = (nodes::NodeCmpRegr *)node->ptr.get();
+        inst.bytes.b1 = opcodes::OP_CMP_REG;
+        inst.bytes.b8 = x->regr1;
+        (inst.bytes.b8 <<= 4) | x->regr2;
+    }
+    else
+    {
+        auto x = (nodes::NodeCmpImm *)node->ptr.get();
+        if (!x->is_iden)
+        {
+            inst.bytes.b1 = opcodes::OP_CMP_IMM;
+            inst_bytes.push_back(inst);
+            inst.whole = std::stoull(x->val);
+        }
+        else
+        {
+            auto var_details = table.find_entry(x->val);
+            switch (var_details->second.dtype)
+            {
+            case nodes::DataType::_TYPE_BYTE:
+            {
+                inst.bytes.b1 = opcodes::OP_CMP_IMM_MEMB;
+                inst.bytes.b2 = x->regr;
+                inst.whole |= data_addrs.find(x->val)->second;
+                break;
+            }
+            case nodes::DataType::_TYPE_WORD:
+            {
+                inst.bytes.b1 = opcodes::OP_CMP_IMM_MEMW;
+                inst.bytes.b2 = x->regr;
+                inst.whole |= data_addrs.find(x->val)->second;
+                break;
+            }
+            case nodes::DataType::_TYPE_DWORD:
+            {
+                inst.bytes.b1 = opcodes::OP_CMP_IMM_MEMD;
+                inst.bytes.b2 = x->regr;
+                inst.whole |= data_addrs.find(x->val)->second;
+                break;
+            }
+            case nodes::DataType::_TYPE_QWORD:
+            {
+                inst.bytes.b1 = opcodes::OP_CMP_IMM_MEMQ;
+                inst.bytes.b2 = x->regr;
+                inst.whole |= data_addrs.find(x->val)->second;
+                break;
+            }
+            }
+        }
+    }
+    inst_bytes.push_back(inst);
+}
+
 void masm::codegen::Codegen::gen()
 {
     gen_data(); // generate data bytes
@@ -1248,6 +1306,10 @@ void masm::codegen::Codegen::gen()
             break;
         case nodes::NodeKind::_INST_JMP:
             gen_inst_jmp(*iter);
+            break;
+        case nodes::NodeKind::_INST_CMP_IMM:
+        case nodes::NodeKind::_INST_CMP_REG:
+            gen_inst_cmp(*iter);
             break;
             // default:
             //     count--;

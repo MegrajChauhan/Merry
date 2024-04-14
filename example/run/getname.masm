@@ -1,3 +1,6 @@
+;; OBJECTIVES:
+;; Test IO instructions
+
 .data:
 question: .string "What is your name? " ;; The question to ask
 question_len: db 19                     ;; The length of the question
@@ -5,7 +8,7 @@ msg: .string "Hello there! "            ;; part-1 of the message
 msg2: .string ", I am Merry. Nice to meet you!" ;; part 2 of the message
 msg_len: db 13                                  ;; msg's length
 msg2_len: db 31                                 ;; msg2's length 
-name: .resb 13
+name: .resb 13 ;; ADJUST THIS TO YOUR NAME'S LENGTH
 
 .text:
 proc main
@@ -26,7 +29,7 @@ main:
 
   hlt ;; no furthur execution
 
-;; Explaination
+;; Explanation
 ;; First ask a question
 ;; Then get the user's name
 ;; And finally greet them
