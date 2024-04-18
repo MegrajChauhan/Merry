@@ -51,7 +51,7 @@ void masm::parser::Parser::parse()
             handle_proc_declaration();
             next_token();
         }
-        else if (curr_tok.type >= lexer::_TT_INST_NOP && curr_tok.type <= lexer::_TT_INST_CMP)
+        else if (curr_tok.type >= lexer::_TT_INST_NOP && curr_tok.type <= lexer::_TT_INST_JSE)
             handleInstruction();
         else
             lexer.parse_error("Expected an identifier name or a keyword");
@@ -220,6 +220,24 @@ void masm::parser::Parser::handleInstruction()
     case lexer::_TT_INST_CMP:
         handle_inst_cmp();
         break;
+    case lexer::_TT_INST_JNZ:
+    case lexer::_TT_INST_JZ:
+    case lexer::_TT_INST_JNE:
+    case lexer::_TT_INST_JE:
+    case lexer::_TT_INST_JNC:
+    case lexer::_TT_INST_JC:
+    case lexer::_TT_INST_JNO:
+    case lexer::_TT_INST_JO:
+    case lexer::_TT_INST_JNN:
+    case lexer::_TT_INST_JN:
+    case lexer::_TT_INST_JNG:
+    case lexer::_TT_INST_JG:
+    case lexer::_TT_INST_JNS:
+    case lexer::_TT_INST_JS:
+    case lexer::_TT_INST_JGE:
+    case lexer::_TT_INST_JSE:
+        handle_inst_jX();
+        break;
     }
     next_token();
 }
@@ -237,6 +255,30 @@ void masm::parser::Parser::parseDataSection()
     }
     section = _SECTION_DATA;
     next_token(); // i can't remember the reason why I moved this line back into each case statements instead of having just one at the end
+}
+
+void masm::parser::Parser::handle_inst_jX()
+{
+    // every jmp can use NodeJmp
+    auto curr = curr_tok.type;
+    next_token();
+    if (curr_tok.type != lexer::_TT_IDENTIFIER)
+    {
+        // we expected an identifier as a label
+        lexer.parse_error("Expected a label after a jX instruction.");
+    }
+    // we also need to make sure that the ID is not a register
+    if (nodes::_regr_iden_map.find(curr_tok.value) != nodes::_regr_iden_map.end())
+    {
+        // we don't need registers either
+        lexer.parse_error("Expected a label as operand, not register");
+    }
+    // we have everything needed
+    std::unique_ptr<nodes::Base> ptr = std::make_unique<nodes::NodeJmp>();
+    auto temp = (nodes::NodeJmp *)ptr.get();
+    temp->_jmp_label_ = curr_tok.value;
+    nodes::NodeKind k = (nodes::NodeKind)(curr + 15);
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, k, std::move(ptr), lexer.get_curr_line()));
 }
 
 void masm::parser::Parser::parseTextSection()

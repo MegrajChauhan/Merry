@@ -46,6 +46,7 @@ namespace masm
             OP_FSUB,
             OP_FMUL,
             OP_FDIV,
+            
             OP_MOVE_IMM,
             OP_MOVE_IMM_64,
             OP_MOVE_REG,
@@ -104,6 +105,7 @@ namespace masm
             OP_CLN,
             OP_CLC,
             OP_CLO,
+
             OP_JNZ,
             OP_JZ,
             OP_JNE,
@@ -120,6 +122,7 @@ namespace masm
             OP_JS,
             OP_JGE,
             OP_JSE,
+            
             OP_LOOP,
             OP_INTR,
             OP_LOADB,

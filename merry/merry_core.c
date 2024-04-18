@@ -635,10 +635,7 @@ _THRET_T_ merry_runCore(mptr_t core)
                     c->stop_running = mtrue;
                     break;
                 }
-                for (msize_t i = 0; i < len; i++, str++)
-                {
-                    putchar(*str);
-                }
+                printf("%s", str);
                 free(str);
             }
             break;

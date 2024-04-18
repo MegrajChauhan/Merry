@@ -374,6 +374,26 @@ void masm::codegen::Codegen::label_labels()
     {
         if (x->kind == nodes::NodeKind::_LABEL)
             label_addrs[((nodes::NodeLabel *)x->ptr.get())->label_name] = i;
+        else if (x->kind == nodes::NodeKind::_INST_MOV_REG_IMMQ)
+        {
+            if (((nodes::NodeInstMovRegImm *)x->ptr.get())->is_iden)
+                i+=2;
+        }
+        else if (x->kind == nodes::NodeKind::_INST_MOVSX_REG_IMM32 || x->kind == nodes::NodeKind::_INST_MOVSX_REG_IMM16 || x->kind == nodes::NodeKind::_INST_MOVSX_REG_IMM8)
+        {
+            if (((nodes::NodeInstMovRegImm *)x->ptr.get())->is_iden)
+                i+=2;
+        }
+        else if (x->kind == nodes::NodeKind::_INST_MOVF || x->kind == nodes::NodeKind::_INST_MOVLF)
+        {
+            if (((nodes::NodeInstMovRegImm *)x->ptr.get())->is_iden)
+                i+=2;
+        }
+        else if (x->kind == nodes::NodeKind::_INST_CMP_IMM)
+        {
+            if (!((nodes::NodeCmpImm *)x->ptr.get())->is_iden)
+                i+=2;
+        }
         else if (x->kind > nodes::NodeKind::_LABEL)
             i++;
     }
@@ -886,6 +906,16 @@ void masm::codegen::Codegen::gen_inst_jmp(std::unique_ptr<nodes::Node> &node)
     inst_bytes.push_back(inst);
 }
 
+void masm::codegen::Codegen::gen_inst_jX(std::unique_ptr<nodes::Node> &node)
+{
+    Instruction inst;
+    auto temp = (nodes::NodeJmp *)node->ptr.get();
+    size_t address = label_addrs.find(temp->_jmp_label_)->second;
+    inst.bytes.b1 = (opcodes::opcodes)(node->kind - 21);
+    inst.whole |= address;
+    inst_bytes.push_back(inst);
+}
+
 void masm::codegen::Codegen::gen_inst_cmp(std::unique_ptr<nodes::Node> &node)
 {
     Instruction inst;
@@ -1306,6 +1336,24 @@ void masm::codegen::Codegen::gen()
             break;
         case nodes::NodeKind::_INST_JMP:
             gen_inst_jmp(*iter);
+            break;
+        case nodes::NodeKind::_INST_JNZ:
+        case nodes::NodeKind::_INST_JZ:
+        case nodes::NodeKind::_INST_JNE:
+        case nodes::NodeKind::_INST_JE:
+        case nodes::NodeKind::_INST_JNC:
+        case nodes::NodeKind::_INST_JC:
+        case nodes::NodeKind::_INST_JNO:
+        case nodes::NodeKind::_INST_JO:
+        case nodes::NodeKind::_INST_JNN:
+        case nodes::NodeKind::_INST_JN:
+        case nodes::NodeKind::_INST_JNG:
+        case nodes::NodeKind::_INST_JG:
+        case nodes::NodeKind::_INST_JNS:
+        case nodes::NodeKind::_INST_JS:
+        case nodes::NodeKind::_INST_JGE:
+        case nodes::NodeKind::_INST_JSE:
+            gen_inst_jX(*iter);
             break;
         case nodes::NodeKind::_INST_CMP_IMM:
         case nodes::NodeKind::_INST_CMP_REG:

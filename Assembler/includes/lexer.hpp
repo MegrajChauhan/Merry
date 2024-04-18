@@ -121,8 +121,25 @@ namespace masm
             _TT_INST_LFDIV,
 
             _TT_INST_JMP,
-
             _TT_INST_CMP,
+
+            // Implement these next
+            _TT_INST_JNZ,
+            _TT_INST_JZ,
+            _TT_INST_JNE,
+            _TT_INST_JE,
+            _TT_INST_JNC,
+            _TT_INST_JC,
+            _TT_INST_JNO,
+            _TT_INST_JO,
+            _TT_INST_JNN,
+            _TT_INST_JN,
+            _TT_INST_JNG,
+            _TT_INST_JG,
+            _TT_INST_JNS,
+            _TT_INST_JS,
+            _TT_INST_JGE,
+            _TT_INST_JSE,
 
             // we ignore commas, they are not absolutely necessary and the assembler won't even complain
             // about not using it. It is just their to provide readability
@@ -207,6 +224,22 @@ namespace masm
                 {"lfdiv", _TT_INST_LFDIV},
                 {"jmp", _TT_INST_JMP},
                 {"cmp", _TT_INST_CMP},
+                {"jnz", _TT_INST_JNZ},
+                {"jz", _TT_INST_JZ},
+                {"jne", _TT_INST_JNE},
+                {"je", _TT_INST_JE},
+                {"jnc", _TT_INST_JNC},
+                {"jc", _TT_INST_JC},
+                {"jno", _TT_INST_JNO},
+                {"jo", _TT_INST_JO},
+                {"jnn", _TT_INST_JNN},
+                {"jn", _TT_INST_JN},
+                {"jng", _TT_INST_JNG},
+                {"jg", _TT_INST_JG},
+                {"jns", _TT_INST_JNS},
+                {"js", _TT_INST_JS},
+                {"jge", _TT_INST_JGE},
+                {"jse", _TT_INST_JSE},
         };
 
         struct Token

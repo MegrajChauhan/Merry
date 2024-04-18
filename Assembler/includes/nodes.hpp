@@ -148,6 +148,23 @@ namespace masm
             _INST_CMP_REG, // comparing two registers
             _INST_CMP_IMM, // comparing with immediates
 
+            _INST_JNZ,
+            _INST_JZ,
+            _INST_JNE,
+            _INST_JE,
+            _INST_JNC,
+            _INST_JC,
+            _INST_JNO,
+            _INST_JO,
+            _INST_JNN,
+            _INST_JN,
+            _INST_JNG,
+            _INST_JG,
+            _INST_JNS,
+            _INST_JS,
+            _INST_JGE,
+            _INST_JSE,
+
             _INST_HLT, // this doesn't need its own structure
         };
 

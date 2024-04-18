@@ -91,6 +91,8 @@ namespace masm
 
             void handle_inst_jmp();
             void handle_inst_cmp();
+
+            void handle_inst_jX();
         };
     };
 };

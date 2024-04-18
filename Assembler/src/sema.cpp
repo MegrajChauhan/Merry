@@ -519,6 +519,22 @@ void masm::sema::Sema::analyse()
             break;
         }
         case nodes::NodeKind::_INST_JMP:
+        case nodes::NodeKind::_INST_JNZ:
+        case nodes::NodeKind::_INST_JZ:
+        case nodes::NodeKind::_INST_JNE:
+        case nodes::NodeKind::_INST_JE:
+        case nodes::NodeKind::_INST_JNC:
+        case nodes::NodeKind::_INST_JC:
+        case nodes::NodeKind::_INST_JNO:
+        case nodes::NodeKind::_INST_JO:
+        case nodes::NodeKind::_INST_JNN:
+        case nodes::NodeKind::_INST_JN:
+        case nodes::NodeKind::_INST_JNG:
+        case nodes::NodeKind::_INST_JG:
+        case nodes::NodeKind::_INST_JNS:
+        case nodes::NodeKind::_INST_JS:
+        case nodes::NodeKind::_INST_JGE:
+        case nodes::NodeKind::_INST_JSE:
         {
             auto node = (nodes::NodeJmp *)inst->ptr.get();
             auto x = symtable.find_entry(node->_jmp_label_);

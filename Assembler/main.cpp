@@ -9,7 +9,7 @@ static std::string version_message = "Masm: An Assembler for the Merry Virtual M
 int main(int argv, char **argc)
 {
     masm::Masm _asm(argv, argc);
-    // masm::Masm _asm(argv, x);
+    // masm::Masm _asm(4, x);
     std::pair<bool, std::string> output_filename;
     masm::parser::Parser parser;
 
