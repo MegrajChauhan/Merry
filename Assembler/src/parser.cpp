@@ -1017,7 +1017,7 @@ void masm::parser::Parser::handle_inst_mod()
             else
                 temp->is_iden = true;
             temp->value = curr_tok.value;
-            kind = temp_curr.type == lexer::_TT_INST_DIV ? nodes::_INST_MOD_IMM : nodes::_INST_IMOD_IMM;
+            kind = temp_curr.type == lexer::_TT_INST_MOD ? nodes::_INST_MOD_IMM : nodes::_INST_IMOD_IMM;
         }
         else
         {
@@ -1025,7 +1025,7 @@ void masm::parser::Parser::handle_inst_mod()
             auto temp = (nodes::NodeModRegReg *)ptr.get();
             temp->dest_regr = dest_regr->second;
             temp->src_reg = src->second;
-            kind = temp_curr.type == lexer::_TT_INST_DIV ? nodes::_INST_MOD_REG : nodes::_INST_IMOD_REG;
+            kind = temp_curr.type == lexer::_TT_INST_MOD ? nodes::_INST_MOD_REG : nodes::_INST_IMOD_REG;
         }
     }
     else

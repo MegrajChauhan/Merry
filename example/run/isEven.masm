@@ -6,7 +6,6 @@
 
 .text:
 proc main   
-proc ask_inp      ;; gets input
 
 main:
   loop: ;; the event loop
@@ -16,7 +15,7 @@ main:
     je exit
     mod Ma, 2
     cmp Ma, 0 ;; check if even
-    in Ma ;; remove the unnecessary '\n'  
+    ;; cin Ma ;; remove the unnecessary '\n'  
     je print_even
     jmp print_odd
 
@@ -46,7 +45,7 @@ inp: resq 1 ;; reserve 1 qword for the input number
 is_even: .string "The number is even.\n"
 is_odd: .string "The number is odd.\n"
 
-sym_len: db 3
+sym_len: db 4
 is_even_len: db 20
 is_odd_len: db 19
 

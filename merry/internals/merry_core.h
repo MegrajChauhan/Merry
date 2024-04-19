@@ -81,8 +81,8 @@ struct MerryFlagRegister
     unsigned long zero : 1;      /*6th bit ZF*/
     unsigned long negative : 1;  /*7th bit SF or NG*/
     flags_res(r4, 2);            /*2 bit reserved here*/
-    unsigned long overflow : 1;  /*10th bit is the OF*/
     unsigned long direction : 1; /*11th bit is the DF[NOT REALLY USEFUL YET BUT MAYBE WHEN IMPLEMENTING STRING RELATED INSTRUCTIONS]*/
+    unsigned long overflow : 1;  /*10th bit is the OF*/
     flags_res(rem_32, 20);
     flags_res(top_32, 32);
 #endif

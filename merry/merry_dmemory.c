@@ -787,10 +787,11 @@ mqptr_t merry_dmemory_get_qword_address_bounds(MerryDMemory *memory, maddress_t 
 
 mstr_t merry_dmemory_get_bytes_maybe_over_multiple_pages(MerryDMemory *memory, maddress_t address, msize_t length)
 {
-    mstr_t array = (mstr_t)malloc(length);
+    mstr_t array = (mstr_t)malloc(length + 1);
     mstr_t curr = array;
     if (array == NULL)
         return RET_NULL;
+    array[length] = '\0';
     register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
     if (surelyF(addr.page >= memory->number_of_pages))
     {

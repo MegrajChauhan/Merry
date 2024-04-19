@@ -377,22 +377,22 @@ void masm::codegen::Codegen::label_labels()
         else if (x->kind == nodes::NodeKind::_INST_MOV_REG_IMMQ)
         {
             if (((nodes::NodeInstMovRegImm *)x->ptr.get())->is_iden)
-                i+=2;
+                i += 2;
         }
         else if (x->kind == nodes::NodeKind::_INST_MOVSX_REG_IMM32 || x->kind == nodes::NodeKind::_INST_MOVSX_REG_IMM16 || x->kind == nodes::NodeKind::_INST_MOVSX_REG_IMM8)
         {
             if (((nodes::NodeInstMovRegImm *)x->ptr.get())->is_iden)
-                i+=2;
+                i += 2;
         }
         else if (x->kind == nodes::NodeKind::_INST_MOVF || x->kind == nodes::NodeKind::_INST_MOVLF)
         {
             if (((nodes::NodeInstMovRegImm *)x->ptr.get())->is_iden)
-                i+=2;
+                i += 2;
         }
         else if (x->kind == nodes::NodeKind::_INST_CMP_IMM)
         {
             if (!((nodes::NodeCmpImm *)x->ptr.get())->is_iden)
-                i+=2;
+                i += 2;
         }
         else if (x->kind > nodes::NodeKind::_LABEL)
             i++;
@@ -933,7 +933,7 @@ void masm::codegen::Codegen::gen_inst_cmp(std::unique_ptr<nodes::Node> &node)
         {
             inst.bytes.b1 = opcodes::OP_CMP_IMM;
             inst_bytes.push_back(inst);
-            inst.whole = std::stoull(x->val);
+            inst.whole = std::stoll(x->val);
         }
         else
         {

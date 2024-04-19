@@ -70,7 +70,7 @@ int main(int argc, char **argv)
         merry_destroy_parser(_parsed_options);
         return -1;
     }
-    // if (merry_os_init("/") == RET_FAILURE)
+    // if (merry_os_init("build/isEven.mbin") == RET_FAILURE)
     // {
     //     return -1;
     // }
