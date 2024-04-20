@@ -93,6 +93,18 @@ namespace masm
             void handle_inst_cmp();
 
             void handle_inst_jX();
+
+            void handle_inst_inc();
+            void handle_inst_dec();
+
+            void handle_inst_and();
+            void handle_inst_or();
+            void handle_inst_xor();
+
+            void handle_inst_not();
+            void handle_inst_lshift();
+            void handle_inst_rshift();
+
         };
     };
 };

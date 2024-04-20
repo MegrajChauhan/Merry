@@ -72,6 +72,7 @@ namespace masm
             OP_POP,
             OP_PUSHA,
             OP_POPA,
+
             OP_AND_IMM,
             OP_AND_REG,
             OP_OR_IMM,
@@ -85,6 +86,7 @@ namespace masm
             OP_CMP_REG,
             OP_INC,
             OP_DEC,
+            
             OP_LEA,
             OP_LOAD,
             OP_STORE,
@@ -106,6 +108,7 @@ namespace masm
             OP_CLC,
             OP_CLO,
 
+            // ------------------------ DONE
             OP_JNZ,
             OP_JZ,
             OP_JNE,
@@ -122,6 +125,7 @@ namespace masm
             OP_JS,
             OP_JGE,
             OP_JSE,
+            // ------------------------ DONE
             
             OP_LOOP,
             OP_INTR,

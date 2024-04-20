@@ -141,6 +141,15 @@ namespace masm
             _TT_INST_JGE,
             _TT_INST_JSE,
 
+            _TT_INST_AND,
+            _TT_INST_OR,
+            _TT_INST_XOR,
+            _TT_INST_NOT,
+            _TT_INST_LSHIFT,
+            _TT_INST_RSHIFT,
+
+            _TT_INST_INC,
+            _TT_INST_DEC,
             // we ignore commas, they are not absolutely necessary and the assembler won't even complain
             // about not using it. It is just their to provide readability
         };
@@ -240,6 +249,14 @@ namespace masm
                 {"js", _TT_INST_JS},
                 {"jge", _TT_INST_JGE},
                 {"jse", _TT_INST_JSE},
+                {"and", _TT_INST_AND},
+                {"or", _TT_INST_OR},
+                {"xor", _TT_INST_XOR},
+                {"not", _TT_INST_NOT},
+                {"lshift", _TT_INST_LSHIFT},
+                {"rshift", _TT_INST_RSHIFT},
+                {"inc", _TT_INST_INC},
+                {"dec", _TT_INST_DEC},
         };
 
         struct Token

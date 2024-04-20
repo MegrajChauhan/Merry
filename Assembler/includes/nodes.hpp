@@ -165,6 +165,20 @@ namespace masm
             _INST_JGE,
             _INST_JSE,
 
+            _INST_INC,
+            _INST_DEC,
+
+            _INST_AND_IMM,
+            _INST_AND_REG,
+            _INST_OR_IMM,
+            _INST_OR_REG,
+            _INST_XOR_IMM,
+            _INST_XOR_REG,
+            _INST_NOT,
+
+            _INST_LSHIFT,
+            _INST_RSHIFT,
+
             _INST_HLT, // this doesn't need its own structure
         };
 
@@ -293,6 +307,35 @@ namespace masm
 
             NodeInstMovRegReg() {} // Default constructor
         };
+
+        struct NodeAndRegImm : public Base
+        {
+            Registers dest_regr;  // destination register
+            std::string value;    // the value of to move
+        };
+
+        struct NodeAndRegReg : public NodeInstMovRegReg
+        {
+        };
+
+        struct NodeOrRegImm : public NodeAndRegImm
+        {
+        };
+
+        struct NodeOrRegReg : public NodeInstMovRegReg
+        {
+        };
+
+        struct NodeXorRegImm : public NodeAndRegImm
+        {
+        };
+
+        struct NodeXorRegReg : public NodeInstMovRegReg
+        {
+        };
+
+        struct NodeShifts: public NodeAndRegImm
+        {};
 
         // this struct is for any instruction that uses just one register operand
         struct NodeOneRegrOperands : public Base

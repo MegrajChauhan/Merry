@@ -1359,6 +1359,113 @@ void masm::codegen::Codegen::gen()
         case nodes::NodeKind::_INST_CMP_REG:
             gen_inst_cmp(*iter);
             break;
+        case nodes::NodeKind::_INST_INC:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_INC;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)(*iter).get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_DEC:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_DEC;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)(*iter).get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_NOT:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_NOT;
+            inst.bytes.b8 = ((nodes::NodeOneRegrOperands *)(*iter).get())->oper_rger;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_LSHIFT:
+        {
+            Instruction inst;
+            auto x = ((nodes::NodeShifts *)(*iter).get());
+            inst.bytes.b1 = opcodes::OP_LSHIFT;
+            inst.bytes.b8 = std::stoi(x->value);
+            inst.bytes.b7 = x->dest_regr;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_RSHIFT:
+        {
+            Instruction inst;
+            auto x = ((nodes::NodeShifts *)(*iter).get());
+            inst.bytes.b1 = opcodes::OP_RSHIFT;
+            inst.bytes.b8 = std::stoi(x->value);
+            inst.bytes.b7 = x->dest_regr;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_AND_IMM:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_AND_IMM;
+            auto x = ((nodes::NodeAndRegImm *)(*iter).get());
+            inst.bytes.b8 = x->dest_regr;
+            inst_bytes.push_back(inst);
+            inst.whole = std::stoull(x->value);
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_AND_REG:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_AND_REG;
+            auto x = ((nodes::NodeAndRegReg *)(*iter).get());
+            inst.bytes.b8 = x->dest_regr;
+            (inst.bytes.b8 <<= 4) | x->src_reg;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_OR_IMM:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_OR_IMM;
+            auto x = ((nodes::NodeOrRegImm *)(*iter).get());
+            inst.bytes.b8 = x->dest_regr;
+            inst_bytes.push_back(inst);
+            inst.whole = std::stoull(x->value);
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_OR_REG:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_OR_REG;
+            auto x = ((nodes::NodeOrRegReg *)(*iter).get());
+            inst.bytes.b8 = x->dest_regr;
+            (inst.bytes.b8 <<= 4) | x->src_reg;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_XOR_IMM:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_XOR_IMM;
+            auto x = ((nodes::NodeXorRegImm *)(*iter).get());
+            inst.bytes.b8 = x->dest_regr;
+            inst_bytes.push_back(inst);
+            inst.whole = std::stoull(x->value);
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_XOR_REG:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_XOR_REG;
+            auto x = ((nodes::NodeXorRegReg *)(*iter).get());
+            inst.bytes.b8 = x->dest_regr;
+            (inst.bytes.b8 <<= 4) | x->src_reg;
+            inst_bytes.push_back(inst);
+            break;
+        }
             // default:
             //     count--;
         }

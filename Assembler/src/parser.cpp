@@ -51,7 +51,7 @@ void masm::parser::Parser::parse()
             handle_proc_declaration();
             next_token();
         }
-        else if (curr_tok.type >= lexer::_TT_INST_NOP && curr_tok.type <= lexer::_TT_INST_JSE)
+        else if (curr_tok.type >= lexer::_TT_INST_NOP && curr_tok.type <= lexer::_TT_INST_DEC)
             handleInstruction();
         else
             lexer.parse_error("Expected an identifier name or a keyword");
@@ -237,6 +237,30 @@ void masm::parser::Parser::handleInstruction()
     case lexer::_TT_INST_JGE:
     case lexer::_TT_INST_JSE:
         handle_inst_jX();
+        break;
+    case lexer::_TT_INST_INC:
+        handle_inst_inc();
+        break;
+    case lexer::_TT_INST_DEC:
+        handle_inst_dec();
+        break;
+    case lexer::_TT_INST_AND:
+        handle_inst_and();
+        break;
+    case lexer::_TT_INST_OR:
+        handle_inst_or();
+        break;
+    case lexer::_TT_INST_XOR:
+        handle_inst_xor();
+        break;
+    case lexer::_TT_INST_NOT:
+        handle_inst_not();
+        break;
+    case lexer::_TT_INST_LSHIFT:
+        handle_inst_lshift();
+        break;
+    case lexer::_TT_INST_RSHIFT:
+        handle_inst_rshift();
         break;
     }
     next_token();
@@ -1262,4 +1286,211 @@ void masm::parser::Parser::handle_inst_cmp()
         }
     }
     nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, kind, std::move(node), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_inst_inc()
+{
+    // this only works on registers
+    next_token();
+    if (curr_tok.type != lexer::_TT_IDENTIFIER)
+        lexer.parse_err_previous_token("Expected a register for inc operation.", curr_tok.value);
+    auto det = nodes::_regr_iden_map.find(curr_tok.value);
+    if (det == nodes::_regr_iden_map.end())
+        lexer.parse_err_previous_token("Expected a register for inc operation.", curr_tok.value);
+    std::unique_ptr<nodes::Base> node = std::make_unique<nodes::NodeOneRegrOperands>();
+    ((nodes::NodeOneRegrOperands *)node.get())->oper_rger = det->second;
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, nodes::_INST_INC, std::move(node)));
+}
+
+void masm::parser::Parser::handle_inst_dec()
+{
+    next_token();
+    if (curr_tok.type != lexer::_TT_IDENTIFIER)
+        lexer.parse_err_previous_token("Expected a register for dec operation.", curr_tok.value);
+    auto det = nodes::_regr_iden_map.find(curr_tok.value);
+    if (det == nodes::_regr_iden_map.end())
+        lexer.parse_err_previous_token("Expected a register for dec operation.", curr_tok.value);
+    std::unique_ptr<nodes::Base> node = std::make_unique<nodes::NodeOneRegrOperands>();
+    ((nodes::NodeOneRegrOperands *)node.get())->oper_rger = det->second;
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, nodes::_INST_DEC, std::move(node)));
+}
+
+void masm::parser::Parser::handle_inst_not()
+{
+    next_token();
+    if (curr_tok.type != lexer::_TT_IDENTIFIER)
+        lexer.parse_err_previous_token("Expected a register for NOT operation.", curr_tok.value);
+    auto det = nodes::_regr_iden_map.find(curr_tok.value);
+    if (det == nodes::_regr_iden_map.end())
+        lexer.parse_err_previous_token("Expected a register for NOT operation.", curr_tok.value);
+    std::unique_ptr<nodes::Base> node = std::make_unique<nodes::NodeOneRegrOperands>();
+    ((nodes::NodeOneRegrOperands *)node.get())->oper_rger = det->second;
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, nodes::_INST_NOT, std::move(node)));
+}
+
+void masm::parser::Parser::handle_inst_and()
+{
+    next_token();
+    // we will not allow memory locations here
+    // we need those unused opcodes for other unique instructions in the future
+    std::unique_ptr<nodes::Base> ptr;
+    nodes::NodeKind k;
+    if (curr_tok.type != lexer::_TT_IDENTIFIER)
+        lexer.parse_err_previous_token("Expected a register for AND operation.", curr_tok.value);
+    auto dest = nodes::_regr_iden_map.find(curr_tok.value);
+    if (dest == nodes::_regr_iden_map.end())
+        lexer.parse_err_previous_token("Expected a register for AND operation.", curr_tok.value);
+    next_token();
+    // either a register or an immediate
+    if (curr_tok.type == lexer::_TT_IDENTIFIER)
+    {
+        auto src = nodes::_regr_iden_map.find(curr_tok.value);
+        if (src == nodes::_regr_iden_map.end())
+            lexer.parse_err_previous_token("Expected a source register in this AND instruction.", curr_tok.value);
+        k = nodes::_INST_AND_REG;
+        ptr = std::make_unique<nodes::NodeAndRegReg>();
+        auto temp = (nodes::NodeAndRegReg *)ptr.get();
+        temp->dest_regr = dest->second;
+        temp->src_reg = src->second;
+    }
+    else if (curr_tok.type == lexer::_TT_INT || curr_tok.type == lexer::_TT_NINT)
+    {
+        k = nodes::_INST_AND_IMM;
+        ptr = std::make_unique<nodes::NodeAndRegImm>();
+        auto temp = (nodes::NodeAndRegImm *)ptr.get();
+        temp->dest_regr = dest->second;
+        temp->value = curr_tok.value;
+    }
+    else
+    {
+        // floats don't have AND operations for them
+        lexer.parse_err_previous_token("Expected an integer in AND instruction.", curr_tok.value);
+    }
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, k, std::move(ptr)));
+}
+
+void masm::parser::Parser::handle_inst_or()
+{
+    next_token();
+    std::unique_ptr<nodes::Base> ptr;
+    nodes::NodeKind k;
+    if (curr_tok.type != lexer::_TT_IDENTIFIER)
+        lexer.parse_err_previous_token("Expected a register for OR operation.", curr_tok.value);
+    auto dest = nodes::_regr_iden_map.find(curr_tok.value);
+    if (dest == nodes::_regr_iden_map.end())
+        lexer.parse_err_previous_token("Expected a register for OR operation.", curr_tok.value);
+    next_token();
+    // either a register or an immediate
+    if (curr_tok.type == lexer::_TT_IDENTIFIER)
+    {
+        auto src = nodes::_regr_iden_map.find(curr_tok.value);
+        if (src == nodes::_regr_iden_map.end())
+            lexer.parse_err_previous_token("Expected a source register in this OR instruction.", curr_tok.value);
+        k = nodes::_INST_OR_REG;
+        ptr = std::make_unique<nodes::NodeOrRegReg>();
+        auto temp = (nodes::NodeOrRegReg *)ptr.get();
+        temp->dest_regr = dest->second;
+        temp->src_reg = src->second;
+    }
+    else if (curr_tok.type == lexer::_TT_INT || curr_tok.type == lexer::_TT_NINT)
+    {
+        k = nodes::_INST_OR_IMM;
+        ptr = std::make_unique<nodes::NodeOrRegImm>();
+        auto temp = (nodes::NodeOrRegImm *)ptr.get();
+        temp->dest_regr = dest->second;
+        temp->value = curr_tok.value;
+    }
+    else
+    {
+        lexer.parse_err_previous_token("Expected an integer in OR instruction.", curr_tok.value);
+    }
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, k, std::move(ptr)));
+}
+
+void masm::parser::Parser::handle_inst_xor()
+{
+    next_token();
+    std::unique_ptr<nodes::Base> ptr;
+    nodes::NodeKind k;
+    if (curr_tok.type != lexer::_TT_IDENTIFIER)
+        lexer.parse_err_previous_token("Expected a register for XOR operation.", curr_tok.value);
+    auto dest = nodes::_regr_iden_map.find(curr_tok.value);
+    if (dest == nodes::_regr_iden_map.end())
+        lexer.parse_err_previous_token("Expected a register for XOR operation.", curr_tok.value);
+    next_token();
+    // either a register or an immediate
+    if (curr_tok.type == lexer::_TT_IDENTIFIER)
+    {
+        auto src = nodes::_regr_iden_map.find(curr_tok.value);
+        if (src == nodes::_regr_iden_map.end())
+            lexer.parse_err_previous_token("Expected a source register in this XOR instruction.", curr_tok.value);
+        k = nodes::_INST_XOR_REG;
+        ptr = std::make_unique<nodes::NodeXorRegReg>();
+        auto temp = (nodes::NodeXorRegReg *)ptr.get();
+        temp->dest_regr = dest->second;
+        temp->src_reg = src->second;
+    }
+    else if (curr_tok.type == lexer::_TT_INT || curr_tok.type == lexer::_TT_NINT)
+    {
+        k = nodes::_INST_XOR_IMM;
+        ptr = std::make_unique<nodes::NodeXorRegImm>();
+        auto temp = (nodes::NodeXorRegImm *)ptr.get();
+        temp->dest_regr = dest->second;
+        temp->value = curr_tok.value;
+    }
+    else
+    {
+        lexer.parse_err_previous_token("Expected an integer in XOR instruction.", curr_tok.value);
+    }
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, k, std::move(ptr)));
+}
+
+void masm::parser::Parser::handle_inst_lshift()
+{
+    next_token();
+    std::unique_ptr<nodes::Base> ptr = std::make_unique<nodes::NodeShifts>();
+    nodes::NodeKind k;
+    if (curr_tok.type != lexer::_TT_IDENTIFIER)
+        lexer.parse_err_previous_token("Expected a register for LSHIFT operation.", curr_tok.value);
+    auto dest = nodes::_regr_iden_map.find(curr_tok.value);
+    if (dest == nodes::_regr_iden_map.end())
+        lexer.parse_err_previous_token("Expected a register for LSHIFT operation.", curr_tok.value);
+    next_token();
+    if (curr_tok.type == lexer::_TT_INT)
+    {
+        k = nodes::_INST_LSHIFT;
+        auto temp = (nodes::NodeShifts *)ptr.get();
+        temp->dest_regr = dest->second;
+        temp->value = curr_tok.value;
+    }
+    else
+    {
+        lexer.parse_err_previous_token("Expected a positive integer in LSHIFT instruction.", curr_tok.value);
+    }
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, k, std::move(ptr)));
+}
+
+void masm::parser::Parser::handle_inst_rshift()
+{
+    next_token();
+    std::unique_ptr<nodes::Base> ptr = std::make_unique<nodes::NodeShifts>();
+    nodes::NodeKind k;
+    if (curr_tok.type != lexer::_TT_IDENTIFIER)
+        lexer.parse_err_previous_token("Expected a register for RSHIFT operation.", curr_tok.value);
+    auto dest = nodes::_regr_iden_map.find(curr_tok.value);
+    if (dest == nodes::_regr_iden_map.end())
+        lexer.parse_err_previous_token("Expected a register for RSHIFT operation.", curr_tok.value);
+    next_token();
+    if (curr_tok.type == lexer::_TT_INT)
+    {
+        k = nodes::_INST_LSHIFT;
+        auto temp = (nodes::NodeShifts *)ptr.get();
+        temp->dest_regr = dest->second;
+        temp->value = curr_tok.value;
+    }
+    else
+    {
+        lexer.parse_err_previous_token("Expected a positive integer in RSHIFT instruction.", curr_tok.value);
+    }
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, k, std::move(ptr)));
 }
