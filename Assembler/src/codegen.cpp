@@ -1466,6 +1466,48 @@ void masm::codegen::Codegen::gen()
             inst_bytes.push_back(inst);
             break;
         }
+        case nodes::NodeKind::_INST_CFLAGS:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_CFLAGS;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_RESET:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_RESET;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_CLC:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_CLC;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_CLN:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_CLN;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_CLO:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_CLN;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_CLZ:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_CLZ;
+            inst_bytes.push_back(inst);
+            break;
+        }
             // default:
             //     count--;
         }

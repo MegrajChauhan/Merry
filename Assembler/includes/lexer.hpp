@@ -148,6 +148,15 @@ namespace masm
             _TT_INST_LSHIFT,
             _TT_INST_RSHIFT,
 
+            _TT_INST_CFLAGS,
+            _TT_INST_RESET,
+            _TT_INST_CLZ,
+            _TT_INST_CLN,
+            _TT_INST_CLC,
+            _TT_INST_CLO,
+
+            _TT_INST_CALL, // continue from here
+
             _TT_INST_INC,
             _TT_INST_DEC,
             // we ignore commas, they are not absolutely necessary and the assembler won't even complain
@@ -257,6 +266,12 @@ namespace masm
                 {"rshift", _TT_INST_RSHIFT},
                 {"inc", _TT_INST_INC},
                 {"dec", _TT_INST_DEC},
+                {"cflags", _TT_INST_CFLAGS},
+                {"reset", _TT_INST_RESET},
+                {"clz", _TT_INST_CLZ},
+                {"cln", _TT_INST_CLN},
+                {"clc", _TT_INST_CLC},
+                {"clo", _TT_INST_CLO},
         };
 
         struct Token

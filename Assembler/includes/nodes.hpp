@@ -179,6 +179,13 @@ namespace masm
             _INST_LSHIFT,
             _INST_RSHIFT,
 
+            _INST_CFLAGS,
+            _INST_RESET,
+            _INST_CLZ,
+            _INST_CLN,
+            _INST_CLC,
+            _INST_CLO,
+
             _INST_HLT, // this doesn't need its own structure
         };
 

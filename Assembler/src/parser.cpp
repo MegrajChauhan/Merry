@@ -262,6 +262,24 @@ void masm::parser::Parser::handleInstruction()
     case lexer::_TT_INST_RSHIFT:
         handle_inst_rshift();
         break;
+    case lexer::_TT_INST_CFLAGS:
+        nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, nodes::_INST_CFLAGS, std::make_unique<nodes::Base>()));
+        break;
+    case lexer::_TT_INST_RESET:
+        nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, nodes::_INST_RESET, std::make_unique<nodes::Base>()));
+        break;
+    case lexer::_TT_INST_CLC:
+        nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, nodes::_INST_CLC, std::make_unique<nodes::Base>()));
+        break;
+    case lexer::_TT_INST_CLN:
+        nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, nodes::_INST_CLN, std::make_unique<nodes::Base>()));
+        break;
+    case lexer::_TT_INST_CLO:
+        nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, nodes::_INST_CLO, std::make_unique<nodes::Base>()));
+        break;
+    case lexer::_TT_INST_CLZ:
+        nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, nodes::_INST_CLZ, std::make_unique<nodes::Base>()));
+        break;
     }
     next_token();
 }

@@ -99,16 +99,12 @@ namespace masm
             OP_MOV8,
             OP_MOV16,
             OP_MOV32,
-            // ------------------------ DONE
-
             OP_CFLAGS,
             OP_RESET,
             OP_CLZ,
             OP_CLN,
             OP_CLC,
             OP_CLO,
-
-            // ------------------------ DONE
             OP_JNZ,
             OP_JZ,
             OP_JNE,
