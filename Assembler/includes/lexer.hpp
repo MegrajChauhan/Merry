@@ -155,7 +155,8 @@ namespace masm
             _TT_INST_CLC,
             _TT_INST_CLO,
 
-            _TT_INST_CALL, // continue from here
+            _TT_INST_CALL,
+            _TT_INST_RET,
 
             _TT_INST_INC,
             _TT_INST_DEC,
@@ -272,6 +273,8 @@ namespace masm
                 {"cln", _TT_INST_CLN},
                 {"clc", _TT_INST_CLC},
                 {"clo", _TT_INST_CLO},
+                {"call", _TT_INST_CALL},
+                {"ret", _TT_INST_RET},
         };
 
         struct Token

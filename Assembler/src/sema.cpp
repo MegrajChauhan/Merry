@@ -538,11 +538,20 @@ void masm::sema::Sema::analyse()
         {
             auto node = (nodes::NodeJmp *)inst->ptr.get();
             auto x = symtable.find_entry(node->_jmp_label_);
-            // WORKING HERE
             if (!symtable.is_invalid(x))
                 analysis_error(inst->line, std::string("The label ") + node->_jmp_label_ + " doesn't exist.");
             if (x->second.type != symtable::SymEntryType::_LABEL && x->second.type != symtable::SymEntryType::_PROC)
                 analysis_error(inst->line, std::string("JMP to label ") + node->_jmp_label_ + " is not a label at all.");
+            break;
+        }
+        case nodes::NodeKind::_INST_CALL:
+        {
+            auto node = (nodes::NodeCall *)inst->ptr.get();
+            auto x = symtable.find_entry(node->_jmp_label_);
+            if (!symtable.is_invalid(x))
+                analysis_error(inst->line, std::string("The procedure ") + node->_jmp_label_ + " doesn't exist.");
+            if (x->second.type != symtable::SymEntryType::_PROC)
+                analysis_error(inst->line, std::string("CALL to procedure ") + node->_jmp_label_ + " is not a procedure at all.");
             break;
         }
         case nodes::NodeKind::_INST_CMP_IMM:

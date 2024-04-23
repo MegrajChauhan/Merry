@@ -105,6 +105,9 @@ namespace masm
             void handle_inst_lshift();
             void handle_inst_rshift();
 
+            // exact copy of jmp
+            void handle_inst_call();
+
         };
     };
 };

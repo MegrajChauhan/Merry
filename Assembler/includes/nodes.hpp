@@ -185,6 +185,8 @@ namespace masm
             _INST_CLN,
             _INST_CLC,
             _INST_CLO,
+            _INST_RET,
+            _INST_CALL,
 
             _INST_HLT, // this doesn't need its own structure
         };
@@ -282,6 +284,10 @@ namespace masm
             std::string _jmp_label_; // the label to jump to
         };
 
+        struct NodeCall : public NodeJmp
+        {
+        };
+
         struct NodeProcDeclr : public Base
         {
             std::string proc_name; // the proc's name
@@ -317,8 +323,8 @@ namespace masm
 
         struct NodeAndRegImm : public Base
         {
-            Registers dest_regr;  // destination register
-            std::string value;    // the value of to move
+            Registers dest_regr; // destination register
+            std::string value;   // the value of to move
         };
 
         struct NodeAndRegReg : public NodeInstMovRegReg
@@ -341,8 +347,9 @@ namespace masm
         {
         };
 
-        struct NodeShifts: public NodeAndRegImm
-        {};
+        struct NodeShifts : public NodeAndRegImm
+        {
+        };
 
         // this struct is for any instruction that uses just one register operand
         struct NodeOneRegrOperands : public Base

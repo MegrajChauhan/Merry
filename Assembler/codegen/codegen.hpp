@@ -144,6 +144,7 @@ namespace masm
             void gen_inst_fdiv(std::unique_ptr<nodes::Node> &);
 
             void gen_inst_jmp(std::unique_ptr<nodes::Node> &);
+            void gen_inst_call(std::unique_ptr<nodes::Node> &);
             void gen_inst_cmp(std::unique_ptr<nodes::Node> &);
           
             void gen_inst_jX(std::unique_ptr<nodes::Node> &);

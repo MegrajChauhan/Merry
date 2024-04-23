@@ -552,9 +552,9 @@ void masm::codegen::Codegen::gen_inst_add(std::unique_ptr<nodes::Node> &node)
     {
         // must be a add_regr
         auto i = (nodes::NodeAddRegReg *)node->ptr.get();
-        inst.bytes.b1 = node->kind == nodes::_INST_ADD_IMM ? opcodes::OP_ADD_REG : opcodes::OP_IADD_REG;
+        inst.bytes.b1 = (node->kind == nodes::_INST_ADD_REG) ? opcodes::OP_ADD_REG : opcodes::OP_IADD_REG;
         inst.bytes.b8 = i->dest_regr;
-        (inst.bytes.b8 <<= 4) | i->src_reg;
+        (inst.bytes.b8 <<= 4) |= i->src_reg;
     }
     inst_bytes.push_back(inst);
 }
@@ -613,7 +613,7 @@ void masm::codegen::Codegen::gen_inst_sub(std::unique_ptr<nodes::Node> &node)
         auto i = (nodes::NodeSubRegReg *)node->ptr.get();
         inst.bytes.b1 = node->kind == nodes::_INST_SUB_REG ? opcodes::OP_SUB_REG : opcodes::OP_ISUB_REG;
         inst.bytes.b8 = i->dest_regr;
-        (inst.bytes.b8 <<= 4) | i->src_reg;
+        (inst.bytes.b8 <<= 4) |= i->src_reg;
     }
     inst_bytes.push_back(inst);
 }
@@ -672,7 +672,7 @@ void masm::codegen::Codegen::gen_inst_mul(std::unique_ptr<nodes::Node> &node)
         auto i = (nodes::NodeMulRegReg *)node->ptr.get();
         inst.bytes.b1 = node->kind == nodes::_INST_MUL_REG ? opcodes::OP_MUL_REG : opcodes::OP_IMUL_REG;
         inst.bytes.b8 = i->dest_regr;
-        (inst.bytes.b8 <<= 4) | i->src_reg;
+        (inst.bytes.b8 <<= 4) |= i->src_reg;
     }
     inst_bytes.push_back(inst);
 }
@@ -731,7 +731,7 @@ void masm::codegen::Codegen::gen_inst_div(std::unique_ptr<nodes::Node> &node)
         auto i = (nodes::NodeDivRegReg *)node->ptr.get();
         inst.bytes.b1 = node->kind == nodes::_INST_DIV_REG ? opcodes::OP_DIV_REG : opcodes::OP_IDIV_REG;
         inst.bytes.b8 = i->dest_regr;
-        (inst.bytes.b8 <<= 4) | i->src_reg;
+        (inst.bytes.b8 <<= 4) |= i->src_reg;
     }
     inst_bytes.push_back(inst);
 }
@@ -790,7 +790,7 @@ void masm::codegen::Codegen::gen_inst_mod(std::unique_ptr<nodes::Node> &node)
         auto i = (nodes::NodeModRegReg *)node->ptr.get();
         inst.bytes.b1 = node->kind == nodes::_INST_MOD_REG ? opcodes::OP_MOD_REG : opcodes::OP_IMOD_REG;
         inst.bytes.b8 = i->dest_regr;
-        (inst.bytes.b8 <<= 4) | i->src_reg;
+        (inst.bytes.b8 <<= 4) |= i->src_reg;
     }
     inst_bytes.push_back(inst);
 }
@@ -817,7 +817,7 @@ void masm::codegen::Codegen::gen_inst_fadd(std::unique_ptr<nodes::Node> &node)
         auto temp = (nodes::NodeAddRegReg *)node->ptr.get();
         inst.bytes.b1 = node->kind == nodes::NodeKind::_INST_FADD_REG ? opcodes::OP_FADD32 : opcodes::OP_FADD;
         inst.bytes.b8 = temp->dest_regr;
-        (inst.bytes.b8 << 4) | temp->src_reg;
+        (inst.bytes.b8 <<= 4) |= temp->src_reg;
     }
     inst_bytes.push_back(inst);
 }
@@ -841,7 +841,7 @@ void masm::codegen::Codegen::gen_inst_fsub(std::unique_ptr<nodes::Node> &node)
         auto temp = (nodes::NodeSubRegReg *)node->ptr.get();
         inst.bytes.b1 = node->kind == nodes::NodeKind::_INST_FSUB_REG ? opcodes::OP_FSUB32 : opcodes::OP_FSUB;
         inst.bytes.b8 = temp->dest_regr;
-        (inst.bytes.b8 << 4) | temp->src_reg;
+        (inst.bytes.b8 <<= 4) |= temp->src_reg;
     }
     inst_bytes.push_back(inst);
 }
@@ -865,7 +865,7 @@ void masm::codegen::Codegen::gen_inst_fmul(std::unique_ptr<nodes::Node> &node)
         auto temp = (nodes::NodeMulRegReg *)node->ptr.get();
         inst.bytes.b1 = node->kind == nodes::NodeKind::_INST_FMUL_REG ? opcodes::OP_FMUL32 : opcodes::OP_FMUL;
         inst.bytes.b8 = temp->dest_regr;
-        (inst.bytes.b8 << 4) | temp->src_reg;
+        (inst.bytes.b8 <<= 4) |= temp->src_reg;
     }
     inst_bytes.push_back(inst);
 }
@@ -889,7 +889,7 @@ void masm::codegen::Codegen::gen_inst_fdiv(std::unique_ptr<nodes::Node> &node)
         auto temp = (nodes::NodeDivRegReg *)node->ptr.get();
         inst.bytes.b1 = node->kind == nodes::NodeKind::_INST_FDIV_REG ? opcodes::OP_FDIV32 : opcodes::OP_FDIV;
         inst.bytes.b8 = temp->dest_regr;
-        (inst.bytes.b8 << 4) | temp->src_reg;
+        (inst.bytes.b8 <<= 4) |= temp->src_reg;
     }
     inst_bytes.push_back(inst);
 }
@@ -902,6 +902,16 @@ void masm::codegen::Codegen::gen_inst_jmp(std::unique_ptr<nodes::Node> &node)
     // since the label exists and we have made sure that it does
     // we can continue without problems
     inst.bytes.b1 = opcodes::OP_JMP_ADDR;
+    inst.whole |= address;
+    inst_bytes.push_back(inst);
+}
+
+void masm::codegen::Codegen::gen_inst_call(std::unique_ptr<nodes::Node> &node)
+{
+    Instruction inst;
+    auto temp = (nodes::NodeCall *)node->ptr.get();
+    size_t address = label_addrs.find(temp->_jmp_label_)->second;
+    inst.bytes.b1 = opcodes::OP_CALL;
     inst.whole |= address;
     inst_bytes.push_back(inst);
 }
@@ -924,7 +934,7 @@ void masm::codegen::Codegen::gen_inst_cmp(std::unique_ptr<nodes::Node> &node)
         auto x = (nodes::NodeCmpRegr *)node->ptr.get();
         inst.bytes.b1 = opcodes::OP_CMP_REG;
         inst.bytes.b8 = x->regr1;
-        (inst.bytes.b8 <<= 4) | x->regr2;
+        (inst.bytes.b8 <<= 4) |= x->regr2;
     }
     else
     {
@@ -1337,6 +1347,9 @@ void masm::codegen::Codegen::gen()
         case nodes::NodeKind::_INST_JMP:
             gen_inst_jmp(*iter);
             break;
+        case nodes::NodeKind::_INST_CALL:
+            gen_inst_call(*iter);
+            break;
         case nodes::NodeKind::_INST_JNZ:
         case nodes::NodeKind::_INST_JZ:
         case nodes::NodeKind::_INST_JNE:
@@ -1505,6 +1518,13 @@ void masm::codegen::Codegen::gen()
         {
             Instruction inst;
             inst.bytes.b1 = opcodes::OP_CLZ;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_RET:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_RET;
             inst_bytes.push_back(inst);
             break;
         }
