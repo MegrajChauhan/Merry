@@ -158,6 +158,9 @@ namespace masm
             _TT_INST_CALL,
             _TT_INST_RET,
 
+            _TT_INST_SVA,
+            _TT_INST_SVC,
+
             _TT_INST_INC,
             _TT_INST_DEC,
             // we ignore commas, they are not absolutely necessary and the assembler won't even complain
@@ -275,6 +278,8 @@ namespace masm
                 {"clo", _TT_INST_CLO},
                 {"call", _TT_INST_CALL},
                 {"ret", _TT_INST_RET},
+                {"sva", _TT_INST_SVA},
+                {"svc", _TT_INST_SVC},
         };
 
         struct Token

@@ -286,6 +286,10 @@ void masm::parser::Parser::handleInstruction()
     case lexer::_TT_INST_CALL:
         handle_inst_call();
         break;
+    case lexer::_TT_INST_SVA:
+    case lexer::_TT_INST_SVC:
+        handle_inst_sva_svc();
+        break;
     }
     next_token();
 }
@@ -1536,4 +1540,17 @@ void masm::parser::Parser::handle_inst_rshift()
         lexer.parse_err_previous_token("Expected a positive integer in RSHIFT instruction.", curr_tok.value);
     }
     nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, k, std::move(ptr)));
+}
+
+void masm::parser::Parser::handle_inst_sva_svc()
+{
+    auto temp = curr_tok;
+    next_token();
+    // These both instructions only take +ve values
+    if (curr_tok.type != lexer::_TT_INT)
+        lexer.parse_err_previous_token("Expected a positive value here.", curr_tok.value);
+    std::unique_ptr<nodes::Base> ptr;
+    ptr = std::make_unique<nodes::NodeOneImmOperand>();
+    ((nodes::NodeOneImmOperand *)ptr.get())->imm = curr_tok.value;
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, temp.type == lexer::_TT_INST_SVA ? nodes::_INST_SVA : nodes::_INST_SVC, std::move(ptr)));
 }

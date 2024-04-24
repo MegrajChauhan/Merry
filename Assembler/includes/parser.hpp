@@ -108,6 +108,8 @@ namespace masm
             // exact copy of jmp
             void handle_inst_call();
 
+            void handle_inst_sva_svc();
+
         };
     };
 };

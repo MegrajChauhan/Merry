@@ -984,6 +984,15 @@ void masm::codegen::Codegen::gen_inst_cmp(std::unique_ptr<nodes::Node> &node)
     inst_bytes.push_back(inst);
 }
 
+void masm::codegen::Codegen::gen_inst_sva_svc(std::unique_ptr<nodes::Node> &node)
+{
+    Instruction inst;
+    auto x = (nodes::NodeOneImmOperand *)node->ptr.get();
+    inst.bytes.b1 = node->kind == nodes::_INST_SVA? opcodes::OP_SVA: opcodes::OP_SVC;
+    inst.whole |= std::stoi(x->imm);
+    inst_bytes.push_back(inst);
+}
+
 void masm::codegen::Codegen::gen()
 {
     gen_data(); // generate data bytes
@@ -1008,6 +1017,10 @@ void masm::codegen::Codegen::gen()
             inst_bytes.push_back(inst);
             break;
         }
+        case nodes::NodeKind::_INST_SVA:
+        case nodes::NodeKind::_INST_SVC:
+           gen_inst_sva_svc(*iter);
+           break;
         case nodes::NodeKind::_INST_MOV_REG_IMMQ:
         {
             gen_inst_mov_reg_immq(*iter);

@@ -187,6 +187,8 @@ namespace masm
             _INST_CLO,
             _INST_RET,
             _INST_CALL,
+            _INST_SVA,
+            _INST_SVC,
 
             _INST_HLT, // this doesn't need its own structure
         };

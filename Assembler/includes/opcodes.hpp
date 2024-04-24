@@ -61,10 +61,10 @@ namespace masm
             OP_MOVESX_REG32,
             OP_JMP_OFF,
             OP_JMP_ADDR,
-            // -------------------- DONE
-
             OP_CALL,
             OP_RET,
+            // -------------------- DONE
+            
             OP_SVA,
             OP_SVC,
             OP_PUSH_IMM,
