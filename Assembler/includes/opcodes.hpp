@@ -63,10 +63,9 @@ namespace masm
             OP_JMP_ADDR,
             OP_CALL,
             OP_RET,
-            // -------------------- DONE
-            
             OP_SVA,
             OP_SVC,
+            // -------------------- DONE
             OP_PUSH_IMM,
             OP_PUSH_REG,
             OP_POP,

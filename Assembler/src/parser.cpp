@@ -290,8 +290,77 @@ void masm::parser::Parser::handleInstruction()
     case lexer::_TT_INST_SVC:
         handle_inst_sva_svc();
         break;
+    case lexer::_TT_INST_PUSH:
+    case lexer::_TT_INST_PUSHA:
+        handle_inst_push();
+        break;
+    case lexer::_TT_INST_POP:
+    case lexer::_TT_INST_POPA:
+        handle_inst_pop();
+        break;
     }
     next_token();
+}
+
+void masm::parser::Parser::handle_inst_push()
+{
+    auto temp = curr_tok;
+    nodes::NodeKind k;
+    if (temp.type != lexer::_TT_INST_PUSHA)
+        next_token();
+    std::unique_ptr<nodes::Base> ptr;
+    if (temp.type == lexer::_TT_INST_PUSH && (curr_tok.type == lexer::_TT_INT || curr_tok.type == lexer::_TT_NINT))
+    {
+        k = nodes::_INST_PUSH_IMM; //  This is push immediate
+        ptr = std::make_unique<nodes::NodeOneImmOperand>();
+        auto temp = (nodes::NodeOneImmOperand *)ptr.get();
+        temp->imm = curr_tok.value;
+    }
+    else if (temp.type == lexer::_TT_INST_PUSH && curr_tok.type == lexer::_TT_IDENTIFIER)
+    {
+        auto regr = nodes::_regr_iden_map.find(curr_tok.value);
+        if (regr == nodes::_regr_iden_map.end())
+            lexer.parse_err_previous_token("Expected either a number or a register.", curr_tok.value);
+        k = nodes::_INST_PUSH_REG;
+        ptr = std::make_unique<nodes::NodeOneRegrOperands>();
+        auto temp = (nodes::NodeOneRegrOperands *)ptr.get();
+        temp->oper_rger = regr->second;
+    }
+    else if (temp.type == lexer::_TT_INST_PUSHA)
+    {
+        k = nodes::_INST_PUSHA;
+        ptr = std::make_unique<nodes::Base>();
+    }
+    else
+        lexer.parse_err_whole_line("Invalid push instruction. Expected a register or a number");
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, k, std::move(ptr)));
+}
+
+void masm::parser::Parser::handle_inst_pop()
+{
+    auto temp = curr_tok;
+    nodes::NodeKind k;
+    if (temp.type != lexer::_TT_INST_POPA)
+        next_token();
+    std::unique_ptr<nodes::Base> ptr;
+    if (temp.type == lexer::_TT_INST_POP && curr_tok.type == lexer::_TT_IDENTIFIER)
+    {
+        auto regr = nodes::_regr_iden_map.find(curr_tok.value);
+        if (regr == nodes::_regr_iden_map.end())
+            lexer.parse_err_previous_token("Expected a register as the destination.", curr_tok.value);
+        k = nodes::_INST_POP;
+        ptr = std::make_unique<nodes::NodeOneRegrOperands>();
+        auto temp = (nodes::NodeOneRegrOperands *)ptr.get();
+        temp->oper_rger = regr->second;
+    }
+    else if (temp.type == lexer::_TT_INST_POPA)
+    {
+        k = nodes::_INST_POPA;
+        ptr = std::make_unique<nodes::Base>();
+    }
+    else
+        lexer.parse_err_whole_line("Invalid pop instruction. Expected a register.");
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, k, std::move(ptr)));
 }
 
 void masm::parser::Parser::parseDataSection()

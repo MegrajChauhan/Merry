@@ -1005,6 +1005,44 @@ void masm::codegen::Codegen::gen()
         auto inst = iter->get();
         switch (inst->kind)
         {
+        case nodes::NodeKind::_INST_PUSH_IMM:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_PUSH_IMM;
+            inst.whole |= std::stoi(((nodes::NodeOneImmOperand*)(*iter).get())->imm);
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_POP:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_POP;
+            inst.whole |= (((nodes::NodeOneRegrOperands*)(*iter).get())->oper_rger);
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_PUSH_REG:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_PUSH_REG;
+            inst.whole |= (((nodes::NodeOneRegrOperands*)(*iter).get())->oper_rger);
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_POPA:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_POPA;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_PUSHA:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_PUSHA;
+            inst_bytes.push_back(inst);
+            break;
+        }
         case nodes::NodeKind::_INST_NOP:
         {
             inst_bytes.push_back(Instruction());

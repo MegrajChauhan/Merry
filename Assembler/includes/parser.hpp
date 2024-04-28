@@ -110,6 +110,9 @@ namespace masm
 
             void handle_inst_sva_svc();
 
+            void handle_inst_push();
+            void handle_inst_pop();
+
         };
     };
 };

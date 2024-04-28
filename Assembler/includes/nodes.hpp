@@ -189,6 +189,11 @@ namespace masm
             _INST_CALL,
             _INST_SVA,
             _INST_SVC,
+            _INST_PUSH_IMM,
+            _INST_PUSH_REG,
+            _INST_PUSHA,
+            _INST_POP,
+            _INST_POPA,
 
             _INST_HLT, // this doesn't need its own structure
         };
@@ -237,6 +242,7 @@ namespace masm
         {
             virtual ~Base() {} // Make the base class polymorphic with a virtual destructor
         };
+
 
         struct NodeCmpRegr : public Base
         {
