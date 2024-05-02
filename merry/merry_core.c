@@ -363,16 +363,16 @@ _THRET_T_ merry_runCore(mptr_t core)
                 c->greater = 1;
             break;
         case OP_CMP_IMM_MEMB:
-            merry_execute_cmp_mem(c, merry_dmemory_get_byte_address);
+            merry_execute_cmp_mem(c, merry_dmemory_read_byte);
             break;
         case OP_CMP_IMM_MEMW:
-            merry_execute_cmp_mem(c, merry_dmemory_get_word_address);
+            merry_execute_cmp_mem(c, merry_dmemory_read_word);
             break;
         case OP_CMP_IMM_MEMD:
-            merry_execute_cmp_mem(c, merry_dmemory_get_dword_address);
+            merry_execute_cmp_mem(c, merry_dmemory_read_dword);
             break;
         case OP_CMP_IMM_MEMQ:
-            merry_execute_cmp_mem(c, merry_dmemory_get_qword_address);
+            merry_execute_cmp_mem(c, merry_dmemory_read_qword);
             break;
         case OP_CMP_REG:
             register mqword_t reg1 = c->registers[(*current >> 4) & 15];
@@ -604,7 +604,7 @@ _THRET_T_ merry_runCore(mptr_t core)
             // the number of bytes to input is in the Mc register
             {
                 register mqword_t len = c->registers[Mc];
-                mbptr_t temp = (mbptr_t *)malloc(len);
+                mbptr_t temp = (mbptr_t)malloc(len);
                 if (temp == NULL)
                 {
                     merry_requestHdlr_panic(MERRY_INTERNAL_ERROR);

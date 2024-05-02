@@ -123,7 +123,7 @@ mret_t merry_os_add_core()
     MerryThread **temp = (MerryThread **)malloc(sizeof(MerryThread *) * (os.core_count + 1));
     if (temp == NULL)
         return RET_FAILURE; // we failed
-    MerryCore **tempc = (MerryThread **)malloc(sizeof(MerryThread *) * (os.core_count + 1));
+    MerryCore **tempc = (MerryCore **)malloc(sizeof(MerryCore *) * (os.core_count + 1));
     if (tempc == NULL)
     {
         // we failed again

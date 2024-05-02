@@ -175,6 +175,13 @@ namespace masm
             _TT_INST_EXCG,
             _TT_INST_LOOP,
             _TT_INST_INTR,
+            _TT_INST_LOADB,
+            _TT_INST_STOREB,
+            _TT_INST_LOADW,
+            _TT_INST_STOREW,
+            _TT_INST_LOADD,
+            _TT_INST_STORED,
+            _TT_INST_CMPXCHG,
      
             _TT_INST_INC,
             _TT_INST_DEC,
@@ -308,6 +315,12 @@ namespace masm
                 {"excgd", _TT_INST_EXCG32},
                 {"loop", _TT_INST_LOOP},
                 {"int", _TT_INST_INTR},
+                {"storeb", _TT_INST_STOREB},
+                {"loadb", _TT_INST_LOADB},
+                {"storew", _TT_INST_STOREW},
+                {"stored", _TT_INST_STORED},
+                {"loadd", _TT_INST_LOADD},
+                {"cmpxchg", _TT_INST_CMPXCHG},
         };
 
         struct Token

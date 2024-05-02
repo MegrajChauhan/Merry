@@ -198,12 +198,27 @@ namespace masm
             _INST_LEA,
             _INST_STORE,
             _INST_LOAD,
+            _INST_STORE_REG,
+            _INST_LOAD_REG,
             _INST_EXCG,
             _INST_EXCG8,
             _INST_EXCG16,
             _INST_EXCG32,
             _INST_LOOP,
             _INST_INTR,
+            _INST_STOREB,
+            _INST_LOADB,
+            _INST_STOREB_REG,
+            _INST_LOADB_REG,
+            _INST_STOREW,
+            _INST_LOADW,
+            _INST_STOREW_REG,
+            _INST_LOADW_REG,
+            _INST_STORED,
+            _INST_LOADD,
+            _INST_STORED_REG,
+            _INST_LOADD_REG,
+            _INST_CMPXCHG,
 
             _INST_HLT, // this doesn't need its own structure
         };
@@ -259,8 +274,15 @@ namespace masm
             Registers regr2; // the second operand register
         };
 
-        struct NodeExcg: public NodeCmpRegr
-        {};
+        struct NodeExcg : public NodeCmpRegr
+        {
+        };
+
+        struct NodeCmpXchg : public Base
+        {
+            Registers r1, r2;
+            std::string var_name;
+        };
 
         struct NodeCmpImm : public Base
         {
@@ -299,11 +321,11 @@ namespace masm
         {
         };
 
-        struct NodeLea: public Base
+        struct NodeLea : public Base
         {
             Registers dest, base, index, scale;
         };
-     
+
         struct NodeJmp : public Base
         {
             std::string _jmp_label_; // the label to jump to
@@ -352,14 +374,23 @@ namespace masm
             std::string value;   // the value of to move
         };
 
-        struct NodeStore: public Base
+        struct NodeStore : public Base
         {
             Registers dest;
             std::string var_name;
         };
 
-        struct NodeLoad: public NodeStore
-        {};
+        struct NodeStoreReg : public Base
+        {
+            Registers dest, addr_regr;
+        };
+
+        struct NodeLoad : public NodeStore
+        {
+        };
+        struct NodeLoadReg : public NodeStoreReg
+        {
+        };
 
         struct NodeAndRegReg : public NodeInstMovRegReg
         {

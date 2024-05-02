@@ -153,7 +153,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fadd32_mem)
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 48) & 15;
    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
-   mdword_t temp = 0;
+   mqword_t temp = 0;
    if (merry_dmemory_read_dword(core->data_mem, addr, &temp) == RET_FAILURE)
    {
       merry_requestHdlr_panic(core->data_mem->error);
@@ -169,7 +169,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fadd64_mem)
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 48) & 15;
    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
-   mdword_t temp = 0;
+   mqword_t temp = 0;
    if (merry_dmemory_read_qword(core->data_mem, addr, &temp) == RET_FAILURE)
    {
       merry_requestHdlr_panic(core->data_mem->error);
@@ -201,7 +201,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fsub32_mem)
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 48) & 15;
    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
-   mdword_t temp = 0;
+   mqword_t temp = 0;
    if (merry_dmemory_read_dword(core->data_mem, addr, &temp) == RET_FAILURE)
    {
       merry_requestHdlr_panic(core->data_mem->error);
@@ -217,7 +217,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fsub64_mem)
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 48) & 15;
    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
-   mdword_t temp = 0;
+   mqword_t temp = 0;
    if (merry_dmemory_read_qword(core->data_mem, addr, &temp) == RET_FAILURE)
    {
       merry_requestHdlr_panic(core->data_mem->error);

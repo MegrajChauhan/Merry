@@ -229,7 +229,18 @@ void masm::sema::Sema::analyse()
         // we only check for those instructions that may use variables and symbols
         switch (inst->kind)
         {
+        case nodes::NodeKind::_INST_CMPXCHG:
+        {
+            auto node = (nodes::NodeCmpXchg *)inst->ptr.get();
+            auto x = symtable.find_entry(node->var_name);
+            if (!symtable.is_invalid(x))
+                analysis_error(inst->line, std::string("The operand '") + node->var_name + "' in the cmpxchg instruction is not a valid identifier.");
+            break;
+        }
         case nodes::NodeKind::_INST_STORE:
+        case nodes::NodeKind::_INST_STOREB:
+        case nodes::NodeKind::_INST_STOREW:
+        case nodes::NodeKind::_INST_STORED:
         {
             auto node = (nodes::NodeStore *)inst->ptr.get();
             auto x = symtable.find_entry(node->var_name);
@@ -238,6 +249,9 @@ void masm::sema::Sema::analyse()
             break;
         }
         case nodes::NodeKind::_INST_LOAD:
+        case nodes::NodeKind::_INST_LOADB:
+        case nodes::NodeKind::_INST_LOADW:
+        case nodes::NodeKind::_INST_LOADD:
         {
             auto node = (nodes::NodeLoad *)inst->ptr.get();
             auto x = symtable.find_entry(node->var_name);

@@ -1005,6 +1005,17 @@ void masm::codegen::Codegen::gen()
         auto i = iter->get();
         switch (i->kind)
         {
+        case nodes::NodeKind::_INST_CMPXCHG:
+        {
+            Instruction inst;
+            auto temp = (nodes::NodeCmpXchg *)(*iter)->ptr.get();
+            inst.bytes.b1 = opcodes::OP_CMPXCHG;
+            inst.bytes.b2 = temp->r1;
+            (inst.bytes.b2 <<= 4) |= temp->r2;
+            inst.whole |= data_addrs.find(temp->var_name)->second;
+            inst_bytes.push_back(inst);
+            break;
+        }
         case nodes::NodeKind::_INST_LOOP:
         {
             Instruction inst;
@@ -1028,22 +1039,64 @@ void masm::codegen::Codegen::gen()
             break;
         }
         case nodes::NodeKind::_INST_STORE:
+        case nodes::NodeKind::_INST_STOREB:
+        case nodes::NodeKind::_INST_STOREW:
+        case nodes::NodeKind::_INST_STORED:
         {
             Instruction inst;
             auto temp = (nodes::NodeStore *)(*iter).get()->ptr.get();
-            inst.bytes.b1 = opcodes::OP_STORE;
+            inst.bytes.b1 = i->kind == nodes::_INST_STORE ? opcodes::OP_STORE : i->kind == nodes::_INST_STOREB ? opcodes::OP_STOREB
+                                                                            : i->kind == nodes::_INST_STOREW   ? opcodes::OP_STOREW
+                                                                                                               : opcodes::OP_STORED;
             inst.bytes.b2 = temp->dest;
             inst.whole |= data_addrs.find(temp->var_name)->second;
             inst_bytes.push_back(inst);
             break;
         }
         case nodes::NodeKind::_INST_LOAD:
+        case nodes::NodeKind::_INST_LOADB:
+        case nodes::NodeKind::_INST_LOADW:
+        case nodes::NodeKind::_INST_LOADD:
         {
             Instruction inst;
             auto temp = (nodes::NodeLoad *)(*iter).get()->ptr.get();
-            inst.bytes.b1 = opcodes::OP_LOAD;
+            inst.bytes.b1 = i->kind == nodes::_INST_LOAD ? opcodes::OP_LOAD : i->kind == nodes::_INST_LOADB ? opcodes::OP_LOADB
+                                                                          : i->kind == nodes::_INST_LOADW   ? opcodes::OP_LOADW
+                                                                                                            : opcodes::OP_LOADD;
             inst.bytes.b2 = temp->dest;
             inst.whole |= data_addrs.find(temp->var_name)->second;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_LOAD_REG:
+        case nodes::NodeKind::_INST_LOADB_REG:
+        case nodes::NodeKind::_INST_LOADW_REG:
+        case nodes::NodeKind::_INST_LOADD_REG:
+        {
+            Instruction inst;
+            auto temp = (nodes::NodeLoadReg *)(*iter).get()->ptr.get();
+            inst.bytes.b1 = i->kind == nodes::_INST_LOAD_REG ? opcodes::OP_LOAD_REG : i->kind == nodes::_INST_LOADB_REG ? opcodes::OP_LOADB_REG
+                                                                                  : i->kind == nodes::_INST_LOADW_REG   ? opcodes::OP_LOADW_REG
+                                                                                                                        : opcodes::OP_LOADD_REG;
+            inst.bytes.b8 = temp->dest;
+            inst.bytes.b8 <<= 4;
+            inst.bytes.b8 |= temp->addr_regr;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_STORE_REG:
+        case nodes::NodeKind::_INST_STOREB_REG:
+        case nodes::NodeKind::_INST_STOREW_REG:
+        case nodes::NodeKind::_INST_STORED_REG:
+        {
+            Instruction inst;
+            auto temp = (nodes::NodeStoreReg *)(*iter).get()->ptr.get();
+            inst.bytes.b1 = i->kind == nodes::_INST_STORE_REG ? opcodes::OP_STORE_REG : i->kind == nodes::_INST_STOREB_REG ? opcodes::OP_STOREB_REG
+                                                                                    : i->kind == nodes::_INST_STOREW_REG   ? opcodes::OP_STOREW_REG
+                                                                                                                           : opcodes::OP_STORED_REG;
+            inst.bytes.b8 = temp->dest;
+            inst.bytes.b8 <<= 4;
+            inst.bytes.b8 |= temp->addr_regr;
             inst_bytes.push_back(inst);
             break;
         }

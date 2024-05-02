@@ -628,8 +628,8 @@ mret_t merry_dmemory_read_lock(MerryDMemory *memory, maddress_t address, mqptr_t
         return RET_FAILURE;
     }
     merry_mutex_lock(memory->pages[addr.page]->lock);
-    mqptr_t temp = &memory->pages[addr.page]->address_space[addr.offset];
-    *_store_in = *temp;
+    mbptr_t temp = &memory->pages[addr.page]->address_space[addr.offset];
+    *_store_in = *((mqptr_t)temp);
     merry_mutex_unlock(memory->pages[addr.page]->lock);
     return RET_SUCCESS;
 }
@@ -648,7 +648,7 @@ mret_t merry_dmemory_write_lock(MerryDMemory *memory, maddress_t address, mqword
         return RET_FAILURE;
     }
     merry_mutex_lock(memory->pages[addr.page]->lock);
-    mqptr_t temp = &memory->pages[addr.page]->address_space[addr.offset];
+    mbptr_t temp = &memory->pages[addr.page]->address_space[addr.offset];
     *temp = _to_write; // write the value
     merry_mutex_unlock(memory->pages[addr.page]->lock);
     return RET_SUCCESS;
@@ -848,7 +848,7 @@ mret_t merry_dmemory_write_bytes_maybe_over_multiple_pages(MerryDMemory *memory,
     if (surelyF(addr.page >= memory->number_of_pages))
     {
         memory->error = MERRY_MEM_INVALID_ACCESS;
-        return RET_NULL;
+        return RET_FAILURE;
     }
     msize_t dist_from_end = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - addr.offset;
     if (dist_from_end > length)

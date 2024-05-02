@@ -120,6 +120,10 @@ namespace masm
             void handle_inst_excgX();
             void handle_inst_loop();
             void handle_inst_intr();
+            void handle_inst_storeX();
+            void handle_inst_loadX();
+
+            void handle_inst_cmpxchg();
 
         };
     };

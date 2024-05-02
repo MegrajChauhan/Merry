@@ -116,7 +116,6 @@ namespace masm
             OP_JSE,
             OP_LOOP,
             OP_INTR,
-            // ------------------------ DONE
             OP_LOADB,
             OP_LOADW,
             OP_LOADD,
@@ -132,8 +131,6 @@ namespace masm
             OP_LOADD_REG,
             OP_STORED_REG,
             OP_CMPXCHG,
-
-            // ------------------------ DONE
             OP_CIN,
             OP_COUT,
             OP_SIN,
