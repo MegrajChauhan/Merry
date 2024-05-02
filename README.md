@@ -1,4 +1,5 @@
-# Due to personal circumstances, There probably won't be any updates for about 1 month and a half. A few updates maybe when I am free.
+# Due to personal circumstances, There probably won't be any updates for about 1 Week. 
+
 # MERRY
 
 Merry is  a 64-bit Virtual Machine that emulates a non-existsent CPU. Merry has it's own custom ISA that is still small but is growing steadily. Merry aspires to be a very easy-to-use and simple tool for problem solving. It has 180 different instructions that can be employed to solve all sorts of problems and that is still only a fraction of what it can do in the future.

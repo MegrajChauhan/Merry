@@ -9,24 +9,6 @@ import os
 import sys
 import platform
 from time import sleep
-# from cpuinfo import cpuinfo
-
-# def has_fpu():
-#     """
-#     Check if the CPU has a Floating Point Unit (FPU).
-#     Should work according to the internet
-#     """
-#     cpu_info = cpuinfo.get_cpu_info()
-#     features = cpu_info.get('flags', [])
-#     ## since different platforms could have different names or FPUs, we need to add checks for them here as well 
-#     return 'fpu' in features or 'vfpu' in features
-
-# def uses_ieee754():
-#     ## should tell if the host uses IEEE754 or not according to the internet 
-#     if sys.float_info.__getattribute__('max') == float('inf'):
-#         return True
-#     else:
-#         return False
 
 def print_usage():
     print("python build.py <Destination Directory> <masm/vm/all>")
@@ -71,7 +53,6 @@ def compile_merry():
 def compile_asm():
     print("Compiling the assembler:")
     print("Compiler messages if any: ")
-    sleep(2);
     result = os.system("g++ -O3 -std=c++23 -o build/masm Assembler/src/*.cpp Assembler/main.cpp")
     if result == 0:
         print(f"Compilation successful with return value of {result}")

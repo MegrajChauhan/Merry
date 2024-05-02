@@ -298,8 +298,214 @@ void masm::parser::Parser::handleInstruction()
     case lexer::_TT_INST_POPA:
         handle_inst_pop();
         break;
+    case lexer::_TT_INST_LEA:
+        handle_inst_lea();
+        break;
+    case lexer::_TT_INST_STORE:
+        handle_inst_store();
+        break;
+    case lexer::_TT_INST_LOAD:
+        handle_inst_load();
+        break;
+    case lexer::_TT_INST_EXCG:
+        handle_inst_excg();
+        break;
+    case lexer::_TT_INST_EXCG8:
+    case lexer::_TT_INST_EXCG16:
+    case lexer::_TT_INST_EXCG32:
+        handle_inst_excgX();
+        break;
+    case lexer::_TT_INST_LOOP:
+        handle_inst_loop();
+        break;
+    case lexer::_TT_INST_INTR:
+        handle_inst_intr();
+        break;
     }
     next_token();
+}
+
+void masm::parser::Parser::handle_inst_intr()
+{
+    // reuse push immediate
+    next_token();
+    std::unique_ptr<nodes::Base> ptr;
+    if ((curr_tok.type == lexer::_TT_INT || curr_tok.type == lexer::_TT_NINT))
+    {
+        ptr = std::make_unique<nodes::NodeOneImmOperand>();
+        auto temp = (nodes::NodeOneImmOperand *)ptr.get();
+        temp->imm = curr_tok.value;
+    }
+    else
+        lexer.parse_err_previous_token("Expected an interrupt number.", curr_tok.value);
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, nodes::_INST_INTR, std::move(ptr)));
+}
+
+void masm::parser::Parser::handle_inst_loop()
+{
+    // reuse JMP
+    next_token();
+    if (curr_tok.type != lexer::_TT_IDENTIFIER)
+    {
+        // we expected an identifier as a label
+        lexer.parse_error("Expected a label after the loop instruction.");
+    }
+    if (nodes::_regr_iden_map.find(curr_tok.value) != nodes::_regr_iden_map.end())
+    {
+        lexer.parse_error("Expected a label as operand, not register");
+    }
+    std::unique_ptr<nodes::Base> ptr = std::make_unique<nodes::NodeJmp>();
+    auto temp = (nodes::NodeJmp *)ptr.get();
+    temp->_jmp_label_ = curr_tok.value;
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, nodes::NodeKind::_INST_LOOP, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_inst_store()
+{
+    // store will store whatever is in the operand register into the given memory address
+    next_token();
+    // we need a register here
+    std::unique_ptr<nodes::Base> ptr = std::make_unique<nodes::NodeStore>();
+    auto temp = (nodes::NodeStore *)ptr.get();
+    nodes::Registers src;
+    auto regr = nodes::_regr_iden_map.find(curr_tok.value);
+    if ((regr) == nodes::_regr_iden_map.end())
+    {
+        lexer.parse_error("Expected a register here as the source.");
+    }
+    src = regr->second;
+    next_token();
+    // now we need a variable name
+    if (curr_tok.type != lexer::_TT_IDENTIFIER)
+    {
+        lexer.parse_error("Expected a label after to store the source.");
+    }
+    // we also need to make sure that the ID is not a register
+    if (nodes::_regr_iden_map.find(curr_tok.value) != nodes::_regr_iden_map.end())
+    {
+        lexer.parse_error("Expected a label as operand, not register");
+    }
+    temp->dest = src;
+    temp->var_name = curr_tok.value;
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, nodes::_INST_STORE, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_inst_load()
+{
+    // exactly same method as store
+    next_token();
+    std::unique_ptr<nodes::Base> ptr = std::make_unique<nodes::NodeLoad>();
+    auto temp = (nodes::NodeLoad *)ptr.get();
+    nodes::Registers src;
+    auto regr = nodes::_regr_iden_map.find(curr_tok.value);
+    if ((regr) == nodes::_regr_iden_map.end())
+    {
+        lexer.parse_error("Expected a register here as the source.");
+    }
+    src = regr->second;
+    next_token();
+    if (curr_tok.type != lexer::_TT_IDENTIFIER)
+    {
+        lexer.parse_error("Expected a label after to load the source.");
+    }
+    if (nodes::_regr_iden_map.find(curr_tok.value) != nodes::_regr_iden_map.end())
+    {
+        lexer.parse_error("Expected a label as operand, not register");
+    }
+    temp->dest = src;
+    temp->var_name = curr_tok.value;
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, nodes::_INST_LOAD, std::move(ptr), lexer.get_curr_line()));
+}
+
+void masm::parser::Parser::handle_inst_excg()
+{
+    next_token();
+    std::unique_ptr<nodes::Base> ptr = std::make_unique<nodes::NodeExcg>();
+    auto temp = (nodes::NodeExcg *)ptr.get();
+    nodes::Registers regr1, regr2;
+    auto regr = nodes::_regr_iden_map.find(curr_tok.value);
+    if ((regr) == nodes::_regr_iden_map.end())
+    {
+        lexer.parse_error("Expected a register here as the operand.");
+    }
+    regr1 = regr->second;
+    next_token();
+    auto regr = nodes::_regr_iden_map.find(curr_tok.value);
+    if ((regr) == nodes::_regr_iden_map.end())
+    {
+        lexer.parse_error("Expected a register here as the operand.");
+    }
+    regr2 = regr->second;
+    temp->regr1 = regr1;
+    temp->regr2 = regr2;
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, nodes::_INST_EXCG, std::move(ptr)));
+}
+
+void masm::parser::Parser::handle_inst_excgX()
+{
+    auto x = curr_tok;
+    next_token();
+    std::unique_ptr<nodes::Base> ptr = std::make_unique<nodes::NodeExcg>();
+    auto temp = (nodes::NodeExcg *)ptr.get();
+    nodes::Registers regr1, regr2;
+    auto regr = nodes::_regr_iden_map.find(curr_tok.value);
+    if ((regr) == nodes::_regr_iden_map.end())
+    {
+        lexer.parse_error("Expected a register here as the operand.");
+    }
+    regr1 = regr->second;
+    next_token();
+    auto regr = nodes::_regr_iden_map.find(curr_tok.value);
+    if ((regr) == nodes::_regr_iden_map.end())
+    {
+        lexer.parse_error("Expected a register here as the operand.");
+    }
+    nodes::NodeKind k = x.type == lexer::_TT_INST_EXCG16 ? nodes::_INST_EXCG16 : x.type == lexer::_TT_INST_EXCG32 ? nodes::_INST_EXCG32
+                                                                                                                  : nodes::_INST_EXCG8;
+    regr2 = regr->second;
+    temp->regr1 = regr1;
+    temp->regr2 = regr2;
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, k, std::move(ptr)));
+}
+
+void masm::parser::Parser::handle_inst_lea()
+{
+    next_token();
+    std::unique_ptr<nodes::Base> ptr = std::make_unique<nodes::NodeLea>();
+    auto temp = (nodes::NodeLea *)ptr.get();
+    nodes::Registers dest, base, index, scale;
+    auto regr = nodes::_regr_iden_map.find(curr_tok.value);
+    if ((regr) == nodes::_regr_iden_map.end())
+    {
+        lexer.parse_error("Expected a register here as Destination.");
+    }
+    dest = regr->second;
+    next_token();
+    auto regr = nodes::_regr_iden_map.find(curr_tok.value);
+    if ((regr) == nodes::_regr_iden_map.end())
+    {
+        lexer.parse_error("Expected a register here as Base.");
+    }
+    base = regr->second;
+    next_token();
+    auto regr = nodes::_regr_iden_map.find(curr_tok.value);
+    if ((regr) == nodes::_regr_iden_map.end())
+    {
+        lexer.parse_error("Expected a register here as index.");
+    }
+    index = regr->second;
+    next_token();
+    auto regr = nodes::_regr_iden_map.find(curr_tok.value);
+    if ((regr) == nodes::_regr_iden_map.end())
+    {
+        lexer.parse_error("Expected a register here as scale.");
+    }
+    scale = regr->second;
+    temp->base = base;
+    temp->dest = dest;
+    temp->index = index;
+    temp->scale = scale;
+    nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, nodes::_INST_LEA, std::move(ptr)));
 }
 
 void masm::parser::Parser::handle_inst_push()

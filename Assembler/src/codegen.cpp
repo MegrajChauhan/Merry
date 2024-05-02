@@ -988,7 +988,7 @@ void masm::codegen::Codegen::gen_inst_sva_svc(std::unique_ptr<nodes::Node> &node
 {
     Instruction inst;
     auto x = (nodes::NodeOneImmOperand *)node->ptr.get();
-    inst.bytes.b1 = node->kind == nodes::_INST_SVA? opcodes::OP_SVA: opcodes::OP_SVC;
+    inst.bytes.b1 = node->kind == nodes::_INST_SVA ? opcodes::OP_SVA : opcodes::OP_SVC;
     inst.whole |= std::stoi(x->imm);
     inst_bytes.push_back(inst);
 }
@@ -1002,14 +1002,80 @@ void masm::codegen::Codegen::gen()
     auto temp = iter;
     while (iter != inst_nodes.end())
     {
-        auto inst = iter->get();
-        switch (inst->kind)
+        auto i = iter->get();
+        switch (i->kind)
         {
+        case nodes::NodeKind::_INST_LOOP:
+        {
+            Instruction inst;
+            auto temp = (nodes::NodeJmp *)(*iter)->ptr.get();
+            size_t address = label_addrs.find(temp->_jmp_label_)->second;
+            inst.bytes.b1 = opcodes::OP_LOOP;
+            inst.whole |= address;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_LEA:
+        {
+            Instruction inst;
+            auto temp = (nodes::NodeLea *)(*iter).get()->ptr.get();
+            inst.bytes.b1 = opcodes::OP_LEA;
+            inst.bytes.b8 = temp->scale;
+            inst.bytes.b7 = temp->index;
+            inst.bytes.b6 = temp->base;
+            inst.bytes.b5 = temp->dest;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_STORE:
+        {
+            Instruction inst;
+            auto temp = (nodes::NodeStore *)(*iter).get()->ptr.get();
+            inst.bytes.b1 = opcodes::OP_STORE;
+            inst.bytes.b2 = temp->dest;
+            inst.whole |= data_addrs.find(temp->var_name)->second;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_LOAD:
+        {
+            Instruction inst;
+            auto temp = (nodes::NodeLoad *)(*iter).get()->ptr.get();
+            inst.bytes.b1 = opcodes::OP_LOAD;
+            inst.bytes.b2 = temp->dest;
+            inst.whole |= data_addrs.find(temp->var_name)->second;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_EXCG:
+        case nodes::NodeKind::_INST_EXCG16:
+        case nodes::NodeKind::_INST_EXCG32:
+        case nodes::NodeKind::_INST_EXCG8:
+        {
+            Instruction inst;
+            auto temp = (nodes::NodeExcg *)(*iter).get()->ptr.get();
+            inst.bytes.b1 = i->kind == nodes::_INST_EXCG16 ? opcodes::OP_EXCG16 : i->kind == nodes::_INST_EXCG32 ? opcodes::OP_EXCG32
+                                                                              : i->kind == nodes::_INST_EXCG8    ? opcodes::OP_EXCG8
+                                                                                                                 : opcodes::OP_EXCG;
+            inst.bytes.b3 = temp->regr1;
+            inst.bytes.b3 <<= 4;
+            inst.bytes.b3 |= temp->regr2;
+            inst_bytes.push_back(inst);
+            break;
+        }
         case nodes::NodeKind::_INST_PUSH_IMM:
         {
             Instruction inst;
             inst.bytes.b1 = opcodes::OP_PUSH_IMM;
-            inst.whole |= std::stoi(((nodes::NodeOneImmOperand*)(*iter).get())->imm);
+            inst.whole |= std::stoi(((nodes::NodeOneImmOperand *)(*iter).get())->imm);
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_INTR:
+        {
+            Instruction inst;
+            inst.bytes.b1 = opcodes::OP_INTR;
+            inst.whole |= std::stoi(((nodes::NodeOneImmOperand *)(*iter).get())->imm);
             inst_bytes.push_back(inst);
             break;
         }
@@ -1017,7 +1083,7 @@ void masm::codegen::Codegen::gen()
         {
             Instruction inst;
             inst.bytes.b1 = opcodes::OP_POP;
-            inst.whole |= (((nodes::NodeOneRegrOperands*)(*iter).get())->oper_rger);
+            inst.whole |= (((nodes::NodeOneRegrOperands *)(*iter).get())->oper_rger);
             inst_bytes.push_back(inst);
             break;
         }
@@ -1025,7 +1091,7 @@ void masm::codegen::Codegen::gen()
         {
             Instruction inst;
             inst.bytes.b1 = opcodes::OP_PUSH_REG;
-            inst.whole |= (((nodes::NodeOneRegrOperands*)(*iter).get())->oper_rger);
+            inst.whole |= (((nodes::NodeOneRegrOperands *)(*iter).get())->oper_rger);
             inst_bytes.push_back(inst);
             break;
         }
@@ -1057,8 +1123,8 @@ void masm::codegen::Codegen::gen()
         }
         case nodes::NodeKind::_INST_SVA:
         case nodes::NodeKind::_INST_SVC:
-           gen_inst_sva_svc(*iter);
-           break;
+            gen_inst_sva_svc(*iter);
+            break;
         case nodes::NodeKind::_INST_MOV_REG_IMMQ:
         {
             gen_inst_mov_reg_immq(*iter);
@@ -1165,12 +1231,12 @@ void masm::codegen::Codegen::gen()
         }
         case nodes::NodeKind::_INST_SIN:
         {
-            gen_inst_sin(data_addrs[((nodes::NodeOneImmOperand *)(inst->ptr.get()))->imm]);
+            gen_inst_sin(data_addrs[((nodes::NodeOneImmOperand *)(i->ptr.get()))->imm]);
             break;
         }
         case nodes::NodeKind::_INST_SOUT:
         {
-            gen_inst_sout(data_addrs[((nodes::NodeOneImmOperand *)(inst->ptr.get()))->imm]);
+            gen_inst_sout(data_addrs[((nodes::NodeOneImmOperand *)(i->ptr.get()))->imm]);
             break;
         }
         case nodes::NodeKind::_INST_IN:

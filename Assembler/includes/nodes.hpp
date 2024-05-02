@@ -195,6 +195,16 @@ namespace masm
             _INST_POP,
             _INST_POPA,
 
+            _INST_LEA,
+            _INST_STORE,
+            _INST_LOAD,
+            _INST_EXCG,
+            _INST_EXCG8,
+            _INST_EXCG16,
+            _INST_EXCG32,
+            _INST_LOOP,
+            _INST_INTR,
+
             _INST_HLT, // this doesn't need its own structure
         };
 
@@ -243,12 +253,14 @@ namespace masm
             virtual ~Base() {} // Make the base class polymorphic with a virtual destructor
         };
 
-
         struct NodeCmpRegr : public Base
         {
             Registers regr1; // the first operand register
             Registers regr2; // the second operand register
         };
+
+        struct NodeExcg: public NodeCmpRegr
+        {};
 
         struct NodeCmpImm : public Base
         {
@@ -287,6 +299,11 @@ namespace masm
         {
         };
 
+        struct NodeLea: public Base
+        {
+            Registers dest, base, index, scale;
+        };
+     
         struct NodeJmp : public Base
         {
             std::string _jmp_label_; // the label to jump to
@@ -334,6 +351,15 @@ namespace masm
             Registers dest_regr; // destination register
             std::string value;   // the value of to move
         };
+
+        struct NodeStore: public Base
+        {
+            Registers dest;
+            std::string var_name;
+        };
+
+        struct NodeLoad: public NodeStore
+        {};
 
         struct NodeAndRegReg : public NodeInstMovRegReg
         {

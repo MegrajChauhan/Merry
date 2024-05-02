@@ -229,6 +229,22 @@ void masm::sema::Sema::analyse()
         // we only check for those instructions that may use variables and symbols
         switch (inst->kind)
         {
+        case nodes::NodeKind::_INST_STORE:
+        {
+            auto node = (nodes::NodeStore *)inst->ptr.get();
+            auto x = symtable.find_entry(node->var_name);
+            if (!symtable.is_invalid(x))
+                analysis_error(inst->line, std::string("The operand '") + node->var_name + "' in the store instruction is not a valid identifier.");
+            break;
+        }
+        case nodes::NodeKind::_INST_LOAD:
+        {
+            auto node = (nodes::NodeLoad *)inst->ptr.get();
+            auto x = symtable.find_entry(node->var_name);
+            if (!symtable.is_invalid(x))
+                analysis_error(inst->line, std::string("The operand '") + node->var_name + "' in the load instruction is not a valid identifier.");
+            break;
+        }
         case nodes::NodeKind::_INST_MOVF:
         case nodes::NodeKind::_INST_MOVLF:
         {
@@ -542,6 +558,16 @@ void masm::sema::Sema::analyse()
                 analysis_error(inst->line, std::string("The label ") + node->_jmp_label_ + " doesn't exist.");
             if (x->second.type != symtable::SymEntryType::_LABEL && x->second.type != symtable::SymEntryType::_PROC)
                 analysis_error(inst->line, std::string("JMP to label ") + node->_jmp_label_ + " is not a label at all.");
+            break;
+        }
+        case nodes::NodeKind::_INST_LOOP:
+        {
+            auto node = (nodes::NodeJmp *)inst->ptr.get();
+            auto x = symtable.find_entry(node->_jmp_label_);
+            if (!symtable.is_invalid(x))
+                analysis_error(inst->line, std::string("The label ") + node->_jmp_label_ + " doesn't exist.");
+            if (x->second.type != symtable::SymEntryType::_LABEL && x->second.type != symtable::SymEntryType::_PROC)
+                analysis_error(inst->line, std::string("LOOP to label ") + node->_jmp_label_ + " is not a label at all.");
             break;
         }
         case nodes::NodeKind::_INST_CALL:

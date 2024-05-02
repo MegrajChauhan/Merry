@@ -165,6 +165,16 @@ namespace masm
             _TT_INST_POP,
             _TT_INST_PUSHA,
             _TT_INST_POPA,
+
+            _TT_INST_LEA,
+            _TT_INST_LOAD,
+            _TT_INST_STORE,
+            _TT_INST_EXCG8,
+            _TT_INST_EXCG16,
+            _TT_INST_EXCG32,
+            _TT_INST_EXCG,
+            _TT_INST_LOOP,
+            _TT_INST_INTR,
      
             _TT_INST_INC,
             _TT_INST_DEC,
@@ -289,6 +299,15 @@ namespace masm
                 {"pusha", _TT_INST_PUSHA},
                 {"pop", _TT_INST_POP},
                 {"popa", _TT_INST_POPA},
+                {"lea", _TT_INST_LEA},
+                {"store", _TT_INST_STORE},
+                {"load", _TT_INST_LOAD},
+                {"excg", _TT_INST_EXCG},
+                {"excgb", _TT_INST_EXCG8},
+                {"excgw", _TT_INST_EXCG16},
+                {"excgd", _TT_INST_EXCG32},
+                {"loop", _TT_INST_LOOP},
+                {"int", _TT_INST_INTR},
         };
 
         struct Token

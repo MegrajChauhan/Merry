@@ -113,6 +113,14 @@ namespace masm
             void handle_inst_push();
             void handle_inst_pop();
 
+            void handle_inst_lea();
+            void handle_inst_store();
+            void handle_inst_load();
+            void handle_inst_excg();
+            void handle_inst_excgX();
+            void handle_inst_loop();
+            void handle_inst_intr();
+
         };
     };
 };

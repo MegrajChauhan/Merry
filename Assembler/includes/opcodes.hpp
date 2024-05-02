@@ -46,7 +46,6 @@ namespace masm
             OP_FSUB,
             OP_FMUL,
             OP_FDIV,
-            
             OP_MOVE_IMM,
             OP_MOVE_IMM_64,
             OP_MOVE_REG,
@@ -65,13 +64,11 @@ namespace masm
             OP_RET,
             OP_SVA,
             OP_SVC,
-            // -------------------- DONE
             OP_PUSH_IMM,
             OP_PUSH_REG,
             OP_POP,
             OP_PUSHA,
             OP_POPA,
-
             OP_AND_IMM,
             OP_AND_REG,
             OP_OR_IMM,
@@ -85,7 +82,6 @@ namespace masm
             OP_CMP_REG,
             OP_INC,
             OP_DEC,
-            
             OP_LEA,
             OP_LOAD,
             OP_STORE,
@@ -93,8 +89,6 @@ namespace masm
             OP_EXCG16,
             OP_EXCG32,
             OP_EXCG,
-
-            // ------------------------ DONE
             OP_MOV8,
             OP_MOV16,
             OP_MOV32,
@@ -120,10 +114,9 @@ namespace masm
             OP_JS,
             OP_JGE,
             OP_JSE,
-            // ------------------------ DONE
-            
             OP_LOOP,
             OP_INTR,
+            // ------------------------ DONE
             OP_LOADB,
             OP_LOADW,
             OP_LOADD,
