@@ -37,16 +37,11 @@
 
 #include "merry_reader.h"
 #include "merry_request_hdlr.h"
-// #include "merry_thread_pool.h"
 #include "merry_core.h"
 
 #if defined(_WIN64)
-#include "services\merry_input.h"
-#include "services\merry_output.h"
 #include "..\..\sys\merry_dynl.h"
 #else
-#include "services/merry_input.h"
-#include "services/merry_output.h"
 #include "../../sys/merry_dynl.h"
 #endif
 
@@ -56,13 +51,10 @@ struct Merry
 {
   MerryCore **cores;          // the vcores
   MerryThread **core_threads; // the vcore's threads
-  // MerryThreadPool *thPool;    // the manager's thread pool
   MerryMemory *inst_mem;  // the instruction memory that every vcore shares
   MerryDMemory *data_mem; // the data memory that every vcore shares
   MerryMutex *_lock;      // the Manager's lock
-  // MerryMutex *_mem_lock;  // lock for memory read/write
   MerryCond *_cond; // the Manager's cond
-  // MerryCond *shared_cond; // this condition is shared among all cores
   msize_t core_count; // the number of vcores
   mbool_t stop;       // tell the manager to stop the VM and exit
   msize_t ret;
@@ -91,13 +83,7 @@ struct Merry
 
 static Merry os;
 
-// _MERRY_ALWAYS_INLINE void get(Merry **g)
-// {
-//   *g = &os;
-// }
 #define merry_manager_mem_read_inst(inst_mem, address, store_in) merry_memory_read(inst_mem, address, store_in)
-// #define merry_manager_mem_read_data(address, store_in) merry_dmemory_read_(os.data_mem, address, store_in)
-// #define merry_manager_mem_write_data(address, _value_to_write) merry_memory_write_lock(os.data_mem, address, _value_to_write)
 
 mret_t merry_os_init(mcstr_t _inp_file);
 _THRET_T_ merry_os_start_vm(mptr_t some_arg);
@@ -107,10 +93,6 @@ mret_t merry_os_boot_core(msize_t core_id, maddress_t start_addr);
 
 // destroy the OS
 void merry_os_destroy();
-
-// mret_t merry_os_mem_read_data(maddress_t address, mqptr_t store_in, msize_t core_id);
-
-// mret_t merry_os_mem_write_data(maddress_t address, mqword_t to_store, msize_t core_id);
 
 // print the suitable error message and exit the VM
 void merry_os_handle_error(merrot_t error);

@@ -28,7 +28,6 @@
 
 // this includes all of the internal errors that may be produced
 
-/*It is just sad to see that for something as powerful as a decoder, the program has to give up on its ability to call as many function as it desires.*/
 /*The call depth will be set according to how much the stack can handle*/
 enum
 {

@@ -67,24 +67,11 @@ typedef struct MerryAddress MerryAddress; // an internal struct
         .page = addr / _MERRY_MEMORY_QS_PER_PAGE_, .offset = address % _MERRY_MEMORY_QS_PER_PAGE_ \
     }
 
-// struct MerryMemPageDetails
-// {
-//     // Atomic operations done to the memory:
-//     // As i cannot think of other ways to provide atomic accesses to data, all i can do is make the page lockable.
-//     // The locked page can be accessed by only the locker for the time period of the operation making the entire page inaccessible to other cores which is
-//     // unwanted and a waste of time and resources.
-//     // I cannot think of other ways to solve this
-//     mbool_t _is_locked;   // is the page locked?
-//     unsigned int _locker; // this is like the key to allow the operator to keep accessing the page atomically
-// };
-
 struct MerryMemPage
 {
     mqptr_t address_space; // the actual memory of the page
-    // MerryMemPageDetails details; // the page details
     MerryMutex *lock; // Many different pages can be accessed simultaneously
     mbool_t _is_locked;
-    // MerryCond *cond;
 };
 
 struct MerryMemory
@@ -130,15 +117,5 @@ mret_t merry_memory_read_lock(MerryMemory *memory, maddress_t address, mqptr_t _
 mret_t merry_memory_write_lock(MerryMemory *memory, maddress_t address, mqword_t _to_write);
 
 mptr_t merry_memory_get_address(MerryMemory *memory, maddress_t address);
-
-// The below functions are called when right after the input file has been read in order to fill the memory to prepare for execution
-// mret_t merry_memory_load(MerryMemory *memory, mqptr_t to_load, msize_t num_of_qs);
-
-/*
-// here number of qs means how many qwords to read
-// this will be specially helpful during operations where single instruction operates on multiple data
-// mret_t merry_memory_read_chunk(MerryMemory *memory, maddress_t address, mqptr_t _store_in, msize_t _num_of_qs);
-mret_t merry_memory_write_chunk(MerryMemory *memory, maddress_t address, mqptr_t _to_write, msize_t _num_of_qs_to_write);
-*/
 
 #endif

@@ -9,7 +9,6 @@
 MerryCore *merry_core_init(MerryMemory *inst_mem, MerryDMemory *data_mem, msize_t id)
 {
     // allocate a new core
-    // _llog_(_CORE_, "Intialization", "Intializing core with ID %lu", id);
     MerryCore *new_core = (MerryCore *)malloc(sizeof(MerryCore));
     // check if the core has been initialized
     if (new_core == RET_NULL)
@@ -41,28 +40,18 @@ MerryCore *merry_core_init(MerryMemory *inst_mem, MerryDMemory *data_mem, msize_
     new_core->stack_mem = (mqptr_t)_MERRY_MEM_GET_PAGE_(_MERRY_STACKMEM_BYTE_LEN_, _MERRY_PROT_DEFAULT_, _MERRY_FLAG_DEFAULT_);
     if (new_core->stack_mem == RET_NULL)
         goto failure;
-    // new_core->should_wait = mtrue;   // should initially wait until said to run
     new_core->stop_running = mfalse; // this is set to false because as soon as the core is instructed to start/continue execution, it shouldn't stop and start immediately
-    new_core->_is_private = mfalse;  // set to false by default
-    // new_core->decoder = merry_init_decoder(new_core);
-    // if (new_core->decoder == RET_NULL)
-    //     goto failure;
-    // if ((new_core->decoder_thread = merry_thread_init()) == RET_NULL)
-    //     goto failure;
-    // // we have done everything now
     new_core->ras = merry_init_stack(_MERRY_RAS_LEN_, mtrue, _MERRY_RAS_LIMIT_, _MERRY_RAS_GROW_PER_RESIZE_);
     if (new_core->ras == RET_NULL)
         goto failure;
     return new_core;
 failure:
-    // _log_(_CORE_, "FAILURE", "Core intialization failed");
     merry_core_destroy(new_core);
     return RET_NULL;
 }
 
 void merry_core_destroy(MerryCore *core)
 {
-    // _llog_(_CORE_, "DESTROYING", "Destroying core with ID %lu", core->core_id);
     if (surelyF(core == NULL))
         return;
     merry_cond_destroy(core->cond);
@@ -96,7 +85,6 @@ _MERRY_INTERNAL_ mqword_t merry_core_get_immediate(MerryCore *core)
     if (merry_manager_mem_read_inst(core->inst_mem, core->pc, &res) == RET_FAILURE)
     {
         // we failed
-        // _llog_(_DECODER_, "DECODE_FAILED", "Decoding failed; Memory read failed", core->core_id);
         core->stop_running = mtrue;
         merry_requestHdlr_panic(core->inst_mem->error);
     }
@@ -110,19 +98,11 @@ _THRET_T_ merry_runCore(mptr_t core)
     register mqword_t curr = 0;
     while (mtrue)
     {
-        // merry_mutex_lock(c->lock);
         if (c->stop_running == mtrue)
-        {
-            // _llog_(_CORE_, "STOPPING", "Core ID %lu stopping now", c->core_id);
             break;
-        }
-        // merry_mutex_unlock(c->lock);
         if (merry_manager_mem_read_inst(c->inst_mem, c->pc, current) == RET_FAILURE)
         {
-            // we failed
-            // _llog_(_DECODER_, "DECODE_FAILED", "Decoding failed; Memory read failed", c->core_id);
             merry_requestHdlr_panic(c->inst_mem->error);
-            /// TODO: Replace all of these types of statements with atomic operations instead.
             break; // stay out of it
         }
         switch (merry_get_opcode(*current))
@@ -133,8 +113,6 @@ _THRET_T_ merry_runCore(mptr_t core)
             merry_requestHdlr_push_request(_REQ_REQHALT, c->core_id, c->cond);
             c->stop_running = mtrue;
             break;
-        // Please ignore all of the redundant code
-        /// TODO: Remove all these redundant code
         case OP_ADD_IMM:
             merry_execute_add_imm(c);
             break;
@@ -219,16 +197,9 @@ _THRET_T_ merry_runCore(mptr_t core)
         case OP_FDIV32:
             merry_execute_fdiv32(c);
             break;
-        // case OP_MOVF_32:
-        //     c->registers[(*current >> 48) & 15] = *current & 0xFFFFFFFF;
-        //     break;
-        // case OP_MOVF_64:
-        //     c->registers[(*current >> 48) & 15] = merry_core_get_immediate(c);
-        //     break;
         case OP_MOVE_IMM: // just 32 bits immediates
             curr = *current;
             c->registers[(curr >> 48) & 15] = (curr) & 0xFFFFFFFF;
-            // printf("Ma is %lu\n", c->registers[Ma]); // remove this
             break;
         case OP_MOVE_IMM_64: // 64 bits immediates
             c->registers[*current & 15] = merry_core_get_immediate(c);
@@ -798,7 +769,6 @@ _THRET_T_ merry_runCore(mptr_t core)
         }
         c->pc++;
     }
-// printf("Ma is now %lu\n", c->registers[Ma]); // 1,000,000,000
 #if defined(_MERRY_HOST_OS_LINUX_)
     return (mptr_t)c->registers[Ma];
 #elif defined(_MERRY_HOST_OS_WINDOWS_)

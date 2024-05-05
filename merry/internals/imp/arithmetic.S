@@ -23,7 +23,6 @@
  */
 
 .intel_syntax noprefix
-// This implements the arithmetic instructions at the hardware level
 #include "../../../utils/merry_config.h"
 
 // We believe that every machine that Merry runs on uses 2's complement for negative number representation and

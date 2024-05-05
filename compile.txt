@@ -3,8 +3,6 @@ merry/merry_logger.c
 merry/merry_stack.c
 sys/src/merry_dynl.c
 sys/src/merry_thread.c
-merry/internals/services/src/merry_input.c
-merry/internals/services/src/merry_output.c
 merry/merry_memory.c
 merry/merry_dmemory.c
 merry/merry_reader.c

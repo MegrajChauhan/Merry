@@ -8,16 +8,6 @@
 #include "internals/merry_os.h"
 #endif
 
-// definitions
-// _MERRY_ALWAYS_INLINE_ _exec_(halt)
-// {
-//    // push a halting request to the queue
-//    _llog_(_CORE_, "EXEC", "Core execuitng halt; core ID %lu", core->core_id);
-//    merry_requestHdlr_push_request(_REQ_REQHALT, core->core_id, core->cond);
-//    core->stop_running = mtrue;
-//    _llog_(_CORE_, "EXEC_DONE", "Halt execution done; core ID %lu", core->core_id);
-// }
-
 _MERRY_INTERNAL_ void merry_cmp_floats64(MerryCore *core, double val1, double val2)
 {
    if (val1 == val2)
@@ -70,7 +60,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(mul_imm){
 _MERRY_ALWAYS_INLINE_ _exec_(mul_reg){
     _ArithMeticRegFrame_(*)}
 
-_MERRY_ALWAYS_INLINE_ _exec_(div_imm)
+_exec_(div_imm)
 {
    // We need to add checks here to check if the operands are valid or not
    register mqword_t current = core->current_inst;
@@ -86,7 +76,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(div_imm)
    _update_flags_(&core->flag);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(div_reg)
+_exec_(div_reg)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 4) & 15;
@@ -101,7 +91,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(div_reg)
    _update_flags_(&core->flag);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(mod_imm)
+_exec_(mod_imm)
 {
    // We need to add checks here to check if the operands are valid or not
    register mqword_t current = core->current_inst;
@@ -117,7 +107,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(mod_imm)
    _update_flags_(&core->flag);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(mod_reg)
+_exec_(mod_reg)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 52) & 15;
@@ -132,7 +122,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(mod_reg)
    _update_flags_(&core->flag);
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(add_mem, mem_read func)
+_lexec_(add_mem, mem_read func)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 48) & 15;
@@ -148,7 +138,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(add_mem, mem_read func)
    _update_flags_(&core->flag);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(fadd32_mem)
+_exec_(fadd32_mem)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 48) & 15;
@@ -164,7 +154,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fadd32_mem)
    merry_cmp_floats32(core, (float)core->registers[reg], (float)temp);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(fadd64_mem)
+_exec_(fadd64_mem)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 48) & 15;
@@ -180,7 +170,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fadd64_mem)
    merry_cmp_floats32(core, (double)core->registers[reg], (double)temp);
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(sub_mem, mem_read func)
+_lexec_(sub_mem, mem_read func)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 48) & 15;
@@ -196,7 +186,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(sub_mem, mem_read func)
    _update_flags_(&core->flag);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(fsub32_mem)
+_exec_(fsub32_mem)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 48) & 15;
@@ -212,7 +202,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fsub32_mem)
    merry_cmp_floats32(core, (float)core->registers[reg], (float)temp);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(fsub64_mem)
+_exec_(fsub64_mem)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 48) & 15;
@@ -228,7 +218,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fsub64_mem)
    merry_cmp_floats64(core, (double)core->registers[reg], (double)temp);
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(mul_mem, mem_read func)
+_lexec_(mul_mem, mem_read func)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 48) & 15;
@@ -244,7 +234,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(mul_mem, mem_read func)
    _update_flags_(&core->flag);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(fmul32_mem)
+_exec_(fmul32_mem)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 48) & 15;
@@ -260,7 +250,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fmul32_mem)
    merry_cmp_floats32(core, (float)core->registers[reg], (float)temp);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(fmul64_mem)
+_exec_(fmul64_mem)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 48) & 15;
@@ -276,7 +266,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fmul64_mem)
    merry_cmp_floats64(core, (double)core->registers[reg], (double)temp);
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(div_mem, mem_read func)
+_lexec_(div_mem, mem_read func)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 52) & 15;
@@ -298,7 +288,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(div_mem, mem_read func)
    _update_flags_(&core->flag);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(fdiv32_mem)
+_exec_(fdiv32_mem)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 48) & 15;
@@ -320,7 +310,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fdiv32_mem)
    merry_cmp_floats32(core, (float)core->registers[reg], (float)temp);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(fdiv64_mem)
+_exec_(fdiv64_mem)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 48) & 15;
@@ -342,7 +332,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fdiv64_mem)
    merry_cmp_floats64(core, (double)core->registers[reg], (double)temp);
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(mod_mem, mem_read func)
+_lexec_(mod_mem, mem_read func)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 52) & 15;
@@ -364,7 +354,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(mod_mem, mem_read func)
    _update_flags_(&core->flag);
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(cmp_mem, mem_read func)
+_lexec_(cmp_mem, mem_read func)
 {
    register mqword_t reg = core->registers[(core->current_inst >> 48) & 15];
    register mqword_t addr = (core->current_inst & 0xFFFFFFFFFFFF) & 15;
@@ -380,33 +370,33 @@ _MERRY_ALWAYS_INLINE_ _lexec_(cmp_mem, mem_read func)
       core->greater = 1;
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(iadd_imm){
+_exec_(iadd_imm){
     // The processor will treat op1 and op2 as signed values
     // Since we will get a result that is also signed, we don't have to worry about anything
     _SArithMeticImmFrame_(+)}
 
-_MERRY_ALWAYS_INLINE_ _exec_(iadd_reg){
+_exec_(iadd_reg){
     _SArithMeticRegFrame_(+)}
 
-_MERRY_ALWAYS_INLINE_ _exec_(isub_imm)
+_exec_(isub_imm)
 {
    _SArithMeticImmFrame_(-) if (core->flag.negative == 0)
            core->greater == 1;
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(isub_reg)
+_exec_(isub_reg)
 {
    _SArithMeticRegFrame_(-) if (core->flag.negative == 0)
            core->greater == 1;
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(imul_imm){
+_exec_(imul_imm){
     _SArithMeticImmFrame_(*)}
 
-_MERRY_ALWAYS_INLINE_ _exec_(imul_reg){
+_exec_(imul_reg){
     _SArithMeticRegFrame_(*)}
 
-_MERRY_ALWAYS_INLINE_ _exec_(idiv_imm)
+_exec_(idiv_imm)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 48) & 15;
@@ -421,7 +411,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(idiv_imm)
    _update_flags_(&core->flag);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(idiv_reg)
+_exec_(idiv_reg)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 4) & 15;
@@ -436,7 +426,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(idiv_reg)
    _update_flags_(&core->flag);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(imod_imm)
+_exec_(imod_imm)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 48) & 15;
@@ -451,7 +441,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(imod_imm)
    _update_flags_(&core->flag);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(imod_reg)
+_exec_(imod_reg)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg = (current >> 4) & 15;
@@ -466,7 +456,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(imod_reg)
    _update_flags_(&core->flag);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(fadd)
+_exec_(fadd)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg1 = (current >> 4) & 15;
@@ -477,7 +467,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fadd)
    merry_cmp_floats64(core, core->registers[reg1], core->registers[reg2]);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(fsub)
+_exec_(fsub)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg1 = (current >> 4) & 15;
@@ -486,7 +476,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fsub)
    merry_cmp_floats64(core, core->registers[reg1], core->registers[reg2]);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(fmul)
+_exec_(fmul)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg1 = (current >> 4) & 15;
@@ -495,7 +485,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fmul)
    merry_cmp_floats64(core, core->registers[reg1], core->registers[reg2]);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(fdiv)
+_exec_(fdiv)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg1 = (current >> 4) & 15;
@@ -504,7 +494,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fdiv)
    merry_cmp_floats64(core, core->registers[reg1], core->registers[reg2]);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(fadd32)
+_exec_(fadd32)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg1 = (current >> 4) & 15;
@@ -513,7 +503,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fadd32)
    merry_cmp_floats32(core, core->registers[reg1], core->registers[reg2]);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(fsub32)
+_exec_(fsub32)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg1 = (current >> 4) & 15;
@@ -522,7 +512,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fsub32)
    merry_cmp_floats32(core, core->registers[reg1], core->registers[reg2]);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(fmul32)
+_exec_(fmul32)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg1 = (current >> 4) & 15;
@@ -531,7 +521,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fmul32)
    merry_cmp_floats32(core, core->registers[reg1], core->registers[reg2]);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(fdiv32)
+_exec_(fdiv32)
 {
    register mqword_t current = core->current_inst;
    register mqword_t reg1 = (current >> 4) & 15;
@@ -541,7 +531,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(fdiv32)
    merry_cmp_floats32(core, core->registers[reg1], core->registers[reg2]);
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(movesx_imm8)
+_exec_(movesx_imm8)
 {
    register mqword_t current = core->current_inst;
    register mqword_t lbyte = current & 0xFF; // this is only 1 byte long
@@ -550,7 +540,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(movesx_imm8)
    core->registers[(current >> 48) & 15] = lbyte;
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(movesx_imm16)
+_exec_(movesx_imm16)
 {
    register mqword_t current = core->current_inst;
    register mqword_t lbyte = current & 0xFFFF;
@@ -559,7 +549,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(movesx_imm16)
    core->registers[(current >> 48) & 15] = lbyte;
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(movesx_imm32)
+_exec_(movesx_imm32)
 {
    register mqword_t current = core->current_inst;
    register mqword_t lbyte = current & 0xFFFFFF;
@@ -568,7 +558,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(movesx_imm32)
    core->registers[(current >> 48) & 15] = lbyte;
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(movesx_reg8)
+_exec_(movesx_reg8)
 {
    register mqword_t current = core->current_inst;
    register mqword_t lbyte = core->registers[(current) & 15] & 0xFF;
@@ -577,7 +567,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(movesx_reg8)
    core->registers[(current >> 4) & 15] = lbyte;
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(movesx_reg16)
+_exec_(movesx_reg16)
 {
    register mqword_t current = core->current_inst;
    register mqword_t lbyte = core->registers[(current) & 15] & 0xFFFF;
@@ -586,7 +576,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(movesx_reg16)
    core->registers[(current >> 4) & 15] = lbyte;
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(movesx_reg32)
+_exec_(movesx_reg32)
 {
    register mqword_t current = core->current_inst;
    register mqword_t lbyte = core->registers[(current) & 15] & 0xFFFFFF;
@@ -597,7 +587,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(movesx_reg32)
 
 // we don't need zero extended version but we do need the sign extended version of MOV
 
-_MERRY_ALWAYS_INLINE_ _exec_(call)
+_exec_(call)
 {
    // we need to save the current state of the SP and BP
    // the parameters for the call should be already pushed
@@ -616,7 +606,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(call)
    core->bp = core->sp++;
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(ret)
+_exec_(ret)
 {
    // Restore everything to its older state
    // also check if the stack is empty
@@ -630,7 +620,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(ret)
    // it is the program's job to restore SP to its desired position
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(sva)
+_exec_(sva)
 {
    // op1 is the destination register and op2 is the offset value
    // first check if the offset value is valid
@@ -648,7 +638,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(sva)
    core->registers[(current >> 48) & 15] = core->stack_mem[core->bp - off];
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(svc)
+_exec_(svc)
 {
    // the same as sva
    register mqword_t current = core->current_inst;
@@ -662,7 +652,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(svc)
    core->stack_mem[core->bp - off] = core->registers[(current >> 48) & 15];
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(push_imm)
+_exec_(push_imm)
 {
    // push the provided immediate value onto the stack
    // it is assumed that the value is unsigned and hence zero extended
@@ -675,7 +665,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(push_imm)
    core->stack_mem[core->sp++] = core->current_inst & 0xFFFFFFFFFFFF;
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(push_reg)
+_exec_(push_reg)
 {
    // same as above
    if (_is_stack_full_(core))
@@ -687,7 +677,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(push_reg)
    core->stack_mem[core->sp++] = core->registers[core->current_inst & 15];
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(pop)
+_exec_(pop)
 {
    // the oppsite of above
    if (_is_stack_empty_(core))
@@ -699,7 +689,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(pop)
    core->registers[core->current_inst & 15] = core->stack_mem[core->sp--];
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(pusha)
+_exec_(pusha)
 {
    if (!_check_stack_lim_(core, REGR_COUNT))
    {
@@ -715,7 +705,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(pusha)
    }
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(popa)
+_exec_(popa)
 {
    if (!_stack_has_atleast_(core, REGR_COUNT))
    {
@@ -731,7 +721,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(popa)
    }
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(load, mqword_t address)
+_lexec_(load, mqword_t address)
 {
    // read from the given address
    if (merry_dmemory_read_qword(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -743,7 +733,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(load, mqword_t address)
    // the value should be loaded
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(store, mqword_t address)
+_lexec_(store, mqword_t address)
 {
    // store to the given address from the given register
    if (merry_dmemory_write_qword(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -755,7 +745,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(store, mqword_t address)
    // the value should be stored
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(loadw, mqword_t address)
+_lexec_(loadw, mqword_t address)
 {
    // read from the given address
    if (merry_dmemory_read_word(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -767,7 +757,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(loadw, mqword_t address)
    // the value should be loaded
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(storew, mqword_t address)
+_lexec_(storew, mqword_t address)
 {
    // store to the given address from the given register
    if (merry_dmemory_write_word(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -779,7 +769,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(storew, mqword_t address)
    // the value should be stored
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(loadd, mqword_t address)
+_lexec_(loadd, mqword_t address)
 {
    // read from the given address
    if (merry_dmemory_read_dword(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -791,7 +781,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(loadd, mqword_t address)
    // the value should be loaded
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(stored, mqword_t address)
+_lexec_(stored, mqword_t address)
 {
    // store to the given address from the given register
    if (merry_dmemory_write_dword(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -803,7 +793,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(stored, mqword_t address)
    // the value should be stored
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(loadb, mqword_t address)
+_lexec_(loadb, mqword_t address)
 {
    // read from the given address
    if (merry_dmemory_read_byte(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -815,7 +805,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(loadb, mqword_t address)
    // the value should be loaded
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(storeb, mqword_t address)
+_lexec_(storeb, mqword_t address)
 {
    // store to the given address from the given register
    if (merry_dmemory_write_byte(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -827,7 +817,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(storeb, mqword_t address)
    // the value should be stored
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(load_reg, mqword_t address)
+_lexec_(load_reg, mqword_t address)
 {
    // read from the given address
    if (merry_dmemory_read_qword(core->data_mem, address, &core->registers[(core->current_inst >> 4) & 15]) == RET_FAILURE)
@@ -839,7 +829,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(load_reg, mqword_t address)
    // the value should be loaded
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(store_reg, mqword_t address)
+_lexec_(store_reg, mqword_t address)
 {
    // store to the given address from the given register
    if (merry_dmemory_write_qword(core->data_mem, address, core->registers[(core->current_inst >> 4) & 15]) == RET_FAILURE)
@@ -851,7 +841,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(store_reg, mqword_t address)
    // the value should be stored
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(loadw_reg, mqword_t address)
+_lexec_(loadw_reg, mqword_t address)
 {
    // read from the given address
    if (merry_dmemory_read_word(core->data_mem, address, &core->registers[(core->current_inst >> 4) & 15]) == RET_FAILURE)
@@ -863,7 +853,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(loadw_reg, mqword_t address)
    // the value should be loaded
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(storew_reg, mqword_t address)
+_lexec_(storew_reg, mqword_t address)
 {
    // store to the given address from the given register
    if (merry_dmemory_write_word(core->data_mem, address, core->registers[(core->current_inst >> 4) & 15]) == RET_FAILURE)
@@ -875,7 +865,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(storew_reg, mqword_t address)
    // the value should be stored
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(loadd_reg, mqword_t address)
+_lexec_(loadd_reg, mqword_t address)
 {
    // read from the given address
    if (merry_dmemory_read_dword(core->data_mem, address, &core->registers[(core->current_inst >> 4) & 15]) == RET_FAILURE)
@@ -887,7 +877,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(loadd_reg, mqword_t address)
    // the value should be loaded
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(stored_reg, mqword_t address)
+_lexec_(stored_reg, mqword_t address)
 {
    // store to the given address from the given register
    if (merry_dmemory_write_dword(core->data_mem, address, core->registers[(core->current_inst >> 4) & 15]) == RET_FAILURE)
@@ -899,7 +889,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(stored_reg, mqword_t address)
    // the value should be stored
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(loadb_reg, mqword_t address)
+_lexec_(loadb_reg, mqword_t address)
 {
    // read from the given address
    if (merry_dmemory_read_byte(core->data_mem, address, &core->registers[(core->current_inst >> 4) & 15]) == RET_FAILURE)
@@ -911,7 +901,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(loadb_reg, mqword_t address)
    // the value should be loaded
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(storeb_reg, mqword_t address)
+_lexec_(storeb_reg, mqword_t address)
 {
    // store to the given address from the given register
    if (merry_dmemory_write_byte(core->data_mem, address, core->registers[(core->current_inst >> 4) & 15]) == RET_FAILURE)
@@ -923,7 +913,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(storeb_reg, mqword_t address)
    // the value should be stored
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(excg8)
+_exec_(excg8)
 {
    // just exchange the bytes and don't overwrite anything
    register mqword_t curr = core->current_inst;
@@ -933,7 +923,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(excg8)
    core->registers[curr & 15] &= (0xFFFFFFFFFFFFFF00 | (reg1 & 0xFF));
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(excg16)
+_exec_(excg16)
 {
    // just exchange the bytes and don't overwrite anything
    register mqword_t curr = core->current_inst;
@@ -943,7 +933,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(excg16)
    core->registers[curr & 15] &= (0xFFFFFFFFFFFFFF00 | (reg1 & 0xFFFF));
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(excg32)
+_exec_(excg32)
 {
    // just exchange the bytes and don't overwrite anything
    register mqword_t curr = core->current_inst;
@@ -953,7 +943,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(excg32)
    core->registers[curr & 15] &= (0xFFFFFFFFFFFFFF00 | (reg1 & 0xFFFFFF));
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(excg)
+_exec_(excg)
 {
    // just exchange the bytes and don't overwrite anything
    register mqword_t curr = core->current_inst;
@@ -963,7 +953,7 @@ _MERRY_ALWAYS_INLINE_ _exec_(excg)
    core->registers[curr & 15] = reg1;
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(atm_load, mqword_t address)
+_lexec_(atm_load, mqword_t address)
 {
    // read from the given address
    if (merry_dmemory_read_qword_atm(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -975,7 +965,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(atm_load, mqword_t address)
    // the value should be loaded
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(atm_store, mqword_t address)
+_lexec_(atm_store, mqword_t address)
 {
    // store to the given address from the given register
    if (merry_dmemory_write_qword_atm(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -987,7 +977,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(atm_store, mqword_t address)
    // the value should be stored
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(atm_loadw, mqword_t address)
+_lexec_(atm_loadw, mqword_t address)
 {
    // read from the given address
    if (merry_dmemory_read_word_atm(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -999,7 +989,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(atm_loadw, mqword_t address)
    // the value should be loaded
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(atm_storew, mqword_t address)
+_lexec_(atm_storew, mqword_t address)
 {
    // store to the given address from the given register
    if (merry_dmemory_write_word_atm(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -1011,7 +1001,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(atm_storew, mqword_t address)
    // the value should be stored
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(atm_loadd, mqword_t address)
+_lexec_(atm_loadd, mqword_t address)
 {
    // read from the given address
    if (merry_dmemory_read_dword_atm(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -1023,7 +1013,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(atm_loadd, mqword_t address)
    // the value should be loaded
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(atm_stored, mqword_t address)
+_lexec_(atm_stored, mqword_t address)
 {
    // store to the given address from the given register
    if (merry_dmemory_write_dword_atm(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -1035,7 +1025,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(atm_stored, mqword_t address)
    // the value should be stored
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(atm_loadb, mqword_t address)
+_lexec_(atm_loadb, mqword_t address)
 {
    // read from the given address
    if (merry_dmemory_read_byte_atm(core->data_mem, address, &core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)
@@ -1047,7 +1037,7 @@ _MERRY_ALWAYS_INLINE_ _lexec_(atm_loadb, mqword_t address)
    // the value should be loaded
 }
 
-_MERRY_ALWAYS_INLINE_ _lexec_(atm_storeb, mqword_t address)
+_lexec_(atm_storeb, mqword_t address)
 {
    // store to the given address from the given register
    if (merry_dmemory_write_byte_atm(core->data_mem, address, core->registers[(core->current_inst >> 48) & 15]) == RET_FAILURE)

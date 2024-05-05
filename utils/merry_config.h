@@ -29,42 +29,21 @@
 #define _MERRY_LITTLE_ENDIAN_ 0x00
 #define _MERRY_BIG_ENDIAN_ 0x01
 
-// The endianness of merry
-#define _MERRY_ENDIANNESS_ _MERRY_LITTLE_ENDIAN_
-
 #define _MERRY_OPTIMIZE_
 
 #define _MERRY_VERSION_ "0.0.0"
 #define _MERRY_VERSION_STATE_ ".alpha-1a" // beta, alpha, etc
 
-
-/*
- * Check for the endianness of the system. We can use this to our advantage for making the VM faster.
- */
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #define _MERRY_BYTE_ORDER_ _MERRY_LITTLE_ENDIAN_
 #else
 #define _MERRY_BYTE_ORDER_ _MERRY_BIG_ENDIAN_
 #endif
 
+#define _MERRY_ENDIANNESS_ _MERRY_LITTLE_ENDIAN_
+
 #if __SIZEOF_POINTER__ != 8
 #error Merry requires 64-bit host machines to run. Host machine is not 64-bit.
-#endif
-
-/*compiler detection*/
-#if defined(__cplusplus)
-#define _MERRY_COMPILER_CPP_ 1 // indicating that the compiler is c++
-#endif
-
-/*For C++ compilers*/
-#if defined(_MERRY_COMPILER_CPP_)
-#define _MERRY_EXTERN_HEADER_ \
-    extern "C"                \
-    {
-#define _MERRY_EXTERN_HEADER_E_ }
-#else
-#define _MERRY_EXTERN_HEADER_
-#define _MERRY_EXTERN_HEADER_E_
 #endif
 
 /*for now we only check for amd architecture*/

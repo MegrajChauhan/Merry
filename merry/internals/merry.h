@@ -28,8 +28,7 @@
 #include <stdlib.h>
 #include "merry_os.h"
 
-#define _MERRY_MAX_OPTIONS_ 4 // I mean this is given. The person can't ask anything to move both forward and backward at the same time. But this is actually not representing the limit
-                              // this represents the number of options
+#define _MERRY_MAX_OPTIONS_ 4
 
 typedef enum MerryCLOption_t MerryCLOption_t;
 typedef struct MerryCLOption MerryCLOption; // an option

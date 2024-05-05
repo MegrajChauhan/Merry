@@ -48,7 +48,6 @@ _MERRY_INTERNAL_ MerryMemPage *merry_mem_allocate_new_mempage_provided(mqptr_t p
         return RET_NULL;
     }
     // everything went successfully
-    // _log_(_MEM_, "Page Allocation", "Allocating memory provided");
     return new_page;
 }
 
@@ -71,12 +70,10 @@ _MERRY_INTERNAL_ void merry_mem_free_mempage(MerryMemPage *page)
 // exposed function: initialize memory with num_of_pages pages
 MerryMemory *merry_memory_init(msize_t num_of_pages)
 {
-    // _llog_(_MEM_, "INIT", "Intializing memory with %lu pages", num_of_pages);
     MerryMemory *memory = (MerryMemory *)malloc(sizeof(MerryMemory));
     if (memory == RET_NULL)
     {
         // we failed
-        // _log_(_MEM_, "FAILED", "Memory inti failed");
         return RET_NULL;
     }
     memory->error = MERRY_ERROR_NONE;
@@ -85,25 +82,21 @@ MerryMemory *merry_memory_init(msize_t num_of_pages)
     if (memory->pages == RET_NULL)
     {
         // failed
-        // _log_(_MEM_, "FAILED", "Mmeory init failed");
         free(memory);
         return RET_NULL;
     }
     // now we need to initialize every single page
     for (msize_t i = 0; i < num_of_pages; i++, memory->number_of_pages++)
     {
-        // _llog_(_MEM_, "ALLOCATING PAGES", "Allocating page %lu", i);
         memory->pages[i] = merry_mem_allocate_new_mempage();
         if (memory->pages[i] == RET_NULL)
         {
             // failure
-            // _log_(_MEM_, "FAILED", "Memory intialization failed while allocating pages");
             merry_memory_free(memory);
             return RET_NULL;
         }
     }
     // we have allocated everything successfully
-    // _log_(_MEM_, "MEM_INIT_SUCCESS", "Memory successfully initialized");
     return memory;
 }
 
@@ -111,12 +104,10 @@ MerryMemory *merry_memory_init_provided(mqptr_t *mapped_pages, msize_t num_of_pa
 {
     // just perform the regular allocation but don't map new pages
     // instead use the already mapped ones
-    // _llog_(_MEM_, "INIT", "Intializing memory with %lu pages", num_of_pages);
     MerryMemory *memory = (MerryMemory *)malloc(sizeof(MerryMemory));
     if (memory == RET_NULL)
     {
         // we failed
-        // _log_(_MEM_, "FAILED", "Memory inti failed");
         return RET_NULL;
     }
     memory->error = MERRY_ERROR_NONE;
@@ -125,31 +116,26 @@ MerryMemory *merry_memory_init_provided(mqptr_t *mapped_pages, msize_t num_of_pa
     if (memory->pages == RET_NULL)
     {
         // failed
-        // _log_(_MEM_, "FAILED", "Memory inti failed");
         free(memory);
         return RET_NULL;
     }
     // now we need to initialize every single page
     for (msize_t i = 0; i < num_of_pages; i++, memory->number_of_pages++)
     {
-        // _llog_(_MEM_, "ALLOCATING PAGES", "Allocating page %lu", i);
         memory->pages[i] = merry_mem_allocate_new_mempage_provided(mapped_pages[i]);
         if (memory->pages[i] == RET_NULL)
         {
             // failure
-            // _log_(_MEM_, "FAILED", "Memory intialization failed while allocating pages");
             merry_memory_free(memory);
             return RET_NULL;
         }
     }
     // we have allocated everything successfully
-    // _log_(_MEM_, "MEM_INIT_SUCCESS", "Memory successfully initialized");
     return memory;
 }
 
 void merry_memory_free(MerryMemory *memory)
 {
-    // _log_(_MEM_, "DESTORYING", "Destroying memory");
     if (surelyF(memory == NULL))
         return;
     if (memory->pages != NULL)
@@ -261,26 +247,3 @@ mptr_t merry_memory_get_address(MerryMemory *memory, maddress_t address)
     // this just basically returns an actual address to the address that the manager can use
     return &memory->pages[addr.page]->address_space[addr.offset];
 }
-
-// mret_t merry_memory_load(MerryMemory *memory, mqptr_t to_load, msize_t num_of_qs)
-// {
-//     // For optimization purposed, we will need to take some measures here
-//     // as the size of the input file grows, the time to read and load grows by a lot[Almost exponentially]
-//     // This lag in performance really shows itself ones we have programs of just a few kilobytes.
-//     // we will need to use various methods in order to write to memory
-//     // for num_of_qs less than 1 memory page size, we can copy the memory from to_load simply
-// }
-
-// // we also need to check if the requested page is being held by a core for atomic operations
-// if (memory->pages[addr.page]->details._is_locked == mtrue)
-// {
-//     if (memory->pages[addr.page]->details._locker != key)
-//     {
-//         // the page is being held by some other core
-//         // in this case we simply cannot return
-//     }
-//     else
-//     {
-//         // this core holds the memory page and so we can access it safely
-//     }
-// }

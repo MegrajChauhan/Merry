@@ -92,7 +92,6 @@ int main(int argc, char **argv)
     merry_thread_join(osthread, &returnval); // I am an idiot
     merry_thread_destroy(osthread);
     merry_os_destroy();
-    // printf("Time taken to run: %lfs.\n", (double)(end - start) / CLOCKS_PER_SEC);
     return returnval;
 failure:
     merry_logger_close();

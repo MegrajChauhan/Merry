@@ -797,7 +797,7 @@ void masm::parser::Parser::handle_inst_jX()
     std::unique_ptr<nodes::Base> ptr = std::make_unique<nodes::NodeJmp>();
     auto temp = (nodes::NodeJmp *)ptr.get();
     temp->_jmp_label_ = curr_tok.value;
-    nodes::NodeKind k = (nodes::NodeKind)(curr + 15);
+    nodes::NodeKind k = (nodes::NodeKind)(curr + 14);
     nodes.push_back(std::make_unique<nodes::Node>(nodes::_TYPE_INST, k, std::move(ptr), lexer.get_curr_line()));
 }
 

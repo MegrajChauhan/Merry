@@ -468,12 +468,6 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_data_same(MerryInpFile *inp)
         _READ_DIRERROR_("Read Error: Failed to read string.\n");
         return RET_FAILURE;
     }
-
-    // for (msize_t i = 0; i < 7; i++)
-    // {
-    //     printf("%lX\n", inp->_data[count][i]);
-    // }
-
     if (inp->slen < rem)
         return RET_SUCCESS; // we have read what we can
 
@@ -525,37 +519,6 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_data(MerryInpFile *inp)
     merry_reader_unalloc_pages(inp);
     return ret;
 }
-
-// _MERRY_INTERNAL_ mret_t merry_reader_read_string(MerryInpFile *inp)
-// {
-//     if (inp->slen == 0)
-//         return RET_SUCCESS;
-//     register msize_t s_count = inp->slen / _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
-//     register msize_t s_ext = inp->slen % _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
-//     // slen will certainly not be that long
-//     register msize_t count = inp->dlen / _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
-//     register msize_t ext = inp->dlen % _MERRY_MEMORY_ADDRESSES_PER_PAGE_; // this gives any remaining addresses
-//     mbyte_t _read[_MERRY_MEMORY_ADDRESSES_PER_PAGE_];
-
-//     mqword_t rem = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - ext;
-
-//     if (fread(&inp->_data[count - 1][ext - 1], 1, rem < inp->slen ? rem : inp->slen, inp->f) != _MERRY_MEMORY_ADDRESSES_PER_PAGE_)
-//     {
-//         _READ_DIRERROR_("Read Error: Failed to read string.\n");
-//         return RET_FAILURE;
-//     }
-
-//     for (msize_t i = 0; i < s_count; i++)
-//     {
-//         if (fread(inp->_data[i], 1, _MERRY_MEMORY_ADDRESSES_PER_PAGE_, inp->f) != _MERRY_MEMORY_ADDRESSES_PER_PAGE_)
-//         {
-//             // we failed
-//             // what should we do when we fail to read?
-//             _READ_DIRERROR_("Read Error: Failed to read data.\n");
-//             return RET_FAILURE;
-//         }
-//     }
-// }
 
 MerryInpFile *merry_read_file(mcstr_t _file_name)
 {

@@ -61,8 +61,6 @@ enum
     _REQ_REQHALT = 151, /*Halt request: Halt the core that is making the request. Also check if any other cores are online, if not stop execution.*/
     _REQ_EXIT,          /*The same as halt but instead it stops every core from running*/
     _REQ_NEWCORE,       /*Create a new core for execution. This requires the requesting core's Ma register to contain the address from which the new core should execute from*/
-    _REQ_READCHAR,      /*Reads a character. The address to store to must be in the Ma register. Can also be used to read 1 byte numbers*/
-    _REQ_WRITECHAR,     /*Writes a character. The address to store to must be in the Ma register. Can also be used to read 1 byte numbers*/
     _REQ_DYNL,          // load a library
     _REQ_DYNUL,         // unload a library
     _REQ_DYNCALL,       // call a function from the loaded libary

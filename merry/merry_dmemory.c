@@ -53,7 +53,6 @@ _MERRY_INTERNAL_ MerryDMemPage *merry_mem_allocate_new_mempage_provided(mqptr_t 
     new_page->address_dspace = (mdptr_t)new_page->address_space;
     new_page->address_qspace = (mqptr_t)new_page->address_space;
     // everything went successfully
-    // _log_(_MEM_, "Page Allocation", "Allocating memory provided");
     return new_page;
 }
 
@@ -76,12 +75,10 @@ _MERRY_INTERNAL_ void merry_mem_free_mempage(MerryDMemPage *page)
 // exposed function: initialize memory with num_of_pages pages
 MerryDMemory *merry_dmemory_init(msize_t num_of_pages)
 {
-    // _llog_(_MEM_, "INIT", "Intializing memory with %lu pages", num_of_pages);
     MerryDMemory *memory = (MerryDMemory *)malloc(sizeof(MerryDMemory));
     if (memory == RET_NULL)
     {
         // we failed
-        // _log_(_MEM_, "FAILED", "Memory inti failed");
         return RET_NULL;
     }
     memory->error = MERRY_ERROR_NONE;
@@ -90,25 +87,21 @@ MerryDMemory *merry_dmemory_init(msize_t num_of_pages)
     if (memory->pages == RET_NULL)
     {
         // failed
-        // _log_(_MEM_, "FAILED", "Mmeory init failed");
         free(memory);
         return RET_NULL;
     }
     // now we need to initialize every single page
     for (msize_t i = 0; i < num_of_pages; i++, memory->number_of_pages++)
     {
-        // _llog_(_MEM_, "ALLOCATING PAGES", "Allocating page %lu", i);
         memory->pages[i] = merry_mem_allocate_new_mempage();
         if (memory->pages[i] == RET_NULL)
         {
             // failure
-            // _log_(_MEM_, "FAILED", "Memory intialization failed while allocating pages");
             merry_dmemory_free(memory);
             return RET_NULL;
         }
     }
     // we have allocated everything successfully
-    // _log_(_MEM_, "MEM_INIT_SUCCESS", "Memory successfully initialized");
     return memory;
 }
 
@@ -116,12 +109,10 @@ MerryDMemory *merry_dmemory_init_provided(mqptr_t *mapped_pages, msize_t num_of_
 {
     // just perform the regular allocation but don't map new pages
     // instead use the already mapped ones
-    // _llog_(_MEM_, "INIT", "Intializing memory with %lu pages", num_of_pages);
     MerryDMemory *memory = (MerryDMemory *)malloc(sizeof(MerryDMemory));
     if (memory == RET_NULL)
     {
         // we failed
-        // _log_(_MEM_, "FAILED", "Memory inti failed");
         return RET_NULL;
     }
     memory->error = MERRY_ERROR_NONE;
@@ -130,31 +121,26 @@ MerryDMemory *merry_dmemory_init_provided(mqptr_t *mapped_pages, msize_t num_of_
     if (memory->pages == RET_NULL)
     {
         // failed
-        // _log_(_MEM_, "FAILED", "Memory inti failed");
         free(memory);
         return RET_NULL;
     }
     // now we need to initialize every single page
     for (msize_t i = 0; i < num_of_pages; i++, memory->number_of_pages++)
     {
-        // _llog_(_MEM_, "ALLOCATING PAGES", "Allocating page %lu", i);
         memory->pages[i] = merry_mem_allocate_new_mempage_provided(mapped_pages[i]);
         if (memory->pages[i] == RET_NULL)
         {
             // failure
-            // _log_(_MEM_, "FAILED", "Memory intialization failed while allocating pages");
             merry_dmemory_free(memory);
             return RET_NULL;
         }
     }
     // we have allocated everything successfully
-    // _log_(_MEM_, "MEM_INIT_SUCCESS", "Memory successfully initialized");
     return memory;
 }
 
 void merry_dmemory_free(MerryDMemory *memory)
 {
-    // _log_(_MEM_, "DESTORYING", "Destroying memory");
     if (surelyF(memory == NULL))
         return;
     if (memory->pages != NULL)
@@ -193,7 +179,6 @@ mret_t merry_dmemory_read_byte_atm(MerryDMemory *memory, maddress_t address, mqp
         return RET_FAILURE;
     }
     *_store_in = atomic_load(&memory->pages[addr.page]->address_space[addr.offset]);
-    // *_store_in = memory->pages[addr.page]->address_space[addr.offset];
     return RET_SUCCESS;
 }
 
@@ -221,7 +206,6 @@ mret_t merry_dmemory_write_byte_atm(MerryDMemory *memory, maddress_t address, mq
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    // memory->pages[addr.page]->address_space[addr.offset] = _to_write;
     atomic_store(&memory->pages[addr.page]->address_space[addr.offset], _to_write);
     return RET_SUCCESS;
 }
@@ -277,7 +261,6 @@ mret_t merry_dmemory_read_word_atm(MerryDMemory *memory, maddress_t address, mqp
     *_store_in = atomic_load(&memory->pages[addr.page]->address_space[addr.offset]);
     (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 1]);
 #endif
-    // *_store_in = memory->pages[addr.page]->address_wspace[addr.offset / 2];
     return RET_SUCCESS;
 }
 
@@ -392,7 +375,6 @@ mret_t merry_dmemory_read_dword_atm(MerryDMemory *memory, maddress_t address, mq
     (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 2]);
     (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 3]);
 #endif
-    // *_store_in = memory->pages[addr.page]->address_dspace[addr.offset / 4];
     return RET_SUCCESS;
 }
 
@@ -442,7 +424,6 @@ mret_t merry_dmemory_write_dword_atm(MerryDMemory *memory, maddress_t address, m
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    // memory->pages[addr.page]->address_wspace[addr.offset / 4] = _to_write & 0xFFFFFFFF;
 #if (_MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_)
     atomic_store(&memory->pages[addr.page]->address_space[addr.offset], _to_write & 255);
     atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 1], (_to_write >> 8) & 255);
@@ -513,7 +494,6 @@ mret_t merry_dmemory_read_qword_atm(MerryDMemory *memory, maddress_t address, mq
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    // *_store_in = memory->pages[addr.page]->address_qspace[addr.offset / 8];
 #if (_MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_)
     *_store_in = atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 7]);
     (*_store_in <<= 8) | atomic_load(&memory->pages[addr.page]->address_space[addr.offset + 6]);

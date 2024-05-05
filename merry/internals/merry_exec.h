@@ -78,9 +78,6 @@ struct MerryDMemory;
     core->registers[reg] = (msqword_t)core->registers[reg] sign(msqword_t) core->registers[_LowerDownReg_(current)]; \
     _update_flags_(&core->flag);
 
-// execute the halt instruction
-// _exec_(halt);
-
 _MERRY_DEFINE_FUNC_PTR_(mret_t, mem_read, struct MerryDMemory *, maddress_t, mqptr_t);
 
 // arithmetic instructions
@@ -135,14 +132,6 @@ _exec_(fsub32);
 _exec_(fmul32);
 _exec_(fdiv32);
 
-// move instructions
-// _exec_(move_imm);
-// _lexec_(move_imm64, mqword_t imm);
-// _exec_(move_reg);
-// _exec_(move_reg8);
-// _exec_(move_reg16);
-// _exec_(move_reg32);
-
 _exec_(movesx_reg8);
 _exec_(movesx_reg16);
 _exec_(movesx_reg32);
@@ -163,26 +152,6 @@ _exec_(pop);
 _exec_(pusha);
 _exec_(popa);
 
-// logical instructions
-// All AND, OR, XOR and CMP take 64 bits values that should follow the instruction in memory
-// _lexec_(and_imm, mqword_t imm);
-// _exec_(and_reg);
-// _lexec_(or_imm, mqword_t imm);
-// _exec_(or_reg);
-// _lexec_(xor_imm, mqword_t imm);
-// _exec_(xor_reg);
-// _exec_(not );
-// _exec_(lshift);
-// _exec_(rshift);
-// _exec_(cmp_imm);
-// _exec_(cmp_reg);
-
-// some extra instructions
-// _exec_(inc);
-// _exec_(dec);
-
-// data movement instructions
-// _exec_(lea);
 _lexec_(load, mqword_t address);
 _lexec_(store, mqword_t address);
 _lexec_(loadb, mqword_t address);
@@ -214,22 +183,5 @@ _exec_(excg);
 _exec_(excg8);
 _exec_(excg16);
 _exec_(excg32);
-
-// _exec_(mov8);
-// _exec_(mov16);
-// _exec_(mov32);
-
-// utility instructions
-
-// _exec_(cflags);
-// _exec_(reset);
-// _exec_(clz);
-// _exec_(cln);
-// _exec_(clc);
-// _exec_(clo);
-
-// contidional jumps
-// _lexec_(jnz, mqword_t address);
-// _lexec_(jz, mqword_t address);
 
 #endif
