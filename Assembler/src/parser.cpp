@@ -51,6 +51,10 @@ void masm::parser::Parser::parse()
             handle_proc_declaration();
             next_token();
         }
+        else if (curr_tok.type == lexer::_TT_KEY_ATM)
+        {
+            handle_atm_insts();
+        }
         else if (curr_tok.type >= lexer::_TT_INST_NOP && curr_tok.type <= lexer::_TT_INST_DEC)
             handleInstruction();
         else
@@ -335,6 +339,39 @@ void masm::parser::Parser::handleInstruction()
         handle_inst_cmpxchg();
         break;
     }
+    next_token();
+}
+
+void masm::parser::Parser::handle_atm_insts()
+{
+    next_token();
+    // handle atomic instructions here
+    switch (curr_tok.type)
+    {
+    case lexer::_TT_INST_LOADB:
+    case lexer::_TT_INST_LOADW:
+    case lexer::_TT_INST_LOADD:
+        handle_inst_loadX();
+        break;
+    case lexer::_TT_INST_STOREB:
+    case lexer::_TT_INST_STOREW:
+    case lexer::_TT_INST_STORED:
+        handle_inst_storeX();
+        break;
+    case lexer::_TT_INST_STORE:
+        handle_inst_store();
+        break;
+    case lexer::_TT_INST_LOAD:
+        handle_inst_load();
+        break;
+    default:
+      lexer.parse_err_previous_token("This is not a valid atomic operation.", curr_tok.value);
+    }
+    // now we need to change the node type
+    auto temp = nodes[nodes.size() - 1].get();
+    if (temp->kind >= 150 && temp->kind <= 157)
+       lexer.parse_err_whole_line("Atomic load and store requires one operand to be a variable.");
+    temp->kind = (nodes::NodeKind)((uint64_t)temp->kind + 16);
     next_token();
 }
 

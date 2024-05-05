@@ -22,11 +22,8 @@ Merry is  a 64-bit Virtual Machine that emulates a non-existsent CPU. Merry has 
 and comming soon....
 
 # Updates:
-A more than basic assembler has been added. The assembler currently supports most of the instructions needed to write cool programs. See _example/run/_ for example programs that can be assembled and run.
+A more than basic assembler has been added. The assembler currently supports all of the instructions needed to write programs. See _example/run/_ for example programs that can be assembled and run. The assembler is only basic and doesn't provide advanced features such as file inclusion and constants definitions.
 Please do not run the programs in _example/don't run_ folder which should be inituitive.
-
-# Some Important Notes:
-Merry is not fully tested right now and so it may not work as expected. Hence any help in finding and solving the issues is appreciated. The building process will be explained soon. The VM hasn't been tested in Windows, Mac or any other operating systems. Also the use of **gcc** as the compiler would be recommended.
 
 # Building the VM and the Assembler:
 Due to my lack of knowledge in build systems, I have had to use a script written in Python for building. For building the project, here is the command to run:
@@ -36,6 +33,7 @@ python build.py <Destination Folder> vm # for building the vm only
 python build.py <Destination Folder> asm # for building the assembler
 ```
 Note that the above command must be ran in the same directory as the script. If the destination directory doesn't exist already, create one first.
+"gcc" is the compiler needed for the compilation of the VM while "g++" is needed for the assembler.
 
 # Running Programs:
 In order to make merry run any program, first go into the directory where the compiled executable resides and type the following command:

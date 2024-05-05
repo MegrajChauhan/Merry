@@ -125,6 +125,8 @@ namespace masm
 
             void handle_inst_cmpxchg();
 
+            void handle_atm_insts();
+
         };
     };
 };

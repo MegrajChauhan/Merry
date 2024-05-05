@@ -35,6 +35,7 @@ namespace masm
             _TT_KEY_RESD,
             _TT_KEY_RESQ,
             _TT_KEY_PROC,
+            _TT_KEY_ATM,
 
             _TT_STRING,
             _TT_INT,
@@ -202,6 +203,7 @@ namespace masm
                 {"df", _TT_KEY_DF},
                 {"dlf", _TT_KEY_DLF},
                 {"proc", _TT_KEY_PROC},
+                {"atm", _TT_KEY_ATM},
                 {":", _TT_OPER_COLON},
                 {"mov", _TT_INST_MOV},
                 {"hlt", _TT_INST_HLT},

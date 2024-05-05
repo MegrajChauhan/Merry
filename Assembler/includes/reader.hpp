@@ -6,6 +6,7 @@
 #include <fstream>
 #include <filesystem>
 #include <iostream>
+#include <optional>
 
 namespace masm
 {
@@ -26,6 +27,7 @@ namespace masm
         {
         private:
             std::string file_name;
+            std::fstream _f;
 
             bool is_valid_filename()
             {
@@ -66,6 +68,16 @@ namespace masm
             std::string get_file_name();
 
             void print_error(ReaderErrorKind);
+
+            std::optional<std::string> get_next_line();
+
+            void open_file();
+
+            ~Reader()
+            {
+                if (_f.is_open())
+                    _f.close();
+            }
         };
     };
 };

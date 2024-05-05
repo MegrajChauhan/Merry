@@ -241,6 +241,10 @@ void masm::sema::Sema::analyse()
         case nodes::NodeKind::_INST_STOREB:
         case nodes::NodeKind::_INST_STOREW:
         case nodes::NodeKind::_INST_STORED:
+        case nodes::NodeKind::_INST_ATM_STORE:
+        case nodes::NodeKind::_INST_ATM_STOREB:
+        case nodes::NodeKind::_INST_ATM_STOREW:
+        case nodes::NodeKind::_INST_ATM_STORED:
         {
             auto node = (nodes::NodeStore *)inst->ptr.get();
             auto x = symtable.find_entry(node->var_name);
@@ -252,6 +256,10 @@ void masm::sema::Sema::analyse()
         case nodes::NodeKind::_INST_LOADB:
         case nodes::NodeKind::_INST_LOADW:
         case nodes::NodeKind::_INST_LOADD:
+        case nodes::NodeKind::_INST_ATM_LOAD:
+        case nodes::NodeKind::_INST_ATM_LOADB:
+        case nodes::NodeKind::_INST_ATM_LOADW:
+        case nodes::NodeKind::_INST_ATM_LOADD:
         {
             auto node = (nodes::NodeLoad *)inst->ptr.get();
             auto x = symtable.find_entry(node->var_name);

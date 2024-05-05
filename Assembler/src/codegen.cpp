@@ -1053,6 +1053,21 @@ void masm::codegen::Codegen::gen()
             inst_bytes.push_back(inst);
             break;
         }
+        case nodes::NodeKind::_INST_ATM_STORE:
+        case nodes::NodeKind::_INST_ATM_STOREB:
+        case nodes::NodeKind::_INST_ATM_STOREW:
+        case nodes::NodeKind::_INST_ATM_STORED:
+        {
+            Instruction inst;
+            auto temp = (nodes::NodeStore *)(*iter).get()->ptr.get();
+            inst.bytes.b1 = i->kind == nodes::_INST_ATM_STORE ? opcodes::OP_ATOMIC_STORE : i->kind == nodes::_INST_ATM_STOREB ? opcodes::OP_ATOMIC_STOREB
+                                                                            : i->kind == nodes::_INST_ATM_STOREW   ? opcodes::OP_ATOMIC_STOREW
+                                                                                                               : opcodes::OP_ATOMIC_STORED;
+            inst.bytes.b2 = temp->dest;
+            inst.whole |= data_addrs.find(temp->var_name)->second;
+            inst_bytes.push_back(inst);
+            break;
+        }
         case nodes::NodeKind::_INST_LOAD:
         case nodes::NodeKind::_INST_LOADB:
         case nodes::NodeKind::_INST_LOADW:
@@ -1063,6 +1078,21 @@ void masm::codegen::Codegen::gen()
             inst.bytes.b1 = i->kind == nodes::_INST_LOAD ? opcodes::OP_LOAD : i->kind == nodes::_INST_LOADB ? opcodes::OP_LOADB
                                                                           : i->kind == nodes::_INST_LOADW   ? opcodes::OP_LOADW
                                                                                                             : opcodes::OP_LOADD;
+            inst.bytes.b2 = temp->dest;
+            inst.whole |= data_addrs.find(temp->var_name)->second;
+            inst_bytes.push_back(inst);
+            break;
+        }
+        case nodes::NodeKind::_INST_ATM_LOAD:
+        case nodes::NodeKind::_INST_ATM_LOADB:
+        case nodes::NodeKind::_INST_ATM_LOADW:
+        case nodes::NodeKind::_INST_ATM_LOADD:
+        {
+            Instruction inst;
+            auto temp = (nodes::NodeLoad *)(*iter).get()->ptr.get();
+            inst.bytes.b1 = i->kind == nodes::_INST_ATM_LOAD ? opcodes::OP_ATOMIC_LOAD : i->kind == nodes::_INST_ATM_LOADB ? opcodes::OP_ATOMIC_LOADB
+                                                                          : i->kind == nodes::_INST_ATM_LOADW   ? opcodes::OP_ATOMIC_LOADW
+                                                                                                            : opcodes::OP_ATOMIC_LOADD;
             inst.bytes.b2 = temp->dest;
             inst.whole |= data_addrs.find(temp->var_name)->second;
             inst_bytes.push_back(inst);

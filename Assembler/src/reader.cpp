@@ -63,3 +63,20 @@ std::string masm::reader::Reader::read()
     file.close();
     return file_contents;
 }
+
+void masm::reader::Reader::open_file()
+{
+    _f.open(file_name, std::ios::in);
+}
+
+std::optional<std::string> masm::reader::Reader::get_next_line()
+{
+    if (_f.eof())
+    {
+        _f.close();
+        return {};
+    }
+    std::string line;
+    std::getline(_f, line);
+    return line;
+}
