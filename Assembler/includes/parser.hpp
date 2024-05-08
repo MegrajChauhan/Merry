@@ -18,7 +18,7 @@ namespace masm
 
         class Parser
         {
-            lexer::Lexer lexer;
+            lexer::Lexer *lexer;
             CurrentSection section = _SECTION_NONE;
             std::vector<std::unique_ptr<nodes::Node>> nodes; // the parsed nodes
             masm::lexer::Token curr_tok;
@@ -26,24 +26,25 @@ namespace masm
 
             void next_token()
             {
-                curr_tok = lexer.lex();
+                curr_tok = lexer->lex();
             }
 
         public:
             Parser() = default;
 
-            Parser(lexer::Lexer &);
+            Parser(lexer::Lexer *);
+
+            void setup(lexer::Lexer *);
 
             // setup by file path
-            void setup_lexer(std::string);
+            // void setup_lexer(std::string);
+            lexer::Lexer *get_lexer() { return lexer; }
 
             // parse the entire file
             // if error, terminate else keep parsing
             void parse();
 
             void move_nodes(std::vector<std::unique_ptr<nodes::Node>> &);
-
-            auto get_path() { return lexer.get_path(); }
 
             void handle_identifier();
 
@@ -126,7 +127,6 @@ namespace masm
             void handle_inst_cmpxchg();
 
             void handle_atm_insts();
-
         };
     };
 };

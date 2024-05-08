@@ -1,0 +1,34 @@
+;; Every procedure here takes it's first operand in Ma, second in Mb
+;; returns in M1
+
+.text:
+proc addX
+proc subX
+proc mulX
+
+addX:
+   add Ma, Mb
+   mov M1, Ma
+   ret
+
+subX:
+   sub Ma, Mb
+   mov M1, Ma
+   ret
+
+mulX:
+   mul Ma, Mb
+   mov M1, Ma
+   ret
+
+;; we don't have elif unfortunately
+;; no problem, maybe in the future?
+
+$ifdef _AVAI_DIV_
+proc divX
+divX:
+   div Ma, Mb
+   mov M1, Ma
+   ret
+$endif
+

@@ -5,13 +5,15 @@
 #include <string>
 #include <unordered_map>
 #include <cctype>
-#include "reader.hpp"
-#include "../utils/colors.hpp"
+#include "preprocessor.hpp"
 
 #define should_skip(ch) (ch == ',' || ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n') // add more as needed
 #define is_num(ch) (ch >= '0' && ch <= '9')
 #define is_alpha(ch) ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'))
 #define is_oper(ch) (ch == ':')
+
+#define _CONTEXT_LEX_ "Lexing"
+#define _CONTEXT_PARSE_ "Parsing"
 
 namespace masm
 {
@@ -183,7 +185,7 @@ namespace masm
             _TT_INST_LOADD,
             _TT_INST_STORED,
             _TT_INST_CMPXCHG,
-     
+
             _TT_INST_INC,
             _TT_INST_DEC,
             // we ignore commas, they are not absolutely necessary and the assembler won't even complain
@@ -339,13 +341,13 @@ namespace masm
         {
         private:
             size_t col_no = 0;
-            size_t line_num = 0;
+            size_t line_num = 1;
             std::string file_contents;
             std::string::iterator curr_char;
             std::string::iterator end;
-            std::string filename;
-            std::filesystem::path path;
             size_t idx = 0;
+            size_t _start_ = 0;
+            prep::Prep *_p;
 
             void consume()
             {
@@ -359,6 +361,7 @@ namespace masm
                 {
                     if (*curr_char == '\n')
                     {
+                        _start_ += col_no + 1;
                         col_no = 0;
                         line_num++;
                         curr_char++;
@@ -413,7 +416,7 @@ namespace masm
                 std::string iden_or_keyword;
                 while (((*curr_char != ' ' && (is_alpha(*curr_char) || is_num(*curr_char) && !is_oper(*curr_char))) || *curr_char == '_'))
                 {
-                    iden_or_keyword.push_back(*curr_char);
+                    iden_or_keyword += (*curr_char);
                     consume();
                 }
                 auto kind = _iden_map_.find(iden_or_keyword);
@@ -455,12 +458,11 @@ namespace masm
             std::string get_current_line()
             {
                 std::string line;
-                std::fstream temp(filename, std::ios::in); // temporary[Should not fail]
-                for (size_t i = 0; i <= line_num; i++)
+                size_t i = _start_;
+                for (; file_contents[i] != '\n'; i++)
                 {
-                    std::getline(temp, line);
                 }
-                temp.close();
+                line = file_contents.substr(_start_, i - _start_);
                 return line;
             }
 
@@ -522,20 +524,19 @@ namespace masm
             }
 
         public:
-            Lexer() = default;
+            Lexer(prep::Prep *);
 
-            bool setup_reader(std::string);
+            void setup(prep::Prep *);
 
             Token lex();
 
-            size_t get_curr_line() { return line_num + 1; }
+            size_t get_curr_line() { return line_num; }
 
-            auto get_path() { return path; }
+            // auto get_path() { return path; }
 
-            std::vector<Token> lex_all();
+            // std::vector<Token> lex_all();
 
             void invalid_token(std::string);
-            void invalid_token();
 
             void lex_error(std::string);
 
@@ -545,6 +546,8 @@ namespace masm
             void parse_err_previous_token(std::string, std::string);
 
             void parse_error(std::string);
+
+            auto get_fileDets(size_t line) { return _p->get_file(line); }
         };
     };
 };

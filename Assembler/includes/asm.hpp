@@ -12,7 +12,7 @@ namespace masm
     {
     public:
         Masm(int argc, char **argv);
-   
+
         void print_help();
 
         void parse_args();

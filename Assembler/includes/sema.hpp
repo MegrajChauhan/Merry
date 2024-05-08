@@ -20,7 +20,7 @@ namespace masm
             std::vector<std::unique_ptr<nodes::Node>> nodes;      // the parsed nodes
             std::vector<std::unique_ptr<nodes::Node>> inst_nodes; // the instruction nodes
             symtable::SymTable symtable;                          // the symbol table
-            std::filesystem::path filepath;
+            lexer::Lexer *lexer;
             size_t main_proc_index = 0;
 
         public:
@@ -28,7 +28,9 @@ namespace masm
 
             Sema(parser::Parser &);
 
-            void set_path(std::filesystem::path);
+            void setup(parser::Parser &);
+
+            // void set_path(std::filesystem::path);
 
             void analyse();
 

@@ -26,13 +26,26 @@ masm::reader::Reader::Reader(std::string filename)
     this->file_name = filename;
 }
 
-bool masm::reader::Reader::setup()
+void masm::reader::Reader::setup()
 {
     if (!this->is_valid_filename())
     {
         print_error(INVALID_EXT);
     }
     this->does_exits_and_not_dir();
+}
+
+bool masm::reader::Reader::_may_not_exist_setup_()
+{
+    if (!this->is_valid_filename())
+        print_error(INVALID_EXT);
+    std::filesystem::path path = std::filesystem::current_path() / this->file_name;
+    if (!std::filesystem::exists(path))
+        return false;
+    if (std::filesystem::is_directory(path))
+        return false;
+    if (std::filesystem::is_empty(path))
+        return false;
     return true;
 }
 
@@ -43,12 +56,11 @@ void masm::reader::Reader::set_filename(std::string filename)
 
 std::string masm::reader::Reader::get_file_name()
 {
-    return file_name;
+    return std::filesystem::path(std::filesystem::current_path() / file_name);
 }
 
 std::string masm::reader::Reader::read()
 {
-    std::string file_contents;
     std::fstream file(file_name, std::ios::in); // should work
     file.seekg(std::ios_base::cur, std::ios_base::end);
     // get the file's length
@@ -57,8 +69,8 @@ std::string masm::reader::Reader::read()
     // rewind
     file.seekg(std::ios_base::beg); // go back to the beginning
     // read
-    file_contents.resize(len);
-    file.read(&file_contents[0], len);
+    char file_contents[len + 1] = {0};
+    file.read(file_contents, len);
     // store the contents
     file.close();
     return file_contents;

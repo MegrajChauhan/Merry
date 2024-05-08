@@ -2,7 +2,6 @@
 
 masm::emit::Emit::Emit(masm::codegen::Codegen &codegen)
 {
-    codegen.gen();
     instructions = codegen.get_instructions();
     data = codegen.get_data();
     entry = codegen.get_entry_addr();

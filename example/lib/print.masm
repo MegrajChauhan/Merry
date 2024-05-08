@@ -1,0 +1,14 @@
+;; Just one procedure
+;; takes the number to print in M1
+
+.text:
+proc print
+
+print:
+   outq M1
+$ifdef _AVAI_DIV_
+   outq M1
+   mov Ma, 10
+   cout Ma ;; print newline
+$endif
+   ret

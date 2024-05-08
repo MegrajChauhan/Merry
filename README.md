@@ -1,5 +1,3 @@
-# Due to personal circumstances, There probably won't be any updates for about 1 Week. 
-
 # MERRY
 
 Merry is  a 64-bit Virtual Machine that emulates a non-existsent CPU. Merry has it's own custom ISA that is still small but is growing steadily. Merry aspires to be a very easy-to-use and simple tool for problem solving. It has 180 different instructions that can be employed to solve all sorts of problems and that is still only a fraction of what it can do in the future.
@@ -20,10 +18,6 @@ Merry is  a 64-bit Virtual Machine that emulates a non-existsent CPU. Merry has 
 10. Dynamic Library Loading(tested for linux only).
 11. File IO(Not fully tested)
 and comming soon....
-
-# Updates:
-A more than basic assembler has been added. The assembler currently supports all of the instructions needed to write programs. See _example/run/_ for example programs that can be assembled and run. The assembler is only basic and doesn't provide advanced features such as file inclusion and constants definitions.
-Please do not run the programs in _example/don't run_ folder which should be inituitive.
 
 # Building the VM and the Assembler:
 Due to my lack of knowledge in build systems, I have had to use a script written in Python for building. For building the project, here is the command to run:

@@ -2,21 +2,23 @@
 
 masm::sema::Sema::Sema(parser::Parser &parser)
 {
-    parser.parse();
-    // nodes = parser.get_nodes();
-    filepath = parser.get_path();
+    // nodes = parser.get_nodes()
     parser.move_nodes(nodes);
+    lexer = parser.get_lexer();
 }
 
-void masm::sema::Sema::set_path(std::filesystem::path path)
+void masm::sema::Sema::setup(parser::Parser &parser)
 {
-    this->filepath = path;
+    // nodes = parser.get_nodes()
+    parser.move_nodes(nodes);
+    lexer = parser.get_lexer();
 }
 
 void masm::sema::Sema::analysis_error(size_t line, std::string msg)
 {
-    std::cerr << "While " << _CCODE_BOLD << "Analysing:\n";
-    std::cerr << filepath << ": In line, " << line++ << ":" << _CCODE_RESET;
+    auto dets = lexer->get_fileDets(line);
+    std::cerr << "While " << _CCODE_BOLDWHITE << "Analysing:\n";
+    std::cerr << dets._file_name_ << ": In line, " << line << ":" << _CCODE_RESET;
     std::cerr << " " << msg << std::endl;
     std::cerr << "Aborting further compilation." << std::endl;
     exit(EXIT_FAILURE);
@@ -24,8 +26,7 @@ void masm::sema::Sema::analysis_error(size_t line, std::string msg)
 
 void masm::sema::Sema::analysis_error(std::string msg)
 {
-    std::cerr << "While " << _CCODE_BOLD << "Analysing:\n";
-    std::cerr << filepath << ":" << _CCODE_RESET;
+    std::cerr << "While " << _CCODE_BOLDWHITE << "Analysing:\n";
     std::cerr << " " << msg << std::endl;
     std::cerr << "Aborting further compilation." << std::endl;
     exit(EXIT_FAILURE);

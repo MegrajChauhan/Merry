@@ -2,7 +2,7 @@
 
 masm::Masm::Masm(int argc, char **argv)
 {
-    this->argc = argc-1;
+    this->argc = argc - 1;
     for (size_t i = 1; i < argc; i++)
     {
         given_options.push_back(argv[i]);

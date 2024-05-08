@@ -1,15 +1,31 @@
 #include "../includes/lexer.hpp"
 
-bool masm::lexer::Lexer::setup_reader(std::string filename)
+// bool masm::lexer::Lexer::setup_reader(std::string filename)
+// {
+//     masm::reader::Reader reader(filename);
+//     reader.setup();
+//     file_contents = reader.read();
+//     curr_char = file_contents.begin();
+//     end = file_contents.end();
+//     this->filename = filename;
+//     path = std::filesystem::current_path() / filename;
+//     return true;
+// }
+
+masm::lexer::Lexer::Lexer(prep::Prep *p)
 {
-    masm::reader::Reader reader(filename);
-    reader.setup();
-    file_contents = reader.read();
+    _p = p;
+    file_contents = p->get_final_contents();
     curr_char = file_contents.begin();
     end = file_contents.end();
-    this->filename = filename;
-    path = std::filesystem::current_path() / filename;
-    return true;
+}
+
+void masm::lexer::Lexer::setup(prep::Prep *p)
+{
+    _p = p;
+    file_contents = p->get_final_contents();
+    curr_char = file_contents.begin();
+    end = file_contents.end();
 }
 
 masm::lexer::Token::Token(masm::lexer::TokenType type, std::string val)
@@ -43,7 +59,7 @@ masm::lexer::Token masm::lexer::Lexer::lex()
         // operkind should be valid
         token.type = (*operkind).second;
     }
-    else if (is_alpha(*curr_char) || *curr_char == '.')
+    else if (is_alpha(*curr_char) || *curr_char == '.' || *curr_char == '_')
     {
         if (*curr_char == '.')
         {
@@ -70,79 +86,36 @@ masm::lexer::Token masm::lexer::Lexer::lex()
     }
     else
     {
-        invalid_token();
+        std::string _;
+        _ += *curr_char;
+        invalid_token(_);
     }
     return token;
 }
 
 void masm::lexer::Lexer::invalid_token(std::string read)
 {
-    std::cerr << "While " << _CCODE_BOLD << "Lexing:\n";
-    std::cerr << path << ":" << line_num + 1 << ":" << col_no << ":" << _CCODE_RESET;
-    std::cerr << " Invalid token received: \n"; // we could add "expected" to make the error more informative
-    // PosDetail detail = extract_word(current_line, curr_char);
-    std::cerr << "  " << line_num + 1 << "| " << get_current_line() << "\n";
-    std::cerr << "    ";
-    for (size_t i = 0; i <= (col_no - read.length()); i++)
-    {
-        std::cerr << " ";
-    }
-    curr_char -= read.length();
-    while (*curr_char != ' ' && curr_char != file_contents.end())
-    {
-        std::cerr << "^";
-        curr_char++;
-    }
-    std::cerr << "\nAborting further compilation." << std::endl;
-    exit(EXIT_FAILURE); // this is a failure
-}
-
-void masm::lexer::Lexer::invalid_token()
-{
-    std::cerr << "While " << _CCODE_BOLD << "Lexing:\n";
-    std::cerr << path << ":" << line_num + 1 << ":" << col_no << ":" << _CCODE_RESET;
-    std::cerr << " Invalid token received: \n"; // we could add "expected" to make the error more informative
-    // PosDetail detail = extract_word(current_line, curr_char);
-    std::cerr << "  " << line_num + 1 << "| " << get_current_line() << "\n";
-    std::cerr << "    ";
-    for (size_t i = 0; i <= (col_no); i++)
-    {
-        std::cerr << " ";
-    }
-    std::cerr << "^";
-    std::cerr << "\nAborting further compilation." << std::endl;
-    exit(EXIT_FAILURE); // this is a failure
+    auto details = _p->get_file(line_num);
+    error::_print_err_(details._file_name_, line_num - details.start, col_no - read.length(), _CONTEXT_LEX_, "Invalid token received.", get_current_line());
 }
 
 void masm::lexer::Lexer::lex_error(std::string msg)
 {
-    std::cerr << "While " << _CCODE_BOLD << "Lexing:\n";
-    std::cerr << path << ":" << line_num + 1 << ":" << col_no << ":" << _CCODE_RESET;
-    std::cerr << " " << msg << ":\n";
-    std::cerr << "  " << line_num + 1 << "| " << get_current_line() << "\n";
-    std::cerr << "    ";
-    for (size_t i = 0; i <= (col_no); i++)
-    {
-        std::cerr << " ";
-    }
-    std::cerr << "^";
-    std::cerr << "\nAborting further compilation." << std::endl;
-    exit(EXIT_FAILURE); // this is a failure
+    auto details = _p->get_file(line_num);
+    error::_print_err_(details._file_name_, line_num - details.start, 0, _CONTEXT_LEX_, msg, get_current_line());
 }
 
 void masm::lexer::Lexer::parse_err_whole_line(std::string msg)
 {
-    std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
-    std::cerr << path << ":" << line_num + 1 << ":" << _CCODE_RESET;
-    std::cerr << " " << msg << std::endl;
-    std::cerr << "Aborting further compilation." << std::endl;
-    exit(EXIT_FAILURE);
+    auto details = _p->get_file(line_num);
+    error::_print_err_(details._file_name_, line_num - details.start, 0, _CONTEXT_PARSE_, msg, get_current_line());
 }
 
 void masm::lexer::Lexer::parse_err_expected_colon(std::string msg)
 {
-    std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
-    std::cerr << path << ":" << line_num + 1 << ":" << _CCODE_RESET;
+    auto details = _p->get_file(line_num);
+    std::cerr << "While " << _CCODE_BOLDWHITE << "Parsing:\n";
+    std::cerr << details._file_name_ << ":" << line_num << ":" << _CCODE_RESET;
     std::cerr << " "
               << "Expected ':'" << msg << std::endl;
     std::cerr << "Aborting further compilation." << std::endl;
@@ -151,8 +124,9 @@ void masm::lexer::Lexer::parse_err_expected_colon(std::string msg)
 
 void masm::lexer::Lexer::parse_err_previous_token(std::string prev_tok, std::string msg)
 {
-    std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
-    std::cerr << path << ":" << line_num + 1 << ":" << _CCODE_RESET;
+    auto details = _p->get_file(line_num);
+    std::cerr << "While " << _CCODE_BOLDWHITE << "Parsing:\n";
+    std::cerr << details._file_name_ << ":" << line_num << ":" << _CCODE_RESET;
     std::cerr << " " << msg << std::endl;
     std::cerr << "Aborting further compilation." << std::endl;
     exit(EXIT_FAILURE);
@@ -160,58 +134,59 @@ void masm::lexer::Lexer::parse_err_previous_token(std::string prev_tok, std::str
 
 void masm::lexer::Lexer::parse_error(std::string msg)
 {
-    std::cerr << "While " << _CCODE_BOLD << "Parsing:\n";
-    std::cerr << path << ":" << line_num + 1 << ":" << _CCODE_RESET;
+    auto details = _p->get_file(line_num);
+    std::cerr << "While " << _CCODE_BOLDWHITE << "Parsing:\n";
+    std::cerr << details._file_name_ << ":" << line_num << ":" << _CCODE_RESET;
     std::cerr << " " << msg << std::endl;
     std::cerr << "Aborting further compilation." << std::endl;
     exit(EXIT_FAILURE);
 }
 
-std::vector<masm::lexer::Token> masm::lexer::Lexer::lex_all()
-{
-    std::vector<Token> alltoks;
-    Token token;
-    std::string val;
-    while (true)
-    {
-        if (std::isspace(*curr_char) || *curr_char == '\n')
-        {
-            clear_unnecessary();
-        }
-        if (*curr_char == '/' && peek() == '/')
-        {
-            // this is a comment and we can completely skip this
-            while (*curr_char == '/' && peek() == '/')
-                consume_comment();
-        }
-        if (curr_char == file_contents.end())
-        {
-            alltoks.push_back(Token(_TT_EOF, ""));
-            break;
-        }
-        if (is_oper(*curr_char))
-        {
-            val.push_back(*curr_char);
-            consume();
-            // we don't have multi-character operators and so we can skip it as well
-            auto operkind = _iden_map_.find(val);
-            // operkind should be valid
-            token.type = (*operkind).second;
-        }
-        else if (is_alpha(*curr_char))
-        {
-            token = get_iden_or_keyword();
-        }
-        else if (is_num(*curr_char))
-        {
-            token = get_number();
-        }
-        else
-        {
-            invalid_token();
-        }
-        alltoks.push_back(token);
-        val.clear();
-    }
-    return alltoks;
-}
+// std::vector<masm::lexer::Token> masm::lexer::Lexer::lex_all()
+// {
+//     std::vector<Token> alltoks;
+//     Token token;
+//     std::string val;
+//     while (true)
+//     {
+//         if (std::isspace(*curr_char) || *curr_char == '\n')
+//         {
+//             clear_unnecessary();
+//         }
+//         if (*curr_char == '/' && peek() == '/')
+//         {
+//             // this is a comment and we can completely skip this
+//             while (*curr_char == '/' && peek() == '/')
+//                 consume_comment();
+//         }
+//         if (curr_char == file_contents.end())
+//         {
+//             alltoks.push_back(Token(_TT_EOF, ""));
+//             break;
+//         }
+//         if (is_oper(*curr_char))
+//         {
+//             val.push_back(*curr_char);
+//             consume();
+//             // we don't have multi-character operators and so we can skip it as well
+//             auto operkind = _iden_map_.find(val);
+//             // operkind should be valid
+//             token.type = (*operkind).second;
+//         }
+//         else if (is_alpha(*curr_char))
+//         {
+//             token = get_iden_or_keyword();
+//         }
+//         else if (is_num(*curr_char))
+//         {
+//             token = get_number();
+//         }
+//         else
+//         {
+//             invalid_token();
+//         }
+//         alltoks.push_back(token);
+//         val.clear();
+//     }
+//     return alltoks;
+// }

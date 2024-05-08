@@ -59,7 +59,7 @@ namespace masm
 
             Reader() = default;
 
-            bool setup();
+            void setup();
 
             std::string read();
 
@@ -67,11 +67,15 @@ namespace masm
 
             std::string get_file_name();
 
+            std::string get_base_dir();
+
             void print_error(ReaderErrorKind);
 
             std::optional<std::string> get_next_line();
 
             void open_file();
+
+            bool _may_not_exist_setup_();
 
             ~Reader()
             {
