@@ -187,7 +187,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_parse_header(MerryInpFile *inp)
         return RET_FAILURE;
     }
     // also check for entry point
-    if ((inp->entry_addr*8) > inp->ilen)
+    if ((inp->entry_addr * 8) > inp->ilen)
     {
         _READ_DIRERROR_("Read Error: The entry point for the program is outside the bounds of the program's size.\n");
         return RET_FAILURE;
@@ -389,6 +389,8 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_data_different(MerryInpFile *inp)
     if (inp->slen == 0)
         return RET_SUCCESS;
 
+    inp->dlen += inp->slen;
+
     // firstly read
     mqword_t rem = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - ext;
 
@@ -470,6 +472,8 @@ _MERRY_INTERNAL_ mret_t merry_reader_read_data_same(MerryInpFile *inp)
     }
     if (inp->slen < rem)
         return RET_SUCCESS; // we have read what we can
+
+    inp->dlen += inp->slen;
 
     // we have read another page now
     inp->slen -= rem; // we have read rem number of bytes already

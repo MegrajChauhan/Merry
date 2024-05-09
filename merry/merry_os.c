@@ -31,7 +31,7 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count)
     }
     if (count > 0)
     {
-        mbptr_t _ = (options[0]);
+        mbptr_t _ = &(options[0][0]);
         if (merry_dmemory_write_bytes_maybe_over_multiple_pages(os.data_mem, input->dlen + 1, len, _) == RET_FAILURE)
         {
             // we don't have enough memory
@@ -46,7 +46,7 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count)
         }
     }
     // we have that in memory now
-    msize_t _t = input->dlen + 1;
+    msize_t _t = input->dlen;
     // perform initialization for the inst mem as well. Unlike data memory, instruction page len cannot be 0
     // based on the size of the input file, the reader should be able to independently run in the background as it reads the input file
     // the reader doesn't concern itself with the OS and so it can run independently
