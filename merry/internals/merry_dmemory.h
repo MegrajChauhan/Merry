@@ -81,6 +81,8 @@ MerryDMemory *merry_dmemory_init(msize_t num_of_pages);
 
 MerryDMemory *merry_dmemory_init_provided(mqptr_t *mapped_pages, msize_t num_of_pages);
 
+mret_t merry_dmemory_add_new_page(MerryDMemory *memory);
+
 void merry_dmemory_free(MerryDMemory *memory);
 
 mret_t merry_dmemory_read_byte(MerryDMemory *memory, maddress_t address, mqptr_t _store_in);

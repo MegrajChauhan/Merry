@@ -48,7 +48,7 @@ masm::lexer::Token masm::lexer::Lexer::lex()
         while (*curr_char == ';' && peek() == ';')
             consume_comment();
     }
-    if (curr_char == end || idx == (file_contents.length() - 1))
+    if (curr_char == end)
         return Token(_TT_EOF, "");
     if (is_oper(*curr_char))
     {

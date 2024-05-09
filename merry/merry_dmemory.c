@@ -105,6 +105,21 @@ MerryDMemory *merry_dmemory_init(msize_t num_of_pages)
     return memory;
 }
 
+mret_t merry_dmemory_add_new_page(MerryDMemory *memory)
+{
+    MerryDMemPage **temp = memory->pages;
+    if ((memory->pages = (MerryDMemPage **)realloc(memory->pages, sizeof(MerryDMemPage *) * (memory->number_of_pages + 1))) == NULL)
+    {
+        memory->pages = temp; // restore on fail
+        return RET_FAILURE;
+    }
+    memory->pages[memory->number_of_pages] = merry_mem_allocate_new_mempage();
+    if (memory->pages[memory->number_of_pages] == RET_NULL)
+        return RET_FAILURE;
+    memory->number_of_pages++;
+    return RET_SUCCESS;
+}
+
 MerryDMemory *merry_dmemory_init_provided(mqptr_t *mapped_pages, msize_t num_of_pages)
 {
     // just perform the regular allocation but don't map new pages
@@ -658,7 +673,6 @@ mbptr_t merry_dmemory_get_byte_address_bounds(MerryDMemory *memory, maddress_t a
     }
     if (surelyF((addr.offset + bound) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
     {
-        // this implies the request is for a page that doesn't exist
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_NULL;
     }
@@ -852,13 +866,13 @@ mret_t merry_dmemory_write_bytes_maybe_over_multiple_pages(MerryDMemory *memory,
         addr.page++;
         for (msize_t i = 0; i < no_of_pages; i++, addr.page++)
         {
-            memcpy(memory->pages[addr.page]->address_space,curr, _MERRY_MEMORY_ADDRESSES_PER_PAGE_);
+            memcpy(memory->pages[addr.page]->address_space, curr, _MERRY_MEMORY_ADDRESSES_PER_PAGE_);
             curr += _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
         }
         if (remaining > 0)
         {
             // addr.page will be correctly pointed
-            memcpy(memory->pages[addr.page]->address_space,curr, remaining);
+            memcpy(memory->pages[addr.page]->address_space, curr, remaining);
         }
     }
     return RET_SUCCESS;

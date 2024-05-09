@@ -21,8 +21,12 @@ MerryCLP *merry_parse_options(int argc, char **argv)
         fprintf(stderr, "Failed to parse options\n");
         return RET_NULL;
     }
-    for (msize_t i = 1; i < argc; i++)
+    mbool_t _clo_provided_ = mfalse;
+    msize_t i = 1;
+    for (; i < argc; i++)
     {
+        if (_clo_provided_ == mtrue)
+            break;
         switch (argv[i][0])
         {
         case '-':
@@ -48,9 +52,7 @@ MerryCLP *merry_parse_options(int argc, char **argv)
                     }
                     break;
                 default:
-                    fprintf(stderr, "Unknown option '%s'\n", argv[i]);
-                    free(clp);
-                    return RET_NULL;
+                    _clo_provided_ = mtrue;
                     break;
                 }
             }
@@ -79,9 +81,6 @@ MerryCLP *merry_parse_options(int argc, char **argv)
                 clp->options[_OPT_FILE]._given_value_str_ = &argv[i + 1];
                 i++;
                 break;
-            case 'l':
-                clp->options[_OPT_ENABLE_LOGGER].provided = mtrue;
-                break;
             default:
                 fprintf(stderr, "Unknown option '%s'\n", argv[i]);
                 free(clp);
@@ -95,6 +94,30 @@ MerryCLP *merry_parse_options(int argc, char **argv)
             return RET_NULL;
         }
     }
+    if (_clo_provided_ == mtrue)
+    {
+        if (argc == (i + 1))
+        {
+            printf("Expected Command Line Options after '--' but found none.\n");
+            free(clp);
+            return RET_NULL;
+        }
+        clp->_options_ = (char **)malloc(sizeof(char *) * (argc - i));
+        if (clp->_options_ == NULL)
+        {
+            printf("Failed to fully parse the options.\n");
+            free(clp);
+            return RET_NULL;
+        }
+        msize_t j = 0;
+        for (; i < argc; i++)
+        {
+            clp->_options_[j] = argv[i];
+            j++;
+        }
+        clp->option_count = j;
+        clp->options[_OPT_CLO].provided = mtrue;
+    }
     return clp;
 }
 
@@ -106,9 +129,7 @@ void merry_print_help()
             "-h, --h, -help, --help --> Print this help\n"
             "-v, --v, -v, --v       --> Display the current version\n"
             "-f                     --> Provide the path to the input file\n"
-            "-l                     --> Enable logging of the VM[Disabled for now. Doesn't work]"
-            "\n                           Enabling logging doesn't ensure that a log file will be generated."
-            "                           The performance will be affected.\n");
+            "--                     --> Provide Command Line Options for your Program\n");
 }
 
 void merry_destroy_parser(MerryCLP *clp)

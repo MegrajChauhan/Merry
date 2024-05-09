@@ -5,7 +5,7 @@
 #endif
 #include <stdatomic.h>
 
-mret_t merry_os_init(mcstr_t _inp_file)
+mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count)
 {
     // initialize the os
     // just 1 core
@@ -23,6 +23,30 @@ mret_t merry_os_init(mcstr_t _inp_file)
         merry_destory_reader(input);
         return RET_FAILURE;
     }
+    // we need to put the options into the memory
+    msize_t len = 0;
+    for (msize_t i = 0; i < count; i++)
+    {
+        len += strlen(options[i]);
+    }
+    if (count > 0)
+    {
+        mbptr_t _ = (options[0]);
+        if (merry_dmemory_write_bytes_maybe_over_multiple_pages(os.data_mem, input->dlen + 1, len, _) == RET_FAILURE)
+        {
+            // we don't have enough memory
+            if (merry_dmemory_add_new_page(os.data_mem) == RET_FAILURE)
+            {
+                // We couldn't even add CLO, no point in continuing
+                goto inp_failure;
+            }
+            // try again and this time it should work, if it doesn't just quit
+            if (merry_dmemory_write_bytes_maybe_over_multiple_pages(os.data_mem, input->dlen + 1, len, _) == RET_FAILURE)
+                goto inp_failure;
+        }
+    }
+    // we have that in memory now
+    msize_t _t = input->dlen + 1;
     // perform initialization for the inst mem as well. Unlike data memory, instruction page len cannot be 0
     // based on the size of the input file, the reader should be able to independently run in the background as it reads the input file
     // the reader doesn't concern itself with the OS and so it can run independently
@@ -47,8 +71,12 @@ mret_t merry_os_init(mcstr_t _inp_file)
     if (os.cores == RET_NULL)
         goto failure;
     os.cores[0] = merry_core_init(os.inst_mem, os.data_mem, 0);
+    // let the core know of the CLO
     if (os.cores[0] == RET_NULL)
         goto failure;
+    os.cores[0]->registers[Mm1] = count;        // Mm1 will have the number of options
+    os.cores[0]->registers[Md] = len;           // Md will have the address to the first byte
+    os.cores[0]->registers[Mm5] = len + _t + 1; // Mm5 contains the address of the first byte that is free and can be manipulated by the program
     os.stop = mfalse;
     os.cores[0]->pc = entry_point;
     os.core_threads = (MerryThread **)malloc(sizeof(MerryThread *)); // just 1 for now
@@ -193,7 +221,7 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
                     // it is most likely an actual request
                     switch (current_req.request_number)
                     {
-                    case _REQ_REQHALT: // halting request
+                    case _REQ_REQHALT:                                    // halting request
                         merry_os_execute_request_halt(&os, &current_req); // this shouldn't generate any errors
                         break;
                     case _REQ_EXIT:

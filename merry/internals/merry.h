@@ -36,11 +36,10 @@ typedef struct MerryCLP MerryCLP;           // command line parser
 
 enum MerryCLOption_t
 {
-    _OPT_HELP,          // '-h; , '--h', '-help', '--help'
-    _OPT_FILE,          // -I <Input file>
-    _OPT_VER,           // -v, --v, -version, --version
-    _OPT_ENABLE_LOGGER, // -l [The use of this flag doesn't ensure that the log file will be generated]
-                        // the logger may fail to get initialized and enabling the logger slows down the performance of the VM
+    _OPT_HELP, // '-h; , '--h', '-help', '--help'
+    _OPT_FILE, // -I <Input file>
+    _OPT_VER,  // -v, --v, -version, --version
+    _OPT_CLO,  // --
 };
 
 struct MerryCLOption
@@ -56,8 +55,9 @@ struct MerryCLOption
 struct MerryCLP
 {
     MerryCLOption options[_MERRY_MAX_OPTIONS_];
+    char **_options_;
+    msize_t option_count;
 };
-
 
 MerryCLP *merry_parse_options(int argc, char **argv);
 

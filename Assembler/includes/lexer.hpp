@@ -345,7 +345,6 @@ namespace masm
             std::string file_contents;
             std::string::iterator curr_char;
             std::string::iterator end;
-            size_t idx = 0;
             size_t _start_ = 0;
             prep::Prep *_p;
 
@@ -365,12 +364,10 @@ namespace masm
                         col_no = 0;
                         line_num++;
                         curr_char++;
-                        idx++;
                         return;
                     }
                     col_no++;
                     curr_char++;
-                    idx++;
                 }
             }
 
@@ -384,13 +381,11 @@ namespace masm
                 while (*curr_char != '\n' && curr_char != end)
                 {
                     curr_char++;
-                    idx++;
                 }
                 if (curr_char == file_contents.end())
                     return;
                 curr_char++;
                 line_num++;
-                idx++;
                 clear_unnecessary();
             }
 

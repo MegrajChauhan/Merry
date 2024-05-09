@@ -364,12 +364,12 @@ void masm::parser::Parser::handle_atm_insts()
         handle_inst_load();
         break;
     default:
-      lexer->parse_err_previous_token("This is not a valid atomic operation.", curr_tok.value);
+        lexer->parse_err_previous_token("This is not a valid atomic operation.", curr_tok.value);
     }
     // now we need to change the node type
     auto temp = nodes[nodes.size() - 1].get();
     if (temp->kind >= 150 && temp->kind <= 157)
-       lexer->parse_err_whole_line("Atomic load and store requires one operand to be a variable.");
+        lexer->parse_err_whole_line("Atomic load and store requires one operand to be a variable.");
     temp->kind = (nodes::NodeKind)((uint64_t)temp->kind + 16);
     next_token();
 }
@@ -1231,10 +1231,10 @@ void masm::parser::Parser::handle_inst_Xin(nodes::NodeKind k)
 {
     next_token();
     if (curr_tok.type != lexer::_TT_IDENTIFIER)
-        lexer->parse_error("Expected a register after " + (k == nodes::_INST_INF || k == nodes::_INST_INLF) ? "inF." : "Xin.");
+        lexer->parse_error(std::string("Expected a register after ") + ((k == nodes::_INST_INF || k == nodes::_INST_INLF) ? "inF." : "Xin."));
     auto regr = nodes::_regr_iden_map.find(curr_tok.value);
     if (regr == nodes::_regr_iden_map.end())
-        lexer->parse_error("Expected a register after " + (k == nodes::_INST_INF || k == nodes::_INST_INLF) ? "inF." : "Xin.");
+        lexer->parse_error(std::string("Expected a register after ") + ((k == nodes::_INST_INF || k == nodes::_INST_INLF) ? "inF." : "Xin."));
     std::unique_ptr<nodes::Base> ptr;
     ptr = std::make_unique<nodes::NodeOneRegrOperands>();
     ((nodes::NodeOneRegrOperands *)(ptr.get()))->oper_rger = regr->second;
@@ -1245,10 +1245,10 @@ void masm::parser::Parser::handle_inst_Xout(nodes::NodeKind k)
 {
     next_token();
     if (curr_tok.type != lexer::_TT_IDENTIFIER)
-        lexer->parse_error("Expected a register after " + (k == nodes::_INST_OUTF || k == nodes::_INST_OUTLF) ? "outF." : "Xout.");
+        lexer->parse_error(std::string("Expected a register after ") + ((k == nodes::_INST_OUTF || k == nodes::_INST_OUTLF) ? "outF." : "Xout."));
     auto regr = nodes::_regr_iden_map.find(curr_tok.value);
     if (regr == nodes::_regr_iden_map.end())
-        lexer->parse_error("Expected a register after " + (k == nodes::_INST_OUTF || k == nodes::_INST_OUTLF) ? "outF." : "Xout.");
+        lexer->parse_error(std::string("Expected a register after ") + ((k == nodes::_INST_OUTF || k == nodes::_INST_OUTLF) ? "outF." : "Xout."));
     std::unique_ptr<nodes::Base> ptr;
     ptr = std::make_unique<nodes::NodeOneRegrOperands>();
     ((nodes::NodeOneRegrOperands *)(ptr.get()))->oper_rger = regr->second;

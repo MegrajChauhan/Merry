@@ -27,7 +27,6 @@
 #include "merry/internals/merry.h"
 #endif
 
-
 int main(int argc, char **argv)
 {
     MerryCLP *_parsed_options = merry_parse_options(argc, argv);
@@ -63,8 +62,8 @@ int main(int argc, char **argv)
         return -1;
     }
     // Now since we don't have any fancy or complex options to handle, let's get straight to business
-    merry_logger_init(_parsed_options->options[_OPT_ENABLE_LOGGER].provided == mtrue ? mtrue : mfalse); // we won't enable logging yet, this is just an option rn
-    if (merry_os_init(*_parsed_options->options[_OPT_FILE]._given_value_str_) == RET_FAILURE)
+
+    if (merry_os_init(*_parsed_options->options[_OPT_FILE]._given_value_str_, _parsed_options->options[_OPT_CLO].provided? _parsed_options->_options_: NULL, _parsed_options->option_count) == RET_FAILURE)
     {
         // the valid error messages will be automatically printed
         merry_destroy_parser(_parsed_options);

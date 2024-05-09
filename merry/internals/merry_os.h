@@ -85,7 +85,7 @@ static Merry os;
 
 #define merry_manager_mem_read_inst(inst_mem, address, store_in) merry_memory_read(inst_mem, address, store_in)
 
-mret_t merry_os_init(mcstr_t _inp_file);
+mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count);
 _THRET_T_ merry_os_start_vm(mptr_t some_arg);
 
 mret_t merry_os_add_core();
