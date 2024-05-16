@@ -55,6 +55,7 @@ MerryCLP *merry_parse_options(int argc, char **argv)
                     _clo_provided_ = mtrue;
                     break;
                 }
+                break;
             }
                 // we don't have a second '-'
             case 'h':
@@ -96,7 +97,7 @@ MerryCLP *merry_parse_options(int argc, char **argv)
     }
     if (_clo_provided_ == mtrue)
     {
-        if (argc == (i + 1))
+        if (argc == (i))
         {
             printf("Expected Command Line Options after '--' but found none.\n");
             free(clp);
@@ -134,5 +135,7 @@ void merry_print_help()
 
 void merry_destroy_parser(MerryCLP *clp)
 {
+    if (clp->_options_ != NULL)
+        free(clp->_options_);
     free(clp);
 }

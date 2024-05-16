@@ -75,7 +75,7 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count)
     if (os.cores[0] == RET_NULL)
         goto failure;
     os.cores[0]->registers[Mm1] = count;        // Mm1 will have the number of options
-    os.cores[0]->registers[Md] = len;           // Md will have the address to the first byte
+    os.cores[0]->registers[Md] = _t + 1;        // Md will have the address to the first byte
     os.cores[0]->registers[Mm5] = len + _t + 1; // Mm5 contains the address of the first byte that is free and can be manipulated by the program
     os.stop = mfalse;
     os.cores[0]->pc = entry_point;

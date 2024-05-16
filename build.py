@@ -11,7 +11,7 @@ import platform
 from time import sleep
 
 def print_usage():
-    print("python build.py <Destination Directory> <masm/vm/all>")
+    print("python build.py <Destination Directory>")
     print("The path to the files to be compiled should be in compile.txt in the order in which it needs to be compiled")
 
 def compile_merry():
@@ -50,15 +50,15 @@ def compile_merry():
         quit(result)
     print("Finished compiling Merry")
 
-def compile_asm():
-    print("Compiling the assembler:")
-    print("Compiler messages if any: ")
-    result = os.system("g++ -O3 -std=c++23 -o build/masm Assembler/src/*.cpp Assembler/main.cpp")
-    if result == 0:
-        print(f"Compilation successful with return value of {result}")
-    else:
-        print(f"Compilation failed with a return value of {result}")
-        quit(result)
+# def compile_asm():
+#     print("Compiling the assembler:")
+#     print("Compiler messages if any: ")
+#     result = os.system("g++ -O3 -std=c++23 -o build/masm Assembler/src/*.cpp Assembler/main.cpp")
+#     if result == 0:
+#         print(f"Compilation successful with return value of {result}")
+#     else:
+#         print(f"Compilation failed with a return value of {result}")
+#         quit(result)
     
 
 def main():
@@ -74,11 +74,11 @@ def main():
           compile_asm()
       elif sys.argv[2] == 'vm':
           compile_merry()
-      else:
-          compile_asm()
+ #     else:
+  #        compile_asm()
     else:
         compile_merry()
-        compile_asm()
+   #     compile_asm()
     
 if __name__ == "__main__":
     main()
