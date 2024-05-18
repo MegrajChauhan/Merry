@@ -19,13 +19,6 @@ _MERRY_INTERNAL_ MerryMemPage *merry_mem_allocate_new_mempage()
         free(new_page);
         return RET_NULL; // we failed
     }
-    // initialize the page's lock
-    if ((new_page->lock = merry_mutex_init()) == RET_NULL)
-    {
-        _MERRY_MEMORY_PGALLOC_UNMAP_PAGE_(new_page->address_space);
-        free(new_page);
-        return RET_NULL;
-    }
     // everything went successfully
     return new_page;
 }
@@ -40,13 +33,6 @@ _MERRY_INTERNAL_ MerryMemPage *merry_mem_allocate_new_mempage_provided(mqptr_t p
     }
     // try allocating the address space
     new_page->address_space = (mqptr_t)page; // we were provided
-    // initialize the page's lock
-    if ((new_page->lock = merry_mutex_init()) == RET_NULL)
-    {
-        _MERRY_MEMORY_PGALLOC_UNMAP_PAGE_(new_page->address_space);
-        free(new_page);
-        return RET_NULL;
-    }
     // everything went successfully
     return new_page;
 }
@@ -56,10 +42,6 @@ _MERRY_INTERNAL_ void merry_mem_free_mempage(MerryMemPage *page)
 {
     if (surelyF(page == NULL))
         return;
-    if (page->lock != NULL)
-    {
-        merry_mutex_destroy(page->lock);
-    }
     if (surelyT(page->address_space != NULL))
     {
         _MERRY_MEMORY_PGALLOC_UNMAP_PAGE_(page->address_space);
@@ -182,56 +164,6 @@ mret_t merry_memory_write(MerryMemory *memory, maddress_t address, mqword_t _to_
         return RET_FAILURE;
     }
     memory->pages[addr.page]->address_space[addr.offset] = _to_write;
-    return RET_SUCCESS;
-}
-
-mret_t merry_memory_read_lock(MerryMemory *memory, maddress_t address, mqptr_t _store_in)
-{
-    // this is the same as read but with page locking ensuring that no other thread can access the same page.
-    MerryAddress addr = _MERRY_MEMORY_DEDUCE_ADDRESS_(address);
-    if (surelyF(_MERRY_MEMORY_IS_ACCESS_ERROR_(addr.offset)))
-    {
-        memory->error = MERRY_MEM_ACCESS_ERROR;
-        return RET_FAILURE;
-    }
-    if (surelyF(addr.page >= memory->number_of_pages))
-    {
-        // this implies the request is for a page that doesn't exist
-        memory->error = MERRY_MEM_INVALID_ACCESS;
-        return RET_FAILURE;
-    }
-    // this is absurd as we are locking and unlocking for just one read and write
-    // well we could use atomic operations but they are not fully understood so we are stuck to being inefficient
-    // we can provide some optimization here
-    // we can decrease the page size and make it such that the possibility of having the data of different variables in different pages is high
-    // this can make the VM faster as multiple vcores can access different variables in different pages without blocking one another
-    // we can add further optimization by making it such that the OS uses the non locked read/write functions in case we have only one vcore running
-    // or we can add some feature such that any data that any two vcores are accessing is private to them and if we can make the Manager aware of that then
-    // it can use the non-lock read//write functions instead
-    merry_mutex_lock(memory->pages[addr.page]->lock);
-    mqptr_t temp = &memory->pages[addr.page]->address_space[addr.offset];
-    *_store_in = *temp;
-    merry_mutex_unlock(memory->pages[addr.page]->lock);
-    return RET_SUCCESS;
-}
-
-mret_t merry_memory_write_lock(MerryMemory *memory, maddress_t address, mqword_t _to_write)
-{
-    MerryAddress addr = _MERRY_MEMORY_DEDUCE_ADDRESS_(address);
-    if (surelyF(_MERRY_MEMORY_IS_ACCESS_ERROR_(addr.offset)))
-    {
-        memory->error = MERRY_MEM_ACCESS_ERROR;
-        return RET_FAILURE;
-    }
-    if (surelyF(addr.page >= memory->number_of_pages))
-    {
-        memory->error = MERRY_MEM_INVALID_ACCESS;
-        return RET_FAILURE;
-    }
-    merry_mutex_lock(memory->pages[addr.page]->lock);
-    mqptr_t temp = &memory->pages[addr.page]->address_space[addr.offset];
-    *temp = _to_write; // write the value
-    merry_mutex_unlock(memory->pages[addr.page]->lock);
     return RET_SUCCESS;
 }
 

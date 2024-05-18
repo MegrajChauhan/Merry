@@ -1,5 +1,4 @@
 merry\internals\imp\arithmetic.S
-merry\merry_logger.c
 merry\merry_stack.c
 sys\src\merry_dynl.c
 sys\src\merry_thread.c

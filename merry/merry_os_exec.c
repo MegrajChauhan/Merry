@@ -170,3 +170,17 @@ _os_exec_(feof)
     os->cores[request->id]->registers[Ma] = feof((FILE *)handle);
     return RET_SUCCESS;
 }
+
+_os_exec_(mem)
+{
+    // each time this request is made, a new page is allocated
+    // the starting address of the new page will be returned in Mb register
+    // if failed, Ma will contain 1 else 0
+    if (merry_dmemory_add_new_page(os->data_mem) == RET_FAILURE)
+    {
+        os->cores[request->id]->registers[Ma] = 1;
+        return RET_FAILURE;
+    }
+    os->cores[request->id]->registers[Mb] = (os->data_mem->number_of_pages - 1) * _MERRY_MEMORY_ADDRESSES_PER_PAGE_ + 1;
+    return RET_SUCCESS;
+}

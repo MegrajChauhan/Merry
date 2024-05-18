@@ -31,12 +31,10 @@
 #include "..\..\sys\merry_mem.h"
 #include "..\../sys\merry_thread.h" // memory needs to be thread safe
 #include "..\includes\merry_errors.h"
-#include "..\..\utils\merry_logger.h"
 #else
 #include "../../sys/merry_mem.h"
 #include "../../sys/merry_thread.h" // memory needs to be thread safe
 #include "../includes/merry_errors.h"
-#include "../../utils/merry_logger.h"
 #endif
 
 #include <stdlib.h>
@@ -61,7 +59,6 @@ struct MerryDMemPage
     mwptr_t address_wspace;
     mdptr_t address_dspace;
     mqptr_t address_qspace;
-    MerryMutex *lock;
 };
 
 struct MerryDMemory
@@ -104,11 +101,6 @@ mret_t merry_dmemory_read_qword(MerryDMemory *memory, maddress_t address, mqptr_
 mret_t merry_dmemory_read_qword_atm(MerryDMemory *memory, maddress_t address, mqptr_t _store_in);
 mret_t merry_dmemory_write_qword(MerryDMemory *memory, maddress_t address, mqword_t _to_write);
 mret_t merry_dmemory_write_qword_atm(MerryDMemory *memory, maddress_t address, mqword_t _to_write);
-
-// Useless functions for now
-mret_t merry_dmemory_read_lock(MerryDMemory *memory, maddress_t address, mqptr_t _store_in);
-mret_t merry_dmemory_write_lock(MerryDMemory *memory, maddress_t address, mqword_t _to_write);
-// -------
 
 mbptr_t merry_dmemory_get_byte_address(MerryDMemory *memory, maddress_t address);
 mbptr_t merry_dmemory_get_byte_address_bounds(MerryDMemory *memory, maddress_t address, msize_t bound);

@@ -47,7 +47,6 @@
 #include "../../sys/merry_mem.h"
 #include "../../sys/merry_thread.h" // memory needs to be thread safe
 #include "../includes/merry_errors.h"
-#include "../../utils/merry_logger.h"
 #endif
 
 #include <stdlib.h>
@@ -70,7 +69,6 @@ typedef struct MerryAddress MerryAddress; // an internal struct
 struct MerryMemPage
 {
     mqptr_t address_space; // the actual memory of the page
-    MerryMutex *lock; // Many different pages can be accessed simultaneously
     mbool_t _is_locked;
 };
 
@@ -109,12 +107,6 @@ void merry_memory_free(MerryMemory *memory);
 mret_t merry_memory_read(MerryMemory *memory, maddress_t address, mqptr_t _store_in);
 
 mret_t merry_memory_write(MerryMemory *memory, maddress_t address, mqword_t _to_write);
-
-// since this module acts as the template for both instruction and data memory, we will need to provide two different types of read/write functions.
-// The above read/write functions read/write without locking which is preferred for instruction memory but not preferred for data memory.
-mret_t merry_memory_read_lock(MerryMemory *memory, maddress_t address, mqptr_t _store_in);
-
-mret_t merry_memory_write_lock(MerryMemory *memory, maddress_t address, mqword_t _to_write);
 
 mptr_t merry_memory_get_address(MerryMemory *memory, maddress_t address);
 

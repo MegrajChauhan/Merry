@@ -87,13 +87,11 @@ int main(int argc, char **argv)
         goto failure;
     }
     msize_t returnval = 0;
-    merry_logger_close();
     merry_thread_join(osthread, &returnval); // I am an idiot
     merry_thread_destroy(osthread);
     merry_os_destroy();
     return returnval;
 failure:
-    merry_logger_close();
     merry_os_destroy();
     return -1;
 }

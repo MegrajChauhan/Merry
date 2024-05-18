@@ -255,6 +255,9 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
                     case _REQ_FEOF:
                         merry_os_execute_request_feof(&os, &current_req);
                         break;
+                    case _REQ_MEM:
+                        merry_os_execute_request_mem(&os, &current_req);
+                        break;
                     default:
                         fprintf(stderr, "Error: Unknown request code: '%llu' is not a valid request code", current_req.request_number);
                         break;

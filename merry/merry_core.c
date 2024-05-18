@@ -766,6 +766,19 @@ _THRET_T_ merry_runCore(mptr_t core)
         case OP_FDIV_MEM:
             merry_execute_fdiv64_mem(c);
             break;
+        case OP_SET_EXCP: // save an address to jump to when errors are encountered
+            c->exception_address = *current & 0xFFFFFFFFFFFF;
+            break;
+        case OP_CALL_EXCP: // jump to the set exception handler
+            if (merry_stack_push(c->ras, c->pc) == RET_FAILURE)
+            {
+                merry_requestHdlr_panic(MERRY_CALL_DEPTH_REACHED);
+                c->stop_running = mtrue;
+                break;
+            }
+            c->pc = c->exception_address - 1; // the address to the first instruction of the procedure
+            merry_execute_call(c);
+            break;
         }
         c->pc++;
     }

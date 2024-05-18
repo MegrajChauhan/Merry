@@ -69,7 +69,8 @@ enum
     _REQ_FREAD,         // read from a file
     _REQ_FWRITE,        // write to a file
     _REQ_FEOF,          // has the EOF been reached?
-               // other functions like fseek, ftell, rewind can be implemented using the above as the base in software
+    _REQ_MEM,           // request for more memory
+                        // other functions like fseek, ftell, rewind can be implemented using the above as the base in software
 };
 
 #endif

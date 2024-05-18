@@ -51,12 +51,12 @@ struct Merry
 {
   MerryCore **cores;          // the vcores
   MerryThread **core_threads; // the vcore's threads
-  MerryMemory *inst_mem;  // the instruction memory that every vcore shares
-  MerryDMemory *data_mem; // the data memory that every vcore shares
-  MerryMutex *_lock;      // the Manager's lock
-  MerryCond *_cond; // the Manager's cond
-  msize_t core_count; // the number of vcores
-  mbool_t stop;       // tell the manager to stop the VM and exit
+  MerryMemory *inst_mem;      // the instruction memory that every vcore shares
+  MerryDMemory *data_mem;     // the data memory that every vcore shares
+  MerryMutex *_lock;          // the Manager's lock
+  MerryCond *_cond;           // the Manager's cond
+  msize_t core_count;         // the number of vcores
+  mbool_t stop;               // tell the manager to stop the VM and exit
   msize_t ret;
 };
 

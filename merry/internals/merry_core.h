@@ -120,6 +120,7 @@ struct MerryCore
     mbool_t greater;
     mqword_t current_inst;
     MerryStack *ras; // the RAS
+    msize_t exception_address;
 };
 
 _MERRY_INTERNAL_ _MERRY_ALWAYS_INLINE_ void merry_core_zero_out_reg(MerryCore *core)

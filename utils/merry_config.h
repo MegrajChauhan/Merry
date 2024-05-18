@@ -32,7 +32,7 @@
 #define _MERRY_OPTIMIZE_
 
 #define _MERRY_VERSION_ "0.0.0"
-#define _MERRY_VERSION_STATE_ ".alpha-1a" // beta, alpha, etc
+#define _MERRY_VERSION_STATE_ ".alpha-1b" // beta, alpha, etc
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #define _MERRY_BYTE_ORDER_ _MERRY_LITTLE_ENDIAN_

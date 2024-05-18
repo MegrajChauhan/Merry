@@ -25,13 +25,12 @@
 #ifndef _MERRY_EXEC_
 #define _MERRY_EXEC_
 
-#if defined(_WIN64)
-#include "..\..\utils\merry_logger.h"
-#else
-#include "../../utils/merry_logger.h"
-#endif
 #include "merry_request.h"
+#if defined(_WIN64)
+#include "imp\merry_imp.h"
+#else
 #include "imp/merry_imp.h"
+#endif
 
 struct MerryCore;
 struct MerryDMemory;

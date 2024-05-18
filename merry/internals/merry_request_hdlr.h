@@ -29,10 +29,8 @@
 
 #if defined(_WIN64)
 #include "..\includes\merry_errors.h"
-#include "..\..\utils\merry_logger.h"
 #else
 #include "../includes/merry_errors.h"
-#include "../../utils/merry_logger.h"
 #endif
 
 #include <stdlib.h>

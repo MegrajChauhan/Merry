@@ -18,13 +18,6 @@ _MERRY_INTERNAL_ MerryDMemPage *merry_mem_allocate_new_mempage()
         free(new_page);
         return RET_NULL; // we failed
     }
-    // initialize the page's lock
-    if ((new_page->lock = merry_mutex_init()) == RET_NULL)
-    {
-        _MERRY_DMEMORY_PGALLOC_UNMAP_PAGE_(new_page->address_space);
-        free(new_page);
-        return RET_NULL;
-    }
     new_page->address_wspace = (mwptr_t)new_page->address_space;
     new_page->address_dspace = (mdptr_t)new_page->address_space;
     new_page->address_qspace = (mqptr_t)new_page->address_space;
@@ -42,13 +35,6 @@ _MERRY_INTERNAL_ MerryDMemPage *merry_mem_allocate_new_mempage_provided(mqptr_t 
     }
     // try allocating the address space
     new_page->address_space = (mbptr_t)page; // we were provided
-    // initialize the page's lock
-    if ((new_page->lock = merry_mutex_init()) == RET_NULL)
-    {
-        _MERRY_DMEMORY_PGALLOC_UNMAP_PAGE_(new_page->address_space);
-        free(new_page);
-        return RET_NULL;
-    }
     new_page->address_wspace = (mwptr_t)new_page->address_space;
     new_page->address_dspace = (mdptr_t)new_page->address_space;
     new_page->address_qspace = (mqptr_t)new_page->address_space;
@@ -61,10 +47,6 @@ _MERRY_INTERNAL_ void merry_mem_free_mempage(MerryDMemPage *page)
 {
     if (surelyF(page == NULL))
         return;
-    if (page->lock != NULL)
-    {
-        merry_mutex_destroy(page->lock);
-    }
     if (surelyT(page->address_space != NULL))
     {
         _MERRY_DMEMORY_PGALLOC_UNMAP_PAGE_(page->address_space);
@@ -648,48 +630,6 @@ mret_t merry_dmemory_write_qword_atm(MerryDMemory *memory, maddress_t address, m
     atomic_store(&memory->pages[addr.page]->address_space[addr.offset + 1], (_to_write >> 48) & 255);
     atomic_store(&memory->pages[addr.page]->address_space[addr.offset], (_to_write >> 56) & 255);
 #endif
-    return RET_SUCCESS;
-}
-
-mret_t merry_dmemory_read_lock(MerryDMemory *memory, maddress_t address, mqptr_t _store_in)
-{
-    // this is the same as read but with page locking ensuring that no other thread can access the same page.
-    MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
-    if (surelyF(_MERRY_MEMORY_IS_ACCESS_ERROR_(addr.offset)))
-    {
-        memory->error = MERRY_MEM_ACCESS_ERROR;
-        return RET_FAILURE;
-    }
-    if (surelyF(addr.page >= memory->number_of_pages))
-    {
-        // this implies the request is for a page that doesn't exist
-        memory->error = MERRY_MEM_INVALID_ACCESS;
-        return RET_FAILURE;
-    }
-    merry_mutex_lock(memory->pages[addr.page]->lock);
-    mbptr_t temp = &memory->pages[addr.page]->address_space[addr.offset];
-    *_store_in = *((mqptr_t)temp);
-    merry_mutex_unlock(memory->pages[addr.page]->lock);
-    return RET_SUCCESS;
-}
-
-mret_t merry_dmemory_write_lock(MerryDMemory *memory, maddress_t address, mqword_t _to_write)
-{
-    MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
-    if (surelyF(_MERRY_MEMORY_IS_ACCESS_ERROR_(addr.offset)))
-    {
-        memory->error = MERRY_MEM_ACCESS_ERROR;
-        return RET_FAILURE;
-    }
-    if (surelyF(addr.page >= memory->number_of_pages))
-    {
-        memory->error = MERRY_MEM_INVALID_ACCESS;
-        return RET_FAILURE;
-    }
-    merry_mutex_lock(memory->pages[addr.page]->lock);
-    mbptr_t temp = &memory->pages[addr.page]->address_space[addr.offset];
-    *temp = _to_write; // write the value
-    merry_mutex_unlock(memory->pages[addr.page]->lock);
     return RET_SUCCESS;
 }
 
