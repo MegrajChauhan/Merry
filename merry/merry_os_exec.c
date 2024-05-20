@@ -85,7 +85,6 @@ _os_exec_(fopen)
 {
     // the address to the filename should be in Ma
     // the file opening mode should be in the lower 3 bits of the Mb register
-    // if incorrect mode is specified, the file will be opened in read mode by default
     // the handle will be returned in the Mb register and the return value in the Ma register
     // the VM won't exit on open failure
     // the filename must be null terminated
@@ -169,6 +168,51 @@ _os_exec_(feof)
     }
     os->cores[request->id]->registers[Ma] = feof((FILE *)handle);
     return RET_SUCCESS;
+}
+
+_os_exec_(fseek)
+{
+   // Mb contains the handle
+   // Ma will contain the return value, 0 for success
+   // Mc contains the offset from which to seek
+   // Md contains the offset to which to seek
+   register mqword_t handle = os->cores[request->id]->registers[Mb];
+   register mqword_t whence = os->cores[request->id]->registers[Mc];
+   register mqword_t offset = os->cores[request->id]->registers[Md];
+    if ((mqptr_t)handle == NULL)
+    {
+        merry_requestHdlr_panic(MERRY_FILEHANDLE_NULL);
+        return RET_FAILURE;
+    }
+    os->cores[request->id]->registers[Ma] = fseek((FILE*)handle, offset, whence);
+    return RET_SUCCESS;
+}
+
+_os_exec_(ftell)
+{
+  // Mb contains the handle
+  // Ma contains the offset
+  register mqword_t handle = os->cores[request->id]->registers[Mb];
+  if ((mqptr_t)handle == NULL)
+    {
+        merry_requestHdlr_panic(MERRY_FILEHANDLE_NULL);
+        return RET_FAILURE;
+    }
+  os->cores[request->id]->registers[Ma] = ftell((FILE*)handle);
+  return RET_SUCCESS;
+}
+
+_os_exec_(rewind)
+{
+  // Mb contains the handle
+  register mqword_t handle = os->cores[request->id]->registers[Mb];
+  if ((mqptr_t)handle == NULL)
+    {
+        merry_requestHdlr_panic(MERRY_FILEHANDLE_NULL);
+        return RET_FAILURE;
+    }
+  rewind((FILE*)handle);
+  return RET_SUCCESS;
 }
 
 _os_exec_(mem)

@@ -36,6 +36,8 @@
                                           : (bits == 3)   ? "w+" \
                                           : (bits == 4)   ? "a"  \
                                           : (bits == 5)   ? "a+" \
+                                          : (bits == 6)   ? "rb"\
+                                          : (bits == 7)   ? "wb"\
                                                           : "r"
 
 // handle the halt request
@@ -49,6 +51,9 @@ _os_exec_(fclose);
 _os_exec_(fread);
 _os_exec_(fwrite);
 _os_exec_(feof);
+_os_exec_(fseek);
+_os_exec_(ftell);
+_os_exec_(rewind);
 _os_exec_(mem);
 
 #endif

@@ -561,6 +561,7 @@ _THRET_T_ merry_runCore(mptr_t core)
                 }
                 atomic_compare_exchange_strong(_addr_, &c->registers[(*current >> 52) & 15], c->registers[(*current >> 48) & 15]);
             }
+            _update_flags_(&c->flag);
             break;
         case OP_CIN:
             // the input is stored in a register that is encoded into the last 4 bits of the instruction

@@ -69,6 +69,9 @@ enum
     _REQ_FREAD,         // read from a file
     _REQ_FWRITE,        // write to a file
     _REQ_FEOF,          // has the EOF been reached?
+    _REQ_FSEEK,         // seek to a given position from the given offset
+    _REQ_FTELL,         // know the current offset from the beginning
+    _REQ_REWIND,        // go to the beginning of the file
     _REQ_MEM,           // request for more memory
                         // other functions like fseek, ftell, rewind can be implemented using the above as the base in software
 };
