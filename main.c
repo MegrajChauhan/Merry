@@ -29,10 +29,10 @@
 
 int main(int argc, char **argv)
 {
-    MerryCLP *_parsed_options = merry_parse_options(argc, argv);
-    // char *x[] = {"./merry", "-f", "useclo.mbin", "--", "hello", "world"};
+    // MerryCLP *_parsed_options = merry_parse_options(argc, argv);
+    char *x[] = {"./merry", "-f", "test.mbin",};
 
-    // MerryCLP *_parsed_options = merry_parse_options(6, x);
+    MerryCLP *_parsed_options = merry_parse_options(3, x);
 
     if (_parsed_options == RET_NULL)
     {

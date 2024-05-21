@@ -1,0 +1,17 @@
+;; testing printf
+
+use merrylib/printf.zasm
+
+.text:
+proc main
+
+main:
+  mov Ma, fmt ;; the address of the string
+  mov Mb, _msg ;; since we cannot directly do "push _msg"
+  push Mb
+  call printf
+  hlt
+
+.data:
+fmt: .string "Hello %s!\n" ;; The assembler adds the terminator for us
+_msg: .string "World"
