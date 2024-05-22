@@ -15,15 +15,15 @@ printf:
 
 ;; Main print loop
 __printf_print_loop:
-    load Mb, Ma               ;; Load the current character from the format string
-    cmp Mb, 10                ;; Check for NULL terminator
+    loadb Mb, Ma               ;; Load the current character from the format string
+    cmp Mb, '\0'              ;; Check for NULL terminator
     je __printf_print_completed ;; If NULL terminator, end printing
     cmp Mb, '%'               ;; Check for format specifier
     jne __printf_print_char   ;; If not '%', print the character directly
 
 ;; Handle format specifier
     inc Ma                    ;; Move to the next character after '%'
-    load Mb, Ma               ;; Load the format specifier character
+    loadb Mb, Ma               ;; Load the format specifier character
     cmp Mb, '%'               ;; Check if it is '%%' (escaped percent sign)
     je __printf_print_percentage
     cmp Mb, 's'               ;; Check if it is '%s'
@@ -48,7 +48,7 @@ __printf_print_completed:
 
 ;; Print escaped percentage '%%'
 __printf_print_percentage:
-    mov Mb, 37                ;; ASCII code for '%'
+    mov Mb, '%'               
     cout Mb                   ;; Print '%'
     jmp __printf_update       ;; Move to the next character
 
@@ -56,8 +56,8 @@ __printf_print_percentage:
 __printf_print_string:
     sva Mb, 1                 ;; Get the address of the string argument
 __printf_inner_printloop:
-    load Mc, Mb               ;; Load the character from the string argument
-    cmp Mc, 10                ;; Check for NULL terminator
+    loadb Mc, Mb               ;; Load the character from the string argument
+    cmp Mc, '\0'              ;; Check for NULL terminator
     je __printf_update        ;; If NULL, end the string printing
     cout Mc                   ;; Print the character
     inc Mb                    ;; Move to the next character in the string

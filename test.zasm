@@ -6,8 +6,8 @@ use merrylib/printf.zasm
 proc main
 
 main:
-  mov Ma, fmt ;; the address of the string
-  mov Mb, _msg ;; since we cannot directly do "push _msg"
+  addr mov Ma, fmt  ;; the address of the string
+  addr mov Mb, _msg ;; since we cannot directly do "push _msg"
   push Mb
   call printf
   hlt
