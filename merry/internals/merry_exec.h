@@ -143,6 +143,8 @@ _exec_(call);
 _exec_(ret);
 _exec_(sva);
 _exec_(svc);
+_exec_(sva_mem);
+_exec_(svc_mem);
 
 // stack based instructions
 _exec_(push_imm);

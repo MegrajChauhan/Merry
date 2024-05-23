@@ -99,10 +99,6 @@ movesx_imm8 -> opcode: 0x20
 movesx_imm16 -> opcode: 0x21 : same as  movesx_imm8 but with 2 bytes immediate value.
 movesx_imm32 -> opcode: 0x22 : same as  movesx_imm8 but with 4 bytes immediate value.
 
-{
-   UPDATE:
-   Now, movesx_regX uses the lowest byte for encoding registers.
-}
 movesx_reg8 -> opcode: 0x23
                operands: 2 registers
                example: 0x23 0x00 0x00 0x00 0x00 0x00 0x00 0x01 -> Here the last byte, 0x01 which is 0b0000_0001. This implies the source is the Mb register and destination is Ma register.
@@ -119,12 +115,10 @@ jmp_off -> opcode: 0x26
                     The immediate is sign extended as per the sign and then added to the pc.
            example: 0x26 0x00 0x01 0x02 0x03 0x04 0x05 0x06 -> The last 6 bytes are the offset. Since it is a signed value, providing 2's complemented negative value will decrement the PC.
 
-[Changes made here]
 jmp_addr -> opcode: 0x27
             operands: 6 bytes address
             example: 0x27 0x00 [6 bytes address]
 
-[Changes made here]
 call -> opcode: 0x28
         operands: 6 bytes address 
         example: 0x28 0x00 [6 bytes address]
@@ -208,18 +202,6 @@ load -> opcode: 0x3F
 
 store -> opcode: 0x40: same as load except the value is now stored into memory rather than loaded.
 
-{
-   Memory details:
-   Both the data memory and the instruction memory are divided into pages of 1MB. The larger the program the more pages is allocated by the VM to fit it all.
-   Same applies for the data in the program, the more data it has the more pages are allocated to fit it all. Even if the program has no data a simgle page is still allocated so that if the program wants to store anything, it can.
-   The instruction memory is inaccessible to the program but the whole data memory belongs to it. Every byte is addressible in the data memory i.e address 12345 would address the 12345th byte in the first page. This allows for 1048576 addresses.
-   Now, it is recommended that the addresses are 8 bytes aligned. Here is why: Say the program is requesting the byte 102. As the VM is 64-bit, 8 bytes are read at once i.e byte 102 through 109. This is completely fine but it is not 8 byte aligned.
-   By 8 bytes aligned, I mean the address should be a multiple of 8 i.e 8, 16, 24, 32....
-   Now say the program requests to read the byte 1048574. As the VM tries to read the corresponding 8 bytes, it finds that the read exceeds the boundary of the page and thus an error is thrown.
-   For the sake of simplicity, the program can assume that the memory is linear meaning the program can think of the memory as an array of bytes rather than a group of bytes divided into different pages. So using the address 1048577 would access
-   the first byte from the second page. Though the error of the page boundary access still remains.  
-}
-
 [
   A few aliases that I would like to set:
   When I am Nibble Encoding, I am referring to the encoding of two registers in 1 byte i.e say 0x01 which would be 0b0000_0001 is encoding 2 registers; 0000 and 0001 namely Ma and Mb.
@@ -245,12 +227,10 @@ cln -> opcode: 0x4B: Resets the negative flag from the flags register
 clc -> opcode: 0x4C: Resets the carry flag from the flags register 
 clo -> opcode: 0x4D: Resets the overflow flag from the flags register 
 
-[I am hoping that the reader can deduce what these instructions do.]
 jnz -> opcode: 0x4E
        operands: A 6 bytes address.
        details: Jump if the zero flag is not set
        example: 0x4E 0x00 [6 bytes address]
-
 jz -> opcode: 0x4F: same as jnz
 jne -> opcode: 0x50: same as jnz
 je -> opcode: 0x51: same as jnz
@@ -271,15 +251,6 @@ loop -> opcode: 0x5E
         operands: takes a 6 byte address just like jmp.
         details: continuously jumps to the given address untill the Mc register is 0
         example: Say Mc = 20, This instruction: 0x5C 0x00 [6 bytes address], untill Mc becomes 0, the program will keep jumping to the address effectively looping 20 times.
-
-[These are the only instructions for now.]
-
-[The following will describe interrupts, services, what each does and the interrupt conventions]
-Merry has an internal manager that manages the entire machine. It tells each core when to start, stop and is the brain of Merry. Ultimately the manager has the task of providing services to the
-program that is running on the machine. Every single service that doesn't require the cores like IO, Networking, File handling, Multi-threading, Dynamic library loading, OS communication, etc
-is provided by the manager and as such the programs require a way to request for a service. Now, the possible side-effects of having a central hub for such critical services mandates careful
-consideration of the machine's performance as it may hinder the efficiency and the speed of the running program rendering the machine useless as a problem solving tool.
-
 intr -> opcode: 0x5F
         operand: The interrupt number. The lower 2 bytes represent the interrupt number.
 
@@ -359,36 +330,54 @@ fsub32 -> opcode: 0x8A -> only takes 2 registers encoded exactly as add_reg.
 fmul32 -> opcode: 0x8B -> only takes 2 registers encoded exactly as add_reg. 
 fdiv32 -> opcode: 0x8C -> only takes 2 registers encoded exactly as add_reg. 
 
-NOTE: The mentioned floating point arithmetic affect only 2 flags. Hence the following instructions should work after them:
-jnz, jz, jne, je, jng, jg, jns, js, jge, jse 
+atm load -> opcode: 0x8D -> same as load but done atomically
+atm loadb -> opcode: 0x8E -> same as loadb but done atomically
+atm loadw -> opcode: 0x8F -> same as loadw but done atomically
+atm loadd -> opcode: 0x90 -> same as loadd but done atomically
+atm store -> opcode: 0x91 -> same as store but done atomically
+atm storeb -> opcode: 0x92 -> same as storeb but done atomically
+atm storew -> opcode: 0x93 -> same as storew but done atomically
+atm stored -> opcode: 0x94 -> same as stored but done atomically
 
-Interrupt numbers/IDs:
-Each interrupt number/ID represents a unique service that the Manager can provide. Numbers 0-150 are reserved for internal use and thus the interrupts that the program can use start from 151.
-If a program were to use any interrupt from 0-150, the manager will handle it as an error and abruptly exit. This behaviour could be utilized for error handling and thus they will be explained in the
-future. For now here are the interrupt:
+add_memb -> opcode: 0x95 -> same as add_imm but the immediate part now stores memory address
+add_memw -> opcode: 0x96 -> same as add_imm but the immediate part now stores memory address
+add_memd -> opcode: 0x97 -> same as add_imm but the immediate part now stores memory address
+add_memq -> opcode: 0x98 -> same as add_imm but the immediate part now stores memory address
 
-Interrupt Number |               Details         
-    151                 HALT: Causes the core that makes this request to exit. If only one core was running to begin with then the VM exits.
-                        If the request causes the VM to stop, the requesting core's Ma register should contain the return value. The HALT instruction produces the same behaviour.
-    
-    152                 EXIT: Causes the VM to exit. The same behaviour as HALT except every core running will be stopped and the VM exits. Just like 151, the requesting core's Ma register
-                        must have the return value.
-    
-    153                 NEW_CORE: Creates a new virtual core that can start running from the point specified by the program. The address for the new core to start executing from should be in the Ma
-                        register of the requesting core. After the request is fulfilled, Ma of the requesting core will contain 1 if the request was a success otherwise it will contain 0. 
-    
-    154                 READCHAR: Reads a character from the console and stores it in the address specified in the Ma register. The return value for the operation is returned in the Ma register.
-                        1 indicating error and 0 indicating success.
+sub_memb -> opcode: 0x99 -> same as sub_imm but the immediate part now stores memory address
+sub_memw -> opcode: 0x9A -> same as sub_imm but the immediate part now stores memory address
+sub_memd -> opcode: 0x9B -> same as sub_imm but the immediate part now stores memory address
+sub_memq -> opcode: 0x9C -> same as sub_imm but the immediate part now stores memory address
 
-    155                 WRITECHAR: Exactly the same as READCHAR except the character is read from the specified address and printed to the console as a character.
+mul_memb -> opcode: 0x9D -> same as mul_imm but the immediate part now stores memory address
+mul_memw -> opcode: 0x9E -> same as mul_imm but the immediate part now stores memory address
+mul_memd -> opcode: 0x9F -> same as mul_imm but the immediate part now stores memory address
+mul_memq -> opcode: 0xA0 -> same as mul_imm but the immediate part now stores memory address
 
-    156                 DYNL: Dynamically load a library and use it's functionality. The address to the first character of the name of the library to be loaded must be in the Ma register.
-                        The name must be null terminated and the name is upto the HOST's convention. For eg: In Linux, even if the library to be loaded is in the same directory as the directory from
-                        where the program is being executed, the filename must be "./<filename>" otherwise it is not opened.
-                        A handle is returned in the Mb register that can be used to access the loaded library. Keep in mind that you shouldn't mess with the handle.
+div_memb -> opcode: 0xA1 -> same as div_imm but the immediate part now stores memory address
+div_memw -> opcode: 0xA2 -> same as div_imm but the immediate part now stores memory address
+div_memd -> opcode: 0xA3 -> same as div_imm but the immediate part now stores memory address
+div_memq -> opcode: 0xA4 -> same as div_imm but the immediate part now stores memory address
 
-    157                 DYNUL: Unload a library loaded using the DYNL service interrupt. The handle to the library must be provided in the Mb register.
+mod_memb -> opcode: 0xA5 -> same as mod_imm but the immediate part now stores memory address
+mod_memw -> opcode: 0xA6 -> same as mod_imm but the immediate part now stores memory address
+mod_memd -> opcode: 0xA7 -> same as mod_imm but the immediate part now stores memory address
+mod_memq -> opcode: 0xA8 -> same as mod_imm but the immediate part now stores memory address
 
-    158                 DYNCALL: Call a function from the dynamically loaded library. The address to the parameter of the function must be in the Mc register and the address to the first
-                        character of the function's name must be in the Ma register. Again, the name must be null terminated. The return value from the called function will be in Ma.
-                        
+fadd_mem -> opcode: 0xA9 -> the lower 4 bits of the second byte contains the register and the lower 6 bytes contain the address to the float 
+fsub_mem -> opcode: 0xAA -> the lower 4 bits of the second byte contains the register and the lower 6 bytes contain the address to the float 
+fmul_mem -> opcode: 0xAB -> the lower 4 bits of the second byte contains the register and the lower 6 bytes contain the address to the float 
+fdiv_mem -> opcode: 0xAC -> the lower 4 bits of the second byte contains the register and the lower 6 bytes contain the address to the float 
+
+fadd32_mem -> opcode: 0xAD -> the lower 4 bits of the second byte contains the register and the lower 6 bytes contain the address to the float 
+fsub32_mem -> opcode: 0xAE -> the lower 4 bits of the second byte contains the register and the lower 6 bytes contain the address to the float 
+fmul32_mem -> opcode: 0xAF -> the lower 4 bits of the second byte contains the register and the lower 6 bytes contain the address to the float 
+fdiv32_mem -> opcode: 0xB0 -> the lower 4 bits of the second byte contains the register and the lower 6 bytes contain the address to the float 
+
+cmp_memb -> opcode: 0xB1 -> the lower 4 bits of the second byte contains the register and the lower 6 bytes contain the address to the immediate
+cmp_memw -> opcode: 0xB2 -> the lower 4 bits of the second byte contains the register and the lower 6 bytes contain the address to the immediate
+cmp_memd -> opcode: 0xB3 -> the lower 4 bits of the second byte contains the register and the lower 6 bytes contain the address to the immediate
+cmp_memq -> opcode: 0xB4 -> the lower 4 bits of the second byte contains the register and the lower 6 bytes contain the address to the immediate
+
+set_excp -> opcode: 0xB5 -> The lower 6 bytes should hold the address to a procedure that will be set as the "Exception proc"
+call_excp -> opcode: 0xB6 -> Takes no arguments and when executed jumps to the procedure set by set_excp

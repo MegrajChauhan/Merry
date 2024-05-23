@@ -602,8 +602,8 @@ _exec_(call)
       core->stop_running = mtrue;
       return;
    }
-   core->stack_mem[core->sp] = core->bp; // save the BP
-   core->bp = core->sp++;
+   core->stack_mem[(core->sp++)] = core->bp; // save the BP
+   core->bp = core->sp;
 }
 
 _exec_(ret)
@@ -652,6 +652,44 @@ _exec_(svc)
    core->stack_mem[core->bp - off] = core->registers[(current >> 48) & 15];
 }
 
+_exec_(sva_mem)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t off;
+   if (merry_dmemory_read_word(core->data_mem, current & 0xFFFFFFFFFFFF, &off) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   if (core->bp < off)
+   {
+      merry_requestHdlr_panic(MERRY_INVALID_VARIABLE_ACCESS);
+      core->stop_running = mtrue;
+      return;
+   }
+   core->registers[(current >> 48) & 15] = core->stack_mem[core->bp - off];
+}
+
+_exec_(svc_mem)
+{
+   register mqword_t current = core->current_inst;
+   register mqword_t off;
+   if (merry_dmemory_read_word(core->data_mem, current & 0xFFFFFFFFFFFF, &off) == RET_FAILURE)
+   {
+      merry_requestHdlr_panic(core->data_mem->error);
+      core->stop_running = mtrue;
+      return; // failure
+   }
+   if (core->bp < off)
+   {
+      merry_requestHdlr_panic(MERRY_INVALID_VARIABLE_ACCESS);
+      core->stop_running = mtrue;
+      return;
+   }
+   core->stack_mem[core->bp - off] = core->registers[(current >> 48) & 15];
+}
+
 _exec_(push_imm)
 {
    // push the provided immediate value onto the stack
@@ -662,7 +700,7 @@ _exec_(push_imm)
       core->stop_running = mtrue;
       return; // failure
    }
-   core->stack_mem[core->sp++] = core->current_inst & 0xFFFFFFFFFFFF;
+   core->stack_mem[(core->sp++)] = core->current_inst & 0xFFFFFFFFFFFF;
 }
 
 _exec_(push_reg)
@@ -674,7 +712,7 @@ _exec_(push_reg)
       core->stop_running = mtrue;
       return; // failure
    }
-   core->stack_mem[core->sp++] = core->registers[core->current_inst & 15];
+   core->stack_mem[(core->sp++)] = core->registers[core->current_inst & 15];
 }
 
 _exec_(pop)
@@ -701,7 +739,7 @@ _exec_(pusha)
    for (msize_t i = 0; i < REGR_COUNT; i++)
    {
       // now move one by one
-      core->stack_mem[core->sp++] = core->registers[i];
+      core->stack_mem[(core->sp++)] = core->registers[i];
    }
 }
 

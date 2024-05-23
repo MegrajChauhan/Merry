@@ -15,7 +15,7 @@ MerryCore *merry_core_init(MerryMemory *inst_mem, MerryDMemory *data_mem, msize_
         return RET_NULL;
     new_core->bp = 0; // initialize these registers to 0
     new_core->pc = 0;
-    new_core->sp = 0;
+    new_core->sp = (mqword_t)(-1);
     new_core->core_id = id;
     new_core->data_mem = data_mem;
     new_core->inst_mem = inst_mem;
@@ -779,6 +779,12 @@ _THRET_T_ merry_runCore(mptr_t core)
             }
             c->pc = c->exception_address - 1; // the address to the first instruction of the procedure
             merry_execute_call(c);
+            break;
+        case OP_SVA_MEM:
+            merry_execute_sva_mem(c);
+            break;
+        case OP_SVC_MEM:
+            merry_execute_svc_mem(c);
             break;
         }
         c->pc++;

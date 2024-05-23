@@ -45,9 +45,9 @@ typedef struct MerryFlagRegister MerryFlagRegister;
 #define flags_res(x, size) unsigned long x : size
 
 #define _is_stack_full_(core) (core->sp == _MERRY_MEMORY_QS_PER_PAGE_)
-#define _check_stack_lim_(core, size) ((_MERRY_MEMORY_QS_PER_PAGE_ - core->sp) > size)
-#define _is_stack_empty_(core) (core->sp == 0)
-#define _stack_has_atleast_(core, atleast) (core->sp >= atleast)
+#define _check_stack_lim_(core, size) (core->sp == (mqword_t)(-1) || (_MERRY_MEMORY_QS_PER_PAGE_ - core->sp) > size)
+#define _is_stack_empty_(core) (core->sp == (mqword_t)(-1))
+#define _stack_has_atleast_(core, atleast) (core->sp >= (atleast - 1))
 
 #define _MERRY_RAS_LEN_ 30             // 30 function calls should be enough
 #define _MERRY_RAS_LIMIT_ 50           // 50 function calls at max
