@@ -72,3 +72,68 @@ machine. This cannot be used just for strings, it can be used for other data tha
 [
   Note: In the input file, the header comes first, then comes the instruction section, then the data section and finally the string section.
 ]
+
+######################################################################
+############                The New Format                ############
+######################################################################
+                  |------------------------ reserved
+                  |    |------------------- reserved
+                  |    |    |-------------- reserved
+                  |    |    |    |--------- DE(Debugging Enabled) flag: Doesn't really do anything for now but is useful and tells the VM to be ready for debugging.
+                  |    |    |    |    |---- STE(Symbol Table Enable) flag: Indicating that the ST should be read and is available(If enabled but not available, the VM will just ignore it).
+0x4D 0x49 0x4E 0x00 0x00 0x00 0x00 0x00
+0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 -> The instruction section's size
+0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 -> The EAT's size
+0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 -> The SsT's size
+0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 -> The ST's size
+
+0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 -> The EAT
+.
+.
+.
+.
+
+0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 -> The Instructions
+.
+.
+.
+.
+
+0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 -> The SsT
+.
+.
+.
+.
+
+0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 -> The various sections
+.
+.
+.
+.
+
+0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 -> The ST
+.
+.
+.
+.
+
+-------------------------------------------------------------------------------------------------------------
+EAT(Execution Address Table):
+This table contains addresses. Each address is an entry on the table. Thus, each entry is 8 bytes in length. Every entry corresponds to a new core.
+The OS, during initialization, will start as many cores as provided in the table each executing from the corresponding address.
+
+SsT(Sections Table):
+Describes the various sections in the binary. One entry can be described as:
+| Size | Type | ST index | Various flags |
+
+The size takes 8 bytes which describes the size of the section. Type describes the type of the section. The ST index provides the index for this section in the ST.
+Types includes: data, info, symd, others
+Flags includes: RIM(Read Into Memory) flag, RAS(Read As String) flag.
+
+Types details:
+data is simply data. info means that the section contains information about the file. The VM doesm't need this but any debuggers may use this for their purposes. There is no strict format
+for the info section and it is upto the debuggers to define a format that suits them. The symb type indicates the various ST index for various symbols.
+For eg: say a procedure "abc" is in the file at address "0x1234". Now in the ST(Symbol Table), it will simply contain "abc\0" but in the symd section it will contain
+0x1234: ST index
+which helps in identifying the position of various symbols. others type is again for the users to decide and use. The VM will, by default, not load info, symd and others into the memory unless,
+for others, the RIM flag is enabled.

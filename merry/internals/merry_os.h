@@ -41,8 +41,10 @@
 
 #if defined(_WIN64)
 #include "..\..\sys\merry_dynl.h"
+#include "..\..\sys\merry_fio.h"
 #else
 #include "../../sys/merry_dynl.h"
+#include "../../sys/merry_fio.h"
 #endif
 
 typedef struct Merry Merry;

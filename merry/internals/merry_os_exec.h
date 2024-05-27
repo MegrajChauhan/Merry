@@ -32,13 +32,13 @@
 #define _os_exec_(reqname) mret_t merry_os_execute_request_##reqname(Merry *os, MerryOSRequest *request)
 
 // r, r+, w, w+, a, a+
-#define _openmode_(bits) (bits == 1) ? "r+" : (bits == 2) ? "w"  \
-                                          : (bits == 3)   ? "w+" \
-                                          : (bits == 4)   ? "a"  \
-                                          : (bits == 5)   ? "a+" \
-                                          : (bits == 6)   ? "rb"\
-                                          : (bits == 7)   ? "wb"\
-                                                          : "r"
+// #define _openmode_(bits) (bits == 1) ? "r+" : (bits == 2) ? "w"  \
+//                                           : (bits == 3)   ? "w+" \
+//                                           : (bits == 4)   ? "a"  \
+//                                           : (bits == 5)   ? "a+" \
+//                                           : (bits == 6)   ? "rb"\
+//                                           : (bits == 7)   ? "wb"\
+//                                                           : "r"
 
 // handle the halt request
 _os_exec_(halt);

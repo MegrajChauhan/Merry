@@ -98,13 +98,15 @@ _THRET_T_ merry_runCore(mptr_t core)
     register mqword_t curr = 0;
     while (mtrue)
     {
-        if (c->stop_running == mtrue)
+        // this will be false most of the times so makes sense
+        if (surelyF(c->stop_running == mtrue))
             break;
         if (merry_manager_mem_read_inst(c->inst_mem, c->pc, current) == RET_FAILURE)
         {
             merry_requestHdlr_panic(c->inst_mem->error);
             break; // stay out of it
         }
+        c->pc++;
         switch (merry_get_opcode(*current))
         {
         case OP_NOP: // we don't care about NOP instructions
@@ -248,7 +250,7 @@ _THRET_T_ merry_runCore(mptr_t core)
             break;
         case OP_JMP_ADDR:
             // 6 bytes should be fine
-            c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
+            c->pc = (*current & 0xFFFFFFFFFFFF);
             break;
         case OP_CALL:
             // save the current return address
@@ -258,7 +260,7 @@ _THRET_T_ merry_runCore(mptr_t core)
                 c->stop_running = mtrue;
                 break;
             }
-            c->pc = (*current & 0xFFFFFFFFFFFF) - 1; // the address to the first instruction of the procedure
+            c->pc = (*current & 0xFFFFFFFFFFFF); // the address to the first instruction of the procedure
             merry_execute_call(c);
             break;
         case OP_RET:
@@ -485,60 +487,60 @@ _THRET_T_ merry_runCore(mptr_t core)
         case OP_JE:
             // the address to jmp should follow the instruction
             if (c->flag.zero == 1)
-                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF);
             break;
         case OP_JNZ:
         case OP_JNE:
             // the address to jmp should follow the instruction
             if (c->flag.zero == 0)
-                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF);
             break;
         case OP_JNC:
             if (c->flag.carry == 0)
-                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF);
             break;
         case OP_JC:
             if (c->flag.carry == 1)
-                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF);
             break;
         case OP_JNO:
             if (c->flag.overflow == 0)
-                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF);
             break;
         case OP_JO:
             if (c->flag.overflow == 1)
-                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF);
             break;
         case OP_JNN:
             if (c->flag.negative == 0)
-                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF);
             break;
         case OP_JN:
             if (c->flag.negative == 1)
-                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF);
             break;
         case OP_JS:
         case OP_JNG:
             if (c->greater == 0)
-                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF);
             break;
         case OP_JNS:
         case OP_JG:
             if (c->greater == 1)
-                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF);
             break;
         case OP_JGE:
             if (c->greater == 1 || c->flag.zero == 0)
-                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF);
             break;
         case OP_JSE:
             if (c->greater == 0 || c->flag.zero == 0)
-                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF);
             break;
         case OP_LOOP:
             if (c->registers[Mc] != 0)
             {
-                c->pc = (*current & 0xFFFFFFFFFFFF) - 1;
+                c->pc = (*current & 0xFFFFFFFFFFFF);
                 c->registers[Mc]--;
             }
             break;
@@ -787,7 +789,6 @@ _THRET_T_ merry_runCore(mptr_t core)
             merry_execute_svc_mem(c);
             break;
         }
-        c->pc++;
     }
 #if defined(_MERRY_HOST_OS_LINUX_)
     return (mptr_t)c->registers[Ma];

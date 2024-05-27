@@ -1,6 +1,7 @@
 merry\internals\imp\arithmetic.S
 merry\merry_stack.c
 sys\src\merry_dynl.c
+sys\src\merry_fio.c
 sys\src\merry_thread.c
 merry\merry_memory.c
 merry\merry_dmemory.c

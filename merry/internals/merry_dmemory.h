@@ -56,9 +56,6 @@ typedef struct MerryDAddress MerryDAddress; // an internal struct
 struct MerryDMemPage
 {
     mbptr_t address_space;
-    mwptr_t address_wspace;
-    mdptr_t address_dspace;
-    mqptr_t address_qspace;
 };
 
 struct MerryDMemory

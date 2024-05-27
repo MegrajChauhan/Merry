@@ -655,7 +655,7 @@ _exec_(svc)
 _exec_(sva_mem)
 {
    register mqword_t current = core->current_inst;
-   register mqword_t off;
+   mqword_t off;
    if (merry_dmemory_read_word(core->data_mem, current & 0xFFFFFFFFFFFF, &off) == RET_FAILURE)
    {
       merry_requestHdlr_panic(core->data_mem->error);
@@ -674,7 +674,7 @@ _exec_(sva_mem)
 _exec_(svc_mem)
 {
    register mqword_t current = core->current_inst;
-   register mqword_t off;
+   mqword_t off;
    if (merry_dmemory_read_word(core->data_mem, current & 0xFFFFFFFFFFFF, &off) == RET_FAILURE)
    {
       merry_requestHdlr_panic(core->data_mem->error);
@@ -700,7 +700,8 @@ _exec_(push_imm)
       core->stop_running = mtrue;
       return; // failure
    }
-   core->stack_mem[(core->sp++)] = core->current_inst & 0xFFFFFFFFFFFF;
+   core->sp++;
+   core->stack_mem[core->sp] = core->current_inst & 0xFFFFFFFFFFFF;
 }
 
 _exec_(push_reg)
@@ -712,7 +713,8 @@ _exec_(push_reg)
       core->stop_running = mtrue;
       return; // failure
    }
-   core->stack_mem[(core->sp++)] = core->registers[core->current_inst & 15];
+   core->sp++;
+   core->stack_mem[core->sp] = core->registers[core->current_inst & 15];
 }
 
 _exec_(pop)
@@ -724,7 +726,8 @@ _exec_(pop)
       core->stop_running = mtrue;
       return; // failure
    }
-   core->registers[core->current_inst & 15] = core->stack_mem[core->sp--];
+   core->registers[core->current_inst & 15] = core->stack_mem[core->sp];
+   core->sp--;
 }
 
 _exec_(pusha)
@@ -739,7 +742,8 @@ _exec_(pusha)
    for (msize_t i = 0; i < REGR_COUNT; i++)
    {
       // now move one by one
-      core->stack_mem[(core->sp++)] = core->registers[i];
+      core->sp++;
+      core->stack_mem[core->sp] = core->registers[i];
    }
 }
 
@@ -755,7 +759,8 @@ _exec_(popa)
    for (msize_t i = 15; i != 0; i--)
    {
       // now move one by one
-      core->registers[i] = core->stack_mem[core->sp--];
+      core->registers[i] = core->stack_mem[core->sp];
+      core->sp--;
    }
 }
 

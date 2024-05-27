@@ -255,6 +255,9 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
                     case _REQ_FEOF:
                         merry_os_execute_request_feof(&os, &current_req);
                         break;
+                    case _REQ_REWIND:
+                        merry_os_execute_request_rewind(&os, &current_req);
+                        break;
                     case _REQ_MEM:
                         merry_os_execute_request_mem(&os, &current_req);
                         break;
@@ -269,7 +272,7 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
         }
     }
 #if defined(_MERRY_HOST_OS_LINUX_)
-    return (mptr_t)os.ret; // freeing the OS is the Main's Job
+    return (mptr_t) & (os.ret); // freeing the OS is the Main's Job
 #elif defined(_MERRY_HOST_OS_WINDOWS_)
     return os.ret;
 #endif
