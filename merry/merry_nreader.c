@@ -4,7 +4,8 @@ _MERRY_INTERNAL_ void merry_reader_give_mem_to_os(mptr_t *addrs, msize_t count)
 {
     for (msize_t i = 0; i < count; i++)
     {
-        _MERRY_MEMORY_PGALLOC_UNMAP_PAGE_(addrs[i]);
+        if (addrs[i] != NULL)
+            _MERRY_MEMORY_PGALLOC_UNMAP_PAGE_(addrs[i]);
     }
 }
 
@@ -49,7 +50,7 @@ MerryReader *merry_init_reader(mcstr_t filename)
         return RET_NULL;
     if ((r->f = fopen(filename, "rb")) == NULL)
     {
-        rlog("Couldn't open given input file %s.\n", filename);
+        rlog("Couldn't open given input file %s. Is it a directory? Are you sure it exists? Is it a path mistake?\n", filename);
         free(r);
         return RET_NULL;
     }
@@ -63,9 +64,10 @@ MerryReader *merry_init_reader(mcstr_t filename)
     r->inst.inst_section_len = 0;
     r->sst.sst_entry_count = 0;
     r->sst.sst_len = 0;
-    r->st.st_entry_count = 0;
     r->st.st_len = 0;
     r->sst.symd_section_provided = mfalse;
+    r->sym_count = 0;
+    r->syms = NULL;
     return r;
 }
 
@@ -77,16 +79,39 @@ void merry_destroy_reader(MerryReader *r)
         free(r->eat.EAT);
     if (r->sst.sections != NULL)
         free(r->sst.sections);
-    if (r->st.st_entries != NULL)
+    if (r->st.st_data != NULL)
     {
-        for (msize_t i = 0; i < r->st.st_entry_count; i++)
-        {
-            if (r->st.st_entries[i] != NULL)
-                free(r->st.st_entries[i]);
-        }
-        free(r->st.st_entries);
+        free(r->st.st_data);
+    }
+    if (r->syms != NULL)
+    {
+        free(r->syms);
     }
     free(r);
+}
+
+mret_t merry_reader_read_file(MerryReader *r)
+{
+    if (merry_reader_is_file_fit_to_read(r) == RET_FAILURE)
+        return RET_FAILURE;
+    if (merry_reader_read_header(r) == RET_FAILURE)
+        return RET_FAILURE;
+    if (merry_reader_validate_header_info(r) == RET_FAILURE)
+        return RET_FAILURE;
+    if (merry_reader_read_eat(r) == RET_FAILURE)
+        return RET_FAILURE;
+    if (merry_reader_read_instructions(r) == RET_FAILURE)
+        goto failed;
+    if (r->sst.sst_len != 0 && merry_reader_read_sst(r) == RET_FAILURE)
+        goto failed;
+    if (r->sst.sst_len != 0 && merry_reader_read_sections(r) == RET_FAILURE)
+        goto failed;
+    if (r->ste_flag == mtrue && r->st.st_len > 0 && merry_reader_read_st(r) == RET_FAILURE)
+        goto failed;
+    return RET_SUCCESS;
+failed:
+    merry_reader_return_all_mem(r);
+    return RET_FAILURE;
 }
 
 mret_t merry_reader_is_file_fit_to_read(MerryReader *r)
@@ -207,14 +232,13 @@ mret_t merry_reader_read_eat(MerryReader *r)
         return RET_SUCCESS;
     }
     r->eat.EAT = (maddress_t *)malloc(8 * num_of_entries);
-    mbyte_t eat_conts[r->eat.eat_len];
-    fread(eat_conts, 1, r->eat.EAT, r->f); // hoping it doesn't fail
     if (r->eat.EAT == NULL)
     {
-        // we failed even this?!! Embarrassing
         rlog("Internal Error: Failed to allocate memory.\n", NULL);
         return RET_FAILURE;
     }
+    mbyte_t eat_conts[r->eat.eat_len];
+    fread(eat_conts, 1, r->eat.EAT, r->f); // hoping it doesn't fail
     for (msize_t i = 0, j = 0; i < num_of_entries; i++)
     {
 #if _MERRY_BYTE_ORDER_ == _MERRY_LITTLE_ENDIAN_
@@ -243,7 +267,6 @@ mret_t merry_reader_read_instructions(MerryReader *r)
         if (fread(r->inst.instructions[i], 8, _MERRY_MEMORY_QS_PER_PAGE_, r->f) != _MERRY_MEMORY_QS_PER_PAGE_)
         {
             rlog("Internal Error: Failed to read input file.\n", NULL);
-            merry_reader_return_all_mem(r);
             return RET_FAILURE;
         }
 #if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
@@ -276,13 +299,13 @@ mret_t merry_reader_read_instructions(MerryReader *r)
         if (fread(r->inst.instructions[number_of_pages], 8, extra_addrs, r->f) != extra_addrs)
         {
             rlog("Internal Error: Failed to read input file.\n", NULL);
-            merry_reader_return_all_mem(r);
             return RET_FAILURE;
         }
     }
     return RET_SUCCESS;
 }
 
+// we read this section only if SsT len is greater than 0 in the first place
 mret_t merry_reader_read_sst(MerryReader *r)
 {
     msize_t sst_entry_count = r->sst.sst_len / _MERRY_SST_PER_ENTRY_LEN_;
@@ -297,10 +320,208 @@ mret_t merry_reader_read_sst(MerryReader *r)
         if (fread(entry, 1, _MERRY_SST_PER_ENTRY_LEN_, r->f) != _MERRY_SST_PER_ENTRY_LEN_)
         {
             rlog("Internal Error: Couldn't read SsT from input.\n", NULL);
-            free(r->sst.sections);
             return RET_FAILURE;
         }
-        
+        msize_t size = 0;
+#if _MERRY_BYTE_ORDER_ == _MERRY_LITTLE_ENDIAN_
+        _MERRY_GET_LITTLE_ENDIAN_(size, entry, 0)
+#else
+        size = *(mqptr_t)(eat_conts + j);
+#endif
+        if ((size % 8) != 0)
+        {
+            rlog("Error: Sections must be 8-byte aligned.\n", NULL);
+            return RET_FAILURE;
+        }
+        msection_t _t = entry[8] & 3;
+        mbool_t rim = entry[9] & 0x1, ras = entry[10] & 0x1;
+        msize_t stind = entry[12];
+        stind <<= 8;
+        stind |= entry[13];
+        stind <<= 8;
+        stind |= entry[14];
+        stind <<= 8;
+        stind |= entry[15];
+        total_len += size; // add to the total length
+        if (_t == _SYMD)
+            r->sst.symd_section_provided = mtrue;
+        r->sst.sections[i].ras = ras;
+        r->sst.sections[i].rim = (_t == _INFO || _t == _SYMD) ? mfalse : rim;
+        r->sst.sections[i].section_len = size;
+        r->sst.sections[i].st_index = stind;
+        r->sst.sections[i].type = _t;
+        if (r->sst.sections[i].rim == mtrue)
+            r->data_len += size;
+    }
+    r->sst.sst_entry_count = sst_entry_count;
+    // make a check here
+    if ((r->inst.inst_section_len + r->eat.eat_len + r->sst.sst_len + r->st.st_len + total_len) > r->flen)
+    {
+        rlog("The section's total size is greater than the file itself.\n", NULL);
+        return RET_FAILURE;
+    }
+    return RET_SUCCESS;
+}
+
+mret_t merry_reader_read_sections(MerryReader *r)
+{
+    // based on the information from the SsT, read the various sections
+    // Mostly every readable section is just data
+    // symd is directly stored by the reader
+    msize_t data_count = r->data_len / 8;
+    msize_t number_of_pages = data_count / _MERRY_MEMORY_QS_PER_PAGE_;
+    msize_t extra_addrs = data_count % _MERRY_MEMORY_QS_PER_PAGE_;
+    r->data_page_count = number_of_pages + (extra_addrs > 0 ? 1 : 0);
+    if (merry_reader_get_mem_from_os(&r->data, r->data_page_count) == RET_FAILURE)
+        return RET_FAILURE;
+    msize_t current_index = 0, current_off = 0;
+    for (msize_t i = 0; i < r->sst.sst_entry_count; i++)
+    {
+        MerrySection current_section = r->sst.sections[i];
+        if (current_section.rim == mfalse)
+            continue;
+        switch (current_section.type)
+        {
+            // we do not read the info section
+        case _SYMD:
+        {
+            // Each entry in this section is in the format: ind = address
+            // first 8 bytes hold the address of the symbol and the second 8 bytes hold the index
+            // Both the address and the index should be in Big Endian format
+            msize_t entries = current_section.section_len / _MERRY_SYMD_PER_ENTRY_LEN_;
+            r->sym_count += entries;
+            r->syms = (MerrySymbol *)realloc(r->syms, sizeof(MerrySymbol) * r->sym_count);
+            if (r->syms == NULL)
+            {
+                rlog("Internal Error: Failed to allocate memory to store the symbols.\n", NULL);
+                return RET_FAILURE;
+            }
+            for (msize_t j = 0; j < entries; j++)
+            {
+                mbyte_t entry[_MERRY_SYMD_PER_ENTRY_LEN_];
+                if (fread(entry, 1, _MERRY_SYMD_PER_ENTRY_LEN_, r->f) != _MERRY_SYMD_PER_ENTRY_LEN_)
+                {
+                    rlog("Internal Error: Failed to read data.\n", NULL);
+                    return RET_FAILURE;
+                }
+                maddress_t address = 0, index = 0;
+#if _MERRY_BYTE_ORDER_ == _MERRY_LITTLE_ENDIAN_
+                _MERRY_GET_LITTLE_ENDIAN_(address, entry, 0)
+                _MERRY_GET_LITTLE_ENDIAN_(index, entry, 8)
+#else
+                address = *(mqptr_t)(entry);
+                index = *(mqptr_t)(entry + 8);
+#endif
+                r->syms[j].address = address;
+                r->syms[j].index = index;
+            }
+            break;
+        }
+        case _OTHER:
+        case _DATA:
+        {
+            if (current_section.ras == mtrue || (_MERRY_BYTE_ORDER_ == _MERRY_LITTLE_ENDIAN_))
+            {
+                while (current_section.section_len > 0)
+                {
+                    msize_t current_page_cap = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - current_index;
+                    if (current_page_cap < current_section.section_len)
+                    {
+                        if (fread((r->data + current_off), 1, current_page_cap, r->f) != current_page_cap)
+                        {
+                            rlog("Internal Error: Failed to read data.\n", NULL);
+                            return RET_FAILURE;
+                        }
+                        current_index++;
+                        current_off = 0;
+                        current_section.section_len -= current_page_cap;
+                    }
+                    else
+                    {
+                        if (fread((r->data + current_off), 1, current_section.section_len, r->f) != current_section.section_len)
+                        {
+                            rlog("Internal Error: Failed to read data.\n", NULL);
+                            return RET_FAILURE;
+                        }
+                        current_off += current_section.section_len;
+                        current_section.section_len -= current_section.section_len;
+                    }
+                }
+            }
+            else
+            {
+                while (current_section.section_len > 0)
+                {
+                    msize_t current_page_cap = (_MERRY_MEMORY_ADDRESSES_PER_PAGE_ - current_index) / 8;
+                    if (current_page_cap < current_section.section_len)
+                    {
+                        if (fread((r->data + current_off), 8, current_page_cap, r->f) != current_page_cap)
+                        {
+                            rlog("Internal Error: Failed to read data.\n", NULL);
+                            return RET_FAILURE;
+                        }
+                        current_index++;
+                        current_off = 0;
+                        current_section.section_len -= current_page_cap;
+                    }
+                    else
+                    {
+                        if (fread((r->data + current_off), 8, (current_section.section_len / 8), r->f) != (current_section.section_len / 8))
+                        {
+                            rlog("Internal Error: Failed to read data.\n", NULL);
+                            return RET_FAILURE;
+                        }
+                        current_off += current_section.section_len;
+                        current_section.section_len -= current_section.section_len;
+                    }
+#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
+                    for (msize_t j = 0; j < _MERRY_MEMORY_QS_PER_PAGE_; j++)
+                    {
+                        mqword_t current = r->inst.instructions[i][j];
+                        mqword_t inverted = 0;
+                        inverted = current >> 56;
+                        inverted <<= 8;
+                        inverted |= ((current >> 48) & 255);
+                        inverted <<= 8;
+                        inverted |= ((current >> 40) & 255);
+                        inverted <<= 8;
+                        inverted |= ((current >> 32) & 255);
+                        inverted <<= 8;
+                        inverted |= ((current >> 24) & 255);
+                        inverted <<= 8;
+                        inverted |= ((current >> 16) & 255);
+                        inverted <<= 8;
+                        inverted |= ((current >> 8) & 255);
+                        inverted <<= 8;
+                        inverted |= ((current) & 255);
+                        r->inst.instructions[i][j] = inverted;
+                    }
+#endif
+                }
+            }
+            break;
+        }
+        }
+    }
+    return RET_SUCCESS;
+}
+
+mret_t merry_reader_read_st(MerryReader *r)
+{
+    // Just read everything remaining into the memory
+    // This section contains string that is indexed by the ST indexes everywhere.
+    // Each string needs to be NULL terminated
+    r->st.st_data = (mbptr_t)malloc(sizeof(r->st.st_len));
+    if (r->st.st_data == NULL)
+    {
+        rlog("Internal Error: Unable to allocate memory for ST.\n", NULL);
+        return RET_FAILURE;
+    }
+    if (fread(r->st.st_data, 1, r->st.st_len, r->f) != r->st.st_len)
+    {
+        rlog("Internal Error: Couldn't read the ST.\n", NULL);
+        free(r->st.st_data);
+        return RET_NULL;
     }
     return RET_SUCCESS;
 }

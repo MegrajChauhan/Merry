@@ -8,19 +8,19 @@
 mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count)
 {
     // initialize the os
-    // just 1 core
-    // logger should be initialized before
     MerryInpFile *input = merry_read_file(_inp_file);
-    if (input == RET_NULL)
+    os.reader = merry_init_reader(_inp_file);
+    if (os.reader == RET_NULL)
+        return RET_FAILURE;
+    // initialize the memory
+    if (merry_reader_read_file(os.reader) == RET_FAILURE)
     {
-        // the input file was not read and we failed
+        merry_destory_reader(os.reader);
         return RET_FAILURE;
     }
-    // initialize the memory
-    if ((os.data_mem = merry_dmemory_init_provided(input->_data, input->dpage_count)) == RET_NULL)
+    if ((os.data_mem = merry_dmemory_init_provided(os.reader->data, os.reader->data_page_count)) == RET_NULL)
     {
-        // grand failure
-        merry_destory_reader(input);
+        merry_destory_reader(os.reader);
         return RET_FAILURE;
     }
     // we need to put the options into the memory
@@ -32,54 +32,43 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count)
     if (count > 0)
     {
         mbptr_t _ = &(options[0][0]);
-        if (merry_dmemory_write_bytes_maybe_over_multiple_pages(os.data_mem, input->dlen + 1, len, _) == RET_FAILURE)
+        if (merry_dmemory_write_bytes_maybe_over_multiple_pages(os.data_mem, os.reader->data_len + 1, len, _) == RET_FAILURE)
         {
             // we don't have enough memory
             if (merry_dmemory_add_new_page(os.data_mem) == RET_FAILURE)
-            {
-                // We couldn't even add CLO, no point in continuing
-                goto inp_failure;
-            }
+                goto failure;
             // try again and this time it should work, if it doesn't just quit
-            if (merry_dmemory_write_bytes_maybe_over_multiple_pages(os.data_mem, input->dlen + 1, len, _) == RET_FAILURE)
-                goto inp_failure;
+            if (merry_dmemory_write_bytes_maybe_over_multiple_pages(os.data_mem, os.reader->data_len + 1, len, _) == RET_FAILURE)
+                goto failure;
         }
     }
     // we have that in memory now
     msize_t _t = input->dlen;
     // perform initialization for the inst mem as well. Unlike data memory, instruction page len cannot be 0
-    // based on the size of the input file, the reader should be able to independently run in the background as it reads the input file
-    // the reader doesn't concern itself with the OS and so it can run independently
-    // all it has to do is map the necessary pages and return us a pointer
-    // This way it can continue to read in the background and the VM can also continue without any problems
-    if ((os.inst_mem = merry_memory_init_provided(input->_instructions, input->ipage_count)) == RET_NULL)
+    if ((os.inst_mem = merry_memory_init_provided(os.reader->inst.instructions, os.reader->inst.inst_page_count)) == RET_NULL)
+        goto failure;
+    // initialize all the cores
+    os.cores = (MerryCore **)malloc(sizeof(MerryCore *) * os.reader->eat.eat_entry_count);
+    if (os.cores == NULL)
+        goto failure;
+    os.core_count = 0;
+    for (msize_t i = 0; i < os.reader->eat.eat_entry_count; i++, os.core_count++)
     {
-        goto inp_failure;
+        if ((os.cores[i] = merry_core_init(os.inst_mem, os.data_mem, os.core_count)) == RET_NULL)
+            goto failure;
     }
     // time for locks and mutexes
     if ((os._cond = merry_cond_init()) == RET_NULL)
-        goto inp_failure;
-    if ((os._lock = merry_mutex_init()) == RET_NULL)
-        goto inp_failure;
-    // don't forget to destory the reader
-    if (merry_requestHdlr_init(_MERRY_REQUEST_QUEUE_LEN_, os._cond) == RET_FAILURE)
-        goto inp_failure;
-    maddress_t entry_point = input->entry_addr;
-    merry_destory_reader(input);
-    os.core_count = 1; // we will start with one core
-    os.cores = (MerryCore **)malloc(sizeof(MerryCore *));
-    if (os.cores == RET_NULL)
         goto failure;
-    os.cores[0] = merry_core_init(os.inst_mem, os.data_mem, 0);
-    // let the core know of the CLO
-    if (os.cores[0] == RET_NULL)
+    if ((os._lock = merry_mutex_init()) == RET_NULL)
+        goto failure;
+    if (merry_requestHdlr_init(_MERRY_REQUEST_QUEUE_LEN_, os._cond) == RET_FAILURE)
         goto failure;
     os.cores[0]->registers[Mm1] = count;        // Mm1 will have the number of options
     os.cores[0]->registers[Md] = _t + 1;        // Md will have the address to the first byte
     os.cores[0]->registers[Mm5] = len + _t + 1; // Mm5 contains the address of the first byte that is free and can be manipulated by the program
     os.stop = mfalse;
-    os.cores[0]->pc = entry_point;
-    os.core_threads = (MerryThread **)malloc(sizeof(MerryThread *)); // just 1 for now
+    os.core_threads = (MerryThread **)malloc(sizeof(MerryThread *) * (os.core_count + 1));
     if (os.core_threads == RET_NULL)
         goto failure;
     if (merry_loader_init(2) == mfalse)
@@ -87,10 +76,6 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count)
     return RET_SUCCESS; // we did everything correctly
 failure:
     merry_os_destroy();
-    return RET_FAILURE;
-inp_failure:
-    merry_os_destroy();
-    merry_destory_reader(input);
     return RET_FAILURE;
 }
 
@@ -103,7 +88,7 @@ void merry_os_destroy()
     merry_cond_destroy(os._cond);
     if (surelyT(os.cores != NULL))
     {
-        for (msize_t i = 0; i < os.core_count; i++)
+        for (msize_t i = 0; i <= os.core_count; i++)
         {
             merry_core_destroy(os.cores[i]);
         }
@@ -111,12 +96,13 @@ void merry_os_destroy()
     }
     if (surelyT(os.core_threads != NULL))
     {
-        for (msize_t i = 0; i < os.core_count; i++)
+        for (msize_t i = 0; i <= os.core_count; i++)
         {
             merry_thread_destroy(os.core_threads[i]);
         }
         free(os.core_threads);
     }
+    merry_destory_reader(os.reader);
     merry_loader_close();
     merry_requestHdlr_destroy();
 }
@@ -136,16 +122,18 @@ mret_t merry_os_boot_core(msize_t core_id, maddress_t start_addr)
 mret_t merry_os_add_core()
 {
     // just add another core
-    MerryThread **temp = (MerryThread **)malloc(sizeof(MerryThread *) * (os.core_count + 1));
+    merry_mutex_lock(os._lock);
+    MerryThread **temp = (MerryThread **)malloc(sizeof(MerryThread *) * (os.core_count + 2));
     if (temp == NULL)
         return RET_FAILURE; // we failed
-    MerryCore **tempc = (MerryCore **)malloc(sizeof(MerryCore *) * (os.core_count + 1));
+    MerryCore **tempc = (MerryCore **)malloc(sizeof(MerryCore *) * (os.core_count + 2));
     if (tempc == NULL)
     {
         // we failed again
         free(temp);
         return RET_FAILURE;
     }
+    os.core_count++;
     tempc[os.core_count] = merry_core_init(os.inst_mem, os.data_mem, os.core_count);
     if (tempc[os.core_count] == RET_NULL)
     {
@@ -154,7 +142,6 @@ mret_t merry_os_add_core()
         return RET_FAILURE;
     }
     // we have succeeded in add cores
-    merry_mutex_lock(os._lock); // Safety for when request Pool is implemented
     for (msize_t i = 0; i <= os.core_count; i++)
     {
         temp[i] = os.core_threads[i];
@@ -165,7 +152,6 @@ mret_t merry_os_add_core()
     free(os.cores);
     os.core_threads = temp;
     os.cores = tempc;
-    os.core_count++;
     merry_mutex_unlock(os._lock);
     return RET_SUCCESS;
 }
@@ -174,7 +160,7 @@ _MERRY_INTERNAL_ void merry_os_prepare_for_exit()
 {
     // prepare for termination
     // firstly tell all cores to shut down
-    for (msize_t i = 0; i < os.core_count; i++)
+    for (msize_t i = 0; i <= os.core_count; i++)
     {
         atomic_exchange(&os.cores[i]->stop_running, mtrue);
     }
@@ -187,10 +173,15 @@ _MERRY_INTERNAL_ void merry_os_prepare_for_exit()
 _THRET_T_ merry_os_start_vm(mptr_t some_arg)
 {
     // this will start the OS
-    if (merry_os_boot_core(0, os.cores[0]->pc) != RET_SUCCESS)
-        return (mptr_t)RET_FAILURE;
-    // Core 0 is now up and running
-    // The OS should be ready to handle requests
+    for (msize_t i = 0; i <= os.core_count; i++)
+    {
+        if (merry_os_boot_core(i, os.reader->eat.EAT[i]) != RET_SUCCESS)
+        {
+            os.core_count = i - 1;
+            merry_os_prepare_for_exit();
+            return (mptr_t)RET_FAILURE;
+        }
+    }
     MerryOSRequest current_req;
     mptr_t temp;
     while (os.stop == mfalse)
@@ -272,7 +263,7 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
         }
     }
 #if defined(_MERRY_HOST_OS_LINUX_)
-    return (mptr_t) & (os.ret); // freeing the OS is the Main's Job
+    return (mptr_t)(&os.ret); // freeing the OS is the Main's Job
 #elif defined(_MERRY_HOST_OS_WINDOWS_)
     return os.ret;
 #endif

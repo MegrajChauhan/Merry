@@ -22,7 +22,7 @@ _MERRY_INTERNAL_ MerryDMemPage *merry_mem_allocate_new_mempage()
     return new_page;
 }
 
-_MERRY_INTERNAL_ MerryDMemPage *merry_mem_allocate_new_mempage_provided(mqptr_t page)
+_MERRY_INTERNAL_ MerryDMemPage *merry_mem_allocate_new_mempage_provided(mbptr_t page)
 {
     MerryDMemPage *new_page = (MerryDMemPage *)malloc(sizeof(MerryDMemPage));
     if (new_page == RET_NULL)
@@ -31,7 +31,7 @@ _MERRY_INTERNAL_ MerryDMemPage *merry_mem_allocate_new_mempage_provided(mqptr_t 
         return RET_NULL;
     }
     // try allocating the address space
-    new_page->address_space = (mbptr_t)page; // we were provided
+    new_page->address_space = page; // we were provided
     // everything went successfully
     return new_page;
 }
@@ -96,7 +96,7 @@ mret_t merry_dmemory_add_new_page(MerryDMemory *memory)
     return RET_SUCCESS;
 }
 
-MerryDMemory *merry_dmemory_init_provided(mqptr_t *mapped_pages, msize_t num_of_pages)
+MerryDMemory *merry_dmemory_init_provided(mbptr_t *mapped_pages, msize_t num_of_pages)
 {
     // just perform the regular allocation but don't map new pages
     // instead use the already mapped ones

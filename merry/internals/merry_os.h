@@ -36,6 +36,7 @@
 #endif
 
 #include "merry_reader.h"
+#include "merry_nreader.h"
 #include "merry_request_hdlr.h"
 #include "merry_core.h"
 
@@ -51,6 +52,7 @@ typedef struct Merry Merry;
 
 struct Merry
 {
+  MerryReader *reader;
   MerryCore **cores;          // the vcores
   MerryThread **core_threads; // the vcore's threads
   MerryMemory *inst_mem;      // the instruction memory that every vcore shares

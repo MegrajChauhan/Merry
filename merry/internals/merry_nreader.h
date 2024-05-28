@@ -19,6 +19,7 @@
 
 #define _MERRY_EAT_PER_ENTRY_LEN_ 8
 #define _MERRY_SST_PER_ENTRY_LEN_ 16
+#define _MERRY_SYMD_PER_ENTRY_LEN_ 16
 
 #define _MERRY_GET_LITTLE_ENDIAN_(var, arr, i) \
     var = arr[i];                              \
@@ -46,6 +47,13 @@ typedef struct MerrySsT MerrySsT;
 typedef struct MerrySection MerrySection;
 typedef enum msection_t msection_t;
 typedef struct MerryST MerryST;
+typedef struct MerrySymbol MerrySymbol;
+
+struct MerrySymbol
+{
+    maddress_t address;
+    msize_t index;
+};
 
 enum msection_t
 {
@@ -57,8 +65,7 @@ enum msection_t
 
 struct MerryST
 {
-    mstr_t *st_entries;     /*All the entries*/
-    msize_t st_entry_count; /*The number of entries*/
+    mbptr_t st_data;     /*All the entries*/
     msize_t st_len;         /*The length of ST in bytes*/
 };
 
@@ -104,6 +111,8 @@ struct MerryReader
     msize_t data_page_count; /* How many pages are there? */
     FILE *f;                 /* the opened file */
     msize_t flen;            /*The file's length*/
+    MerrySymbol *syms;       /*Data from symd*/
+    msize_t sym_count;       /*The number of symbols*/
 };
 
 MerryReader *merry_init_reader(mcstr_t filename);
@@ -112,14 +121,20 @@ void merry_destroy_reader(MerryReader *r);
 
 mret_t merry_reader_is_file_fit_to_read(MerryReader *r);
 
-mret_t merry_reader_read_arr(MerryReader *r);
+mret_t merry_reader_read_header(MerryReader *r);
 
-mret_t merry_reader_validate_arr_ifo(MerryReader *r);
+mret_t merry_reader_validate_header_info(MerryReader *r);
 
 mret_t merry_reader_read_eat(MerryReader *r);
 
 mret_t merry_reader_read_instructions(MerryReader *r);
 
 mret_t merry_reader_read_sst(MerryReader *r);
+
+mret_t merry_reader_read_sections(MerryReader *r);
+
+mret_t merry_reader_read_st(MerryReader *r);
+
+mret_t merry_reader_read_file(MerryReader *r);
 
 #endif
