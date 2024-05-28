@@ -111,7 +111,7 @@ void merry_loader_unloadLib(msize_t handle)
 {
     // this will not throw any error
     // while it should but not now
-    if (handle >= loader.entries)
+    if (handle >= loader.entry_count)
         return;
     if (loader.entries[handle].handle_open == mtrue)
         return; // it is already closed
@@ -126,7 +126,7 @@ void merry_loader_unloadLib(msize_t handle)
 
 dynfunc_t merry_loader_getFuncSymbol(msize_t handle, mstr_t sym_name)
 {
-    if (handle >= loader.entries)
+    if (handle >= loader.entry_count)
         return RET_NULL;
     if (loader.entries[handle].handle_open == mtrue)
         return RET_NULL; // it is already closed

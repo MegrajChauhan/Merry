@@ -24,7 +24,7 @@ mret_t merry_requestHdlr_init(msize_t queue_len, MerryCond *cond)
 
 mret_t merry_requestHdlr_push_request(msize_t req_id, msize_t id, MerryCond *req_cond)
 {
-    mret_t success = RET_SUCCESS; // just to tell the core to stop furthur execution
+    mret_t success = RET_SUCCESS;
     merry_mutex_lock(req_hdlr.lock);
     if (req_hdlr.handle_more == mfalse)
         goto here; // don't accept more

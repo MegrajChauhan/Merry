@@ -42,12 +42,12 @@ _MERRY_CREATE_QUEUE_NOPTR_(MerryRequestQueue, MerryRequestNode)
 
 MerryRequestQueue *merry_request_queue_init(msize_t number_of_requests);
 
-static _MERRY_ALWAYS_INLINE_ mbool_t merry_is_queue_full(MerryRequestQueue *queue)
+static _MERRY_ALWAYS_INLINE_ inline mbool_t merry_is_queue_full(MerryRequestQueue *queue)
 {
     return _MERRY_IS_QUEUE_FULL_NOPTR_(queue) ? mtrue : mfalse;
 }
 
-static _MERRY_ALWAYS_INLINE_ mbool_t merry_is_queue_emtpy(MerryRequestQueue *queue)
+static _MERRY_ALWAYS_INLINE_ inline mbool_t merry_is_queue_emtpy(MerryRequestQueue *queue)
 {
     return _MERRY_IS_QUEUE_EMPTY_NOPTR_(queue) ? mtrue : mfalse;
 }

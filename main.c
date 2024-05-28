@@ -30,7 +30,7 @@
 int main(int argc, char **argv)
 {
     MerryCLP *_parsed_options = merry_parse_options(argc, argv);
-    // char *x[] = {"./merry", "-f", "test.mbin",};
+    // char *x[] = {"./merry", "-f", "output.bin",};
 
     // MerryCLP *_parsed_options = merry_parse_options(3, x);
 

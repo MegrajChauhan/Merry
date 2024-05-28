@@ -38,7 +38,7 @@
     var <<= 8;                                 \
     var |= arr[i + 7];
 
-#define rlog(msg, ...) fprintf(msg, __VA_ARGS__)
+#define rlog(msg, ...) fprintf(stderr, msg, __VA_ARGS__)
 
 typedef struct MerryReader MerryReader;
 typedef struct MerryEAT MerryEAT;

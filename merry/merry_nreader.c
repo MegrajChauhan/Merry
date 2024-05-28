@@ -15,7 +15,7 @@ _MERRY_INTERNAL_ mret_t merry_reader_get_mem_from_os(mptr_t **addrs, msize_t cou
     // On failure, we can do nothing but exit
     *addrs = (mptr_t *)malloc(sizeof(mptr_t) * count);
     if (*addrs == NULL)
-        return RET_NULL;
+        return RET_FAILURE;
     for (msize_t i = 0; i < count; i++)
     {
         if (((*addrs)[0] = _MERRY_MEMORY_PGALLOC_MAP_PAGE_) == _MERRY_RET_GET_ERROR_)
@@ -33,12 +33,12 @@ _MERRY_INTERNAL_ void merry_reader_return_all_mem(MerryReader *r)
 {
     if (r->inst.inst_page_count > 0)
     {
-        merry_reader_give_mem_to_os(r->inst.instructions, r->inst.inst_page_count);
+        merry_reader_give_mem_to_os((void *)r->inst.instructions, r->inst.inst_page_count);
         free(r->inst.instructions);
     }
     if (r->data_page_count > 0)
     {
-        merry_reader_give_mem_to_os(r->data, r->data_page_count);
+        merry_reader_give_mem_to_os((void *)r->data, r->data_page_count);
         free(r->data);
     }
 }
@@ -170,7 +170,7 @@ mret_t merry_reader_read_header(MerryReader *r)
     // make couple of checks
     if ((r->inst.inst_section_len + r->eat.eat_len + r->sst.sst_len + r->st.st_len) > r->flen)
     {
-        rlog("The provided header data doesn't match with the file's contents.", NULL);
+        rlog("The provided header data doesn't match with the file's contents.\n", NULL);
         return RET_FAILURE;
     }
     return RET_SUCCESS;
@@ -238,7 +238,7 @@ mret_t merry_reader_read_eat(MerryReader *r)
         return RET_FAILURE;
     }
     mbyte_t eat_conts[r->eat.eat_len];
-    fread(eat_conts, 1, r->eat.EAT, r->f); // hoping it doesn't fail
+    fread(eat_conts, 1, r->eat.eat_len, r->f); // hoping it doesn't fail
     for (msize_t i = 0, j = 0; i < num_of_entries; i++)
     {
 #if _MERRY_BYTE_ORDER_ == _MERRY_LITTLE_ENDIAN_
@@ -260,7 +260,7 @@ mret_t merry_reader_read_instructions(MerryReader *r)
     msize_t number_of_pages = inst_count / _MERRY_MEMORY_QS_PER_PAGE_;
     msize_t extra_addrs = inst_count % _MERRY_MEMORY_QS_PER_PAGE_;
     r->inst.inst_page_count = number_of_pages + (extra_addrs > 0 ? 1 : 0);
-    if (merry_reader_get_mem_from_os(&r->inst.instructions, r->inst.inst_page_count) == RET_FAILURE)
+    if (merry_reader_get_mem_from_os((void***)(&r->inst.instructions), r->inst.inst_page_count) == RET_FAILURE)
         return RET_FAILURE;
     for (msize_t i = 0; i < number_of_pages; i++)
     {
@@ -372,7 +372,7 @@ mret_t merry_reader_read_sections(MerryReader *r)
     msize_t number_of_pages = data_count / _MERRY_MEMORY_QS_PER_PAGE_;
     msize_t extra_addrs = data_count % _MERRY_MEMORY_QS_PER_PAGE_;
     r->data_page_count = number_of_pages + (extra_addrs > 0 ? 1 : 0);
-    if (merry_reader_get_mem_from_os(&r->data, r->data_page_count) == RET_FAILURE)
+    if (merry_reader_get_mem_from_os((void***)(&r->data), r->data_page_count) == RET_FAILURE)
         return RET_FAILURE;
     msize_t current_index = 0, current_off = 0;
     for (msize_t i = 0; i < r->sst.sst_entry_count; i++)
@@ -521,7 +521,7 @@ mret_t merry_reader_read_st(MerryReader *r)
     {
         rlog("Internal Error: Couldn't read the ST.\n", NULL);
         free(r->st.st_data);
-        return RET_NULL;
+        return RET_FAILURE;
     }
     return RET_SUCCESS;
 }

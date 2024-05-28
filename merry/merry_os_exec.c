@@ -53,7 +53,7 @@ _os_exec_(dynl)
     return RET_SUCCESS;
 }
 
-_MERRY_ALWAYS_INLINE_ _os_exec_(dynul)
+_MERRY_ALWAYS_INLINE_ inline _os_exec_(dynul)
 {
     merry_loader_unloadLib(os->cores[request->id]->registers[Mb]);
     return RET_SUCCESS;

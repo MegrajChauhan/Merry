@@ -123,7 +123,7 @@ struct MerryCore
     msize_t exception_address;
 };
 
-_MERRY_INTERNAL_ _MERRY_ALWAYS_INLINE_ void merry_core_zero_out_reg(MerryCore *core)
+_MERRY_INTERNAL_ _MERRY_ALWAYS_INLINE_ inline void merry_core_zero_out_reg(MerryCore *core)
 {
     for (msize_t i = 0; i < REGR_COUNT; i++)
     {

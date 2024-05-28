@@ -33,15 +33,6 @@ In order to make merry run any program, first go into the directory where the co
 ./merry -f <input file path>
 ```
 This will make merry read the input file and start executing it. 
-But before running a program, you would need one and for that you can use the assembler to write the program and then assemble it. The old assembler, Masm, has been replaced with Zeta.
-Zeta is a much better, more efficient and faster assembler. Perform the following command to get Zeta:
-```bash
-git clone --depth=1 https://www.github.com/MegrajChauhan/Zeta # remove --depth=1 to clone everything
-cd Zeta
-g++ -std=c++20 \[More options here\] src/* main.cpp -o zeta # add options there such as -O3 for even faster assembling or enable debugging symbols, your choice
-./zeta input_file_path_ending_in_.zasm -o output_file_name_.mbin_is temporary_to_add # no additional options are supported yet
-```
-
 
 # Things to know:
 Merry is still in development and hence it is appreciated for feedback on test failures. Many features are yet to be implemented. 
@@ -49,3 +40,14 @@ Merry is still in development and hence it is appreciated for feedback on test f
 # Run Tests:
 Goto **_example/run_** to look at example programs involving the assembly language. 
 The syntax is inspired by x86_64 Nasm assembly which should be well knowm.
+
+# Note:
+Previously when we had a simpler input file format, we used the Zeta assembler as our assembler to assemble the programs but now it will not suffice. We have a more complicated input file format now.
+This format requires new, more complex and complicated assembler which is not possible yet as I still have much new to add. So if you would like to implement an assembler on your own, please contact
+me via our patreon. I will then provide a complete description of Merry's ISA and input file format.
+
+**_NOTE_**: _test.t and output.bin are one of the tests of the newer file format. You can compile the VM and then run output.bin to see what happens._
+**_NOTE_**: _The new format is still fully untested. Manual testing with handwritten binary programs will be bothersome but I have no choice and testing will take time._
+
+# What to expect?
+Given the current development efforts, we can expect debugger support, networking support, a more robust error handling, maybe a dynamic library loader for Merry binaries, core dumps, and many more.

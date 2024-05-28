@@ -34,30 +34,30 @@ _MERRY_INTERNAL_ void merry_cmp_floats32(MerryCore *core, float val1, float val2
    // only these two flags are affected
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(add_imm){
+_MERRY_ALWAYS_INLINE_ inline _exec_(add_imm){
     // add immediate value to a register
     _ArithMeticImmFrame_(+)}
 
-_MERRY_ALWAYS_INLINE_ _exec_(add_reg){
+_MERRY_ALWAYS_INLINE_ inline _exec_(add_reg){
     // add one register to another register
     _ArithMeticRegFrame_(+)}
 
-_MERRY_ALWAYS_INLINE_ _exec_(sub_imm)
+_MERRY_ALWAYS_INLINE_ inline _exec_(sub_imm)
 {
    _ArithMeticImmFrame_(-) if (core->flag.negative == 0)
            core->greater == 1;
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(sub_reg)
+_MERRY_ALWAYS_INLINE_ inline _exec_(sub_reg)
 {
    _ArithMeticRegFrame_(-) if (core->flag.negative == 0)
            core->greater == 1;
 }
 
-_MERRY_ALWAYS_INLINE_ _exec_(mul_imm){
+_MERRY_ALWAYS_INLINE_ inline _exec_(mul_imm){
     _ArithMeticImmFrame_(*)}
 
-_MERRY_ALWAYS_INLINE_ _exec_(mul_reg){
+_MERRY_ALWAYS_INLINE_ inline _exec_(mul_reg){
     _ArithMeticRegFrame_(*)}
 
 _exec_(div_imm)

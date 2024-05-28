@@ -5,7 +5,7 @@ sys/src/merry_fio.c
 sys/src/merry_thread.c
 merry/merry_memory.c
 merry/merry_dmemory.c
-merry/merry_reader.c
+merry/merry_nreader.c
 merry/merry_request_queue.c
 merry/merry_request_hdlr.c
 merry/merry_exec.c

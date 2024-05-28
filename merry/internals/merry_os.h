@@ -35,7 +35,6 @@
 #include "../../utils/merry_types.h"
 #endif
 
-#include "merry_reader.h"
 #include "merry_nreader.h"
 #include "merry_request_hdlr.h"
 #include "merry_core.h"
@@ -60,6 +59,7 @@ struct Merry
   MerryMutex *_lock;          // the Manager's lock
   MerryCond *_cond;           // the Manager's cond
   msize_t core_count;         // the number of vcores
+  msize_t active_core_count;  // the number of vcores currently active
   mbool_t stop;               // tell the manager to stop the VM and exit
   msize_t ret;
 };
