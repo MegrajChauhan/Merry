@@ -1,10 +1,5 @@
-#if defined(_WIN64)
-#include "internals\merry_core.h"
-#include "internals\merry_os.h"
-#else
-#include "internals/merry_core.h"
-#include "internals/merry_os.h"
-#endif
+#include "merry_core.h"
+#include <merry_os.h>
 
 MerryCore *merry_core_init(MerryMemory *inst_mem, MerryDMemory *data_mem, msize_t id)
 {

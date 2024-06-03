@@ -21,11 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#if defined(_WIN64)
-#include "merry\internals\merry.h" // for windows{Could have been better if a build system was used but whatever}
-#else
-#include "merry/internals/merry.h"
-#endif
+#include <merry.h>
 
 int main(int argc, char **argv)
 {

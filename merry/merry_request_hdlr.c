@@ -1,8 +1,4 @@
-#if defined(_WIN64)
-#include "internals\merry_request_hdlr.h"
-#else
-#include "internals/merry_request_hdlr.h"
-#endif
+#include "merry_request_hdlr.h"
 
 mret_t merry_requestHdlr_init(msize_t queue_len, MerryCond *cond)
 {

@@ -1,12 +1,6 @@
-#if defined(_WIN64)
-#include "internals\merry_exec.h"
-#include "internals\merry_core.h"
-#include "internals\merry_os.h"
-#else
-#include "internals/merry_exec.h"
-#include "internals/merry_core.h"
-#include "internals/merry_os.h"
-#endif
+#include "merry_exec.h"
+#include <merry_core.h>
+#include <merry_os.h>
 
 _MERRY_INTERNAL_ void merry_cmp_floats64(MerryCore *core, double val1, double val2)
 {

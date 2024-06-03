@@ -266,7 +266,7 @@ storeb -> opcode: 0x63
           encoding: The instruction is exactly the same as loadb except it stores a byte rather than loading.
 
 storew -> opcode: 0x64: same as storeb except stores 2 bytes
-storew -> opcode: 0x65: same as storeb except stores 4 bytes
+stored -> opcode: 0x65: same as storeb except stores 4 bytes
 
 load_reg -> opcode: 0x66
             operands: 2 registers encoded in the same way as add_reg

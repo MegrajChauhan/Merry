@@ -31,8 +31,12 @@
 
 #define _MERRY_OPTIMIZE_
 
-#define _MERRY_VERSION_ "0.0.0"
-#define _MERRY_VERSION_STATE_ ".alpha-1b" // beta, alpha, etc
+#define _MERRY_VERSION_CHANGE_ 0
+#define _MERRY_VERSION_MINOR_ 0
+#define _MERRY_VERSION_MAJOR_ 0
+
+#define _MERRY_VERSION_ (_MERRY_VERSION_MAJOR_ * 10000000) + (_MERRY_VERSION_MINOR_ * 10000) + _MERRY_VERSION_CHANGE_
+#define _MERRY_VERSION_STATE_ "alpha"
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #define _MERRY_BYTE_ORDER_ _MERRY_LITTLE_ENDIAN_
@@ -40,62 +44,34 @@
 #define _MERRY_BYTE_ORDER_ _MERRY_BIG_ENDIAN_
 #endif
 
-#define _MERRY_ENDIANNESS_ _MERRY_LITTLE_ENDIAN_
+// Merry's endianness
+#define _MERRY_ENDIANNESS_ _MERRY_BYTE_ORDER_
 
-#if __SIZEOF_POINTER__ != 8
-#error Merry requires 64-bit host machines to run. Host machine is not 64-bit.
-#endif
-
-/*for now we only check for amd architecture*/
+// Host CPU detection
 #if defined(__amd64) || defined(__amd64__)
-// the CPU is an AMD CPU
 #define _MERRY_HOST_CPU_AMD_ 1
 #endif
 
-// for only x86_64 available
+// Architecture detection
 #if defined(__x86_64)
 #define _MERRY_HOST_CPU_x86_64_ARCH_ 1
 #endif
 
-// for now we only do this for the linux systems because we don't know anything about other systems
+// Host OS detection
 #if defined(__linux) || defined(__linux__) || defined(__gnu_linux__)
-// the os is linux
 #define _MERRY_HOST_OS_LINUX_ 1
+#define _USE_LINUX_
 #endif
 
 #if defined(_WIN64)
-// the os is windows
 #define _MERRY_HOST_OS_WINDOWS_ 1
+#define _USE_WIN_
 #endif
-
-#define _MERRY_TO_BOOL_(x) !!(x) // convert x to bool
-
-#ifndef surelyT
-
-#define surelyT(x) __builtin_expect(!!(x), 1) // tell the compiler that the expression x is most likely to be true
-#define surelyF(x) __builtin_expect(!!(x), 0) // tell the compiler that the expression x is most likely to be false
-
-#endif
-
-/*Based on optimizations, this may be set*/
-#if defined(_MERRY_OPTIMIZE_)
-#define _MERRY_ALWAYS_INLINE_ __attribute__((always_inline))
-#else
-#define _MERRY_ALWAYS_INLINE_ static inline
-#endif
-
-#define _MERRY_NO_DISCARD_ [[nodiscard]]
-#define _MERRY_NO_THROW_ __attribute__((no_throw))
-#define _MERRY_NO_RETURN_ __attribute__((no_return))
-#define _MERRY_NO_NULL_ __attribute__((nonnull))
 
 #if __SIZEOF_LONG__ == __SIZEOF_LONG_LONG__
 #define _MERRY_LONG_ long
 #else
 #define _MERRY_LONG_ long long
 #endif
-
-#define _MERRY_INTERNAL_ static // for a variable or a function that is localized to a module only
-#define _MERRY_LOCAL_ static // any static variable inside a function 
 
 #endif

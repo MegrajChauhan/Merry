@@ -1,8 +1,4 @@
-#if defined(_WIN64)
-#include "internals\merry_dmemory.h"
-#else
-#include "internals/merry_dmemory.h"
-#endif
+#include "merry_dmemory.h"
 
 _MERRY_INTERNAL_ MerryDMemPage *merry_mem_allocate_new_mempage()
 {
@@ -635,7 +631,7 @@ mret_t merry_dmemory_write_bytes_maybe_over_multiple_pages(MerryDMemory *memory,
     // Exact opposite of the above
     if (array == NULL)
         return RET_SUCCESS;
-    mstr_t curr = array;
+    mbptr_t curr = array;
     register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
     if (surelyF(addr.page >= memory->number_of_pages))
     {

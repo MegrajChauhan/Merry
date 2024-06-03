@@ -50,4 +50,4 @@ me via our patreon. I will then provide a complete description of Merry's ISA an
 **_NOTE_**: _The new format is still fully untested. Manual testing with handwritten binary programs will be bothersome but I have no choice and testing will take time._
 
 # What to expect?
-Given the current development efforts, we can expect debugger support, networking support, a more robust error handling, maybe a dynamic library loader for Merry binaries, core dumps, and many more.
+Given the current development efforts, we can expect debugger support, networking support, maybe a dynamic library loader for Merry binaries, core dumps, and many more.

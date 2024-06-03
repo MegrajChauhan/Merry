@@ -1,8 +1,4 @@
-#if defined(_WIN64)
-#include "internals\merry.h"
-#else
-#include "internals/merry.h"
-#endif
+#include "merry.h"
 
 MerryCLP *merry_parse_options(int argc, char **argv)
 {

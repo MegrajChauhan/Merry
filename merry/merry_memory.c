@@ -1,8 +1,4 @@
-#if defined(_WIN64)
-#include "internals\merry_memory.h"
-#else
-#include "internals/merry_memory.h"
-#endif
+#include "merry_memory.h"
 
 // helper function: Allocate a new memory page and return it
 _MERRY_INTERNAL_ MerryMemPage *merry_mem_allocate_new_mempage()

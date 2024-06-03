@@ -26,7 +26,7 @@
 #ifndef _MERRY_TYPES_
 #define _MERRY_TYPES_
 
-#include "merry_config.h"
+#include <merry_config.h>
 
 // boolean types
 #define mtrue 1
@@ -53,7 +53,7 @@ typedef unsigned _MERRY_LONG_ msize_t;
 typedef mbool_t mret_t; // for function returns
 
 // define function pointers
-#define _MERRY_DEFINE_FUNC_PTR_(ret, func_name, ...) typedef ret (*func_name)(__VA_ARGS__);
+#define _MERRY_DEFINE_FUNC_PTR_(ret, func_name, ...) typedef ret (*func_name)(__VA_ARGS__)
 
 // pointers for memory types
 typedef mbyte_t *mbptr_t;
@@ -68,9 +68,9 @@ typedef void *mptr_t;
 
 typedef msize_t merrot_t;
 
-#if defined(_MERRY_HOST_OS_LINUX_)
+#if defined(_USE_LINUX_)
 #define _THRET_T_ mptr_t
-#elif defined(_MERRY_HOST_OS_WINDOWS_)
+#elif defined(_USE_WIN_)
 #define _THRET_T_ unsigned __stdcall
 #endif
 
