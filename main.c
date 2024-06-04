@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 #include <merry.h>
+#include <merry_os.h>
 
 int main(int argc, char **argv)
 {
@@ -45,9 +46,9 @@ int main(int argc, char **argv)
     // if version is to be printed, do the same as help
     if (_parsed_options->options[_OPT_VER].provided == mtrue)
     {
-        fprintf(stdout, "Merry Virtual Machine: A 64-bit virtual machine\nLatest version-%s %s\n", _MERRY_VERSION_, _MERRY_VERSION_STATE_);
-        merry_destroy_parser(_parsed_options);
-        return 0;
+        // fprintf(stdout, "Merry Virtual Machine: A 64-bit virtual machine\nLatest version-%s %s\n", _MERRY_VERSION_, _MERRY_VERSION_STATE_);
+        // merry_destroy_parser(_parsed_options);
+        // return 0;
     }
     // see if input file was provided or not
     if (_parsed_options->options[_OPT_FILE].provided == mfalse)

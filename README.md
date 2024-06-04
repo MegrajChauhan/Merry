@@ -1,3 +1,6 @@
+# THIS PROJECT HAS BEEN MOVED TO (https://www.github.com/MegrajChauahn/MerryV2)
+# The reason for this is the misbehaviour of CMAKE.
+
 # MERRY
 
 Merry is  a 64-bit Virtual Machine that emulates a non-existsent CPU. Merry has it's own custom ISA that is still small but is growing steadily. Merry aspires to be a very easy-to-use and simple tool for problem solving. It has 180 different instructions that can be employed to solve all sorts of problems and that is still only a fraction of what it can do in the future.

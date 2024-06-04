@@ -1,4 +1,4 @@
-#include "merry.h"
+#include "tools/merry.h"
 
 MerryCLP *merry_parse_options(int argc, char **argv)
 {

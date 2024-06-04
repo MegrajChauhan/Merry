@@ -15,3 +15,134 @@ main:
 .data:
 fmt: .string "Hello %s!\n" ;; The assembler adds the terminator for us
 _msg: .string "World"
+
+
+# Why is CMAKE doing this to me?
+# In my test project, the exact structure worked perfectly
+# And now it is making me want to punch a hole in my Laptop
+
+cmake_minimum_required(VERSION 3.28.2)
+project(mvm C ASM)
+
+# enable assembly language
+enable_language(ASM)
+
+if(CMAKE_BUILD_TYPE STREQUAL "debug")
+   add_compile_options(-g -Wall -Wextra)
+else()
+#    add_compile_options(-O3 -Wall -Wextra)
+endif()
+
+# Check for the system's bus length
+if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+    message(FATAL_ERROR "Merry requires a 64-bit operating system to run.")
+endif()
+
+if(MSVC)
+    message(FATAL_ERROR "Please use gcc.")
+endif()
+
+# Setting up build directory
+# Ensure all output directories are set correctly
+set(OutputDir "${CMAKE_SOURCE_DIR}/build")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OutputDir}/${CMAKE_BUILD_TYPE}/libs)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OutputDir}/${CMAKE_BUILD_TYPE}/)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OutputDir}/${CMAKE_BUILD_TYPE}/libs)
+
+
+# Include directories
+# Check for platform and set platform-specific include directories
+if(WIN32)
+    set(PlatFormIncludeDirs
+        abs/hard/win
+        abs/soft/win
+    )
+elseif(LINUX)
+    set(PlatFormIncludeDirs
+        abs/hard/linux
+        abs/soft/linux
+    )
+endif()
+
+# Set common include directories and include platform-specific directories
+set(IncludeDirs
+    utils
+    tools
+    dev
+    defs
+    core
+    os
+    ${PlatFormIncludeDirs}
+)
+
+# The libraries to add from here
+set(LIBS_TO_ADD
+    merry_thread.c
+    merry_time.c
+    merry_process.c
+    merry_dynl.c
+    merry_fio.c
+    merry_errno.c
+    merry_stack.c
+    merry_dmemory.c
+    merry_memory.c
+    merry_request_queue.c
+    merry_request_hdlr.c
+    merry_core.c
+    merry_nreader.c
+    merry_os.c
+    merry.c
+    arithmetic.S
+)
+
+set(LIBS_NAME
+    mthread
+    mtime
+    mprocess
+    mdynl
+    mfio
+    merrno
+    mstack
+    mdmem
+    mimem
+    mreqqueue
+    mreqhdlr
+    mcore
+    mnreader
+    mos
+    mclo
+    marithmetic
+)
+
+list(LENGTH LIBS_TO_ADD LIBS_TO_ADD_LENGTH)
+math(EXPR LIBS_TO_ADD_LENGTH "${LIBS_TO_ADD_LENGTH} - 1")
+
+foreach(i RANGE ${LIBS_TO_ADD_LENGTH})
+    list(GET LIBS_TO_ADD ${i} LIB_SRC)
+    list(GET LIBS_NAME ${i} LIB_NAME)
+    add_library(${LIB_NAME} ${LIB_SRC})
+endforeach()
+
+set_target_properties(marithmetic PROPERTIES LINKER_LANGUAGE ASM)
+
+# The libraries to add
+# set(LIBS_TO_ADD
+# )
+
+# set(LIBS_NAME
+# )
+
+# list(LENGTH LIBS_TO_ADD LIBS_TO_ADD_LENGTH)
+# math(EXPR LIBS_TO_ADD_LENGTH "${LIBS_TO_ADD_LENGTH} - 1")
+
+# foreach(i RANGE ${LIBS_TO_ADD_LENGTH})
+#     list(GET LIBS_TO_ADD ${i} LIB_SRC)
+#     list(GET LIBS_NAME ${i} LIB_NAME)
+#     add_library(${LIB_NAME} ${LIB_SRC})
+# endforeach()
+
+# Add subdirectories
+
+# Add executable
+add_executable(${PROJECT_NAME} main.c)
+target_link_libraries(${PROJECT_NAME} ${LIBS_NAME})

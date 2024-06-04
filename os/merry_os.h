@@ -38,6 +38,7 @@
 #include <merry_request_hdlr.h>
 #include <merry_core.h>
 #include <merry_console.h>
+#include <stdatomic.h>
 
 typedef struct Merry Merry;
 
@@ -55,8 +56,6 @@ struct Merry
   mbool_t stop;               // tell the manager to stop the VM and exit
   msize_t ret;
 };
-
-#include <merry_os_exec.h>
 
 #define _MERRY_REQUEST_QUEUE_LEN_ 10 // for now
 #define _MERRY_THPOOL_LEN_ 10        // for now
@@ -95,5 +94,32 @@ void merry_os_destroy();
 void merry_os_handle_error(merrot_t error);
 
 void merry_os_handle_internal_module_error(merrot_t error_num);
+
+#define _os_exec_(reqname) mret_t merry_os_execute_request_##reqname(Merry *os, MerryOSRequest *request)
+
+// r, r+, w, w+, a, a+
+// #define _openmode_(bits) (bits == 1) ? "r+" : (bits == 2) ? "w"  \
+//                                           : (bits == 3)   ? "w+" \
+//                                           : (bits == 4)   ? "a"  \
+//                                           : (bits == 5)   ? "a+" \
+//                                           : (bits == 6)   ? "rb"\
+//                                           : (bits == 7)   ? "wb"\
+//                                                           : "r"
+
+// handle the halt request
+_os_exec_(halt);
+_os_exec_(new_core);
+_os_exec_(dynl);
+_os_exec_(dynul);
+_os_exec_(dyncall);
+_os_exec_(fopen);
+_os_exec_(fclose);
+_os_exec_(fread);
+_os_exec_(fwrite);
+_os_exec_(feof);
+_os_exec_(fseek);
+_os_exec_(ftell);
+_os_exec_(rewind);
+_os_exec_(mem);
 
 #endif

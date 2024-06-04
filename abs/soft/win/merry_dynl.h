@@ -26,9 +26,9 @@
 
 #include <merry_types.h>
 #include <merry_utils.h>
-#include <dlfcn.h>
 #include <stdlib.h>
 #include <string.h>
+#include <windows.h>
 
 typedef struct MerryDynEntry MerryDynEntry;
 typedef struct MerryDynLoader MerryDynLoader;
@@ -38,11 +38,7 @@ _MERRY_DEFINE_FUNC_PTR_(mdword_t, dynfunc_t, mptr_t ptr);
 struct MerryDynEntry
 {
     char entry_name[255]; // the library's name or path
-#if defined(_USE_LINUX_)
-    mptr_t lib_handle; // the loaded library's handle
-#elif defined(_USE_WIN_)
     HINSTANCE lib_handle;
-#endif
     mbool_t handle_open; // is the library open to use?
 };
 

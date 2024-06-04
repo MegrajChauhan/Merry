@@ -21,50 +21,41 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#ifndef _MERRY_DYNL_
-#define _MERRY_DYNL_
 
-#include <merry_types.h>
+.intel_syntax noprefix
+#include <merry_config.h>
 #include <merry_utils.h>
-#include <stdlib.h>
-#include <string.h>
-#include <windows.h>
 
-typedef struct MerryDynEntry MerryDynEntry;
-typedef struct MerryDynLoader MerryDynLoader;
+// We believe that every machine that Merry runs on uses 2's complement for negative number representation and
+// IEEE representation for floating point numbers
 
-_MERRY_DEFINE_FUNC_PTR_(mdword_t, dynfunc_t, mptr_t ptr);
+// void _update_flags_(MerryFlagRegister *reg)
+.global _update_flags_
+// void _cmp_inst_(mqword_t val1, mqword_t val2, struct MerryFlagRegsiter *reg)
+.global _cmp_inst_
 
-struct MerryDynEntry
-{
-    char entry_name[255]; // the library's name or path
+
+#if defined(_MERRY_HOST_CPU_x86_64_ARCH_)
+_update_flags_:
+   pushfq          // push the flags register unto the stack
+   pop rax        // pop the flags
+   mov [rdi], rax // save the values back such that we have the flags value
+   ret
+
 #if defined(_USE_LINUX_)
-    mptr_t lib_handle; // the loaded library's handle
-#elif defined(_USE_WIN_)
-    HINSTANCE lib_handle;
+_cmp_inst_:
+   cmp rdi, rsi
+   mov rdi, rdx
+   call _update_flags_
+   ret
 #endif
-    mbool_t handle_open; // is the library open to use?
-};
 
-struct MerryDynLoader
-{
-    MerryDynEntry *entries; // the entries
-    msize_t entry_count;    // number of entries
-    msize_t closed_entry_count;
-};
-
-static MerryDynLoader loader;
-
-mbool_t merry_loader_init(msize_t initial_entry_count);
-
-void merry_loader_close();
-
-mbool_t merry_loader_loadLib(mstr_t lib_path, msize_t *handle);
-
-void merry_loader_unloadLib(msize_t handle);
-
-// each function in the library must return unsigned int which will be the return value
-// the return value of the function is loaded into the Ma register
-dynfunc_t merry_loader_getFuncSymbol(msize_t handle, mstr_t sym_name);
+#if defined(_USE_WIN_)
+_cmp_inst_:
+   cmp rcx, rdx
+   mov rdi, r8
+   call _update_flags_
+   ret
+#endif
 
 #endif

@@ -27,15 +27,16 @@
 
 #include <stdlib.h>
 #include <merry_internals.h>
+#include <merry_request.h>
+#include <merry_imp.h>
 #include <merry_memory.h>
 #include <merry_dmemory.h>
 #include <merry_opcodes.h>
+#include <merry_stack.h>
+#include <merry_thread.h>
 
 typedef struct MerryCore MerryCore;
 typedef struct MerryFlagRegister MerryFlagRegister;
-
-#include <merry_exec.h>
-#include <merry_stack.h>
 
 #define flags_res(x, size) unsigned long x : size
 
@@ -132,5 +133,155 @@ MerryCore *merry_core_init(MerryMemory *inst_mem, MerryDMemory *data_mem, msize_
 void merry_core_destroy(MerryCore *core);
 
 _THRET_T_ merry_runCore(mptr_t core);
+
+// The function structure
+#define _exec_(name) void merry_execute_##name(MerryCore *core)
+// some instructions that need full definition
+#define _lexec_(name, ...) void merry_execute_##name(MerryCore *core, __VA_ARGS__)
+
+#define _sign_extend8_(val) val | 0xFFFFFFFFFFFFFF00
+#define _sign_extend16_(val) val | 0xFFFFFFFFFFFF0000
+#define _sign_extend32_(val) val | 0xFFFFFFFFFF000000
+
+#define _clear_(f) core->flag.f = 0
+#define _fclear_(f) c->flag.f = 0
+
+#define _LowerTopReg_(current) (current >> 48) & 15
+#define _UpperTopReg_(current) (current >> 52) & 15
+#define _LowerUpReg_(current) (current >> 4) & 15
+#define _LowerDownReg_(current) (current & 15)
+#define _Lower4byteImm_(current) (current) & 0xFFFFFFFF
+
+#define _ArithMeticImmFrame_(sign)                                              \
+    register mqword_t current = core->current_inst;                             \
+    register mqword_t reg = _LowerTopReg_(current);                             \
+    core->registers[reg] = core->registers[reg] sign(_Lower4byteImm_(current)); \
+    _update_flags_(&core->flag);
+
+#define _SArithMeticImmFrame_(sign)                                                                                   \
+    register mqword_t current = core->current_inst;                                                                   \
+    register mqword_t reg = _LowerTopReg_(current);                                                                   \
+    core->registers[reg] = (msqword_t)core->registers[reg] sign(msqword_t) _sign_extend32_(_Lower4byteImm_(current)); \
+    _update_flags_(&core->flag);
+
+#define _ArithMeticRegFrame_(sign)                                                             \
+    register mqword_t current = core->current_inst;                                            \
+    register mqword_t reg = _LowerUpReg_(current);                                             \
+    core->registers[reg] = core->registers[reg] sign core->registers[_LowerDownReg_(current)]; \
+    _update_flags_(&core->flag);
+
+#define _SArithMeticRegFrame_(sign)                                                                                  \
+    register mqword_t current = core->current_inst;                                                                  \
+    register mqword_t reg = _LowerUpReg_(current);                                                                   \
+    core->registers[reg] = (msqword_t)core->registers[reg] sign(msqword_t) core->registers[_LowerDownReg_(current)]; \
+    _update_flags_(&core->flag);
+
+_MERRY_DEFINE_FUNC_PTR_(mret_t, mem_read, MerryDMemory *, maddress_t, mqptr_t);
+
+// arithmetic instructions
+_exec_(add_imm);
+_exec_(add_reg);
+_exec_(sub_imm);
+_exec_(sub_reg);
+_exec_(mul_imm);
+_exec_(mul_reg);
+_exec_(div_imm);
+_exec_(div_reg);
+
+_lexec_(add_mem, mem_read func);
+_lexec_(sub_mem, mem_read func);
+_lexec_(mul_mem, mem_read func);
+_lexec_(div_mem, mem_read func);
+_lexec_(mod_mem, mem_read func);
+
+_lexec_(cmp_mem, mem_read func);
+
+_exec_(fadd64_mem);
+_exec_(fsub64_mem);
+_exec_(fmul64_mem);
+_exec_(fdiv64_mem);
+
+_exec_(fadd32_mem);
+_exec_(fsub32_mem);
+_exec_(fmul32_mem);
+_exec_(fdiv32_mem);
+
+_exec_(mod_imm);
+_exec_(mod_reg);
+
+_exec_(iadd_imm);
+_exec_(iadd_reg);
+_exec_(isub_imm);
+_exec_(isub_reg);
+_exec_(imul_imm);
+_exec_(imul_reg);
+_exec_(idiv_imm);
+_exec_(idiv_reg);
+_exec_(imod_imm);
+_exec_(imod_reg);
+
+_exec_(fadd);
+_exec_(fsub);
+_exec_(fmul);
+_exec_(fdiv);
+
+_exec_(fadd32);
+_exec_(fsub32);
+_exec_(fmul32);
+_exec_(fdiv32);
+
+_exec_(movesx_reg8);
+_exec_(movesx_reg16);
+_exec_(movesx_reg32);
+_exec_(movesx_imm8);
+_exec_(movesx_imm16);
+_exec_(movesx_imm32);
+
+// control flow instructions
+_exec_(call);
+_exec_(ret);
+_exec_(sva);
+_exec_(svc);
+_exec_(sva_mem);
+_exec_(svc_mem);
+
+// stack based instructions
+_exec_(push_imm);
+_exec_(push_reg);
+_exec_(pop);
+_exec_(pusha);
+_exec_(popa);
+
+_lexec_(load, mqword_t address);
+_lexec_(store, mqword_t address);
+_lexec_(loadb, mqword_t address);
+_lexec_(storeb, mqword_t address);
+_lexec_(loadw, mqword_t address);
+_lexec_(storew, mqword_t address);
+_lexec_(loadd, mqword_t address);
+_lexec_(stored, mqword_t address);
+_lexec_(load_reg, mqword_t address);
+_lexec_(store_reg, mqword_t address);
+_lexec_(loadb_reg, mqword_t address);
+_lexec_(storeb_reg, mqword_t address);
+_lexec_(loadw_reg, mqword_t address);
+_lexec_(storew_reg, mqword_t address);
+_lexec_(loadd_reg, mqword_t address);
+_lexec_(stored_reg, mqword_t address);
+
+_lexec_(atm_load, mqword_t address);
+_lexec_(atm_loadb, mqword_t address);
+_lexec_(atm_loadw, mqword_t address);
+_lexec_(atm_loadd, mqword_t address);
+
+_lexec_(atm_store, mqword_t address);
+_lexec_(atm_storeb, mqword_t address);
+_lexec_(atm_storew, mqword_t address);
+_lexec_(atm_stored, mqword_t address);
+
+_exec_(excg);
+_exec_(excg8);
+_exec_(excg16);
+_exec_(excg32);
 
 #endif
