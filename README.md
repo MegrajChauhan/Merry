@@ -1,4 +1,4 @@
-# THIS PROJECT HAS BEEN MOVED TO (https://www.github.com/MegrajChauahn/MerryV2)
+# THIS PROJECT HAS BEEN MOVED TO https://www.github.com/MegrajChauhan/MerryV2
 # The reason for this is the misbehaviour of CMAKE.
 
 # MERRY
