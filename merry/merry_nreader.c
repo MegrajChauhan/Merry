@@ -204,12 +204,6 @@ mret_t merry_reader_validate_header_info(MerryReader *r)
         rlog("STE flag provided but the ST is empty: Ignoring the flag.\n", NULL);
         r->ste_flag = mfalse;
     }
-    if (r->sst.sst_len == 0 && r->de_flag == mtrue)
-    {
-        rlog("DE flag provided by the SsT is empty: Ignoring the flag[No Data Provided either].\n", NULL);
-        r->de_flag = mfalse;
-        r->data_len = 0;
-    }
     return RET_SUCCESS;
 }
 

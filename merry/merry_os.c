@@ -59,6 +59,7 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count)
         goto failure;
     if (merry_requestHdlr_init(_MERRY_REQUEST_QUEUE_LEN_, os._cond) == RET_FAILURE)
         goto failure;
+    os.dbg_running = mfalse;
     if (os.reader->de_flag == mtrue)
     {
         // Once we see that we have this flag
@@ -72,12 +73,7 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count)
             if (os.dbg_th == RET_NULL)
                 rlog("Internal Error: Could not connect to the debugger.\n", NULL);
             else
-            {
-                if (merry_create_detached_thread(os.dbg_th, &merry_dbg_run, os.dbg) == RET_FAILURE)
-                    os.dbg_running = mfalse;
-                else
-                    os.dbg_running = mtrue;
-            }
+                merry_create_detached_thread(os.dbg_th, &merry_dbg_run, os.dbg);
         }
     }
     os.cores[0]->registers[Mm1] = count;        // Mm1 will have the number of options
@@ -121,27 +117,27 @@ mret_t merry_os_init_reader_provided(MerryReader *r)
         goto failure;
     if (merry_requestHdlr_init(_MERRY_REQUEST_QUEUE_LEN_, os._cond) == RET_FAILURE)
         goto failure;
-    if (os.reader->de_flag == mtrue)
-    {
-        // Once we see that we have this flag
-        // we first prepare for connection from the debugger
-        os.dbg = merry_init_dbsupp();
-        if (os.dbg == RET_NULL)
-            rlog("Internal Error: Failed to initialize connection to debugger.\n", NULL);
-        else
-        {
-            os.dbg_th = merry_thread_init();
-            if (os.dbg_th == RET_NULL)
-                rlog("Internal Error: Could not connect to the debugger.\n", NULL);
-            else
-            {
-                if (merry_create_detached_thread(os.dbg_th, &merry_dbg_run, os.dbg) == RET_FAILURE)
-                    os.dbg_running = mfalse;
-                else
-                    os.dbg_running = mtrue;
-            }
-        }
-    }
+    // if (os.reader->de_flag == mtrue)
+    // {
+    //     // Once we see that we have this flag
+    //     // we first prepare for connection from the debugger
+    //     os.dbg = merry_init_dbsupp();
+    //     if (os.dbg == RET_NULL)
+    //         rlog("Internal Error: Failed to initialize connection to debugger.\n", NULL);
+    //     else
+    //     {
+    //         os.dbg_th = merry_thread_init();
+    //         if (os.dbg_th == RET_NULL)
+    //             rlog("Internal Error: Could not connect to the debugger.\n", NULL);
+    //         else
+    //         {
+    //             if (merry_create_detached_thread(os.dbg_th, &merry_dbg_run, os.dbg) == RET_FAILURE)
+    //                 os.dbg_running = mfalse;
+    //             else
+    //                 os.dbg_running = mtrue;
+    //         }
+    //     }
+    // }
     os.stop = mfalse;
     os.core_threads = (MerryThread **)malloc(sizeof(MerryThread *) * (os.core_count));
     if (os.core_threads == RET_NULL)
@@ -176,8 +172,7 @@ void merry_os_destroy()
         }
         free(os.core_threads);
     }
-    if (os.dbg != NULL)
-        merry_destroy_dbsupp(os.dbg);
+    merry_destroy_dbsupp(os.dbg);
     merry_thread_destroy(os.dbg_th);
     merry_destroy_reader(os.reader);
     merry_requestHdlr_destroy();
@@ -203,9 +198,11 @@ void merry_os_new_proc_cleanup()
         }
         free(os.core_threads);
     }
-    if (os.dbg != NULL)
-        merry_destroy_dbsupp(os.dbg);
+    merry_cleanup_dbsupp(os.dbg);
+    os.dbg_running = mfalse;
+    os.dbg = NULL;
     merry_thread_destroy(os.dbg_th);
+    os.dbg_th = NULL;
     merry_requestHdlr_destroy();
 }
 
@@ -365,6 +362,9 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
                             merry_os_execute_request_bp(&os, &current_req);
                             continue;
                         }
+                        break;
+                    case _REQ_GDB_INIT:
+                        os.dbg_running = mtrue;
                         break;
                     default:
                         fprintf(stderr, "Error: Unknown request code: '%llu' is not a valid request code.\n", current_req.request_number);
@@ -613,6 +613,8 @@ _os_exec_(bp)
 
 void merry_os_notify_dbg(mqword_t sig, mbyte_t arg, mbyte_t arg2)
 {
+    if (os.dbg_running == mfalse)
+        return;
     merry_mutex_lock(os.dbg->lock);
     os.dbg->sig[0] = sig;
     os.dbg->sig[15] = arg;

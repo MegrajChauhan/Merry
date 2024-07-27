@@ -1,6 +1,6 @@
 MANAGING THREAD[PROCESS 0]
 	Core count(At the time of termination): 5
-	Cause of Termination: CORE ID=0
+	Cause of Termination: CORE ID=4
 
 MEMORY INFO[DATA MEMORY]
 	Number of pages: 0
@@ -12,7 +12,7 @@ NOTE: Size of page: 1MB
 
 CORE DETAILS
 
-VIRTUAL CORE[ID:0](CAUSE OF TERMINATION)
+VIRTUAL CORE[ID:0]
 	BP(At the time of termination):0
 	SP(At the time of termination):FFFFFFFFFFFFFFFF
 	PC(At the time of termination):3
@@ -25,7 +25,7 @@ VIRTUAL CORE[ID:0](CAUSE OF TERMINATION)
 		NEGATIVE :0
 		OVERFLOW :0
 		GREATER  :0
-	REGITSER FLAG:
+	REGITSER FILE:
 		Ma :0
 		Mb :0
 		Mc :0
@@ -57,7 +57,7 @@ VIRTUAL CORE[ID:1]
 		NEGATIVE :0
 		OVERFLOW :0
 		GREATER  :0
-	REGITSER FLAG:
+	REGITSER FILE:
 		Ma :1
 		Mb :0
 		Mc :0
@@ -89,7 +89,7 @@ VIRTUAL CORE[ID:2]
 		NEGATIVE :0
 		OVERFLOW :0
 		GREATER  :0
-	REGITSER FLAG:
+	REGITSER FILE:
 		Ma :2
 		Mb :0
 		Mc :0
@@ -121,7 +121,7 @@ VIRTUAL CORE[ID:3]
 		NEGATIVE :0
 		OVERFLOW :0
 		GREATER  :0
-	REGITSER FLAG:
+	REGITSER FILE:
 		Ma :3
 		Mb :0
 		Mc :0
@@ -140,7 +140,7 @@ VIRTUAL CORE[ID:3]
 		Mm5:0
 	CALL TRACE:
 
-VIRTUAL CORE[ID:4]
+VIRTUAL CORE[ID:4](CAUSE OF TERMINATION)
 	BP(At the time of termination):0
 	SP(At the time of termination):FFFFFFFFFFFFFFFF
 	PC(At the time of termination):E
@@ -153,8 +153,8 @@ VIRTUAL CORE[ID:4]
 		NEGATIVE :0
 		OVERFLOW :0
 		GREATER  :0
-	REGITSER FLAG:
-		Ma :1
+	REGITSER FILE:
+		Ma :0
 		Mb :0
 		Mc :0
 		Md :0

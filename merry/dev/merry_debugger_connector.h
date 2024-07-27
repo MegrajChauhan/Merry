@@ -15,7 +15,7 @@
 #include <unistd.h>
 #endif
 
-#define _MERRY_DEFAULT_PORT_ 55000
+#define _MERRY_DEFAULT_PORT_ 4144
 
 // The debugger should expect 16 byte
 #define _MERRY_PER_EXCG_BUF_LEN_ 16
@@ -40,6 +40,8 @@ struct MerryDBSupp
 MerryDBSupp *merry_init_dbsupp();
 
 void merry_destroy_dbsupp(MerryDBSupp *dbg);
+
+void merry_cleanup_dbsupp(MerryDBSupp *dbg);
 
 _THRET_T_ merry_dbg_run(mptr_t _ptr);
 

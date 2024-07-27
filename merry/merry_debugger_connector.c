@@ -22,6 +22,8 @@ MerryDBSupp *merry_init_dbsupp()
 
 void merry_destroy_dbsupp(MerryDBSupp *dbg)
 {
+    if (dbg == NULL)
+        return;
 #ifdef _USE_LINUX_
     close(dbg->_fd);
     close(dbg->_listen_fd);
@@ -29,7 +31,16 @@ void merry_destroy_dbsupp(MerryDBSupp *dbg)
     merry_cond_destroy(dbg->cond);
     merry_mutex_destroy(dbg->lock);
     free(dbg);
-    dbg = NULL;
+}
+
+void merry_cleanup_dbsupp(MerryDBSupp *dbg)
+{
+#ifdef _USE_LINUX_
+    close(dbg->_fd);
+    close(dbg->_listen_fd);
+#endif
+    merry_mutex_destroy(dbg->lock);
+    free(dbg);
 }
 
 _THRET_T_ merry_dbg_run(mptr_t _ptr)
@@ -41,7 +52,7 @@ _THRET_T_ merry_dbg_run(mptr_t _ptr)
         perror("DEBUGGER CONNECT");
         return NULL;
     }
-    if (listen(dbg->_fd, 1) < 0)
+    if (listen(dbg->_fd, 5) < 0)
     {
         perror("DEBUUGER LISTEN");
         return NULL;
@@ -55,6 +66,7 @@ _THRET_T_ merry_dbg_run(mptr_t _ptr)
 
 #endif
     ssize_t read_into_buf;
+    merry_requestHdlr_push_request(_REQ_GDB_INIT, 0, dbg->cond);
     while (mtrue)
     {
         merry_mutex_lock(dbg->lock);
@@ -76,7 +88,6 @@ _THRET_T_ merry_dbg_run(mptr_t _ptr)
         merry_requestHdlr_push_dbg_request(_REQ_INTR, dbg->cond, dbg->sig);
     }
 #ifdef _USE_LINUX_
-    close(dbg->_listen_fd);
     return NULL;
 #endif
     return 0;

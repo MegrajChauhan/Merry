@@ -783,7 +783,7 @@ _THRET_T_ merry_runCore(mptr_t core)
                 c->stop_running = mtrue;
                 break;
             }
-            c->pc = c->exception_address - 1; // the address to the first instruction of the procedure
+            c->pc = c->exception_address; // the address to the first instruction of the procedure
             merry_execute_call(c);
             break;
         case OP_SVA_MEM:

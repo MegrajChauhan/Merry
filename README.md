@@ -6,7 +6,7 @@ Merry is  a 64-bit Virtual Machine that emulates a non-existsent CPU. Merry has 
 >_If you wish to learn about the instructions that Merry supports or how they are encoded, please look in_ <span style="background-color: #000000; color: white; padding: 0.2em;">docs/opcodes.txt</span> _where I have tried my best to explain it._
 
 # Building the VM:
-In order to build the VM, you need CMAKE.
+In order to build the VM, you need MAKE.
 ```bash
 git clone https://www.github.com/MegrajChauhan/MerryV2
 cd MerryV2
@@ -36,3 +36,6 @@ me via our patreon. I will then provide a complete description of Merry's ISA an
 
 **_NOTE_**: _test.t and output.bin are one of the tests of the newer file format. You can compile the VM and then run output.bin to see what happens._
 **_NOTE_**: _The new format is still fully untested. Manual testing with handwritten binary programs will be bothersome but I have no choice and testing will take time._
+
+# Refer to:
+For any queries, please refer to **info/**. Though there might not be much information, the one available should be enough for now.

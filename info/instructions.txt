@@ -381,4 +381,8 @@ cmp_memq -> opcode: 0xB4 -> the lower 4 bits of the second byte contains the reg
 
 set_excp -> opcode: 0xB5 -> The lower 6 bytes should hold the address to a procedure that will be set as the "Exception proc"
 call_excp -> opcode: 0xB6 -> Takes no arguments and when executed jumps to the procedure set by set_excp
-0xB7 0xB8 0xB9
+
+sva_mem -> opcode: 0xB7 -> Same as sva but the offset is in memory and so the lower 6 bytes encodes the address.
+svc_mem -> opcode: 0xB8 -> Same as svc but the offset is in memory and so the lower 6 bytes encodes the address.
+
+syscall -> opcode: 0xB9 -> Makes a system call for the program. The first argument is taken in Ma, second in M1 and so on upto M5

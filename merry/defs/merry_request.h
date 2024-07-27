@@ -63,6 +63,7 @@ enum
     _REQ_NEWPROCESS,    // create a new process
     _REQ_INTR,          // a request of the debuggers
     _REQ_BP,            // a request for the debugger
+    _REQ_GDB_INIT,      // the debugger is initialized
 };
 
 #endif
