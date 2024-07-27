@@ -381,3 +381,4 @@ cmp_memq -> opcode: 0xB4 -> the lower 4 bits of the second byte contains the reg
 
 set_excp -> opcode: 0xB5 -> The lower 6 bytes should hold the address to a procedure that will be set as the "Exception proc"
 call_excp -> opcode: 0xB6 -> Takes no arguments and when executed jumps to the procedure set by set_excp
+0xB7 0xB8 0xB9

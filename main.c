@@ -27,9 +27,9 @@
 int main(int argc, char **argv)
 {
     MerryCLP *_parsed_options = merry_parse_options(argc, argv);
-    // char *x[] = {"./merry", "-f", "output.bin",};
+    // char *x[] = {"./merry", "-f", "temp.bin","--dump-file"};
 
-    // MerryCLP *_parsed_options = merry_parse_options(3, x);
+    // MerryCLP *_parsed_options = merry_parse_options(4, x);
 
     if (_parsed_options == RET_NULL)
     {
@@ -37,21 +37,21 @@ int main(int argc, char **argv)
         return -1;
     }
     // if help is to be printed, ignore every other options
-    if (_parsed_options->options[_OPT_HELP].provided == mtrue)
+    if (_parsed_options->_help == mtrue)
     {
         merry_print_help();
         merry_destroy_parser(_parsed_options);
         return 0;
     }
     // if version is to be printed, do the same as help
-    if (_parsed_options->options[_OPT_VER].provided == mtrue)
+    if (_parsed_options->_version == mtrue)
     {
-        // fprintf(stdout, "Merry Virtual Machine: A 64-bit virtual machine\nLatest version-%s %s\n", _MERRY_VERSION_, _MERRY_VERSION_STATE_);
-        // merry_destroy_parser(_parsed_options);
-        // return 0;
+        fprintf(stdout, "Merry Virtual Machine: A 64-bit virtual machine\nLatest version-%lu %lu\n", _MERRY_VERSION_, _MERRY_VERSION_STATE_);
+        merry_destroy_parser(_parsed_options);
+        return 0;
     }
     // see if input file was provided or not
-    if (_parsed_options->options[_OPT_FILE].provided == mfalse)
+    if (_parsed_options->_inp_file == NULL)
     {
         fprintf(stderr, "Error: Expected path to input file, provided none\n");
         merry_print_help();
@@ -60,17 +60,18 @@ int main(int argc, char **argv)
     }
     // Now since we don't have any fancy or complex options to handle, let's get straight to business
 
-    if (merry_os_init(*_parsed_options->options[_OPT_FILE]._given_value_str_, (_parsed_options->options[_OPT_CLO].provided == mtrue) ? _parsed_options->_options_ : NULL, _parsed_options->option_count) == RET_FAILURE)
+    if (merry_os_init(_parsed_options->_inp_file, (_parsed_options->option_count > 0) ? _parsed_options->_options_ : NULL, _parsed_options->option_count) == RET_FAILURE)
     {
         // the valid error messages will be automatically printed
         merry_destroy_parser(_parsed_options);
         return -1;
     }
+    if (_parsed_options->_dump == mtrue)
+        merry_os_produce_dump(_parsed_options->_dump_file);
     // if (merry_os_init("build/isEven.mbin") == RET_FAILURE)
     // {
     //     return -1;
     // }
-    merry_destroy_parser(_parsed_options);
     MerryThread *osthread = merry_thread_init();
     if (osthread == NULL)
     {
@@ -83,11 +84,12 @@ int main(int argc, char **argv)
         merry_thread_destroy(osthread);
         goto failure;
     }
-    msize_t returnval = 0;
-    merry_thread_join(osthread, &returnval); // I am an idiot
+    mqptr_t returnval;
+    merry_thread_join(osthread, returnval); // I am an idiot
     merry_thread_destroy(osthread);
+    merry_destroy_parser(_parsed_options);
     merry_os_destroy();
-    return returnval;
+    return *returnval;
 failure:
     merry_os_destroy();
     return -1;

@@ -53,7 +53,7 @@ typedef unsigned _MERRY_LONG_ msize_t;
 typedef mbool_t mret_t; // for function returns
 
 // define function pointers
-#define _MERRY_DEFINE_FUNC_PTR_(ret, func_name, ...) typedef ret (*func_name)(__VA_ARGS__)
+#define _MERRY_DEFINE_FUNC_PTR_(ret, func_name, ...) typedef ret (*func_name)(__VA_ARGS__);
 
 // pointers for memory types
 typedef mbyte_t *mbptr_t;

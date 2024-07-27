@@ -1,0 +1,45 @@
+MANAGING THREAD[PROCESS 1]
+	Core count(At the time of termination): 1
+	Cause of Termination: CORE ID=0
+
+MEMORY INFO[DATA MEMORY]
+	Number of pages: 0
+NOTE: Size of page: 1MB
+
+MEMORY INFO[INSTRUCTION MEMORY]
+	Number of pages: 1
+NOTE: Size of page: 1MB
+
+CORE DETAILS
+
+VIRTUAL CORE[ID:0](CAUSE OF TERMINATION)
+	BP(At the time of termination):0
+	SP(At the time of termination):FFFFFFFFFFFFFFFF
+	PC(At the time of termination):E
+	IR(At the time of termination):2900000000000000
+	STACK SIZE:Static Stack(Upwards):1MB
+	Exception Address(Set by the program):0(EXCP NOT SET)
+	FLAGS REGISTER:
+		CARRY    :0
+		ZERO     :0
+		NEGATIVE :0
+		OVERFLOW :0
+		GREATER  :0
+	REGITSER FLAG:
+		Ma :0
+		Mb :0
+		Mc :0
+		Md :0
+		Me :0
+		Mf :0
+		M1 :0
+		M2 :0
+		M3 :0
+		M4 :0
+		M5 :0
+		Mm1:0
+		Mm2:0
+		Mm3:0
+		Mm4:0
+		Mm5:0
+	CALL TRACE:

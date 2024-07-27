@@ -50,6 +50,7 @@
 // Host CPU detection
 #if defined(__amd64) || defined(__amd64__)
 #define _MERRY_HOST_CPU_AMD_ 1
+#define _MERRY_HOST_ID_ARCH_ 0x00
 #endif
 
 // Architecture detection
@@ -61,11 +62,16 @@
 #if defined(__linux) || defined(__linux__) || defined(__gnu_linux__)
 #define _MERRY_HOST_OS_LINUX_ 1
 #define _USE_LINUX_
+#define _MERRY_HOST_ID_OS_ 0x00
+#ifndef __USE_MISC
+#define __USE_MISC
+#endif
 #endif
 
 #if defined(_WIN64)
 #define _MERRY_HOST_OS_WINDOWS_ 1
 #define _USE_WIN_
+#define _MERRY_HOST_ID_OS_ 0x01
 #endif
 
 #if __SIZEOF_LONG__ == __SIZEOF_LONG_LONG__
