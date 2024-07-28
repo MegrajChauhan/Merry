@@ -27,9 +27,9 @@
 int main(int argc, char **argv)
 {
     // MerryCLP *_parsed_options = merry_parse_options(argc, argv);
-    char *x[] = {"./merry", "-f", "temp.bin","--dump-file"};
+    char *x[] = {"./merry", "-f", "temp.bin"};
 
-    MerryCLP *_parsed_options = merry_parse_options(4, x);
+    MerryCLP *_parsed_options = merry_parse_options(3, x);
 
     if (_parsed_options == RET_NULL)
     {

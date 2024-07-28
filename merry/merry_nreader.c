@@ -56,6 +56,8 @@ MerryReader *merry_init_reader(mcstr_t filename)
     }
     r->de_flag = mfalse;
     r->ste_flag = mfalse;
+    r->dfe_flag = mfalse;
+    r->dfw_flag = mfalse;
     r->data_len = 0;
     r->data_page_count = 0;
     r->eat.eat_entry_count = 0;
@@ -136,10 +138,14 @@ mret_t merry_reader_read_header(MerryReader *r)
         return RET_FAILURE;
     }
     // reading the flags
-    if (header[_MERRY_STE_FLAG_] == 0x01)
+    if (ste_(header) == 0x01)
         r->ste_flag = mtrue;
-    if (header[_MERRY_DE_FLAG_] == 0x01)
+    if (de_(header) == 0x01)
         r->de_flag = mtrue;
+    if (dfe_(header) == 0x01)
+        r->dfe_flag = mtrue;
+    if (dfw_(header) == 0x01)
+        r->dfw_flag = mtrue;
     // The various section size
     mqword_t tmp = 0;
 #if _MERRY_BYTE_ORDER_ == _MERRY_LITTLE_ENDIAN_

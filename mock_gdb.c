@@ -3,14 +3,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <errno.h>
+#include <pthread.h>
 
-#define PORT 4144
-
-/*
-The VM so fast that it terminates before even an attempt is made.
-Useful for big programs but not for small programs. gotta wait for connection first
-*/
+#define REQUEST_PORT 4048
+#define SIGNAL_PORT 4144
 
 // Request codes
 #define _GET_CORE_COUNT_ 0x00
@@ -35,6 +31,34 @@ Useful for big programs but not for small programs. gotta wait for connection fi
 #define _HIT_BP_ 0x05
 #define _CORE_TERMINATING_ 0x06
 #define _ADDED_MEM_ 0x07
+
+int create_socket_and_connect(int port)
+{
+    int sockfd;
+    struct sockaddr_in server_addr;
+
+    // Create socket
+    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        perror("Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Server address
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = (port);
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+
+    // Attempt to connect to server
+    while (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+    {
+        printf("Connection to port %d failed, retrying in 1 second...\n", port);
+        sleep(1);
+    }
+
+    printf("Connected to port %d.\n", port);
+    return sockfd;
+}
 
 void send_request(int sockfd, unsigned char request_code, unsigned char *args, size_t args_len)
 {
@@ -82,66 +106,84 @@ void handle_signal(unsigned char *signal)
     }
 }
 
-int main()
+void *signal_listener_thread(void *arg)
 {
-    int sockfd;
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     struct sockaddr_in server_addr;
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = (SIGNAL_PORT);
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+
+    bind(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+    listen(sockfd, 5);
+    socklen_t addrlen = sizeof(server_addr);
+    int t = accept(sockfd, (struct sockaddr *)&server_addr, &addrlen);
+    close(sockfd);
     unsigned char buffer[16];
 
-    // Create socket
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    while (1)
     {
-        perror("Socket creation failed");
-        exit(EXIT_FAILURE);
+        int bytes_received = recv(t, buffer, sizeof(buffer), 0);
+        if (bytes_received > 0)
+        {
+            handle_signal(buffer);
+            if (buffer[0] == _TERMINATING_)
+                break;
+        }
+        else if (bytes_received == 0)
+        {
+            printf("Connection closed by server on signal port\n");
+            break;
+        }
+        else
+        {
+            perror("Receive failed on signal port");
+            break;
+        }
     }
 
-    // Server address
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = (PORT);
-    server_addr.sin_addr.s_addr = inet_addr("0.0.0.0");
+    close(t);
+    return NULL;
+}
 
-    sleep(1);
-    // Attempt to connect to server
-    while (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
-    {
-        printf("Connection failed, retrying in 1 second...\n");
-        usleep(5);
-    }
-
-    printf("Connected to VM server.\n");
+void *request_sender_thread(void *arg)
+{
+    int sockfd = create_socket_and_connect(REQUEST_PORT);
+    sleep(1); // Wait for the signal listener to be ready
 
     // Example requests
-    // send_request(sockfd, _GET_OS_ID_, NULL, 0);
+    send_request(sockfd, _GET_OS_ID_, NULL, 0);
 
-    // // Example to add a breakpoint at address 0x123456
+    // Example to add a breakpoint at address 0x123456
     // unsigned char bp_address[6] = {0x00, 0x00, 0x00, 0x12, 0x34, 0x56};
     // send_request(sockfd, _ADD_BREAKPOINT_, bp_address, 6);
 
     // // Example to get instruction at address 0x123456
     // send_request(sockfd, _INST_AT_, bp_address, 6);
 
-    // Receive and handle signals
-    send_request(sockfd, _GET_CORE_COUNT_, NULL, 0);
     while (1)
     {
-        int bytes_received = recv(sockfd, buffer, sizeof(buffer), 0);
-        if (bytes_received > 0)
-        {
-            handle_signal(buffer);
-        }
-        else if (bytes_received == 0)
-        {
-            printf("Connection closed by server\n");
-            break;
-        }
-        else
-        {
-            perror("Receive failed");
-            break;
-        }
+        // Keep sending requests as needed
+        // Here we just wait indefinitely, you can modify this to send periodic requests if needed
+        send_request(sockfd, _GET_CORE_COUNT_, NULL, 0);
+        sleep(10);
     }
 
-    // Close socket
     close(sockfd);
+    return NULL;
+}
+
+int main()
+{
+    pthread_t signal_thread, request_thread;
+
+    // Create threads for sending requests and listening to signals
+    pthread_create(&signal_thread, NULL, signal_listener_thread, NULL);
+    pthread_create(&request_thread, NULL, request_sender_thread, NULL);
+
+    // Wait for both threads to complete
+    pthread_join(signal_thread, NULL);
+    pthread_join(request_thread, NULL);
+
     return 0;
 }

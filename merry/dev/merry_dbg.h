@@ -65,6 +65,8 @@ struct MerrySender
     mbool_t stop;
 };
 
+extern void merry_os_notice(mbool_t _type);
+
 MerryListener *merry_init_listener(mbool_t notify_os);
 
 MerrySender *merry_init_sender(mbool_t notify_os);

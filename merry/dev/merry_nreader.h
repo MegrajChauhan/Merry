@@ -37,6 +37,11 @@
 #define _MERRY_STE_FLAG_ 7
 #define _MERRY_DE_FLAG_ 6
 
+#define ste_(h) (h[_MERRY_STE_FLAG_] & 1)
+#define de_(h) (h[_MERRY_DE_FLAG_] & 1)
+#define dfe_(h) ((h[_MERRY_DE_FLAG_] >> 1) & 1)
+#define dfw_(h) ((h[_MERRY_DE_FLAG_] >> 2) & 1)
+
 #define _MERRY_EAT_PER_ENTRY_LEN_ 8
 #define _MERRY_SST_PER_ENTRY_LEN_ 16
 #define _MERRY_SYMD_PER_ENTRY_LEN_ 16
@@ -121,7 +126,7 @@ struct MerryEAT
 
 struct MerryReader
 {
-    mbool_t de_flag, ste_flag;
+    mbool_t de_flag, ste_flag, dfe_flag, dfw_flag;
     MerryInstSection inst;   /*The instruction section details*/
     MerryEAT eat;            /* The details about the EAT section */
     MerrySsT sst;            /*The SsT*/

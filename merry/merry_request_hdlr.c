@@ -66,7 +66,6 @@ void merry_requestHdlr_push_request_dbg(msize_t req, mbyte_t op, mbyte_t arg_id,
     goto here;
 here:
     merry_mutex_unlock(req_hdlr.lock);
-    return success;
 }
 
 void merry_requestHdlr_kill_requests()

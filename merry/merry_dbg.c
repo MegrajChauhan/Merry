@@ -161,6 +161,7 @@ _THRET_T_ merry_start_listening(mptr_t _list)
         }
         merry_requestHdlr_push_request_dbg(_REQ_INTR, op, arg_id, addr);
     }
+    merry_os_notice(3);
 #ifdef _USE_LINUX_
     return NULL;
 #endif
@@ -169,7 +170,7 @@ _THRET_T_ merry_start_listening(mptr_t _list)
 
 _THRET_T_ merry_start_sending(mptr_t _send)
 {
-    MerrySender *dbg = (MerryListener *)_send;
+    MerrySender *dbg = (MerrySender *)_send;
 #ifdef _USE_LINUX_
     while (connect(dbg->_send_fd, (struct sockaddr *)&dbg->_addr, sizeof(dbg->_addr)) < 0)
     {
@@ -184,12 +185,15 @@ _THRET_T_ merry_start_sending(mptr_t _send)
     MerrySendQueueNode node;
     while (mtrue)
     {
+        merry_mutex_lock(dbg->lock);
         if (merry_sender_pop_sig(dbg, &node) == mfalse)
             merry_cond_wait(dbg->cond, dbg->lock);
         if (dbg->stop == mtrue)
             break;
         send(dbg->_send_fd, node.value.sig, _MERRY_PER_EXCG_BUF_LEN_, 0);
+        merry_mutex_unlock(dbg->lock);
     }
+    merry_os_notice(2);
 #ifdef _USE_LINUX_
     return NULL;
 #endif
@@ -215,11 +219,9 @@ _exit_:
 
 mret_t merry_sender_pop_sig(MerrySender *sender, MerrySendQueueNode *node)
 {
-    merry_mutex_lock(sender->lock);
     mbool_t ret;
     _MERRY_QUEUE_POP_NOPTR_(sender->queue, node->value, ret);
     goto _exit_;
 _exit_:
-    merry_mutex_unlock(sender->lock);
     return ret;
 }

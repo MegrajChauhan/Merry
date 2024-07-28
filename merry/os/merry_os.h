@@ -37,7 +37,6 @@
 #include <merry_core.h>
 #include <merry_console.h>
 #include <merry_process.h>
-#include "merry_debugger_connector.h"
 #include "merry_commands.h"
 #include "merry_dbg.h"
 #include <stdatomic.h>
@@ -63,11 +62,11 @@ struct Merry
   msize_t err_core_id;
   mbool_t wait_for_conn;
   MerryListener *listener;
-  MerrySection *sender;
+  MerrySender *sender;
   MerryThread *listener_th;
   MerryThread *sender_th;
-  mbool_t listener_running;
-  mbool_t sender_running;
+  mbool_t listener_running, listener_stopped;
+  mbool_t sender_running, sender_stopped;
 };
 
 #define _MERRY_REQUEST_QUEUE_LEN_ 10 // for now
@@ -101,6 +100,8 @@ static Merry os;
 
 mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _wait_for_conn);
 mret_t merry_os_init_reader_provided(MerryReader *r);
+
+void merry_os_start_dbg(mbool_t _flag);
 
 void merry_os_produce_dump(mstr_t _output_filename);
 

@@ -3,6 +3,7 @@
 mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _wait_for_conn)
 {
     // initialize the os
+    os.listener_stopped = os.sender_stopped = mtrue;
     os._os_id = 0;
     os.reader = merry_init_reader(_inp_file);
     if (os.reader == RET_NULL)
@@ -63,46 +64,7 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _
     os.sender_running = mfalse;
     /// NOTE: Don't mind the nested if-conditions if you will.
     if (os.reader->de_flag == mtrue)
-    {
-        // Initialize debugger threads
-        os.listener = merry_init_listener(_wait_for_conn);
-        if (os.listener != RET_NULL)
-        {
-            os.sender = merry_init_sender(_wait_for_conn);
-            if (os.sender != RET_NULL)
-            {
-                os.listener_th = merry_thread_init();
-                os.sender_th = merry_thread_init();
-                if (os.listener_th == NULL || os.sender_th == NULL)
-                {
-                    merry_destroy_reader(os.sender);
-                    merry_destroy_listener(os.listener);
-                    rlog("Internal Error: DE flag provided but couldn't start the debugger threads.\n", NULL);
-                }
-                else
-                {
-                    if (merry_create_detached_thread(os.listener_th, &merry_start_listening, os.listener) != RET_FAILURE)
-                    {
-                        if (merry_create_detached_thread(os.sender_th, &merry_start_sending, os.sender) == RET_FAILURE)
-                        {
-                            atomic_store(&os.listener->stop, mtrue);
-                            rlog("Internal Error: DE flag provided but couldn't start the debugger threads.\n", NULL);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                merry_destroy_listener(os.listener);
-                rlog("Internal Error: DE flag provided but couldn't start the debugger threads.\n", NULL);
-            }
-            while (_wait_for_conn == mtrue && os.listener_running != mtrue && os.sender_running != mtrue)
-            {
-            }
-        }
-        else
-            rlog("Internal Error: DE flag provided but couldn't start the debugger threads.\n", NULL);
-    }
+        merry_os_start_dbg(_wait_for_conn);
     os.cores[0]->registers[Mm1] = count;        // Mm1 will have the number of options
     os.cores[0]->registers[Md] = _t + 1;        // Md will have the address to the first byte
     os.cores[0]->registers[Mm5] = len + _t + 1; // Mm5 contains the address of the first byte that is free and can be manipulated by the program
@@ -144,28 +106,8 @@ mret_t merry_os_init_reader_provided(MerryReader *r)
         goto failure;
     if (merry_requestHdlr_init(_MERRY_REQUEST_QUEUE_LEN_, os._cond) == RET_FAILURE)
         goto failure;
-    // We need to define some convention that will be useful for multi-processing
-    // if (os.reader->de_flag == mtrue)
-    // {
-    //     // Once we see that we have this flag
-    //     // we first prepare for connection from the debugger
-    //     os.dbg = merry_init_dbsupp();
-    //     if (os.dbg == RET_NULL)
-    //         rlog("Internal Error: Failed to initialize connection to debugger.\n", NULL);
-    //     else
-    //     {
-    //         os.dbg_th = merry_thread_init();
-    //         if (os.dbg_th == RET_NULL)
-    //             rlog("Internal Error: Could not connect to the debugger.\n", NULL);
-    //         else
-    //         {
-    //             if (merry_create_detached_thread(os.dbg_th, &merry_dbg_run, os.dbg) == RET_FAILURE)
-    //                 os.dbg_running = mfalse;
-    //             else
-    //                 os.dbg_running = mtrue;
-    //         }
-    //     }
-    // }
+    if (os.reader->dfe_flag == mtrue)
+        merry_os_start_dbg(os.reader->dfw_flag);
     os.stop = mfalse;
     os.core_threads = (MerryThread **)malloc(sizeof(MerryThread *) * (os.core_count));
     if (os.core_threads == RET_NULL)
@@ -175,6 +117,54 @@ mret_t merry_os_init_reader_provided(MerryReader *r)
 failure:
     merry_os_destroy();
     return RET_FAILURE;
+}
+
+void merry_os_start_dbg(mbool_t _flag)
+{
+    /// NOTE: Don't mind the nested if-conditions if you will.
+    if (os.reader->de_flag == mtrue)
+    {
+        // Initialize debugger threads
+        os.listener = merry_init_listener(_flag);
+        if (os.listener != RET_NULL)
+        {
+            os.sender = merry_init_sender(_flag);
+            if (os.sender != RET_NULL)
+            {
+                os.listener_th = merry_thread_init();
+                os.sender_th = merry_thread_init();
+                if (os.listener_th == NULL || os.sender_th == NULL)
+                {
+                    merry_destroy_sender(os.sender);
+                    merry_destroy_listener(os.listener);
+                    rlog("Internal Error: DE flag provided but couldn't start the debugger threads.\n", NULL);
+                }
+                else
+                {
+                    if (merry_create_detached_thread(os.listener_th, &merry_start_listening, os.listener) != RET_FAILURE)
+                    {
+                        if (merry_create_detached_thread(os.sender_th, &merry_start_sending, os.sender) == RET_FAILURE)
+                        {
+                            atomic_store(&os.listener->stop, mtrue);
+                            rlog("Internal Error: DE flag provided but couldn't start the debugger threads.\n", NULL);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                merry_destroy_listener(os.listener);
+                rlog("Internal Error: DE flag provided but couldn't start the debugger threads.\n", NULL);
+            }
+            while (_flag == mtrue && os.listener_running != mtrue && os.sender_running != mtrue)
+            {
+            }
+            if (os.listener_running == mtrue && os.sender_running == mtrue)
+                os.listener_stopped = os.sender_stopped = mfalse;
+        }
+        else
+            rlog("Internal Error: DE flag provided but couldn't start the debugger threads.\n", NULL);
+    }
 }
 
 void merry_os_destroy()
@@ -235,6 +225,7 @@ void merry_os_new_proc_cleanup()
     merry_thread_destroy(os.listener_th);
     merry_thread_destroy(os.sender_th);
     os.listener_th = os.sender_th = NULL;
+    os.listener_stopped = os.sender_stopped = mtrue;
     merry_requestHdlr_destroy();
 }
 
@@ -248,7 +239,7 @@ mret_t merry_os_boot_core(msize_t core_id, maddress_t start_addr)
     if (merry_create_detached_thread(os.core_threads[core_id], &merry_runCore, os.cores[core_id]) == RET_FAILURE)
         return RET_FAILURE;
     os.active_core_count++;
-    merry_os_notify_dbg(_NEW_CORE_, os.core_count - 1, 0);
+    merry_os_notify_dbg(_NEW_CORE_, core_id, 0);
     return RET_SUCCESS;
 }
 
@@ -388,7 +379,7 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
                         if (os.reader->de_flag == mfalse)
                             break; // ignore it
                         merry_os_execute_request_intr(&os, &current_req);
-                        break;
+                        continue;
                     case _REQ_BP:
                         if (os.listener_running == mtrue && os.sender_running == mtrue)
                             merry_os_execute_request_bp(&os, &current_req);
@@ -408,6 +399,17 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
             // after the fulfillment of the request, wake up the core
             merry_cond_signal(current_req._wait_lock);
         }
+    }
+    if (os.listener_running == mtrue)
+        atomic_store(&os.listener->stop, mtrue);
+    if (os.sender_running == mtrue)
+    {
+        if (os.sender->queue->data_count == 0)
+            merry_cond_signal(os.sender->cond);
+        atomic_store(&os.sender->stop, mtrue);
+    }
+    while (os.listener_stopped != mtrue && os.sender_stopped != mtrue)
+    {
     }
     // dump data if necessary
     if (os.ret == _MERRY_EXIT_FAILURE_ && os.dump_on_error == mtrue)
@@ -603,6 +605,7 @@ _os_exec_(intr)
         merry_cond_signal(os->cores[request->arg_id]->cond);
         break;
     }
+    merry_sender_push_sig(os->sender, reply);
 }
 
 _os_exec_(bp)
@@ -776,6 +779,10 @@ void merry_os_notice(mbool_t _type)
 {
     if (_type == mtrue)
         atomic_store(&os.listener_running, mtrue);
-    else
+    else if (_type == mfalse)
         atomic_store(&os.sender_running, mtrue);
+    else if (_type == 2)
+        atomic_store(&os.sender_stopped, mtrue);
+    else
+        atomic_store(&os.listener_stopped, mtrue);
 }
