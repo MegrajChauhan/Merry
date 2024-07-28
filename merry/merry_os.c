@@ -59,28 +59,50 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _
         goto failure;
     if (merry_requestHdlr_init(_MERRY_REQUEST_QUEUE_LEN_, os._cond) == RET_FAILURE)
         goto failure;
-    os.dbg_running = mfalse;
-    // if (os.reader->de_flag == mtrue)
-    // {
-    //     // Once we see that we have this flag
-    //     // we first prepare for connection from the debugger
-    //     os.dbg = merry_init_dbsupp();
-    //     if (_wait_for_conn == mtrue)
-    //         os.dbg->notify_os = mtrue;
-    //     if (os.dbg == RET_NULL)
-    //         rlog("Internal Error: Failed to initialize connection to debugger.\n", NULL);
-    //     else
-    //     {
-    //         os.dbg_th = merry_thread_init();
-    //         if (os.dbg_th == RET_NULL)
-    //             rlog("Internal Error: Could not connect to the debugger.\n", NULL);
-    //         else
-    //             merry_create_detached_thread(os.dbg_th, &merry_dbg_run, os.dbg);
-    //     }
-    //     while (_wait_for_conn == mtrue && os.dbg_running != mtrue)
-    //     {
-    //     }
-    // }
+    os.listener_running = mfalse;
+    os.sender_running = mfalse;
+    /// NOTE: Don't mind the nested if-conditions if you will.
+    if (os.reader->de_flag == mtrue)
+    {
+        // Initialize debugger threads
+        os.listener = merry_init_listener(_wait_for_conn);
+        if (os.listener != RET_NULL)
+        {
+            os.sender = merry_init_sender(_wait_for_conn);
+            if (os.sender != RET_NULL)
+            {
+                os.listener_th = merry_thread_init();
+                os.sender_th = merry_thread_init();
+                if (os.listener_th == NULL || os.sender_th == NULL)
+                {
+                    merry_destroy_reader(os.sender);
+                    merry_destroy_listener(os.listener);
+                    rlog("Internal Error: DE flag provided but couldn't start the debugger threads.\n", NULL);
+                }
+                else
+                {
+                    if (merry_create_detached_thread(os.listener_th, &merry_start_listening, os.listener) != RET_FAILURE)
+                    {
+                        if (merry_create_detached_thread(os.sender_th, &merry_start_sending, os.sender) == RET_FAILURE)
+                        {
+                            atomic_store(&os.listener->stop, mtrue);
+                            rlog("Internal Error: DE flag provided but couldn't start the debugger threads.\n", NULL);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                merry_destroy_listener(os.listener);
+                rlog("Internal Error: DE flag provided but couldn't start the debugger threads.\n", NULL);
+            }
+            while (_wait_for_conn == mtrue && os.listener_running != mtrue && os.sender_running != mtrue)
+            {
+            }
+        }
+        else
+            rlog("Internal Error: DE flag provided but couldn't start the debugger threads.\n", NULL);
+    }
     os.cores[0]->registers[Mm1] = count;        // Mm1 will have the number of options
     os.cores[0]->registers[Md] = _t + 1;        // Md will have the address to the first byte
     os.cores[0]->registers[Mm5] = len + _t + 1; // Mm5 contains the address of the first byte that is free and can be manipulated by the program
@@ -122,6 +144,7 @@ mret_t merry_os_init_reader_provided(MerryReader *r)
         goto failure;
     if (merry_requestHdlr_init(_MERRY_REQUEST_QUEUE_LEN_, os._cond) == RET_FAILURE)
         goto failure;
+    // We need to define some convention that will be useful for multi-processing
     // if (os.reader->de_flag == mtrue)
     // {
     //     // Once we see that we have this flag
@@ -177,8 +200,10 @@ void merry_os_destroy()
         }
         free(os.core_threads);
     }
-    // merry_destroy_dbsupp(os.dbg);
-    // merry_thread_destroy(os.dbg_th);
+    merry_destroy_listener(os.listener);
+    merry_destroy_sender(os.sender);
+    merry_thread_destroy(os.listener_th);
+    merry_thread_destroy(os.sender_th);
     merry_destroy_reader(os.reader);
     merry_requestHdlr_destroy();
 }
@@ -203,11 +228,13 @@ void merry_os_new_proc_cleanup()
         }
         free(os.core_threads);
     }
-    // merry_cleanup_dbsupp(os.dbg);
-    // os.dbg_running = mfalse;
-    // os.dbg = NULL;
-    // merry_thread_destroy(os.dbg_th);
-    // os.dbg_th = NULL;
+    merry_cleanup_sender(os.sender);
+    os.sender = NULL;
+    merry_destroy_listener(os.listener);
+    os.listener = NULL;
+    merry_thread_destroy(os.listener_th);
+    merry_thread_destroy(os.sender_th);
+    os.listener_th = os.sender_th = NULL;
     merry_requestHdlr_destroy();
 }
 
@@ -363,13 +390,13 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
                         merry_os_execute_request_intr(&os, &current_req);
                         break;
                     case _REQ_BP:
-                        if (os.dbg_running == mtrue)
-                        {
-                            merry_os_execute_request_bp(&os, &current_req);
-                        }
+                        // if (os.dbg_running == mtrue)
+                        // {
+                        //     merry_os_execute_request_bp(&os, &current_req);
+                        // }
                         break;
                     case _REQ_GDB_INIT:
-                        os.dbg_running = mtrue;
+                        // os.dbg_running = mtrue;
                         break;
                     default:
                         fprintf(stderr, "Error: Unknown request code: '%llu' is not a valid request code.\n", current_req.request_number);
@@ -532,96 +559,96 @@ _os_exec_(intr)
 {
     maddress_t addr;
     mqword_t x;
-    switch (os->dbg->reply_sig[0])
+    // switch (os->dbg->reply_sig[0])
     {
-    case _GET_CORE_COUNT_:
-        os->dbg->reply_sig[0] = _REPLY_;
-        os->dbg->reply_sig[15] = os->core_count; // the last byte
-        os->dbg->_send_sig = mtrue;
-        break;
-    case _GET_OS_ID_:
-        os->dbg->reply_sig[0] = _REPLY_;
-        os->dbg->reply_sig[15] = os->_os_id; // the last byte
-        os->dbg->_send_sig = mtrue;
-        break;
-    case _GET_DATA_MEM_PAGE_COUNT_:
-        os->dbg->reply_sig[0] = _REPLY_;
-        os->dbg->reply_sig[15] = os->data_mem->number_of_pages; // the last byte
-        os->dbg->_send_sig = mtrue;
-        break;
-    case _GET_INST_MEM_PAGE_COUNT_:
-        os->dbg->reply_sig[0] = _REPLY_;
-        os->dbg->reply_sig[15] = os->inst_mem->number_of_pages; // the last byte
-        os->dbg->_send_sig = mtrue;
-        break;
-    case _ADD_BREAKPOINT_:
-        // The last 8 bytes must be the address
-        addr = merry_os_get_dbg_sig();
-        os->dbg->_send_sig = _REPLY_;
-        merry_memory_write(os->inst_mem, addr, ((0xFFFFFFFFFFFFFFFF | OP_INTR) << 56) | _REQ_BP);
-        os->dbg->_send_sig = mtrue;
-        break;
-    case _INST_AT_:
-        addr = merry_os_get_dbg_sig();
-        merry_memory_read(os->inst_mem, addr, &x);
-        os->dbg->_send_sig = _REPLY_;
-        os->dbg->_send_sig = mtrue;
-        merry_os_set_dbg_sig(x);
-        break;
-    case _DATA_AT_:
-        addr = *(mqptr_t)(os->dbg->reply_sig + 7);
-        merry_dmemory_read_qword_atm(os->data_mem, addr, &x);
-        os->dbg->_send_sig = _REPLY_;
-        os->dbg->_send_sig = mtrue;
-        merry_os_set_dbg_sig(x);
-        break;
-    case _SP_OF_:
-        // the last byte needs to be the core ID
-        os->dbg->_send_sig = _REPLY_;
-        os->dbg->_send_sig = mtrue;
-        merry_os_set_dbg_sig(os->cores[os->dbg->reply_sig[15] & os->core_count]->sp);
-        break;
-    case _BP_OF_:
-        // the last byte needs to be the core ID
-        os->dbg->_send_sig = _REPLY_;
-        os->dbg->_send_sig = mtrue;
-        merry_os_set_dbg_sig(os->cores[os->dbg->reply_sig[15] & os->core_count]->bp);
-        break;
-    case _PC_OF_:
-        // the last byte needs to be the core ID
-        os->dbg->_send_sig = _REPLY_;
-        os->dbg->_send_sig = mtrue;
-        merry_os_set_dbg_sig(os->cores[os->dbg->reply_sig[15] & os->core_count]->pc);
-        break;
-    case _REGR_OF_:
-        // the last byte needs to be the core ID
-        // second last byte needs to be the Register ID
-        os->dbg->_send_sig = _REPLY_;
-        os->dbg->_send_sig = mtrue;
-        merry_os_set_dbg_sig(os->cores[os->dbg->reply_sig[15] & os->core_count]->registers[os->dbg->reply_sig[14] & REGR_COUNT]);
-        break;
-    case _CONTINUE_CORE_:
-        // There won't be any reply to this request
-        merry_cond_signal(os->cores[os->dbg->reply_sig[15 & os->core_count]]->cond);
-        break;
+        // case _GET_CORE_COUNT_:
+        //     os->dbg->reply_sig[0] = _REPLY_;
+        //     os->dbg->reply_sig[15] = os->core_count; // the last byte
+        //     os->dbg->_send_sig = mtrue;
+        //     break;
+        // case _GET_OS_ID_:
+        //     os->dbg->reply_sig[0] = _REPLY_;
+        //     os->dbg->reply_sig[15] = os->_os_id; // the last byte
+        //     os->dbg->_send_sig = mtrue;
+        //     break;
+        // case _GET_DATA_MEM_PAGE_COUNT_:
+        //     os->dbg->reply_sig[0] = _REPLY_;
+        //     os->dbg->reply_sig[15] = os->data_mem->number_of_pages; // the last byte
+        //     os->dbg->_send_sig = mtrue;
+        //     break;
+        // case _GET_INST_MEM_PAGE_COUNT_:
+        //     os->dbg->reply_sig[0] = _REPLY_;
+        //     os->dbg->reply_sig[15] = os->inst_mem->number_of_pages; // the last byte
+        //     os->dbg->_send_sig = mtrue;
+        //     break;
+        // case _ADD_BREAKPOINT_:
+        //     // The last 8 bytes must be the address
+        //     addr = merry_os_get_dbg_sig();
+        //     os->dbg->_send_sig = _REPLY_;
+        //     merry_memory_write(os->inst_mem, addr, ((0xFFFFFFFFFFFFFFFF | OP_INTR) << 56) | _REQ_BP);
+        //     os->dbg->_send_sig = mtrue;
+        //     break;
+        // case _INST_AT_:
+        //     addr = merry_os_get_dbg_sig();
+        //     merry_memory_read(os->inst_mem, addr, &x);
+        //     os->dbg->_send_sig = _REPLY_;
+        //     os->dbg->_send_sig = mtrue;
+        //     merry_os_set_dbg_sig(x);
+        //     break;
+        // case _DATA_AT_:
+        //     addr = *(mqptr_t)(os->dbg->reply_sig + 7);
+        //     merry_dmemory_read_qword_atm(os->data_mem, addr, &x);
+        //     os->dbg->_send_sig = _REPLY_;
+        //     os->dbg->_send_sig = mtrue;
+        //     merry_os_set_dbg_sig(x);
+        //     break;
+        // case _SP_OF_:
+        //     // the last byte needs to be the core ID
+        //     os->dbg->_send_sig = _REPLY_;
+        //     os->dbg->_send_sig = mtrue;
+        //     merry_os_set_dbg_sig(os->cores[os->dbg->reply_sig[15] & os->core_count]->sp);
+        //     break;
+        // case _BP_OF_:
+        //     // the last byte needs to be the core ID
+        //     os->dbg->_send_sig = _REPLY_;
+        //     os->dbg->_send_sig = mtrue;
+        //     merry_os_set_dbg_sig(os->cores[os->dbg->reply_sig[15] & os->core_count]->bp);
+        //     break;
+        // case _PC_OF_:
+        //     // the last byte needs to be the core ID
+        //     os->dbg->_send_sig = _REPLY_;
+        //     os->dbg->_send_sig = mtrue;
+        //     merry_os_set_dbg_sig(os->cores[os->dbg->reply_sig[15] & os->core_count]->pc);
+        //     break;
+        // case _REGR_OF_:
+        //     // the last byte needs to be the core ID
+        //     // second last byte needs to be the Register ID
+        //     os->dbg->_send_sig = _REPLY_;
+        //     os->dbg->_send_sig = mtrue;
+        //     merry_os_set_dbg_sig(os->cores[os->dbg->reply_sig[15] & os->core_count]->registers[os->dbg->reply_sig[14] & REGR_COUNT]);
+        //     break;
+        // case _CONTINUE_CORE_:
+        //     // There won't be any reply to this request
+        //     merry_cond_signal(os->cores[os->dbg->reply_sig[15 & os->core_count]]->cond);
+        //     break;
     }
 }
 
 _os_exec_(bp)
 {
-    os->dbg->reply_sig[0] = _HIT_BP_;
-    os->dbg->reply_sig[15] = request->id;
-    os->dbg->_send_sig = mtrue;
+    // os->dbg->reply_sig[0] = _HIT_BP_;
+    // os->dbg->reply_sig[15] = request->id;
+    // os->dbg->_send_sig = mtrue;
 }
 
 void merry_os_notify_dbg(mqword_t sig, mbyte_t arg, mbyte_t arg2)
 {
-    if (os.dbg_running == mfalse)
-        return;
-    os.dbg->reply_sig[0] = sig;
-    os.dbg->reply_sig[15] = arg;
-    os.dbg->reply_sig[14] = arg2;
-    os.dbg->_send_sig = mtrue;
+    // if (os.dbg_running == mfalse)
+    //     return;
+    // os.dbg->reply_sig[0] = sig;
+    // os.dbg->reply_sig[15] = arg;
+    // os.dbg->reply_sig[14] = arg2;
+    // os.dbg->_send_sig = mtrue;
 }
 
 void merry_os_new_proc_init()
@@ -671,7 +698,8 @@ void merry_os_dump_core_dets(FILE *f)
         fprintf(f, "\tSP(At the time of termination):%lX\n", c->sp);
         fprintf(f, "\tPC(At the time of termination):%lX\n", c->pc);
         fprintf(f, "\tIR(At the time of termination):%lX\n", c->current_inst);
-        fprintf(f, "\tSTACK SIZE:Static Stack(Upwards):1MB\n");                            continue;
+        fprintf(f, "\tSTACK SIZE:Static Stack(Upwards):1MB\n");
+        continue;
         fprintf(f, "\tException Address(Set by the program):%lX(%s)\n", c->exception_address, c->excp_set == mtrue ? (sym = merry_reader_get_symbol(os.reader, c->exception_address)) == NULL ? "NO SYMBOL FOUND" : (mstr_t)sym : "EXCP NOT SET");
         fprintf(f, "\tFLAGS REGISTER:\n");
         fprintf(f, "\t\tCARRY    :%lu\n", c->flag.carry);
@@ -730,37 +758,40 @@ mret_t merry_os_error_dump()
 
 mqword_t merry_os_get_dbg_sig()
 {
-    mqword_t x = os.dbg->reply_sig[8];
-    (x <<= 8);
-    x |= os.dbg->reply_sig[9];
-    (x <<= 8);
-    x |= os.dbg->reply_sig[10];
-    (x <<= 8);
-    x |= os.dbg->reply_sig[11];
-    (x <<= 8);
-    x |= os.dbg->reply_sig[12];
-    (x <<= 8);
-    x |= os.dbg->reply_sig[13];
-    (x <<= 8);
-    x |= os.dbg->reply_sig[14];
-    (x <<= 8);
-    x |= os.dbg->reply_sig[15];
-    return x;
+    // mqword_t x = os.dbg->reply_sig[8];
+    // (x <<= 8);
+    // x |= os.dbg->reply_sig[9];
+    // (x <<= 8);
+    // x |= os.dbg->reply_sig[10];
+    // (x <<= 8);
+    // x |= os.dbg->reply_sig[11];
+    // (x <<= 8);
+    // x |= os.dbg->reply_sig[12];
+    // (x <<= 8);
+    // x |= os.dbg->reply_sig[13];
+    // (x <<= 8);
+    // x |= os.dbg->reply_sig[14];
+    // (x <<= 8);
+    // x |= os.dbg->reply_sig[15];
+    // return x;
 }
 
 void merry_os_set_dbg_sig(mqword_t _sig)
 {
-    os.dbg->reply_sig[8] = _sig >> 56;
-    os.dbg->reply_sig[9] = (_sig >> 48) & 255;
-    os.dbg->reply_sig[10] = (_sig >> 40) & 255;
-    os.dbg->reply_sig[11] = (_sig >> 32) & 255;
-    os.dbg->reply_sig[12] = (_sig >> 24) & 255;
-    os.dbg->reply_sig[13] = (_sig >> 16) & 255;
-    os.dbg->reply_sig[14] = (_sig >> 8) & 255;
-    os.dbg->reply_sig[15] = (_sig) & 255;
+    // os.dbg->reply_sig[8] = _sig >> 56;
+    // os.dbg->reply_sig[9] = (_sig >> 48) & 255;
+    // os.dbg->reply_sig[10] = (_sig >> 40) & 255;
+    // os.dbg->reply_sig[11] = (_sig >> 32) & 255;
+    // os.dbg->reply_sig[12] = (_sig >> 24) & 255;
+    // os.dbg->reply_sig[13] = (_sig >> 16) & 255;
+    // os.dbg->reply_sig[14] = (_sig >> 8) & 255;
+    // os.dbg->reply_sig[15] = (_sig) & 255;
 }
 
-void merry_os_accept_notice()
+void merry_os_notice(mbool_t _type)
 {
-    atomic_store(&os.dbg_running, mtrue);
+    if (_type == mtrue)
+        atomic_store(&os.listener_running, mtrue);
+    else
+        atomic_store(&os.sender_running, mtrue);
 }

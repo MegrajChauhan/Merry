@@ -39,6 +39,7 @@
 #include <merry_process.h>
 #include "merry_debugger_connector.h"
 #include "merry_commands.h"
+#include "merry_dbg.h"
 #include <stdatomic.h>
 
 typedef struct Merry Merry;
@@ -60,10 +61,13 @@ struct Merry
   mbool_t dump_on_error;
   mstr_t dump_file;
   msize_t err_core_id;
-  MerryDBSupp *dbg;
-  MerryThread *dbg_th;
-  mbool_t dbg_running;
   mbool_t wait_for_conn;
+  MerryListener *listener;
+  MerrySection *sender;
+  MerryThread *listener_th;
+  MerryThread *sender_th;
+  mbool_t listener_running;
+  mbool_t sender_running;
 };
 
 #define _MERRY_REQUEST_QUEUE_LEN_ 10 // for now
@@ -128,7 +132,7 @@ mqword_t merry_os_get_dbg_sig();
 
 void merry_os_set_dbg_sig(mqword_t _sig);
 
-void merry_os_accept_notice();
+void merry_os_notice(mbool_t _type);
 
 #define _os_exec_(reqname) mret_t merry_os_execute_request_##reqname(Merry *os, MerryOSRequest *request)
 
