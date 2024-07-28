@@ -390,13 +390,14 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
                         merry_os_execute_request_intr(&os, &current_req);
                         break;
                     case _REQ_BP:
-                        // if (os.dbg_running == mtrue)
-                        // {
-                        //     merry_os_execute_request_bp(&os, &current_req);
-                        // }
+                        if (os.listener_running == mtrue && os.sender_running == mtrue)
+                            merry_os_execute_request_bp(&os, &current_req);
                         break;
                     case _REQ_GDB_INIT:
-                        // os.dbg_running = mtrue;
+                        if (current_req.id == 1)
+                            os.sender_running = mtrue;
+                        else
+                            os.listener_running = mtrue;
                         break;
                     default:
                         fprintf(stderr, "Error: Unknown request code: '%llu' is not a valid request code.\n", current_req.request_number);
@@ -559,96 +560,79 @@ _os_exec_(intr)
 {
     maddress_t addr;
     mqword_t x;
-    // switch (os->dbg->reply_sig[0])
+    mbyte_t reply[_MERRY_PER_EXCG_BUF_LEN_];
+    reply[0] = _REPLY_;
+    switch (request->opcode)
     {
-        // case _GET_CORE_COUNT_:
-        //     os->dbg->reply_sig[0] = _REPLY_;
-        //     os->dbg->reply_sig[15] = os->core_count; // the last byte
-        //     os->dbg->_send_sig = mtrue;
-        //     break;
-        // case _GET_OS_ID_:
-        //     os->dbg->reply_sig[0] = _REPLY_;
-        //     os->dbg->reply_sig[15] = os->_os_id; // the last byte
-        //     os->dbg->_send_sig = mtrue;
-        //     break;
-        // case _GET_DATA_MEM_PAGE_COUNT_:
-        //     os->dbg->reply_sig[0] = _REPLY_;
-        //     os->dbg->reply_sig[15] = os->data_mem->number_of_pages; // the last byte
-        //     os->dbg->_send_sig = mtrue;
-        //     break;
-        // case _GET_INST_MEM_PAGE_COUNT_:
-        //     os->dbg->reply_sig[0] = _REPLY_;
-        //     os->dbg->reply_sig[15] = os->inst_mem->number_of_pages; // the last byte
-        //     os->dbg->_send_sig = mtrue;
-        //     break;
-        // case _ADD_BREAKPOINT_:
-        //     // The last 8 bytes must be the address
-        //     addr = merry_os_get_dbg_sig();
-        //     os->dbg->_send_sig = _REPLY_;
-        //     merry_memory_write(os->inst_mem, addr, ((0xFFFFFFFFFFFFFFFF | OP_INTR) << 56) | _REQ_BP);
-        //     os->dbg->_send_sig = mtrue;
-        //     break;
-        // case _INST_AT_:
-        //     addr = merry_os_get_dbg_sig();
-        //     merry_memory_read(os->inst_mem, addr, &x);
-        //     os->dbg->_send_sig = _REPLY_;
-        //     os->dbg->_send_sig = mtrue;
-        //     merry_os_set_dbg_sig(x);
-        //     break;
-        // case _DATA_AT_:
-        //     addr = *(mqptr_t)(os->dbg->reply_sig + 7);
-        //     merry_dmemory_read_qword_atm(os->data_mem, addr, &x);
-        //     os->dbg->_send_sig = _REPLY_;
-        //     os->dbg->_send_sig = mtrue;
-        //     merry_os_set_dbg_sig(x);
-        //     break;
-        // case _SP_OF_:
-        //     // the last byte needs to be the core ID
-        //     os->dbg->_send_sig = _REPLY_;
-        //     os->dbg->_send_sig = mtrue;
-        //     merry_os_set_dbg_sig(os->cores[os->dbg->reply_sig[15] & os->core_count]->sp);
-        //     break;
-        // case _BP_OF_:
-        //     // the last byte needs to be the core ID
-        //     os->dbg->_send_sig = _REPLY_;
-        //     os->dbg->_send_sig = mtrue;
-        //     merry_os_set_dbg_sig(os->cores[os->dbg->reply_sig[15] & os->core_count]->bp);
-        //     break;
-        // case _PC_OF_:
-        //     // the last byte needs to be the core ID
-        //     os->dbg->_send_sig = _REPLY_;
-        //     os->dbg->_send_sig = mtrue;
-        //     merry_os_set_dbg_sig(os->cores[os->dbg->reply_sig[15] & os->core_count]->pc);
-        //     break;
-        // case _REGR_OF_:
-        //     // the last byte needs to be the core ID
-        //     // second last byte needs to be the Register ID
-        //     os->dbg->_send_sig = _REPLY_;
-        //     os->dbg->_send_sig = mtrue;
-        //     merry_os_set_dbg_sig(os->cores[os->dbg->reply_sig[15] & os->core_count]->registers[os->dbg->reply_sig[14] & REGR_COUNT]);
-        //     break;
-        // case _CONTINUE_CORE_:
-        //     // There won't be any reply to this request
-        //     merry_cond_signal(os->cores[os->dbg->reply_sig[15 & os->core_count]]->cond);
-        //     break;
+    case _GET_CORE_COUNT_:
+        reply[15] = os->core_count;
+        break;
+    case _GET_OS_ID_:
+        reply[15] = os->_os_id;
+        break;
+    case _GET_DATA_MEM_PAGE_COUNT_:
+        reply[15] = os->data_mem->number_of_pages;
+        break;
+    case _GET_INST_MEM_PAGE_COUNT_:
+        reply[15] = os->inst_mem->number_of_pages;
+        break;
+    case _ADD_BREAKPOINT_:
+        merry_memory_write(os->inst_mem, request->address, ((0xFFFFFFFFFFFFFFFF | OP_INTR) << 56) | _REQ_BP);
+        break;
+    case _INST_AT_:
+        merry_memory_read(os->inst_mem, request->address, &x);
+        merry_os_set_dbg_sig(x, reply);
+        break;
+    case _DATA_AT_:
+        merry_dmemory_read_qword_atm(os->data_mem, request->address, &x);
+        merry_os_set_dbg_sig(x, reply);
+        break;
+    case _SP_OF_:
+        merry_os_set_dbg_sig(os->cores[request->arg_id & os->core_count]->sp, reply);
+        break;
+    case _BP_OF_:
+        merry_os_set_dbg_sig(os->cores[request->arg_id & os->core_count]->bp, reply);
+        break;
+    case _PC_OF_:
+        merry_os_set_dbg_sig(os->cores[request->arg_id & os->core_count]->pc, reply);
+        break;
+    case _REGR_OF_:
+        merry_os_set_dbg_sig(os->cores[request->arg_id & os->core_count]->registers[request->address], reply);
+        break;
+    case _CONTINUE_CORE_:
+        merry_cond_signal(os->cores[request->arg_id]->cond);
+        break;
     }
 }
 
 _os_exec_(bp)
 {
-    // os->dbg->reply_sig[0] = _HIT_BP_;
-    // os->dbg->reply_sig[15] = request->id;
-    // os->dbg->_send_sig = mtrue;
+    merry_os_notify_dbg(_HIT_BP_, request->id, 0);
 }
 
 void merry_os_notify_dbg(mqword_t sig, mbyte_t arg, mbyte_t arg2)
 {
-    // if (os.dbg_running == mfalse)
-    //     return;
-    // os.dbg->reply_sig[0] = sig;
-    // os.dbg->reply_sig[15] = arg;
-    // os.dbg->reply_sig[14] = arg2;
-    // os.dbg->_send_sig = mtrue;
+    if (os.listener_running != mtrue || os.sender_running != mtrue)
+        return;
+    mbyte_t _to_send[_MERRY_PER_EXCG_BUF_LEN_];
+    _to_send[0] = sig;
+    switch (sig)
+    {
+    case _NEW_CORE_:
+    case _TERMINATING_:
+    case _HIT_BP_:
+    case _CORE_TERMINATING_:
+        _to_send[15] = arg;
+        break;
+    case _ERROR_ENCOUNTERED_:
+        _to_send[15] = arg;
+        _to_send[14] = arg2;
+        break;
+    case _NEW_OS_:
+    case _ADDED_MEM_:
+        break;
+    }
+    merry_sender_push_sig(os.sender, _to_send);
 }
 
 void merry_os_new_proc_init()
@@ -756,36 +740,36 @@ mret_t merry_os_error_dump()
     return RET_SUCCESS;
 }
 
-mqword_t merry_os_get_dbg_sig()
+mqword_t merry_os_get_dbg_sig(mbptr_t sig)
 {
-    // mqword_t x = os.dbg->reply_sig[8];
-    // (x <<= 8);
-    // x |= os.dbg->reply_sig[9];
-    // (x <<= 8);
-    // x |= os.dbg->reply_sig[10];
-    // (x <<= 8);
-    // x |= os.dbg->reply_sig[11];
-    // (x <<= 8);
-    // x |= os.dbg->reply_sig[12];
-    // (x <<= 8);
-    // x |= os.dbg->reply_sig[13];
-    // (x <<= 8);
-    // x |= os.dbg->reply_sig[14];
-    // (x <<= 8);
-    // x |= os.dbg->reply_sig[15];
-    // return x;
+    mqword_t x = sig[8];
+    (x <<= 8);
+    x |= sig[9];
+    (x <<= 8);
+    x |= sig[10];
+    (x <<= 8);
+    x |= sig[11];
+    (x <<= 8);
+    x |= sig[12];
+    (x <<= 8);
+    x |= sig[13];
+    (x <<= 8);
+    x |= sig[14];
+    (x <<= 8);
+    x |= sig[15];
+    return x;
 }
 
-void merry_os_set_dbg_sig(mqword_t _sig)
+void merry_os_set_dbg_sig(mqword_t _sig, mbptr_t sig)
 {
-    // os.dbg->reply_sig[8] = _sig >> 56;
-    // os.dbg->reply_sig[9] = (_sig >> 48) & 255;
-    // os.dbg->reply_sig[10] = (_sig >> 40) & 255;
-    // os.dbg->reply_sig[11] = (_sig >> 32) & 255;
-    // os.dbg->reply_sig[12] = (_sig >> 24) & 255;
-    // os.dbg->reply_sig[13] = (_sig >> 16) & 255;
-    // os.dbg->reply_sig[14] = (_sig >> 8) & 255;
-    // os.dbg->reply_sig[15] = (_sig) & 255;
+    sig[8] = _sig >> 56;
+    sig[9] = (_sig >> 48) & 255;
+    sig[10] = (_sig >> 40) & 255;
+    sig[11] = (_sig >> 32) & 255;
+    sig[12] = (_sig >> 24) & 255;
+    sig[13] = (_sig >> 16) & 255;
+    sig[14] = (_sig >> 8) & 255;
+    sig[15] = (_sig) & 255;
 }
 
 void merry_os_notice(mbool_t _type)

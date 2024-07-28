@@ -128,9 +128,9 @@ void merry_os_new_proc_init();
 
 void merry_os_notify_dbg(mqword_t sig, mbyte_t arg, mbyte_t arg2);
 
-mqword_t merry_os_get_dbg_sig();
+mqword_t merry_os_get_dbg_sig(mbptr_t sig);
 
-void merry_os_set_dbg_sig(mqword_t _sig);
+void merry_os_set_dbg_sig(mqword_t _sig, mbptr_t sig);
 
 void merry_os_notice(mbool_t _type);
 

@@ -44,6 +44,11 @@ struct MerryOSRequest
     msize_t request_number; // this is like the interrupt number
     MerryCond *_wait_lock; // the requesting core's condition variable
     msize_t id;            // the core's id
+
+    // for debuggers
+    mbyte_t opcode;
+    mbyte_t arg_id;
+    maddress_t address;
 };
 
 enum
