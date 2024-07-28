@@ -63,6 +63,7 @@ struct Merry
   MerryDBSupp *dbg;
   MerryThread *dbg_th;
   mbool_t dbg_running;
+  mbool_t wait_for_conn;
 };
 
 #define _MERRY_REQUEST_QUEUE_LEN_ 10 // for now
@@ -94,7 +95,7 @@ static Merry os;
 
 #define merry_manager_mem_read_inst(inst_mem, address, store_in) merry_memory_read(inst_mem, address, store_in)
 
-mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count);
+mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _wait_for_conn);
 mret_t merry_os_init_reader_provided(MerryReader *r);
 
 void merry_os_produce_dump(mstr_t _output_filename);
@@ -126,6 +127,8 @@ void merry_os_notify_dbg(mqword_t sig, mbyte_t arg, mbyte_t arg2);
 mqword_t merry_os_get_dbg_sig();
 
 void merry_os_set_dbg_sig(mqword_t _sig);
+
+void merry_os_accept_notice();
 
 #define _os_exec_(reqname) mret_t merry_os_execute_request_##reqname(Merry *os, MerryOSRequest *request)
 

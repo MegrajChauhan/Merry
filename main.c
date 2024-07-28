@@ -26,10 +26,10 @@
 
 int main(int argc, char **argv)
 {
-    MerryCLP *_parsed_options = merry_parse_options(argc, argv);
-    // char *x[] = {"./merry", "-f", "temp.bin","--dump-file"};
+    // MerryCLP *_parsed_options = merry_parse_options(argc, argv);
+    char *x[] = {"./merry", "-f", "temp.bin","--dump-file"};
 
-    // MerryCLP *_parsed_options = merry_parse_options(4, x);
+    MerryCLP *_parsed_options = merry_parse_options(4, x);
 
     if (_parsed_options == RET_NULL)
     {
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
     }
     // Now since we don't have any fancy or complex options to handle, let's get straight to business
 
-    if (merry_os_init(_parsed_options->_inp_file, (_parsed_options->option_count > 0) ? _parsed_options->_options_ : NULL, _parsed_options->option_count) == RET_FAILURE)
+    if (merry_os_init(_parsed_options->_inp_file, (_parsed_options->option_count > 0) ? _parsed_options->_options_ : NULL, _parsed_options->option_count, mtrue) == RET_FAILURE)
     {
         // the valid error messages will be automatically printed
         merry_destroy_parser(_parsed_options);

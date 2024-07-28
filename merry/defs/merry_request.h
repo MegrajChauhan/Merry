@@ -40,12 +40,8 @@ typedef struct MerryOSRequest MerryOSRequest;
 
 struct MerryOSRequest
 {
-    union
-    {
-        msize_t request_number; // this is like the interrupt number
-        mbyte_t *_req;
-    };
 
+    msize_t request_number; // this is like the interrupt number
     MerryCond *_wait_lock; // the requesting core's condition variable
     msize_t id;            // the core's id
 };

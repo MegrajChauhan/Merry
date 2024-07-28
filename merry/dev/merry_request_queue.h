@@ -52,6 +52,8 @@ void merry_request_queue_destroy(MerryRequestQueue *queue);
 
 mbool_t merry_push_request(MerryRequestQueue *queue, MerryCond *_req_cond, msize_t req_num, msize_t id);
 
+mbool_t merry_push_dbg_requests(MerryRequestQueue *queue, msize_t req, mbyte_t op, mbyte_t arg_id, maddress_t addr);
+
 mbool_t merry_pop_request(MerryRequestQueue *queue, MerryOSRequest *dest);
 
 void merry_panic_push(MerryRequestQueue *queue, merrot_t error);

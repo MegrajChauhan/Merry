@@ -15,8 +15,6 @@ MerryDBSupp *merry_init_dbsupp()
 #endif
     if ((dbg->cond = merry_cond_init()) == RET_NULL)
         merry_destroy_dbsupp(dbg);
-    else if ((dbg->lock = merry_mutex_init()) == RET_NULL)
-        merry_destroy_dbsupp(dbg);
     return dbg;
 }
 
@@ -29,7 +27,6 @@ void merry_destroy_dbsupp(MerryDBSupp *dbg)
     close(dbg->_listen_fd);
 #endif
     merry_cond_destroy(dbg->cond);
-    merry_mutex_destroy(dbg->lock);
     free(dbg);
 }
 
@@ -39,7 +36,6 @@ void merry_cleanup_dbsupp(MerryDBSupp *dbg)
     close(dbg->_fd);
     close(dbg->_listen_fd);
 #endif
-    merry_mutex_destroy(dbg->lock);
     free(dbg);
 }
 
@@ -63,17 +59,18 @@ _THRET_T_ merry_dbg_run(mptr_t _ptr)
         perror("DEBUGGER ACCEPT");
         return NULL;
     }
-
 #endif
+    if (dbg->notify_os == mtrue)
+        merry_os_accept_notice();
+    else
+        merry_requestHdlr_push_request(_REQ_GDB_INIT, 0, dbg->cond);
     ssize_t read_into_buf;
-    merry_requestHdlr_push_request(_REQ_GDB_INIT, 0, dbg->cond);
     while (mtrue)
     {
-        merry_mutex_lock(dbg->lock);
         if (atomic_load(&dbg->_send_sig) == mtrue)
         {
 #ifdef _USE_LINUX_
-            send(dbg->_listen_fd, dbg->sig, _MERRY_PER_EXCG_BUF_LEN_, 0);
+            send(dbg->_listen_fd, dbg->reply_sig, _MERRY_PER_EXCG_BUF_LEN_, 0);
 #endif
             if (dbg->sig[0] == _TERMINATING_)
                 break;
@@ -84,8 +81,7 @@ _THRET_T_ merry_dbg_run(mptr_t _ptr)
 #endif
         if (read_into_buf == 0)
             continue;
-        merry_mutex_unlock(dbg->lock);
-        merry_requestHdlr_push_dbg_request(_REQ_INTR, dbg->cond, dbg->sig);
+        merry_requestHdlr_push_request(_REQ_INTR, 0, dbg->cond);
     }
 #ifdef _USE_LINUX_
     return NULL;

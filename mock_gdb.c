@@ -97,8 +97,8 @@ int main()
 
     // Server address
     server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(PORT);
-    server_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    server_addr.sin_port = (PORT);
+    server_addr.sin_addr.s_addr = inet_addr("0.0.0.0");
 
     sleep(1);
     // Attempt to connect to server
@@ -111,17 +111,17 @@ int main()
     printf("Connected to VM server.\n");
 
     // Example requests
-    send_request(sockfd, _GET_CORE_COUNT_, NULL, 0);
-    send_request(sockfd, _GET_OS_ID_, NULL, 0);
+    // send_request(sockfd, _GET_OS_ID_, NULL, 0);
 
-    // Example to add a breakpoint at address 0x123456
-    unsigned char bp_address[6] = {0x00, 0x00, 0x00, 0x12, 0x34, 0x56};
-    send_request(sockfd, _ADD_BREAKPOINT_, bp_address, 6);
+    // // Example to add a breakpoint at address 0x123456
+    // unsigned char bp_address[6] = {0x00, 0x00, 0x00, 0x12, 0x34, 0x56};
+    // send_request(sockfd, _ADD_BREAKPOINT_, bp_address, 6);
 
-    // Example to get instruction at address 0x123456
-    send_request(sockfd, _INST_AT_, bp_address, 6);
+    // // Example to get instruction at address 0x123456
+    // send_request(sockfd, _INST_AT_, bp_address, 6);
 
     // Receive and handle signals
+    send_request(sockfd, _GET_CORE_COUNT_, NULL, 0);
     while (1)
     {
         int bytes_received = recv(sockfd, buffer, sizeof(buffer), 0);

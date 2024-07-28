@@ -45,32 +45,34 @@ here:
     return success;
 }
 
-void merry_requestHdlr_push_dbg_request(msize_t req_id, MerryCond *dbg_cond, mbptr_t _req)
+void merry_requestHdlr_push_request_dbg(msize_t req, mbyte_t op, mbyte_t arg_id, maddress_t addr)
 {
+    mret_t success = RET_SUCCESS;
     merry_mutex_lock(req_hdlr.lock);
     if (req_hdlr.handle_more == mfalse)
-        goto here; // asked to not accept more requests
-    if (merry_push_request(req_hdlr.queue, dbg_cond, req_id, 0) == mfalse)
+        goto here; // don't accept more
+    if (merry_push_dbg_requests(req_hdlr.queue, req, op, arg_id, addr) == mfalse)
     {
         merry_panic_push(req_hdlr.queue, _PANIC_REQBUFFEROVERFLOW); // panic
         if (req_hdlr.queue->data_count == 1)
             merry_cond_signal(req_hdlr.host_cond); // wake up the OS
+        success = RET_FAILURE;
     }
     else
     {
-        req_hdlr.queue->tail->value._req = _req;
         if (req_hdlr.queue->data_count == 1)
             merry_cond_signal(req_hdlr.host_cond); // wake up the OS
-        merry_cond_wait(dbg_cond, req_hdlr.lock);  // the return value from the request should be in the requesting core's Registers
     }
     goto here;
 here:
     merry_mutex_unlock(req_hdlr.lock);
+    return success;
 }
 
 void merry_requestHdlr_kill_requests()
 {
     merry_mutex_lock(req_hdlr.lock);
+    req_hdlr.handle_more = mfalse;
     MerryOSRequest request;
     for (msize_t i = 0; i < req_hdlr.queue->data_count; i++)
     {

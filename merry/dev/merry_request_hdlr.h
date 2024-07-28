@@ -38,6 +38,11 @@ struct MerryRequestHdlr
     MerryMutex *lock;         // only one thread can pop and push
     MerryCond *host_cond;     // the OS's condition variable
     mbool_t handle_more;      // a flag to see if the handler should accept more request
+    
+    // for debuggers
+    mbyte_t opcode;
+    mbyte_t arg_id;
+    maddress_t address;
 };
 
 // the request handler doesn't belong to even the OS just like Reader
@@ -47,7 +52,7 @@ mret_t merry_requestHdlr_init(msize_t queue_len, MerryCond *cond);
 
 mret_t merry_requestHdlr_push_request(msize_t req_id, msize_t id, MerryCond *req_cond);
 
-void merry_requestHdlr_push_dbg_request(msize_t req_id, MerryCond *dbg_cond, mbptr_t _req);
+void merry_requestHdlr_push_request_dbg(msize_t req, mbyte_t op, mbyte_t arg_id, maddress_t addr);
 
 // exclusive for the OS
 mbool_t merry_requestHdlr_pop_request(MerryOSRequest *request);

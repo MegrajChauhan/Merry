@@ -27,9 +27,18 @@ mbool_t merry_push_request(MerryRequestQueue *queue, MerryCond *_req_cond, msize
 {
     mbool_t ret = mtrue;
     // create a new request
-    MerryOSRequest new_req = {req_num, _req_cond, id};
+    MerryOSRequest new_req = {req_num, _req_cond, id, 0,0,0};
     _MERRY_QUEUE_PUSH_NOPTR_(queue, new_req, ret);
     return ret; // should be mfalse only when the queue is full
+}
+
+mbool_t merry_push_dbg_requests(MerryRequestQueue *queue, msize_t req, mbyte_t op, mbyte_t arg_id, maddress_t addr)
+{
+    mbool_t ret = mtrue;
+    // create a new request
+    MerryOSRequest new_req = {req, NULL, 0, op, arg_id, addr};
+    _MERRY_QUEUE_PUSH_NOPTR_(queue, new_req, ret);
+    return ret;
 }
 
 mbool_t merry_pop_request(MerryRequestQueue *queue, MerryOSRequest *dest)

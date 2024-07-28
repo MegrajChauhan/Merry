@@ -30,12 +30,15 @@ struct MerryDBSupp
     struct sockaddr_in _addr;
 #endif
     mbyte_t sig[_MERRY_PER_EXCG_BUF_LEN_];
+    mbyte_t reply_sig[_MERRY_PER_EXCG_BUF_LEN_];
     mbool_t _send_sig; // The Manager thread sets this when some important event takes place(new core creation, process creation, syscall etc).
                        // 'sig' will be set to an appropriate value which is sent to the debugger.
                        // The debugger can interpret the 'sig' and send response similarly
     MerryCond *cond;
-    MerryMutex *lock;
+    mbool_t notify_os;
 };
+
+extern void merry_os_accept_notice();
 
 MerryDBSupp *merry_init_dbsupp();
 
