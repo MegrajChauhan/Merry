@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <stdatomic.h>
 
 #define REQUEST_PORT 4048
 #define SIGNAL_PORT 4144
@@ -31,6 +32,8 @@
 #define _HIT_BP_ 0x05
 #define _CORE_TERMINATING_ 0x06
 #define _ADDED_MEM_ 0x07
+
+static int exi = 0;
 
 int create_socket_and_connect(int port)
 {
@@ -128,7 +131,11 @@ void *signal_listener_thread(void *arg)
         {
             handle_signal(buffer);
             if (buffer[0] == _TERMINATING_)
+            {
+                atomic_store(&exi, 1);
+                printf("Listener Exiting.\n");
                 break;
+            }
         }
         else if (bytes_received == 0)
         {
@@ -161,12 +168,19 @@ void *request_sender_thread(void *arg)
     // // Example to get instruction at address 0x123456
     // send_request(sockfd, _INST_AT_, bp_address, 6);
 
+        send_request(sockfd, _GET_CORE_COUNT_, NULL, 0);
     while (1)
     {
         // Keep sending requests as needed
         // Here we just wait indefinitely, you can modify this to send periodic requests if needed
-        send_request(sockfd, _GET_CORE_COUNT_, NULL, 0);
-        sleep(10);
+        if (exi == 1)
+        {
+            printf("Prep to exit\n");
+            send_request(sockfd, 0, NULL, 0);
+            printf("Sender Exiting.\n");
+            break;
+        }
+        sleep(5);
     }
 
     close(sockfd);

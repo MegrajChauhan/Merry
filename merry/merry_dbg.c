@@ -115,8 +115,11 @@ _THRET_T_ merry_start_listening(mptr_t _list)
 #ifdef _USE_LINUX_
         read_into_buf = read(dbg->_listen_fd, dbg->sig, _MERRY_PER_EXCG_BUF_LEN_);
 #endif
-        if (atomic_load(&dbg->stop) == mtrue)
+        if (dbg->stop == mtrue)
+        {
+            printf("Listener stopped.\n");
             break;
+        }
         if (read_into_buf == 0)
             continue;
         // merry_requestHdlr_push_request_dbg(_REQ_INTR);
@@ -189,7 +192,18 @@ _THRET_T_ merry_start_sending(mptr_t _send)
         if (merry_sender_pop_sig(dbg, &node) == mfalse)
             merry_cond_wait(dbg->cond, dbg->lock);
         if (dbg->stop == mtrue)
+        {
+            if (dbg->queue->data_count > 0)
+            {
+                while (merry_sender_pop_sig(dbg, &node) != mfalse)
+                {
+                    send(dbg->_send_fd, node.value.sig, _MERRY_PER_EXCG_BUF_LEN_, 0);
+                }
+            }
+            printf("Sender stopped.\n");
             break;
+        }
+        merry_sender_pop_sig(dbg, &node); // this should work
         send(dbg->_send_fd, node.value.sig, _MERRY_PER_EXCG_BUF_LEN_, 0);
         merry_mutex_unlock(dbg->lock);
     }

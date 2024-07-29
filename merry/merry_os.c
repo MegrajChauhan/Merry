@@ -156,11 +156,10 @@ void merry_os_start_dbg(mbool_t _flag)
                 merry_destroy_listener(os.listener);
                 rlog("Internal Error: DE flag provided but couldn't start the debugger threads.\n", NULL);
             }
-            while (_flag == mtrue && os.listener_running != mtrue && os.sender_running != mtrue)
+            while (_flag == mtrue && (os.listener_running != mtrue || os.sender_running != mtrue))
             {
             }
-            if (os.listener_running == mtrue && os.sender_running == mtrue)
-                os.listener_stopped = os.sender_stopped = mfalse;
+            os.listener_stopped = os.sender_stopped = mfalse;
         }
         else
             rlog("Internal Error: DE flag provided but couldn't start the debugger threads.\n", NULL);
@@ -306,7 +305,15 @@ _MERRY_INTERNAL_ void merry_os_prepare_for_exit()
     }
     // some cores may be waiting for their requests to be fulfilled
     merry_requestHdlr_kill_requests(); // kill all requests
+    if (os.listener_running == mtrue)
+        atomic_exchange(&os.listener->stop, mtrue);
     merry_os_notify_dbg(_TERMINATING_, os._os_id, 0);
+    if (os.sender_running == mtrue)
+    {
+        atomic_exchange(&os.sender->stop, mtrue);
+        if (os.sender->queue->data_count == 0)
+            merry_cond_signal(os.sender->cond);
+    }
     os.stop = mtrue; // done
 }
 
@@ -314,6 +321,7 @@ _MERRY_INTERNAL_ void merry_os_prepare_for_exit()
 _THRET_T_ merry_os_start_vm(mptr_t some_arg)
 {
     // this will start the OS
+    printf("%lu %lu \n", os.listener_stopped, os.sender_stopped);
     for (msize_t i = 0; i < os.core_count; i++)
     {
         if (merry_os_boot_core(i, os.reader->eat.EAT[i]) != RET_SUCCESS)
@@ -400,15 +408,9 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
             merry_cond_signal(current_req._wait_lock);
         }
     }
-    if (os.listener_running == mtrue)
-        atomic_store(&os.listener->stop, mtrue);
-    if (os.sender_running == mtrue)
-    {
-        if (os.sender->queue->data_count == 0)
-            merry_cond_signal(os.sender->cond);
-        atomic_store(&os.sender->stop, mtrue);
-    }
-    while (os.listener_stopped != mtrue && os.sender_stopped != mtrue)
+    if (os.ret == _MERRY_EXIT_SUCCESS_)
+        merry_os_prepare_for_exit();
+    while (os.listener_stopped != mtrue || os.sender_stopped != mtrue)
     {
     }
     // dump data if necessary
@@ -463,7 +465,7 @@ void merry_os_handle_error(merrot_t error)
         break;
     default:
         merry_error("Unknown error code: '%llu' is not a valid error code", error);
-        break;
+        break;    printf("%lu %lu \n", os.listener_stopped, os.sender_stopped);
     }
     merry_os_notify_dbg(_ERROR_ENCOUNTERED_, error, os.err_core_id);
 }
@@ -777,12 +779,13 @@ void merry_os_set_dbg_sig(mqword_t _sig, mbptr_t sig)
 
 void merry_os_notice(mbool_t _type)
 {
+    printf("DID: %lu\n", _type);
     if (_type == mtrue)
-        atomic_store(&os.listener_running, mtrue);
+        atomic_exchange(&os.listener_running, mtrue);
     else if (_type == mfalse)
-        atomic_store(&os.sender_running, mtrue);
+        atomic_exchange(&os.sender_running, mtrue);
     else if (_type == 2)
-        atomic_store(&os.sender_stopped, mtrue);
+        atomic_exchange(&os.sender_stopped, mtrue);
     else
-        atomic_store(&os.listener_stopped, mtrue);
+        atomic_exchange(&os.listener_stopped, mtrue);
 }

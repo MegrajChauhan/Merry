@@ -24,6 +24,7 @@ MerryCLP *merry_parse_options(int argc, char **argv)
     clp->_help = mfalse;
     clp->_options_ = NULL;
     clp->_version = mfalse;
+    clp->freeze = mfalse;
     mbool_t _clo_provided_ = mfalse;
     int i = 1;
     for (; i < argc; i++)
@@ -61,6 +62,10 @@ MerryCLP *merry_parse_options(int argc, char **argv)
                         return clp;
                     }
                     break;
+                case 'f':
+                    if (strcmp(&argv[i][2], "freeze") == 0)
+                        clp->freeze = mtrue; // the program asks for version
+                    break;
                 default:
                     _clo_provided_ = mtrue;
                     break;
@@ -95,6 +100,9 @@ MerryCLP *merry_parse_options(int argc, char **argv)
                 }
                 clp->_inp_file = argv[i + 1];
                 i++;
+                break;
+            case 'F':
+                clp->freeze = mtrue;
                 break;
             case 'd':
                 if (merry_parse_d_options(clp, argv[i]) == RET_FAILURE)
@@ -152,7 +160,8 @@ void merry_print_help()
         "-f                            --> Provide the path to the input file\n"
         "--                            --> Provide Command Line Options for your Program\n"
         "--dump-file=[PATH],-df=[PATH] --> Tell the VM to produce a dumpfile\n"
-        "                                  If '=' is given, a file name is expected otherwise no need.\n",
+        "                                  If '=' is given, a file name is expected otherwise no need.\n"
+        "-F, --freeze                  --> If DE flag is set; causes the VM to wait for connection for debugging.",
         NULL);
 }
 

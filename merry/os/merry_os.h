@@ -69,8 +69,7 @@ struct Merry
   mbool_t sender_running, sender_stopped;
 };
 
-#define _MERRY_REQUEST_QUEUE_LEN_ 10 // for now
-#define _MERRY_THPOOL_LEN_ 10        // for now
+#define _MERRY_REQUEST_QUEUE_LEN_ 20 // for now
 
 #define _MERRY_REQUEST_INTERNAL_ERROR_(request_id) (request_id >= 0 && request_id <= 50)
 #define _MERRY_REQUEST_PROGRAM_ERROR_(request_id) (request_id >= 51 && request_id <= 150)

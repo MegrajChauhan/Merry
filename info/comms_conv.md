@@ -72,3 +72,15 @@ Here are some signals that a debugger can receive:
 |05|One of the core hit the break point. The last byte contains the core ID that hit the BP.|
 |06|A core is terminating. The last byte contains the core ID that hit the BP.|
 |07|More memory was allocated.|
+
+# Communicating With the VM
+The VM, upon noticing the DE flag, starts two of its components namely the **listener** and **sender**. The listener only listens to the requests from the connected program. It looks for connection on port 4048.
+The sender only sends back signals and replies and it looks for connection on port 4144. This structure necessitates the connecting program to have two threads as well.
+_Note: The connecting program should not send more than 20 - CORE_COUNT requests at once._
+This limit is because the request queue that the Managing thread manages has a maximum size of 20 and so some room for the running cores is also necessary.
+
+## As simple as it gets
+The above described convention is the only convention you require to write a debugger for the VM but one additional thing that needs to be kept in mind is that once the connected
+program receives its _TERMINATING_ signal, it should make sure to send back a signal one last time so that the VM's listener also terminates peacefully. 
+
+That's it!

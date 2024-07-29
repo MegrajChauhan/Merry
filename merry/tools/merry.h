@@ -42,12 +42,14 @@ enum MerryCLOption_t
     _OPT_VER,       // -v, --v, -version, --version
     _OPT_DUMP_FILE, // --dump-file, -df
     _OPT_CLO,       // --
+    _OPT_FREEZE,    // -F, --freeze
 };
 
 struct MerryCLP
 {
     mbool_t _help;
     mbool_t _version;
+    mbool_t freeze;
     mstr_t _inp_file;
     mstr_t _dump_file;
     mbool_t _dump;

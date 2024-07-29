@@ -54,7 +54,7 @@
 -------------------------------------------------------------------------------------------------------------
 
 ### Flags Description
-**DE = Debug Enable flag**: Causes the VM to start looking for connections with debuggers at port 55000. The VM doesn't care if the debugger connects or the connection fails. Any error during communication is ignored by the VM. For ways to communicate with the VM, refer to comms_conv.txt.
+**DE = Debug Enable flag**: Causes the VM to start looking for connections with debuggers. The VM doesn't care if the debugger connects or the connection fails. Any error during communication is ignored by the VM. For ways to communicate with the VM, refer to comms_conv.txt.
 
 **STE = Symbol Table Enable flag**: Tells the VM that a Symbol Table exists and should be read. The Symbol Table is really useful for more detailed dump files. If the ST is not available (indicated by the ST size), the STE flag is ignored.
 
@@ -81,3 +81,11 @@ main\0add_two_numbers\0start_thread\0end_of_world!!do_something!!\0we_are_in_the
 This is a short and simple example of ST. This ST describes 5 functions. Say the program crashed while executing the we_are_in_the_symbol_table procedure. The VM knows the address of the procedure, say it is 0xFF44532. The VM also reads the Symd section. What does it do now? The VM looks for that address in the ordered pairs it has, finds 0xFF44532, and also finds the ST index, which happens to be 67 (counting could have been wrong, starts from 0). Now the VM goes to index 67 in the ST and finds the letter 'w' there. Starting from there, the VM reads until the terminating character and figures out the name of the procedure. If the '--dump-files' or '-df' option was provided, the VM will produce a dump file and backtrace the function calls. This is when the ST becomes useful. If the provided index is wrong or ST isn't available, "NO SYMBOL FOUND" is printed instead.
 
 Refer to abc0 and abc1 files for examples of what the dump files look like.
+
+## New Header Flags added:
+Apart from the DE flag and STE flag, we have two new flags: DFE flag and DFW flag.
+
+**DFE flag:** DFE\(Debug Follow Enable\) tells the VM that any new process should also look for debugger connections. For now we have to think about solving the different port problem with the new process which will be solved soon enough.
+Position: second last bit of the second last byte.
+**DFW flag:** DFW\(Debug Follow Wait) tells what the **--freeze, -f** options do to the new processes. 
+Position: third last bit of the second last byte.
