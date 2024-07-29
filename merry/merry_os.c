@@ -321,7 +321,6 @@ _MERRY_INTERNAL_ void merry_os_prepare_for_exit()
 _THRET_T_ merry_os_start_vm(mptr_t some_arg)
 {
     // this will start the OS
-    printf("%lu %lu \n", os.listener_stopped, os.sender_stopped);
     for (msize_t i = 0; i < os.core_count; i++)
     {
         if (merry_os_boot_core(i, os.reader->eat.EAT[i]) != RET_SUCCESS)
@@ -465,7 +464,7 @@ void merry_os_handle_error(merrot_t error)
         break;
     default:
         merry_error("Unknown error code: '%llu' is not a valid error code", error);
-        break;    printf("%lu %lu \n", os.listener_stopped, os.sender_stopped);
+        break;
     }
     merry_os_notify_dbg(_ERROR_ENCOUNTERED_, error, os.err_core_id);
 }
@@ -788,4 +787,9 @@ void merry_os_notice(mbool_t _type)
         atomic_exchange(&os.sender_stopped, mtrue);
     else
         atomic_exchange(&os.listener_stopped, mtrue);
+}
+
+mqword_t merry_os_get_ret()
+{
+    return os.ret;
 }

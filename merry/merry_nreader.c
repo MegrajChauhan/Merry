@@ -9,24 +9,24 @@ _MERRY_INTERNAL_ void merry_reader_give_mem_to_os(mptr_t *addrs, msize_t count)
     }
 }
 
-_MERRY_INTERNAL_ mret_t merry_reader_get_mem_from_os(mptr_t **addrs, msize_t count)
+_MERRY_INTERNAL_ mptr_t *merry_reader_get_mem_from_os(msize_t count)
 {
     // This will get us memory pages from the Host OS directly
     // On failure, we can do nothing but exit
-    *addrs = (mptr_t *)malloc(sizeof(mptr_t) * count);
-    if (*addrs == NULL)
-        return RET_FAILURE;
+    mptr_t *addrs = (mptr_t *)malloc(sizeof(mptr_t) * count);
+    if (addrs == NULL)
+        return NULL;
     for (msize_t i = 0; i < count; i++)
     {
-        if (((*addrs)[0] = _MERRY_MEMORY_PGALLOC_MAP_PAGE_) == _MERRY_RET_GET_ERROR_)
+        if (((addrs)[i] = _MERRY_MEMORY_PGALLOC_MAP_PAGE_) == _MERRY_RET_GET_ERROR_)
         {
-            merry_reader_give_mem_to_os(*addrs, i);
+            merry_reader_give_mem_to_os(addrs, i);
             rlog("Internal Error: Couldn't receive memory from the OS.\n", NULL);
-            free(*addrs);
-            return RET_FAILURE;
+            free(addrs);
+            return NULL;
         }
     }
-    return RET_SUCCESS;
+    return addrs;
 }
 
 _MERRY_INTERNAL_ void merry_reader_return_all_mem(MerryReader *r)
@@ -260,7 +260,7 @@ mret_t merry_reader_read_instructions(MerryReader *r)
     msize_t number_of_pages = inst_count / _MERRY_MEMORY_QS_PER_PAGE_;
     msize_t extra_addrs = inst_count % _MERRY_MEMORY_QS_PER_PAGE_;
     r->inst.inst_page_count = number_of_pages + (extra_addrs > 0 ? 1 : 0);
-    if (merry_reader_get_mem_from_os((void ***)(&r->inst.instructions), r->inst.inst_page_count) == RET_FAILURE)
+    if ((r->inst.instructions = (mqptr_t*)merry_reader_get_mem_from_os(r->inst.inst_page_count)) == NULL)
         return RET_FAILURE;
     for (msize_t i = 0; i < number_of_pages; i++)
     {
@@ -372,7 +372,7 @@ mret_t merry_reader_read_sections(MerryReader *r)
     msize_t number_of_pages = data_count / _MERRY_MEMORY_QS_PER_PAGE_;
     msize_t extra_addrs = data_count % _MERRY_MEMORY_QS_PER_PAGE_;
     r->data_page_count = number_of_pages + (extra_addrs > 0 ? 1 : 0);
-    if (merry_reader_get_mem_from_os((void ***)(&r->data), r->data_page_count) == RET_FAILURE)
+    if ((r->inst.instructions = (mqptr_t*)merry_reader_get_mem_from_os(r->data_page_count)) == NULL)
         return RET_FAILURE;
     msize_t current_index = 0, current_off = 0;
     for (msize_t i = 0; i < r->sst.sst_entry_count; i++)

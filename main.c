@@ -27,7 +27,7 @@
 int main(int argc, char **argv)
 {
     MerryCLP *_parsed_options = merry_parse_options(argc, argv);
-    // char *x[] = {"./merry", "-f", "temp.bin"};
+    // char *x[] = {"./merry", "-f", "speedtest.bin"};
 
     // MerryCLP *_parsed_options = merry_parse_options(3, x);
 
@@ -84,12 +84,12 @@ int main(int argc, char **argv)
         merry_thread_destroy(osthread);
         goto failure;
     }
-    mqptr_t returnval;
-    merry_thread_join(osthread, returnval); // I am an idiot
+    merry_thread_join(osthread, NULL); // I am an idiot
+    mqword_t r = merry_os_get_ret();
     merry_thread_destroy(osthread);
     merry_destroy_parser(_parsed_options);
     merry_os_destroy();
-    return *returnval;
+    return r;
 failure:
     merry_os_destroy();
     return -1;

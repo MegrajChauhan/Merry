@@ -134,6 +134,8 @@ void merry_os_set_dbg_sig(mqword_t _sig, mbptr_t sig);
 
 void merry_os_notice(mbool_t _type);
 
+mqword_t merry_os_get_ret();
+
 #define _os_exec_(reqname) mret_t merry_os_execute_request_##reqname(Merry *os, MerryOSRequest *request)
 
 // handle the halt request
