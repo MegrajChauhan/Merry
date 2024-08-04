@@ -28,7 +28,7 @@ ${OUTPUT_DIR}%.o: %.c
 # Create necessary directories
 directories:
 	mkdir -p ${OUTPUT_DIR}
-	mkdir -p ${OUTPUT_DIR}${SRC_DIR}
+	${foreach f, ${SRC_DIR}, ${shell "mkdir -p ${OUTPUT_DIR}${f}"}}
 
 clean:
 	rm -rf ${OUTPUT_DIR}

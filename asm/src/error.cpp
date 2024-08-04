@@ -13,22 +13,22 @@ std::string masm::get_error(ErrorKind kind)
 
 void masm::mlog(std::string _path, size_t line, size_t col_st, size_t col_end, ErrorKind kind, std::string msg, std::string _err_line)
 {
-    printf("%s:%lu:%lu:%s:%s\n", _path, line, col_st, get_error(kind), msg);
+    fprintf(stdout, "%s:%lu:%lu:%s:%s\n", _path.c_str(), line, col_st, get_error(kind).c_str(), msg.c_str());
     std::string l = std::to_string(line);
-    printf("%s| %s\n", l, _err_line);
+    fprintf(stdout, "%s| %s\n", l.c_str(), _err_line.c_str());
     for (auto c : l)
     {
-        std::cerr << ' ';
+        std::cout << ' ';
     }
-    std::cerr << '  ';
+    std::cout << "  ";
     for (size_t i = 0; i < col_st; i++)
     {
-        std::cerr << ' ';
+        std::cout << ' ';
     }
-    std::cerr << '^';
+    std::cout << '^';
     for (size_t i = col_st; i < col_end; i++)
     {
-        std::cerr << '~';
+        std::cout << '~';
     }
-    std::cerr << '\n';
+    std::cout << '\n';
 }
