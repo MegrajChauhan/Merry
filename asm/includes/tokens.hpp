@@ -13,6 +13,7 @@ namespace masm
         TOK_NUM,
         TOK_FLOAT,
         TOK_ID,
+        TOK_USE,
     };
 
     struct Location
@@ -29,7 +30,7 @@ namespace masm
         Location loc;
     };
 
-    static std::unordered_map<std::string, TokenType> keymap;
+    static std::unordered_map<std::string, TokenType> keymap = {{"use", TOK_USE}};
 };
 
 #endif

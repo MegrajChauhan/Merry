@@ -5,7 +5,7 @@
 #include "nodes.hpp"
 #include <unordered_map>
 #include <vector>
-#include "compunit.hpp"
+#include "master.hpp"
 
 namespace masm
 {
@@ -18,7 +18,8 @@ namespace masm
         Parser() = default;
 
         bool parse(std::string fname);
+
+        bool new_file();
     };
 };
-
 #endif

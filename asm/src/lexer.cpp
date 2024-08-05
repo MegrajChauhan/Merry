@@ -8,7 +8,10 @@ masm::Lexer::Lexer(std::string filename)
 bool masm::Lexer::validate_file()
 {
     if (!std::filesystem::exists(std::filesystem::path(path)))
+    {
+        log("File Error: The file " + path + " doesn't exist.");
         return false;
+    }
     return true;
 }
 
@@ -16,7 +19,10 @@ bool masm::Lexer::validate_file(std::string name)
 {
     path = (std::filesystem::current_path() / name).string();
     if (!std::filesystem::exists(std::filesystem::path(path)))
+    {
+        log("File Error: The file " + path + " doesn't exist.");
         return false;
+    }
     return true;
 }
 
@@ -157,4 +163,32 @@ std::string masm::Lexer::extract_current_line()
         ed++;
 
     return std::string(st, ed);
+}
+
+std::string masm::Lexer::extract_just_text()
+{
+    std::string text;
+    while (std::isspace(*iter))
+    {
+        if (*iter == '\n')
+        {
+            col = 0;
+            line++;
+        }
+        else
+            col++;
+        iter++;
+    }
+    while (!std::isspace(*iter) && *iter != '\0')
+    {
+        text += *iter;
+        iter++;
+        col++;
+    }
+    return text;
+}
+
+size_t masm::Lexer::get_line()
+{
+    return line;
 }

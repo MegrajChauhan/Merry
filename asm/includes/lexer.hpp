@@ -31,6 +31,10 @@ namespace masm
         Token next_token();
 
         std::string extract_current_line();
+
+        std::string extract_just_text();
+
+        size_t get_line();
     };
 };
 

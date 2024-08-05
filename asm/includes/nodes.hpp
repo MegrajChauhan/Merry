@@ -8,10 +8,16 @@ namespace masm
 {
     enum NodeKind
     {
+        _INC_FILE,
     };
 
     struct Base
     {
+    };
+
+    struct NodeIncFile: public Base
+    {
+        size_t ind;
     };
 
     struct Node
