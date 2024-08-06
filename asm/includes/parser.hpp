@@ -5,7 +5,6 @@
 #include "nodes.hpp"
 #include <unordered_map>
 #include <vector>
-#include "master.hpp"
 
 namespace masm
 {
@@ -22,4 +21,7 @@ namespace masm
         bool new_file();
     };
 };
+
+#include "compunit.hpp"
+
 #endif

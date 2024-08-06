@@ -29,14 +29,15 @@ bool masm::Parser::parse(std::string fname)
             n.st_line = t.loc.line;
             n.ed_line = l.get_line();
             n.kind = _INC_FILE;
-            n.node = std::make_unique<NodeIncFile>(units.size() - 1);
+            n.node = std::make_unique<NodeIncFile>();
+            ((NodeIncFile*)n.node.get())->ind = units.size() - 1;
             n.st_col = 0;
             n.ed_col = 3;
             break;
         }
         }
         t = l.next_token();
-        nodes.push_back(n);
+        nodes.push_back(std::move(n));
     }
     return true;
 }
@@ -45,9 +46,8 @@ bool masm::Parser::new_file()
 {
     CompUnit unit;
     // Create a new compilation unit and add it to the list to be compiled
-    unit.add_parent(parent);
     std::string inc_file = l.extract_just_text();
     unit.set_filename(inc_file);
-    units.push_back(unit);
+    add_unit(&unit);
     return true;
 }

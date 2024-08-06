@@ -1,2 +1,19 @@
 
 use abc.txt
+
+byte x: 123
+word y: 77
+dword pork: 567
+qword l: 748598574
+float _test_: 123.456
+lfloat __: 0.12343564
+string name: "Hello World!".0."Woo!".10 ;; The '.' here are for connecting the strings
+
+rbyte pqr: 10 ;; Here 10 would indicate 10 bytes
+rword a: 1
+rdword b: 1
+rqword c: 1
+
+;; Variables can be declared anywhere and used anywhere
+;; Its not like you have to define them first to use them.
+;; If a variable exists in the included file, you can access it as well.

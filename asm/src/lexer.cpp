@@ -44,12 +44,6 @@ bool masm::Lexer::init_lexer()
     in.close();
     return true;
 }
-bool masm::Lexer::validate_file()
-{
-    if (!std::filesystem::exists(std::filesystem::path(path)))
-        return false;
-    return true;
-}
 
 masm::Token masm::Lexer::next_token()
 {
@@ -76,7 +70,10 @@ masm::Token masm::Lexer::next_token()
             else
             {
                 while (*iter != '\n' && *iter != '\0')
+                {
                     iter++;
+                    offset++;
+                }
             }
         }
         else if (std::isspace(*iter))
@@ -138,6 +135,18 @@ masm::Token masm::Lexer::next_token()
                 t.type = iskey->second;
             break;
         }
+        else if (*iter == ':')
+        {
+            iter++;
+            col++;
+            offset++;
+            t.type = TOK_SEMI;
+            break;
+        }
+        else if (*iter == '\"')
+        {
+            // we don't accept the single quotes
+        }
         else
         {
             elog(path, line, st, col, "FATAL", "Cannot build a token with this.", extract_current_line());
@@ -178,12 +187,14 @@ std::string masm::Lexer::extract_just_text()
         else
             col++;
         iter++;
+        offset++;
     }
     while (!std::isspace(*iter) && *iter != '\0')
     {
         text += *iter;
         iter++;
         col++;
+        offset++;
     }
     return text;
 }
@@ -191,4 +202,75 @@ std::string masm::Lexer::extract_just_text()
 size_t masm::Lexer::get_line()
 {
     return line;
+}
+
+std::optional<std::string> masm::Lexer::get_string()
+{
+    size_t st = col;
+    iter++;
+    col++;
+    offset++;
+    std::string str;
+    while (*iter != '\"')
+    {
+        if (*iter == '\0')
+        {
+            elog(path, line, st, col, "FATAL", "The string was never terminated; reached EOF.", extract_current_line());
+            return {};
+        }
+        if (*iter == '\n')
+        {
+            elog(path, line, st, col, "FATAL", "The string was never terminated; reached EOL.", extract_current_line());
+            return {};
+        }
+        str += *iter;
+        iter++;
+        col++;
+        offset++;
+    }
+    st = col;
+    iter++;
+    col++;
+    offset++;
+    if (iter != fileconts.end() && *iter == '.')
+    {
+        while (*iter == '.')
+        {
+            iter++;
+            col++;
+            offset++;
+            if (iter == fileconts.end())
+            {
+                elog(path, line, st, col, "FATAL", "After the operator '.', expected a string or a byte.", extract_current_line());
+                return {};
+            }
+            if (*iter == '\n')
+            {
+                elog(path, line, st, col, "FATAL", "No concatenation performed; reached EOL.", extract_current_line());
+                return {};
+            }
+            if (std::isdigit(*iter))
+            {
+                st = col;
+                std::string n;
+                while (std::isdigit(*iter))
+                {
+                    n += *iter;
+                    iter++;
+                    col++;
+                    offset++;
+                }
+                str += (char)(std::stoi(n));
+                if (iter == fileconts.end() || *iter != '.' || *iter != ' ')
+                {
+                    elog(path, line, st, col, "FATAL", "After the byte, expected either another '.' operator or EOL..", extract_current_line());
+                    return {};
+                }
+            }else if (*iter == '\"')
+            {
+                              
+            }
+        }
+    }
+    return std::make_optional<std::string>(str);
 }

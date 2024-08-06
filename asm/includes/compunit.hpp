@@ -12,12 +12,9 @@ namespace masm
     {
         std::string fname;
         Parser p;
-        CompUnit *parent = nullptr;
 
     public:
         CompUnit() = default;
-
-        void add_parent(CompUnit *u);
 
         void set_filename(std::string name);
 
@@ -33,6 +30,15 @@ namespace masm
         std::string value;
         DataType type;
     };
+
+    static std::unordered_map<std::string, Variable> varlist;
+    static std::vector<CompUnit> units;
+    
+    std::vector<CompUnit>* get_unit();
+    
+    void add_unit(CompUnit *u);
+
+    size_t get_size();
 
 };
 

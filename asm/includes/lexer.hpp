@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <filesystem>
+#include <optional>
 #include "tokens.hpp"
 #include "error.hpp"
 
@@ -35,6 +36,8 @@ namespace masm
         std::string extract_just_text();
 
         size_t get_line();
+
+        std::optional<std::string> get_string();
     };
 };
 

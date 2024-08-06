@@ -11,9 +11,22 @@ namespace masm
         TOK_ERR,
         TOK_EOF,
         TOK_NUM,
+        TOK_BARRAY, // array of bytes
         TOK_FLOAT,
         TOK_ID,
         TOK_USE,
+        TOK_SEMI,   // :
+        TOK_BYTE,   // byte
+        TOK_WORD,   // word
+        TOK_DWORD,  // dword
+        TOK_QWORD,  // qword
+        TOK_RBYTE,  // rbyte
+        TOK_RWORD,  // rword
+        TOK_RDWORD, // rdword
+        TOK_RQWORD, // rqword
+        TOK_FLOAT,  // float
+        TOK_LFLOAT, // lfloat
+        TOK_STRING, // string
     };
 
     struct Location
@@ -30,7 +43,10 @@ namespace masm
         Location loc;
     };
 
-    static std::unordered_map<std::string, TokenType> keymap = {{"use", TOK_USE}};
+    static std::unordered_map<std::string, TokenType>
+        keymap =
+            {
+                {"use", TOK_USE}, {"byte", TOK_BYTE}, {"word", TOK_WORD}, {"dword", TOK_DWORD}, {"qword", TOK_QWORD}, {"rbyte", TOK_RBYTE}, {"rword", TOK_RWORD}, {"rdword", TOK_RDWORD}, {"rqword", TOK_RQWORD}, {"string", TOK_STRING}, {"float", TOK_FLOAT}, {"lfloat", TOK_LFLOAT}};
 };
 
 #endif
