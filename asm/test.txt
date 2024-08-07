@@ -1,5 +1,5 @@
 
-use abc txt
+use abc.txt
 
 byte x: 123
 word y: 77
@@ -30,3 +30,7 @@ cbyte len: 256
 ;; However, you cannot do arithmetic using '+', '-' and other symbols yet.
 ;; That will have to wait until an expression parser is in place
 ;; Something like: byte version: (MAJOR * 1000) << 63 ... would be cool, wouldn't it?
+
+;; Unlike the previous version of masm, this version of masm will directly map the VMs
+;; ISA to opcodes. Even the names. The assembler will not attempt to convert some instruction
+;; to other internally and everything will be a one to one mapping.

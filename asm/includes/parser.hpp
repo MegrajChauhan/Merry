@@ -12,6 +12,9 @@ namespace masm
     {
         Lexer l;
         std::vector<Node> nodes;
+        Token t;
+        std::string path;
+        bool read_again = true;
 
     public:
         Parser() = default;
@@ -19,6 +22,10 @@ namespace masm
         bool parse(std::string fname);
 
         bool new_file();
+
+        bool variable_declaration();
+
+        DataType get_datatype(TokenType t);
     };
 };
 

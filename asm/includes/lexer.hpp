@@ -39,6 +39,8 @@ namespace masm
 
         size_t get_line();
 
+        size_t get_col();
+
         std::optional<std::string> get_string();
 
         std::optional<std::vector<Token>> get_str();

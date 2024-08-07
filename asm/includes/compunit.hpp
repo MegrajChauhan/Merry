@@ -21,10 +21,6 @@ namespace masm
         bool do_comp();
     };
 
-    enum DataType
-    {
-    };
-
     struct Variable
     {
         std::string value;

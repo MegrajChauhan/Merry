@@ -226,6 +226,11 @@ size_t masm::Lexer::get_line()
     return line;
 }
 
+size_t masm::Lexer::get_col()
+{
+    return col;
+}
+
 std::optional<std::string> masm::Lexer::get_string()
 {
     size_t st = col;
