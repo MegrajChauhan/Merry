@@ -95,7 +95,7 @@ masm::Token masm::Lexer::next_token()
         {
             int dot_count = 0;
             st = col;
-            while (std::isdigit(*iter) || *iter == '.')
+            while (std::isdigit(*iter) || (*iter == '.' && !ignore_dot))
             {
                 if (*iter == '.')
                     dot_count++;
@@ -146,9 +146,31 @@ masm::Token masm::Lexer::next_token()
         else if (*iter == '\"')
         {
             // we don't accept the single quotes
+            auto ret = get_string();
+            if (!ret.has_value())
+                t.type = TOK_ERR;
+            else
+            {
+                t.type = TOK_BARRAY;
+                t.val = ret.value();
+            }
+            break;
+        }
+        else if (*iter == ',')
+        {
+            iter++;
+            col++;
+            offset++;
         }
         else
         {
+            if ((*iter == '.' && ignore_dot))
+            {
+                iter++;
+                col++;
+                offset++;
+                continue;
+            }
             elog(path, line, st, col, "FATAL", "Cannot build a token with this.", extract_current_line());
             t.type = TOK_ERR;
             break;
@@ -232,45 +254,19 @@ std::optional<std::string> masm::Lexer::get_string()
     iter++;
     col++;
     offset++;
-    if (iter != fileconts.end() && *iter == '.')
-    {
-        while (*iter == '.')
-        {
-            iter++;
-            col++;
-            offset++;
-            if (iter == fileconts.end())
-            {
-                elog(path, line, st, col, "FATAL", "After the operator '.', expected a string or a byte.", extract_current_line());
-                return {};
-            }
-            if (*iter == '\n')
-            {
-                elog(path, line, st, col, "FATAL", "No concatenation performed; reached EOL.", extract_current_line());
-                return {};
-            }
-            if (std::isdigit(*iter))
-            {
-                st = col;
-                std::string n;
-                while (std::isdigit(*iter))
-                {
-                    n += *iter;
-                    iter++;
-                    col++;
-                    offset++;
-                }
-                str += (char)(std::stoi(n));
-                if (iter == fileconts.end() || *iter != '.' || *iter != ' ')
-                {
-                    elog(path, line, st, col, "FATAL", "After the byte, expected either another '.' operator or EOL..", extract_current_line());
-                    return {};
-                }
-            }else if (*iter == '\"')
-            {
-                              
-            }
-        }
-    }
     return std::make_optional<std::string>(str);
+}
+
+std::optional<std::vector<masm::Token>> masm::Lexer::get_str()
+{
+    std::vector<Token> str;
+    ignore_dot = true;
+    Token r = next_token();
+    while (r.type != TOK_EOF && r.type != TOK_ERR && !std::isspace(*iter))
+    {
+        str.push_back(r);
+        r = next_token();
+    }
+    ignore_dot = false;
+    return std::make_optional<std::vector<Token>>(str);
 }

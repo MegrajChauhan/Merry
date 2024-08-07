@@ -6,6 +6,7 @@
 #include <vector>
 #include <filesystem>
 #include <optional>
+#include <sstream>
 #include "tokens.hpp"
 #include "error.hpp"
 
@@ -17,6 +18,7 @@ namespace masm
         std::string fileconts;
         std::string::iterator iter;
         size_t offset = 0, line = 0, col = 0;
+        bool ignore_dot = false;
 
     public:
         Lexer() = default;
@@ -38,6 +40,8 @@ namespace masm
         size_t get_line();
 
         std::optional<std::string> get_string();
+
+        std::optional<std::vector<Token>> get_str();
     };
 };
 

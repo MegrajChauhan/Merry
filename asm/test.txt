@@ -1,5 +1,5 @@
 
-use abc.txt
+use abc txt
 
 byte x: 123
 word y: 77
@@ -7,6 +7,7 @@ dword pork: 567
 qword l: 748598574
 float _test_: 123.456
 lfloat __: 0.12343564
+
 string name: "Hello World!".0."Woo!".10 ;; The '.' here are for connecting the strings
 
 rbyte pqr: 10 ;; Here 10 would indicate 10 bytes
@@ -17,3 +18,15 @@ rqword c: 1
 ;; Variables can be declared anywhere and used anywhere
 ;; Its not like you have to define them first to use them.
 ;; If a variable exists in the included file, you can access it as well.
+
+;; These constants are like #define from C.
+;; These will not be in the final binary.
+;; The assembler will replace them in the source everywhere
+cstring msg: "Hello"
+cbyte len: 256
+;; .. and for all
+
+;; You can certainly use other variables to initialize other variables
+;; However, you cannot do arithmetic using '+', '-' and other symbols yet.
+;; That will have to wait until an expression parser is in place
+;; Something like: byte version: (MAJOR * 1000) << 63 ... would be cool, wouldn't it?
