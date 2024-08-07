@@ -35,11 +35,11 @@ bool masm::Parser::parse(std::string fname)
             }
             n.st_line = t.loc.line;
             n.ed_line = l.get_line();
+            n.st_off = t.loc.offset;
+            n.ed_off = l.get_off();
             n.kind = _INC_FILE;
             n.node = std::make_unique<NodeIncFile>();
             ((NodeIncFile *)n.node.get())->ind = units.size() - 1;
-            n.st_col = 0;
-            n.ed_col = 3;
             nodes.push_back(std::move(n));
             break;
         }
@@ -116,7 +116,15 @@ bool masm::Parser::variable_declaration()
     x->name = id.val;
     x->type = get_datatype(temp.type);
     read_again = false;
+
+    n.ed_line = expr[expr.size() - 1].loc.line;
+    n.st_line = temp.loc.line;
+    n.st_off = temp.loc.offset;
+    n.ed_off = expr[expr.size() - 1].loc.offset;
+
+    n.kind = _VAR_DECLR;
     nodes.push_back(std::move(n));
+    t = val;
     return true;
 }
 

@@ -1,4 +1,4 @@
-#ifndef _NODES_
+*#ifndef _NODES_
 #define _NODES_
 
 #include <memory>
@@ -46,7 +46,7 @@ namespace masm
         std::unique_ptr<Base> node;
         NodeKind kind;
         size_t st_line, ed_line;
-        size_t st_col, ed_col;
+        size_t st_off, ed_off;
     };
 };
 

@@ -231,6 +231,11 @@ size_t masm::Lexer::get_col()
     return col;
 }
 
+size_t masm::Lexer::get_off()
+{
+    return offset;
+}
+
 std::optional<std::string> masm::Lexer::get_string()
 {
     size_t st = col;
