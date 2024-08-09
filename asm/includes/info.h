@@ -3,11 +3,13 @@
 
 #include "merry_types.h"
 #include "defs.h"
+#include <stdlib.h>
 
 typedef struct UnitInfo UnitInfo;
 typedef struct Context Context;
 typedef struct CompUnit CompUnit;
 
+// The current status of the unit
 struct UnitInfo
 {
     msize_t current_line;
@@ -18,6 +20,8 @@ struct UnitInfo
     msize_t inp_file_len; // We will have the '\0' obviously
 };
 
+// The state of the unit
+// Note: Unit refers to a file that has been included or the input file
 struct CompUnit
 {
     UnitInfo info;
@@ -29,14 +33,16 @@ struct CompUnit
 
 struct Context
 {
-    CompUnit **units;
+    CompUnit *units;
     msize_t unit_count;
 };
 
 Context *generate_context();
 
-mret_t add_comp_unit(Context *c, mstr_t path);
+mret_t add_comp_unit(Context *c, mstr_t path, mbool_t is_inc, CompUnit *parent);
 
 void destroy_context(Context *c);
+
+void destroy_compunit(CompUnit *unit);
 
 #endif
