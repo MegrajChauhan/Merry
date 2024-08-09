@@ -15,11 +15,9 @@ void destroy_compunit(CompUnit *unit)
     if (unit == NULL)
         return;
     if (unit->f_read == mtrue && unit->info.inp_file_contents != NULL)
-    {
         free(unit->info.inp_file_contents);
-        if (unit->info.inp_file_path != NULL)
-            free(unit->info.inp_file_path);
-    }
+    if (unit->info.inp_file_path != NULL)
+        free(unit->info.inp_file_path);
     if (unit->included == mtrue)
         unit->parent = NULL;
 }
@@ -48,7 +46,13 @@ mret_t add_comp_unit(Context *c, mstr_t path, mbool_t is_inc, CompUnit *parent)
         return RET_FAILURE;
     // Here, the failure to allocate for one unit indicates that we cannot continue the compilation
     // Thus, we have to terminate the assembler and then exit.
-    
+    c->units[c->unit_count].f_read = mfalse;
+    c->units[c->unit_count].included = is_inc;
+    c->units[c->unit_count].parent = parent;
+    c->units[c->unit_count].state = NONE;
+    c->units[c->unit_count].info.inp_file_path = path;
+    c->units[c->unit_count].curr_char = NULL;
+    c->units[c->unit_count].eof = mfalse;
     c->unit_count++;
     return RET_SUCCESS;
 }

@@ -5,6 +5,7 @@ typedef enum State State;
 
 enum State
 {
+    NONE,
     LEXING,
     PARSING,
 };

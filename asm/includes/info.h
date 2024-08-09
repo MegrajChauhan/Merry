@@ -4,6 +4,7 @@
 #include "merry_types.h"
 #include "defs.h"
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct UnitInfo UnitInfo;
 typedef struct Context Context;
@@ -29,6 +30,8 @@ struct CompUnit
     mbool_t f_read;   // indicating if the file has been read
     CompUnit *parent; // Which unit included it?
     State state;
+    mstr_t curr_char;
+    mbool_t eof;
 };
 
 struct Context
