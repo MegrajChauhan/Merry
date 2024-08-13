@@ -2,6 +2,7 @@
 #define _LEXER_
 
 #include "info.h"
+#include "log.h"
 
 typedef enum TokenType TokenType;
 typedef struct Token Token;
@@ -12,6 +13,7 @@ enum TokenType
     TOK_EOF,
     TOK_ERR,
     TOK_NUM,
+    TOK_FLOAT,
 };
 
 struct Location
@@ -42,6 +44,8 @@ struct Token
 #define isspace(c) (c == ' ' || c == '\r' || c == '\t' || c == '\n' || c == "\f" || c == '\v')
 
 mret_t next_token(CompUnit *unit, Token *t);
+
+char peek(CompUnit *unit, msize_t peek_by);
 
 void consume(CompUnit *unit);
 
