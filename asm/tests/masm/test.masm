@@ -1,0 +1,44 @@
+;; This contains just the code
+;; Any data here will result in an error
+
+;; There are two types of labels: procedures and simple labels
+
+proc main ;; The above is a procedure i.e it is globally visible meaning it may be called from any file
+
+main ;; the definition of proc main
+
+_just_a_label ;; this is not a proc meaning this is visible to only this file
+  nop
+  halt
+
+;; variants of add
+  add Mm1, 1234 ;; regr + imm
+  add Ma, Mb    ;; regr + regr
+  add M1, a     ;; regr + variable
+  ;; unfortunately there is no "add M1, [Ma]" with address in Ma
+  ;; The reason for this is that there is no instruction in the VM that supports this
+  ;; The ISA of VM was to make execution faster so the complicated decoding can be avoided
+  ;; This has limited us in the number of instructions we can have.
+  ;; We may implement extended ISA in the future
+
+  ;; The same from above can be copied for sub, mul, div and mod
+  sub Mm1, 1234 ;; regr - imm
+  sub Ma, Mb    ;; regr - regr
+  sub M1, a     ;; regr - variable
+
+  mul Mm1, 1234 ;; regr * imm
+  mul Ma, Mb    ;; regr * regr
+  mul M1, a     ;; regr * variable
+
+  div Mm1, 1234 ;; regr / imm
+  div Ma, Mb    ;; regr / regr
+  div M1, a     ;; regr / variable
+
+  mod Mm1, 1234 ;; regr % imm
+  mod Ma, Mb    ;; regr % regr
+  mod M1, a     ;; regr % variable
+  
+
+;; Here is the thing.
+;; A procedure or a label can have the same name as an identifier
+;; The assembler will know which you are referencing based on the context.

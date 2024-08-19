@@ -17,7 +17,10 @@ usage:
 	@echo "make clean dirs=<Output_directory>"
 	
 all: __pretest directories ${OUTPUT_FILES_NAME}
-	${CC} ${FLAGS} ${OUTPUT_FILES_NAME} main.c merry/arithmetic.S ${INC_DIRS} -o ${OUTPUT_DIR}mvm 
+	${CC} ${FLAGS} ${OUTPUT_FILES_NAME} main.c merry/arithmetic.S ${INC_DIRS} -o ${OUTPUT_DIR}mvm
+	g++ -Iasm/includes asm/src/* asm/main.cpp -o ${OUTPUT_DIR}masm
+
+# The command for building the assembler is the simplest for now but hey! it works!
 
 ${OUTPUT_DIR}${SRC_DIR}%.o: ${SRC_DIR}%.c 
 	${CC} ${FLAGS} ${INC_DIRS} -c $< -o $@

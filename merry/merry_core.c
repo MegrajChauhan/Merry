@@ -922,7 +922,7 @@ _lexec_(add_mem, mem_read func)
 {
     register mqword_t current = core->current_inst;
     register mqword_t reg = (current >> 48) & 15;
-    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+    register mqword_t addr = (current & 0xFFFFFFFFFFFF);
     mqword_t temp = 0;
     if (func(core->data_mem, addr, &temp) == RET_FAILURE)
     {
@@ -938,7 +938,7 @@ _exec_(fadd32_mem)
 {
     register mqword_t current = core->current_inst;
     register mqword_t reg = (current >> 48) & 15;
-    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+    register mqword_t addr = (current & 0xFFFFFFFFFFFF);
     mqword_t temp = 0;
     if (merry_dmemory_read_dword(core->data_mem, addr, &temp) == RET_FAILURE)
     {
@@ -954,7 +954,7 @@ _exec_(fadd64_mem)
 {
     register mqword_t current = core->current_inst;
     register mqword_t reg = (current >> 48) & 15;
-    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+    register mqword_t addr = (current & 0xFFFFFFFFFFFF);
     mqword_t temp = 0;
     if (merry_dmemory_read_qword(core->data_mem, addr, &temp) == RET_FAILURE)
     {
@@ -970,7 +970,7 @@ _lexec_(sub_mem, mem_read func)
 {
     register mqword_t current = core->current_inst;
     register mqword_t reg = (current >> 48) & 15;
-    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+    register mqword_t addr = (current & 0xFFFFFFFFFFFF);
     mqword_t temp = 0;
     if (func(core->data_mem, addr, &temp) == RET_FAILURE)
     {
@@ -986,7 +986,7 @@ _exec_(fsub32_mem)
 {
     register mqword_t current = core->current_inst;
     register mqword_t reg = (current >> 48) & 15;
-    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+    register mqword_t addr = (current & 0xFFFFFFFFFFFF);
     mqword_t temp = 0;
     if (merry_dmemory_read_dword(core->data_mem, addr, &temp) == RET_FAILURE)
     {
@@ -1002,7 +1002,7 @@ _exec_(fsub64_mem)
 {
     register mqword_t current = core->current_inst;
     register mqword_t reg = (current >> 48) & 15;
-    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+    register mqword_t addr = (current & 0xFFFFFFFFFFFF);
     mqword_t temp = 0;
     if (merry_dmemory_read_qword(core->data_mem, addr, &temp) == RET_FAILURE)
     {
@@ -1018,7 +1018,7 @@ _lexec_(mul_mem, mem_read func)
 {
     register mqword_t current = core->current_inst;
     register mqword_t reg = (current >> 48) & 15;
-    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+    register mqword_t addr = (current & 0xFFFFFFFFFFFF);
     mqword_t temp = 0;
     if (func(core->data_mem, addr, &temp) == RET_FAILURE)
     {
@@ -1034,7 +1034,7 @@ _exec_(fmul32_mem)
 {
     register mqword_t current = core->current_inst;
     register mqword_t reg = (current >> 48) & 15;
-    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+    register mqword_t addr = (current & 0xFFFFFFFFFFFF);
     mqword_t temp = 0;
     if (merry_dmemory_read_dword(core->data_mem, addr, &temp) == RET_FAILURE)
     {
@@ -1050,7 +1050,7 @@ _exec_(fmul64_mem)
 {
     register mqword_t current = core->current_inst;
     register mqword_t reg = (current >> 48) & 15;
-    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+    register mqword_t addr = (current & 0xFFFFFFFFFFFF);
     mqword_t temp = 0;
     if (merry_dmemory_read_qword(core->data_mem, addr, &temp) == RET_FAILURE)
     {
@@ -1065,7 +1065,7 @@ _exec_(fmul64_mem)
 _lexec_(div_mem, mem_read func)
 {
     register mqword_t current = core->current_inst;
-    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+    register mqword_t addr = (current & 0xFFFFFFFFFFFF);
     mqword_t temp = 0;
     if (func(core->data_mem, addr, &temp) == RET_FAILURE)
     {
@@ -1087,7 +1087,7 @@ _exec_(fdiv32_mem)
 {
     register mqword_t current = core->current_inst;
     register mqword_t reg = (current >> 48) & 15;
-    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+    register mqword_t addr = (current & 0xFFFFFFFFFFFF);
     mqword_t temp = 0;
     if (merry_dmemory_read_dword(core->data_mem, addr, &temp) == RET_FAILURE)
     {
@@ -1109,7 +1109,7 @@ _exec_(fdiv64_mem)
 {
     register mqword_t current = core->current_inst;
     register mqword_t reg = (current >> 48) & 15;
-    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+    register mqword_t addr = (current & 0xFFFFFFFFFFFF);
     mqword_t temp = 0;
     if (merry_dmemory_read_qword(core->data_mem, addr, &temp) == RET_FAILURE)
     {
@@ -1130,7 +1130,7 @@ _exec_(fdiv64_mem)
 _lexec_(mod_mem, mem_read func)
 {
     register mqword_t current = core->current_inst;
-    register mqword_t addr = (current & 0xFFFFFFFFFFFF) & 15;
+    register mqword_t addr = (current & 0xFFFFFFFFFFFF);
     mqword_t temp = 0;
     if (func(core->data_mem, addr, &temp) == RET_FAILURE)
     {
@@ -1151,7 +1151,7 @@ _lexec_(mod_mem, mem_read func)
 _lexec_(cmp_mem, mem_read func)
 {
     register mqword_t reg = core->registers[(core->current_inst >> 48) & 15];
-    register mqword_t addr = (core->current_inst & 0xFFFFFFFFFFFF) & 15;
+    register mqword_t addr = (core->current_inst & 0xFFFFFFFFFFFF);
     mqword_t temp = 0;
     if (func(core->data_mem, addr, &temp) == RET_FAILURE)
     {

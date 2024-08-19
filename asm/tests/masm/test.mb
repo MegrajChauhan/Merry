@@ -1,0 +1,15 @@
+;; ;; This is the "build script" for the project
+
+data test.mdat ;; Include the "test.mdat" data file and put its contents at first
+code test.masm ;; The code
+code test2.masm
+
+;; Include the files as necessary just like above
+;; For now these are the only two things that can be done with this file type
+;; In future, maybe this file does more than just this
+
+;; The order in which the files appear is the exact order in which they appear in their respective sections in the final binary
+;; This file makes sure that a file is not included more than once.
+;; With the probable addition of built-in variables, more things could be done.
+;; Data file cannot contain code and the code file cannot contain data.
+;; There is no need for includes as any file in here already shares a scope.
