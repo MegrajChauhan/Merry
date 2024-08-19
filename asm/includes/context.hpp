@@ -46,6 +46,8 @@ namespace masm
         void start();
 
         void setup_for_new_file(std::string npath);
+
+        void analyse_proc(); // check if any procedure was left undefined 
     };
 };
 

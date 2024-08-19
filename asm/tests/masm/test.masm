@@ -7,7 +7,8 @@ proc main ;; The above is a procedure i.e it is globally visible meaning it may 
 
 main ;; the definition of proc main
 
-_just_a_label ;; this is not a proc meaning this is visible to only this file
+;; Given that parsing becomes simpler, labels cannot share the same name throughout the same project
+_just_a_label
   nop
   halt
 

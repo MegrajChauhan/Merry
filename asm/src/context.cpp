@@ -94,6 +94,7 @@ void masm::Context::start()
         }
         }
     }
+    analyse_proc();
 }
 
 void masm::Context::setup_for_new_file(std::string npath)
@@ -105,4 +106,16 @@ void masm::Context::setup_for_new_file(std::string npath)
     read_file(npath);
     filelist[npath] = true;
     flist.push_back(npath);
+}
+
+void masm::Context::analyse_proc()
+{
+    for (auto p : proc_list)
+    {
+        if (!p.second.defined)
+        {
+            fu_err(*nodes[p.second.ind].file.get(), nodes[p.second.ind].line_st, "Procedure \"" + p.first + "\" was not defined.");
+            die(1);
+        }
+    }
 }
