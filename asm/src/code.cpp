@@ -85,7 +85,7 @@ bool masm::Code::read_code()
             break;
         }
         default:
-            err(fname, t.line, t.col, t.val.length(), _parsing, straytok, error, "A stray token that doesn't fit any rules was found.", _l.get_from_line(t.line), "Maybe a fluke? Forgot a keyword?");
+            err(fname, t.line, t.col, t.val.length(), _parsing, straytok, ERR_STR, "A stray token that doesn't fit any rules was found.", _l.get_from_line(t.line), "Maybe a fluke? Forgot a keyword?");
             return false;
         }
     }
@@ -99,13 +99,13 @@ bool masm::Code::handle_names(bool _proc)
         auto r = _l.next_token();
         if (!r.has_value())
         {
-            err(fname, t.line, t.col, t.col + 4, _parsing, syntaxerr, error, "Missing an identifier after the 'proc' keyword.", _l.get_from_line(t.line));
+            err(fname, t.line, t.col, t.col + 4, _parsing, syntaxerr, ERR_STR, "Missing an identifier after the 'proc' keyword.", _l.get_from_line(t.line));
             return false;
         }
         t = r.value();
         if (t.type != IDENTIFIER)
         {
-            err(fname, t.line, t.col, t.col + 4, _parsing, syntaxerr, error, "Missing an identifier after the 'proc' keyword.", _l.get_from_line(t.line));
+            err(fname, t.line, t.col, t.col + 4, _parsing, syntaxerr, ERR_STR, "Missing an identifier after the 'proc' keyword.", _l.get_from_line(t.line));
             return false;
         }
     }
@@ -119,13 +119,13 @@ bool masm::Code::handle_names(bool _proc)
         if (!pl)
         {
             // redeclaration
-            err(fname, t.line, t.col, t.val.length(), _parsing, redeclr, error, "Redeclaration of proc \"" + t.val + "\".", _l.get_from_line(t.line));
+            err(fname, t.line, t.col, t.val.length(), _parsing, redeclr, ERR_STR, "Redeclaration of proc \"" + t.val + "\".", _l.get_from_line(t.line));
             return false;
         }
         if (!lbl)
         {
             // The label was defined before the procedure was declared
-            err(fname, t.line, t.col, t.val.length(), _parsing, noorder, error, "Declaration of proc \"" + t.val + "\" after the definition of its label.", _l.get_from_line(t.line));
+            err(fname, t.line, t.col, t.val.length(), _parsing, noorder, ERR_STR, "Declaration of proc \"" + t.val + "\" after the definition of its label.", _l.get_from_line(t.line));
             return false;
         }
     }
@@ -137,7 +137,7 @@ bool masm::Code::handle_names(bool _proc)
             if (!lbl)
             {
                 // redefinition
-                err(fname, t.line, t.col, t.val.length(), _parsing, redefin, error, "Redefinition of procedure label \"" + t.val + "\".", _l.get_from_line(t.line));
+                err(fname, t.line, t.col, t.val.length(), _parsing, redefin, ERR_STR, "Redefinition of procedure label \"" + t.val + "\".", _l.get_from_line(t.line));
                 return false;
             }
         }
@@ -146,7 +146,7 @@ bool masm::Code::handle_names(bool _proc)
             if (!lbl)
             {
                 // redefinition
-                err(fname, t.line, t.col, t.val.length(), _parsing, redefin, error, "Redefinition of label \"" + t.val + "\".", _l.get_from_line(t.line));
+                err(fname, t.line, t.col, t.val.length(), _parsing, redefin, ERR_STR, "Redefinition of label \"" + t.val + "\".", _l.get_from_line(t.line));
                 return false;
             }
         }
@@ -170,7 +170,11 @@ bool masm::Code::handle_names(bool _proc)
         (*proc_list)[t.val] = p;
     }
     else
+    {
         (*label_list)[t.val] = nodes->size() - 1;
+        if (!pl)
+            in_pl->second.defined = true;
+    }
     return true;
 }
 
@@ -185,19 +189,19 @@ bool masm::Code::handle_arithmetic_unsigned(NodeKind k)
     auto res = _l.next_token();
     if (!res.has_value())
     {
-        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, error, "Expected a register here after the arithmetic instruction.", _l.get_from_line(regr_line));
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the arithmetic instruction.", _l.get_from_line(regr_line));
         return false;
     }
     t = res.value();
     if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
     {
-        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, error, "Expected a register here after the arithmetic instruction.", _l.get_from_line(t.line));
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the arithmetic instruction.", _l.get_from_line(t.line));
         return false;
     }
     res = _l.next_token();
     if (!res.has_value())
     {
-        err(fname, _l.get_line(), _l.get_col(), 0, _parsing, syntaxerr, error, "Expected a register, variable or another register here after the first operand.", _l.get_from_line(_l.get_line()));
+        err(fname, _l.get_line(), _l.get_col(), 0, _parsing, syntaxerr, ERR_STR, "Expected a register, variable or another register here after the first operand.", _l.get_from_line(_l.get_line()));
         return false;
     }
     a->reg = regr_map.find(t.type)->second;
@@ -208,7 +212,7 @@ bool masm::Code::handle_arithmetic_unsigned(NodeKind k)
     {
         if (check_var(t.val))
         {
-            err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, error, "The variable \"" + t.val + "\" doesn't exist.", _l.get_from_line(t.line));
+            err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "The variable \"" + t.val + "\" doesn't exist.", _l.get_from_line(t.line));
             return false;
         }
         node.kind = (NodeKind)(k + 2);
@@ -229,7 +233,7 @@ bool masm::Code::handle_arithmetic_unsigned(NodeKind k)
             a->second_oper = regr_map.find(t.type)->second;
             break;
         }
-        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, error, "Expected a register, variable or another register here after the first operand.", _l.get_from_line(t.line));
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register, variable or another register here after the first operand.", _l.get_from_line(t.line));
         return false;
     }
     }

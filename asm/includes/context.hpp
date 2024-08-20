@@ -11,6 +11,7 @@
 #include "data.hpp"
 #include "nodes.hpp"
 #include "code.hpp"
+#include "codegen.hpp"
 
 namespace masm
 {
@@ -36,6 +37,8 @@ namespace masm
         std::unordered_map<std::string, Procedure> proc_list; // the list of all procedures
         std::unordered_map<std::string, size_t> labels;
 
+        CodeGen gen;
+
     public:
         Context() = default;
 
@@ -47,7 +50,7 @@ namespace masm
 
         void setup_for_new_file(std::string npath);
 
-        void analyse_proc(); // check if any procedure was left undefined 
+        void analyse_proc(); // check if any procedure was left undefined
     };
 };
 

@@ -26,9 +26,9 @@
 #define BOLD_BLUE "\033[1m\033[34m"
 #define BOLD_WHITE "\033[1m\033[37m"
 
-#define error "error"
-#define warning "warning"
-#define notice "note"
+#define ERR_STR "ERROR"
+#define WARN_STR "WARNING"
+#define NOTICE_STR "NOTE"
 
 #define building "Building"
 #define _parsing "Parsing"

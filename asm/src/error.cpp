@@ -4,15 +4,15 @@ void masm::err(std::string path, size_t line, size_t col_st, size_t col_ed, std:
 {
     // Determine color based on error level
     const char *level_color = WHITE;
-    if (lvl == "error")
+    if (lvl == ERR_STR)
     {
         level_color = BOLD_RED;
     }
-    else if (lvl == "warning")
+    else if (lvl == WARN_STR)
     {
         level_color = BOLD_YELLOW;
     }
-    else if (lvl == "info")
+    else if (lvl == NOTICE_STR)
     {
         level_color = BOLD_BLUE;
     }
@@ -56,15 +56,15 @@ void masm::err(std::string path, size_t line, size_t col_st, size_t col_ed, std:
 void masm::ld_err(std::string path, size_t line, std::string _while, std::string _err_name, std::string lvl, std::string msg, std::string errline)
 {
     const char *level_color = WHITE;
-    if (lvl == "error")
+    if (lvl == ERR_STR)
     {
         level_color = BOLD_RED;
     }
-    else if (lvl == "warning")
+    else if (lvl == WARN_STR)
     {
         level_color = BOLD_YELLOW;
     }
-    else if (lvl == "info")
+    else if (lvl == NOTICE_STR)
     {
         level_color = BOLD_BLUE;
     }

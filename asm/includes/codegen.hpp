@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include "symtable.hpp"
 #include "nodes.hpp"
-#include "error.h"
+#include "error.hpp"
 #include "merry_config.h"
 #include "merry_types.h"
 #include "merry_opcodes.h"
@@ -18,7 +18,7 @@ namespace masm
         {
             struct
             {
-#ifdef _MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_
+#if _MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_
                 mbyte_t b8, b7, b6, b5, b4, b3, b2, b1;
 #else
                 mbyte_t b1, b2, b3, b5, b6, b4, b7, b8;
@@ -52,6 +52,10 @@ namespace masm
         void generate_data();
 
         void give_address_to_labels();
+
+        void handle_arithmetic_reg_imm(msize_t op, NodeArithmetic *a);
+        void handle_arithmetic_reg_reg(msize_t op, NodeArithmetic *a);
+        void handle_arithmetic_reg_var(NodeArithmetic *a, msize_t op);
     };
 };
 

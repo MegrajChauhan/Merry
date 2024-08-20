@@ -38,7 +38,7 @@ void masm::Context::read_file(std::string file)
         curr_file_type = CODE;
     else
     {
-        err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col() - file.length(), inp_file_lexer.get_col(), building, invalext, error, "Unknown file type. Expected \".mdat\" or \".masm\"", inp_file_lexer.extract_line());
+        err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col() - file.length(), inp_file_lexer.get_col(), building, invalext, ERR_STR, "Unknown file type. Expected \".mdat\" or \".masm\"", inp_file_lexer.extract_line());
         die(1);
     }
 
@@ -70,7 +70,7 @@ void masm::Context::start()
         std::string _file = inp_file_lexer.get_a_group();
         if (_file.empty() && inp_file_lexer.eof())
         {
-            err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, error, "Expected a data file after 'data' that needs to be read.", inp_file_lexer.extract_line());
+            err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected a data file after 'data' that needs to be read.", inp_file_lexer.extract_line());
             die(1);
         }
         setup_for_new_file(_file);
@@ -95,6 +95,8 @@ void masm::Context::start()
         }
     }
     analyse_proc();
+    gen.setup_codegen(&table, &nodes);
+    gen.generate();
 }
 
 void masm::Context::setup_for_new_file(std::string npath)

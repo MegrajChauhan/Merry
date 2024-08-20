@@ -73,7 +73,7 @@ std::optional<masm::Token> masm::Lexer::next_token()
             }
             else
             {
-                err(*filepath.get(), line, col, col + 1, _lexing, syntaxerr, error, "This is not how you use comments.", extract_line());
+                err(*filepath.get(), line, col, col + 1, _lexing, syntaxerr, ERR_STR, "This is not how you use comments.", extract_line());
                 return {};
             }
         }
@@ -119,7 +119,7 @@ std::optional<masm::Token> masm::Lexer::next_token()
             }
             else
             {
-                err(*filepath.get(), line, col, col + 1, _lexing, invalidtok, error, "Cannot build a token from this.", extract_line());
+                err(*filepath.get(), line, col, col + 1, _lexing, invalidtok, ERR_STR, "Cannot build a token from this.", extract_line());
                 return {};
             }
         }
@@ -168,7 +168,7 @@ std::optional<masm::Token> masm::Lexer::group_num()
         }
         if (d_count > 1)
         {
-            err(*filepath.get(), line, st, col, _lexing, syntaxerr, error, "More than one '.' are not allowed.", extract_line());
+            err(*filepath.get(), line, st, col, _lexing, syntaxerr, ERR_STR, "More than one '.' are not allowed.", extract_line());
             return {};
         }
         val += c;
@@ -255,7 +255,7 @@ std::optional<masm::Token> masm::Lexer::gather_quote_string()
     if (c != '\"')
     {
         // The only thing that can happen is we reached EOF
-        err(*filepath.get(), l, st, st + 1, _lexing, syntaxerr, error, "This quote was never terminated.", get_from_line(l));
+        err(*filepath.get(), l, st, st + 1, _lexing, syntaxerr, ERR_STR, "This quote was never terminated.", get_from_line(l));
         return {};
     }
     if (str.empty())

@@ -85,7 +85,7 @@ bool masm::Data::read_data()
             break;
         }
         default:
-            err(fname, t.line, t.col, t.val.length(), _parsing, straytok, error, "A stray token that doesn't fit any rules was found.", l.get_from_line(t.line), "Maybe a fluke? Forgot a keyword?");
+            err(fname, t.line, t.col, t.val.length(), _parsing, straytok, ERR_STR, "A stray token that doesn't fit any rules was found.", l.get_from_line(t.line), "Maybe a fluke? Forgot a keyword?");
             return false;
         }
     }
@@ -100,13 +100,13 @@ bool masm::Data::handle_defines(DataType t)
     auto res = l.next_token();
     if (!res.has_value())
     {
-        err(fname, l.get_line(), l.get_col(), l.get_col() + 1, _parsing, syntaxerr, error, "Expected an identifier after a definition key.", l.extract_line());
+        err(fname, l.get_line(), l.get_col(), l.get_col() + 1, _parsing, syntaxerr, ERR_STR, "Expected an identifier after a definition key.", l.extract_line());
         return false;
     }
     id = res.value();
     if (id.type != IDENTIFIER)
     {
-        err(fname, id.line, id.col, l.get_col(), _parsing, syntaxerr, error, "Expected an identifier after a definition key.", l.extract_line());
+        err(fname, id.line, id.col, l.get_col(), _parsing, syntaxerr, ERR_STR, "Expected an identifier after a definition key.", l.extract_line());
         return false;
     }
     res = l.next_token();
@@ -138,7 +138,7 @@ bool masm::Data::add_variable(Variable v)
     {
         // redefinition
         Variable tmp = sym->variables[res->second];
-        ld_err(fname, v.line, _parsing, redefin, error, "Redefinition of variable \"" + v.name + "\"; In line " + std::to_string(tmp.line), l.get_from_line(v.line));
+        ld_err(fname, v.line, _parsing, redefin, ERR_STR, "Redefinition of variable \"" + v.name + "\"; In line " + std::to_string(tmp.line), l.get_from_line(v.line));
         fu_err(*tmp.file.get(), tmp.line, "Defined here firstly as a variable.");
         return false;
     }
@@ -153,13 +153,13 @@ bool masm::Data::handle_strings()
     auto res = l.next_token();
     if (!res.has_value())
     {
-        err(fname, l.get_line(), l.get_col(), l.get_col() + 1, _parsing, syntaxerr, error, "Expected an identifier after a definition key.", l.extract_line());
+        err(fname, l.get_line(), l.get_col(), l.get_col() + 1, _parsing, syntaxerr, ERR_STR, "Expected an identifier after a definition key.", l.extract_line());
         return false;
     }
     id = res.value();
     if (id.type != IDENTIFIER)
     {
-        err(fname, id.line, id.col, l.get_col(), _parsing, syntaxerr, error, "Expected an identifier after a definition key.", l.extract_line());
+        err(fname, id.line, id.col, l.get_col(), _parsing, syntaxerr, ERR_STR, "Expected an identifier after a definition key.", l.extract_line());
         return false;
     }
     l.set_flag_ignore_dots(true);
@@ -167,14 +167,14 @@ bool masm::Data::handle_strings()
     res = l.next_token();
     if (!res.has_value())
     {
-        err(fname, id.line, id.col, id.val.length(), _parsing, syntaxerr, error, "A string cannot have a default value.", l.get_from_line(id.line));
+        err(fname, id.line, id.col, id.val.length(), _parsing, syntaxerr, ERR_STR, "A string cannot have a default value.", l.get_from_line(id.line));
         return false;
     }
     _t = res.value();
     std::string final_val;
     if (_t.type == OPER_DOT)
     {
-        err(fname, _t.line, _t.col, 0, _parsing, syntaxerr, error, "The strings should not start with a '.'", l.get_from_line(_t.line));
+        err(fname, _t.line, _t.col, 0, _parsing, syntaxerr, ERR_STR, "The strings should not start with a '.'", l.get_from_line(_t.line));
         return false;
     }
     final_val += _t.val;
@@ -184,7 +184,7 @@ bool masm::Data::handle_strings()
         res = l.next_token();
         if (!res.has_value())
         {
-            err(fname, l.get_line(), l.get_col(), 0, _parsing, syntaxerr, error, "Expected a value or a string after the '.' operator.", l.extract_line());
+            err(fname, l.get_line(), l.get_col(), 0, _parsing, syntaxerr, ERR_STR, "Expected a value or a string after the '.' operator.", l.extract_line());
             return false;
         }
         _t = res.value();
@@ -201,7 +201,7 @@ bool masm::Data::handle_strings()
             break;
         }
         default:
-            err(fname, _t.line, _t.col, 0, _parsing, syntaxerr, error, "There can only be either integers or strings after the '.' operator.", l.get_from_line(_t.line));
+            err(fname, _t.line, _t.col, 0, _parsing, syntaxerr, ERR_STR, "There can only be either integers or strings after the '.' operator.", l.get_from_line(_t.line));
             return false;
         }
         res = l.next_token();
