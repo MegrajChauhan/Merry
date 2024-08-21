@@ -87,7 +87,7 @@ std::optional<masm::Token> masm::Lexer::next_token()
             t = group_word();
             break;
         }
-        else if (std::isdigit(c))
+        else if (std::isdigit(c) || (c == '-' && std::isdigit(peek())))
         {
             auto res = group_num();
             if (!res.has_value())
@@ -158,6 +158,11 @@ std::optional<masm::Token> masm::Lexer::group_num()
     int d_count = 0;
     std::string val;
     size_t st = col;
+    if (c == '-')
+    {
+        val += c;
+        consume();
+    }
     while (std::isdigit(c) || c == '.')
     {
         if (c == '.')

@@ -1,6 +1,6 @@
 #include "data.hpp"
 
-void masm::Data::setup_for_read(SymbolTable* t, std::shared_ptr<std::string> f, std::shared_ptr<std::string> fconts)
+void masm::Data::setup_for_read(SymbolTable *t, std::shared_ptr<std::string> f, std::shared_ptr<std::string> fconts)
 {
     sym = t;
     file = f;
@@ -54,27 +54,39 @@ bool masm::Data::read_data()
                 return false;
             break;
         }
+        case KEY_DF:
+        {
+            if (!handle_defines(FLOAT))
+                return false;
+            break;
+        }
+        case KEY_DLF:
+        {
+            if (!handle_defines(LFLOAT))
+                return false;
+            break;
+        }
         case KEY_RB:
         {
-            if (!handle_defines(BYTE))
+            if (!handle_defines(RESB))
                 return false;
             break;
         }
         case KEY_RW:
         {
-            if (!handle_defines(WORD))
+            if (!handle_defines(RESW))
                 return false;
             break;
         }
         case KEY_RD:
         {
-            if (!handle_defines(DWORD))
+            if (!handle_defines(RESD))
                 return false;
             break;
         }
         case KEY_RQ:
         {
-            if (!handle_defines(QWORD))
+            if (!handle_defines(RESQ))
                 return false;
             break;
         }
@@ -115,7 +127,8 @@ bool masm::Data::handle_defines(DataType t)
     else
     {
         value = res.value();
-        if (value.type != NUM_INT)
+        // Yes, db, dw etc can also have floats but they are ignored in the final conversion
+        if (value.type != NUM_INT && value.type != NUM_FLOAT)
         {
             has_value = false;
             read_again = false;

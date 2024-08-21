@@ -24,7 +24,10 @@ rw q
 rd r 3
 rq s 5
 
-;; dq a
+df float 1234.5
+dlf long_float -873248.455353
+
+;; Using rd for floats and rq for long_float is enough
 
 ;; To meet the VM's memory alignment requirements, if the number of bytes reserved are not aligned
 ;; the assembler will pad the memory

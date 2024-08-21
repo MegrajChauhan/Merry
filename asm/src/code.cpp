@@ -84,6 +84,84 @@ bool masm::Code::read_code()
                 return false;
             break;
         }
+        case INST_IADD:
+        {
+            if (!handle_arithmetic_signed(IADD_IMM))
+                return false;
+            break;
+        }
+        case INST_ISUB:
+        {
+            if (!handle_arithmetic_signed(ISUB_IMM))
+                return false;
+            break;
+        }
+        case INST_IMUL:
+        {
+            if (!handle_arithmetic_signed(IMUL_IMM))
+                return false;
+            break;
+        }
+        case INST_IDIV:
+        {
+            if (!handle_arithmetic_signed(IDIV_IMM))
+                return false;
+            break;
+        }
+        case INST_IMOD:
+        {
+            if (!handle_arithmetic_signed(IMOD_IMM))
+                return false;
+            break;
+        }
+        case INST_ADDF:
+        {
+            if (!handle_arithmetic_float(FADD))
+                return false;
+            break;
+        }
+        case INST_ADDLF:
+        {
+            if (!handle_arithmetic_float(LFADD))
+                return false;
+            break;
+        }
+        case INST_SUBF:
+        {
+            if (!handle_arithmetic_float(FSUB))
+                return false;
+            break;
+        }
+        case INST_SUBLF:
+        {
+            if (!handle_arithmetic_float(LFSUB))
+                return false;
+            break;
+        }
+        case INST_MULF:
+        {
+            if (!handle_arithmetic_float(FMUL))
+                return false;
+            break;
+        }
+        case INST_MULLF:
+        {
+            if (!handle_arithmetic_float(LFMUL))
+                return false;
+            break;
+        }
+        case INST_DIVF:
+        {
+            if (!handle_arithmetic_float(FDIV))
+                return false;
+            break;
+        }
+        case INST_DIVLF:
+        {
+            if (!handle_arithmetic_float(LFDIV))
+                return false;
+            break;
+        }
         default:
             err(fname, t.line, t.col, t.val.length(), _parsing, straytok, ERR_STR, "A stray token that doesn't fit any rules was found.", _l.get_from_line(t.line), "Maybe a fluke? Forgot a keyword?");
             return false;
@@ -236,6 +314,100 @@ bool masm::Code::handle_arithmetic_unsigned(NodeKind k)
         err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register, variable or another register here after the first operand.", _l.get_from_line(t.line));
         return false;
     }
+    }
+    nodes->push_back(std::move(node));
+    return true;
+}
+
+bool masm::Code::handle_arithmetic_signed(NodeKind k)
+{
+    Node node;
+    node.col_st = regr_col;
+    node.line_st = regr_line;
+    node.file = file;
+    node.node = std::make_unique<NodeArithmetic>();
+    NodeArithmetic *a = (NodeArithmetic *)node.node.get();
+    auto res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the signed arithmetic instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    t = res.value();
+    if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the signed arithmetic instruction.", _l.get_from_line(t.line));
+        return false;
+    }
+    res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, _l.get_line(), _l.get_col(), 0, _parsing, syntaxerr, ERR_STR, "Expected a register or another register here after the first operand.", _l.get_from_line(_l.get_line()));
+        return false;
+    }
+    a->reg = regr_map.find(t.type)->second;
+    t = res.value();
+    switch (t.type)
+    {
+    case NUM_INT:
+    {
+        node.kind = k;
+        a->second_oper = t.val;
+        break;
+    }
+    default:
+    {
+        if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
+        {
+            node.kind = (NodeKind)(k + 1);
+            a->second_oper = regr_map.find(t.type)->second;
+            break;
+        }
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register or another register here after the first operand.", _l.get_from_line(t.line));
+        return false;
+    }
+    }
+    nodes->push_back(std::move(node));
+    return true;
+}
+
+bool masm::Code::handle_arithmetic_float(NodeKind k)
+{
+    Node node;
+    node.col_st = regr_col;
+    node.line_st = regr_line;
+    node.file = file;
+    node.node = std::make_unique<NodeArithmetic>();
+    NodeArithmetic *a = (NodeArithmetic *)node.node.get();
+    auto res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the floating-point arithmetic instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    t = res.value();
+    if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the floating-point arithmetic instruction.", _l.get_from_line(t.line));
+        return false;
+    }
+    res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, _l.get_line(), _l.get_col(), 0, _parsing, syntaxerr, ERR_STR, "Expected a register or another register here after the first operand.", _l.get_from_line(_l.get_line()));
+        return false;
+    }
+    a->reg = regr_map.find(t.type)->second;
+    t = res.value();
+    if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        node.kind = (NodeKind)(k + 1);
+        a->second_oper = regr_map.find(t.type)->second;
+    }
+    else
+    {
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register or another register here after the first operand.", _l.get_from_line(t.line));
+        return false;
     }
     nodes->push_back(std::move(node));
     return true;

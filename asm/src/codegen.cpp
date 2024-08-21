@@ -54,9 +54,11 @@ void masm::CodeGen::handle_arithmetic_reg_var(NodeArithmetic *a, msize_t op)
         b.bytes.b1 = (op + 1);
         break;
     case DWORD:
+    case FLOAT:
         b.bytes.b1 = (op + 2);
         break;
     case QWORD:
+    case LFLOAT:
         b.bytes.b1 = (op + 3);
         break;
     }
@@ -132,6 +134,30 @@ bool masm::CodeGen::generate()
         case MOD_MEM:
             handle_arithmetic_reg_var((NodeArithmetic *)node.node.get(), OP_MOD_MEMB);
             break;
+        case FADD:
+            handle_arithmetic_reg_reg(OP_FADD32, (NodeArithmetic *)node.node.get());
+            break;
+        case LFADD:
+            handle_arithmetic_reg_reg(OP_FADD, (NodeArithmetic *)node.node.get());
+            break;
+        case FSUB:
+            handle_arithmetic_reg_reg(OP_FSUB32, (NodeArithmetic *)node.node.get());
+            break;
+        case LFSUB:
+            handle_arithmetic_reg_reg(OP_FSUB, (NodeArithmetic *)node.node.get());
+            break;
+        case FMUL:
+            handle_arithmetic_reg_reg(OP_FMUL32, (NodeArithmetic *)node.node.get());
+            break;
+        case LFMUL:
+            handle_arithmetic_reg_reg(OP_FMUL, (NodeArithmetic *)node.node.get());
+            break;
+        case FDIV:
+            handle_arithmetic_reg_reg(OP_FDIV32, (NodeArithmetic *)node.node.get());
+            break;
+        case LFDIV:
+            handle_arithmetic_reg_reg(OP_FDIV, (NodeArithmetic *)node.node.get());
+            break;
         }
     }
     for (auto b : code)
@@ -141,17 +167,21 @@ bool masm::CodeGen::generate()
     printf("\n");
     for (auto b : data)
     {
-        std::cout << ((int)b)<< "\n";
+        std::cout << ((int)b) << "\n";
+    }
+    for (auto b : str_data)
+    {
+        std::cout << ((int)b) << "\n";
     }
     printf("\n");
     for (auto l : label_addr)
     {
-        printf("%s: %lX\n", l.first, l.second);
+        printf("%s: %lX\n", l.first.c_str(), l.second);
     }
     printf("\n");
     for (auto l : data_addr)
     {
-        printf("%s: %lX\n", l.first, l.second);
+        printf("%s: %lX\n", l.first.c_str(), l.second);
     }
     return true;
 }
@@ -173,32 +203,62 @@ void masm::CodeGen::generate_data()
         case WORD:
         {
             data_addr[var.name] = start;
-            data.push_back(std::stoull(var.value) & 0xFFFF);
+            mword_t v = std::stoull(var.value);
+            data.push_back(v & 0xFF);
+            data.push_back((v >> 8) & 0xFF);
             start += 2;
             break;
         }
         case DWORD:
         {
             data_addr[var.name] = start;
-            data.push_back(std::stoull(var.value) & 0xFFFFFFFF);
+            mdword_t v = std::stoull(var.value);
+            data.push_back(v & 0xFF);
+            data.push_back((v >> 8) & 0xFF);
+            data.push_back((v >> 16) & 0xFF);
+            data.push_back((v >> 24) & 0xFF);
             start += 4;
             break;
         }
         case QWORD:
         {
             data_addr[var.name] = start;
-            data.push_back(std::stoull(var.value));
+            mqword_t v = std::stoull(var.value);
+            data.push_back(v & 0xFF);
+            data.push_back((v >> 8) & 0xFF);
+            data.push_back((v >> 16) & 0xFF);
+            data.push_back((v >> 24) & 0xFF);
+            data.push_back((v >> 32) & 0xFF);
+            data.push_back((v >> 40) & 0xFF);
+            data.push_back((v >> 48) & 0xFF);
+            data.push_back((v >> 56) & 0xFF);
             start += 8;
             break;
         }
-        case STRING:
+        case FLOAT:
         {
             data_addr[var.name] = start;
-            for (auto _c : var.value)
-            {
-                data.push_back(_c);
-            }
-            start += var.value.length();
+            mdword_t v = (mdword_t)(std::stof(var.value));
+            data.push_back(v & 0xFF);
+            data.push_back((v >> 8) & 0xFF);
+            data.push_back((v >> 16) & 0xFF);
+            data.push_back((v >> 24) & 0xFF);
+            start += 4;
+            break;
+        }
+        case LFLOAT:
+        {
+            data_addr[var.name] = start;
+            mqword_t v = (mqword_t)(std::stod(var.value));
+            data.push_back(v & 0xFF);
+            data.push_back((v >> 8) & 0xFF);
+            data.push_back((v >> 16) & 0xFF);
+            data.push_back((v >> 24) & 0xFF);
+            data.push_back((v >> 32) & 0xFF);
+            data.push_back((v >> 40) & 0xFF);
+            data.push_back((v >> 48) & 0xFF);
+            data.push_back((v >> 56) & 0xFF);
+            start += 8;
             break;
         }
         case RESB:
@@ -235,6 +295,22 @@ void masm::CodeGen::generate_data()
             for (size_t i = 0; i < len; i++)
                 data.push_back(0);
             start += len;
+            break;
+        }
+        }
+    }
+    for (auto var : table->variables)
+    {
+        switch (var.type)
+        {
+        case STRING:
+        {
+            data_addr[var.name] = start;
+            for (auto _c : var.value)
+            {
+                str_data.push_back(_c);
+            }
+            start += var.value.length();
             break;
         }
         }

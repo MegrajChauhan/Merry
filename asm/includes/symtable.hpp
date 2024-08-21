@@ -14,6 +14,8 @@ namespace masm
         WORD,
         DWORD,
         QWORD,
+        FLOAT,
+        LFLOAT,
         STRING,
         RESB,
         RESW,

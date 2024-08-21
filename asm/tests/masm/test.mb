@@ -1,8 +1,8 @@
 ;; ;; This is the "build script" for the project
 
-data test.mdat ;; Include the "test.mdat" data file and put its contents at first
-code test.masm ;; The code
-code test2.masm
+data tests/masm/test.mdat ;; Include the "test.mdat" data file and put its contents at first
+code tests/masm/test.masm ;; The code
+code tests/masm/test2.masm
 
 ;; Include the files as necessary just like above
 ;; For now these are the only two things that can be done with this file type

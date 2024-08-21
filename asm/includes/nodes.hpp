@@ -30,6 +30,25 @@ namespace masm
         MOD_REG,
         MOD_MEM,
 
+        IADD_IMM,
+        IADD_REG,
+        ISUB_IMM,
+        ISUB_REG,
+        IMUL_IMM,
+        IMUL_REG,
+        IDIV_IMM,
+        IDIV_REG,
+        IMOD_IMM,
+        IMOD_REG,
+
+        FADD,
+        FSUB,
+        FMUL,
+        FDIV,
+        LFADD,
+        LFSUB,
+        LFMUL,
+        LFDIV,
     };
 
     enum Register

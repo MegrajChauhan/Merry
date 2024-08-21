@@ -39,6 +39,48 @@ _just_a_label
   mod Ma, Mb    ;; regr % regr
   mod M1, a     ;; regr % variable
   
+  ;; There isn't much difference between the signed and unsigned version of the arithmetic
+  ;; instructions. If you provide immediates that are properly sign extended then that will work
+  ;; too. Signed and unsigned both affect the same set of flags and so using any is fine.
+  ;; The below iadd with immediate performs sign extension to the immediate which the unsigned
+  ;; doesn't do. Unless dedicated versions of the signed instructions for all lengths of data
+  ;; types is provided, the program has no choice but to perform the sign extension first and
+  ;; then proceeding to use the unsigned instructions. For eg: iadd M1, Mm1 assumes a 64-bit
+  ;; signed value in both registers. So you will have to perform a sign extension first.
+
+  iadd Mm5, -347 ;; treat as signed
+  iadd M1, Mm1
+  
+  isub Mm5, -347
+  isub M1, Mm1
+  
+  imul Mm5, -347
+  imul M1, Mm1
+  
+  idiv Mm5, -347
+  idiv M1, Mm1
+  
+  imod Mm5, -347
+  imod M1, Mm1
+
+  ;; NOTE: The assembler ignores all commas so you can do whatever you want.
+  
+  ;; FLoating point instructions don't take anything other than registers as operands
+  ;; Having immediates would be convinient, isn't it?
+  ;; I am getting new ideas as I develop the assembler so in future
+  addf M1, M2 ;; 32-bit floating point values
+  addlf M1, M2 ;; 64-bit floating point values
+
+  subf M1, M2 
+  sublf M1, M2
+
+  mulf M1, M2 
+  mullf M1, M2
+
+  divf M1, M2 
+  divlf M1, M2
+
+  ;; No mods for floats
 
 ;; Here is the thing.
 ;; A procedure or a label can have the same name as an identifier

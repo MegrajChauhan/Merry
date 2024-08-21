@@ -830,13 +830,17 @@ _MERRY_INTERNAL_ void merry_cmp_floats32(MerryCore *core, float val1, float val2
     // only these two flags are affected
 }
 
-_MERRY_ALWAYS_INLINE_ inline _exec_(add_imm){
+_MERRY_ALWAYS_INLINE_ inline _exec_(add_imm)
+{
     // add immediate value to a register
-    _ArithMeticImmFrame_(+)}
+    _ArithMeticImmFrame_(+);
+}
 
-_MERRY_ALWAYS_INLINE_ inline _exec_(add_reg){
+_MERRY_ALWAYS_INLINE_ inline _exec_(add_reg)
+{
     // add one register to another register
-    _ArithMeticRegFrame_(+)}
+    _ArithMeticRegFrame_(+);
+}
 
 _MERRY_ALWAYS_INLINE_ inline _exec_(sub_imm)
 {
@@ -850,11 +854,15 @@ _MERRY_ALWAYS_INLINE_ inline _exec_(sub_reg)
         core->greater = 1;
 }
 
-_MERRY_ALWAYS_INLINE_ inline _exec_(mul_imm){
-    _ArithMeticImmFrame_(*)}
+_MERRY_ALWAYS_INLINE_ inline _exec_(mul_imm)
+{
+    _ArithMeticImmFrame_(*);
+}
 
-_MERRY_ALWAYS_INLINE_ inline _exec_(mul_reg){
-    _ArithMeticRegFrame_(*)}
+_MERRY_ALWAYS_INLINE_ inline _exec_(mul_reg)
+{
+    _ArithMeticRegFrame_(*);
+}
 
 _exec_(div_imm)
 {
@@ -1164,31 +1172,41 @@ _lexec_(cmp_mem, mem_read func)
         core->greater = 1;
 }
 
-_exec_(iadd_imm){
+_exec_(iadd_imm)
+{
     // The processor will treat op1 and op2 as signed values
     // Since we will get a result that is also signed, we don't have to worry about anything
-    _SArithMeticImmFrame_(+)}
+    _SArithMeticImmFrame_(+);
+}
 
-_exec_(iadd_reg){
-    _SArithMeticRegFrame_(+)}
+_exec_(iadd_reg)
+{
+    _SArithMeticRegFrame_(+);
+}
 
 _exec_(isub_imm)
 {
-    _SArithMeticImmFrame_(-) if (core->flag.negative == 0)
+    _SArithMeticImmFrame_(-);
+    if (core->flag.negative == 0)
         core->greater = 1;
 }
 
 _exec_(isub_reg)
 {
-    _SArithMeticRegFrame_(-) if (core->flag.negative == 0)
+    _SArithMeticRegFrame_(-);
+    if (core->flag.negative == 0)
         core->greater = 1;
 }
 
-_exec_(imul_imm){
-    _SArithMeticImmFrame_(*)}
+_exec_(imul_imm)
+{
+    _SArithMeticImmFrame_(*);
+}
 
-_exec_(imul_reg){
-    _SArithMeticRegFrame_(*)}
+_exec_(imul_reg)
+{
+    _SArithMeticRegFrame_(*);
+}
 
 _exec_(idiv_imm)
 {
