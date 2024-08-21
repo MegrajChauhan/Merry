@@ -59,6 +59,8 @@ namespace masm
         void handle_arithmetic_reg_var(NodeArithmetic *a, msize_t op);
 
         void handle_mov_reg_imm(bool l, NodeMov *n);
+        void handle_mov_reg_reg(NodeMov *n, msize_t op);
+        void handle_mov_reg_var(NodeMov *n);
     };
 };
 

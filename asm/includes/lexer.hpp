@@ -71,6 +71,7 @@ namespace masm
         INST_MULLF,
         INST_DIVLF,
         INST_MOV,
+        INST_MOVL,
     };
 
     static std::unordered_map<std::string, TokenType>
@@ -126,6 +127,7 @@ namespace masm
                 {"mullf", INST_MULLF},
                 {"divlf", INST_DIVLF},
                 {"mov", INST_MOV},
+                {"movl", INST_MOVL},
                 {"proc", KEY_PROC}};
 
     static std::unordered_map<TokenType, Register>

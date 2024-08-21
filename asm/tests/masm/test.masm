@@ -85,7 +85,15 @@ _just_a_label
   mov Mf, 56379 ;; 32-bit immediates only
   mov Me, 7238.544 ;; only 32-bit floating point numbers
   mov Ma, Mb
-  mov Mc, d ;; translated to load instruction
+  mov Mc, d ;; translated to corresponding load instruction
+
+  movl Mf, 85789375389 ;; 64-bit immediates
+  movl Mm4, 378246.437437 ;; 64-bit floating point immediate
+  ;; movl M5, M3 ;; This won't throw an error but this is useless to do as the same can be done with mov M5, M3
+  ;; movl Ma, a  ;; The same as mov regr, any_var 
+
+  ;; It would have made more sense if "movl regr, var" forced the assembler to translate it to 
+  ;; 64-bit load no matter what but then that would be preety useless.
 
 ;; Here is the thing.
 ;; A procedure or a label can have the same name as an identifier

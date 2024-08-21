@@ -62,7 +62,7 @@ void masm::CodeGen::handle_arithmetic_reg_var(NodeArithmetic *a, msize_t op)
         b.bytes.b1 = (op + 3);
         break;
     }
-    b.full += var_addr & 0xFFFFFFFFFFFF;
+    b.full |= var_addr & 0xFFFFFFFFFFFF;
     code.push_back(b);
 }
 
@@ -160,6 +160,17 @@ bool masm::CodeGen::generate()
             break;
         case MOV_IMM:
             handle_mov_reg_imm(false, (NodeMov *)node.node.get());
+            break;
+        case MOV_REG:
+        case MOVL_REG:
+            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVE_REG);
+            break;
+        case MOV_VAR:
+        case MOVL_VAR:
+            handle_mov_reg_var((NodeMov *)node.node.get());
+            break;
+        case MOVL_IMM:
+            handle_mov_reg_imm(true, (NodeMov *)node.node.get());
             break;
         }
     }
@@ -347,6 +358,47 @@ void masm::CodeGen::handle_mov_reg_imm(bool l, NodeMov *n)
     code.push_back(b);
 }
 
+void masm::CodeGen::handle_mov_reg_reg(NodeMov *n, msize_t op)
+{
+    GenBinary b;
+    b.bytes.b1 = op;
+    b.bytes.b8 = n->reg;
+    b.bytes.b8 <<= 4;
+    b.bytes.b8 |= std::get<Register>(n->second_oper);
+    code.push_back(b);
+}
+
+void masm::CodeGen::handle_mov_reg_var(NodeMov *n)
+{
+    GenBinary b;
+    auto _s = std::get<std::pair<std::string, DataType>>(n->second_oper);
+    size_t addr = data_addr.find(_s.first)->second;
+    Variable dets = table->variables[table->_var_list[_s.first]];
+    b.bytes.b2 = n->reg;
+    b.full |= addr;
+    switch (dets.type)
+    {
+    case BYTE:
+    case STRING:
+    case RESB:
+        b.bytes.b1 = OP_LOADB;
+        break;
+    case WORD:
+    case RESW:
+        b.bytes.b1 = OP_LOADW;
+        break;
+    case DWORD:
+    case RESD:
+        b.bytes.b1 = OP_LOADD;
+        break;
+    case QWORD:
+    case RESQ:
+        b.bytes.b1 = OP_LOAD;
+        break;
+    }
+    code.push_back(b);
+}
+
 void masm::CodeGen::give_address_to_labels()
 {
     size_t i = 0;
@@ -364,7 +416,12 @@ void masm::CodeGen::give_address_to_labels()
         default:
             if (l.kind >= NOP)
                 i++;
-            // for instructions that take two qwords, we need another one here
+            switch (l.kind)
+            {
+            case MOVL_IMM:
+                i++;
+                break;
+            }
         }
     }
 }

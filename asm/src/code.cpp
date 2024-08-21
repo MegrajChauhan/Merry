@@ -168,6 +168,12 @@ bool masm::Code::read_code()
                 return false;
             break;
         }
+        case INST_MOVL:
+        {
+            if (!handle_mov(MOVL_IMM))
+                return false;
+            break;
+        }
 
         default:
             err(fname, t.line, t.col, t.val.length(), _parsing, straytok, ERR_STR, "A stray token that doesn't fit any rules was found.", _l.get_from_line(t.line), "Maybe a fluke? Forgot a keyword?");
