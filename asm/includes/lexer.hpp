@@ -72,6 +72,12 @@ namespace masm
         INST_DIVLF,
         INST_MOV,
         INST_MOVL,
+        INST_MOVB,
+        INST_MOVW,
+        INST_MOVD,
+        INST_MOVESXB,
+        INST_MOVESXW,
+        INST_MOVESXD, // there is no need for 64-bit which should be obvious
     };
 
     static std::unordered_map<std::string, TokenType>
@@ -128,6 +134,12 @@ namespace masm
                 {"divlf", INST_DIVLF},
                 {"mov", INST_MOV},
                 {"movl", INST_MOVL},
+                {"movb", INST_MOVB},
+                {"movw", INST_MOVW},
+                {"movd", INST_MOVD},
+                {"movsxb", INST_MOVESXB},
+                {"movsxw", INST_MOVESXW},
+                {"movsxd", INST_MOVESXD},
                 {"proc", KEY_PROC}};
 
     static std::unordered_map<TokenType, Register>

@@ -16,7 +16,7 @@ namespace masm
         // F to unique or shared pointers ;)
         std::vector<Node> *nodes;
         std::unordered_map<std::string, Procedure> *proc_list;
-        std::unordered_map<std::string, size_t>* label_list;
+        std::unordered_map<std::string, size_t> *label_list;
         Lexer _l;
         std::shared_ptr<std::string> file;
         std::string fname;
@@ -29,7 +29,7 @@ namespace masm
     public:
         Code() = default;
 
-        void setup_code_read(std::vector<Node> *n, std::unordered_map<std::string, Procedure> *pl, std::shared_ptr<std::string> fn, std::shared_ptr<std::string> fcont, SymbolTable *sym, std::unordered_map<std::string, size_t>* lbl_list);
+        void setup_code_read(std::vector<Node> *n, std::unordered_map<std::string, Procedure> *pl, std::shared_ptr<std::string> fn, std::shared_ptr<std::string> fcont, SymbolTable *sym, std::unordered_map<std::string, size_t> *lbl_list);
 
         bool read_code();
 
@@ -42,6 +42,8 @@ namespace masm
         bool handle_arithmetic_signed(NodeKind k);
 
         bool handle_arithmetic_float(NodeKind k);
+
+        bool handle_movX(NodeKind k);
 
         bool check_var(std::string name);
     };

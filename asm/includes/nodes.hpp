@@ -57,6 +57,22 @@ namespace masm
         MOVL_IMM,
         MOVL_REG,
         MOVL_VAR,
+
+        MOVB,
+        MOVW,
+        MOVD,
+
+        MOVSXB_IMM,
+        MOVSXB_REG,
+        MOVSXB_VAR,
+
+        MOVSXW_IMM,
+        MOVSXW_REG,
+        MOVSXW_VAR,
+
+        MOVSXD_IMM,
+        MOVSXD_REG,
+        MOVSXD_VAR,
     };
 
     enum Register

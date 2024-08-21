@@ -92,8 +92,32 @@ _just_a_label
   ;; movl M5, M3 ;; This won't throw an error but this is useless to do as the same can be done with mov M5, M3
   ;; movl Ma, a  ;; The same as mov regr, any_var 
 
+  ;; These below only work on registers
+  movb Ma, Mb ;; move the lowest byte from Mb to Ma, overwrites the above bytes of Ma
+  movw Ma, Mb ;; move the lower 2 bytes from Mb to Ma, overwrites the above bytes of Ma
+  movd Ma, Mb ;; move the lower 4 bytes from Mb to Ma, overwrites the above bytes of Ma
+
   ;; It would have made more sense if "movl regr, var" forced the assembler to translate it to 
   ;; 64-bit load no matter what but then that would be preety useless.
+
+  ;; These instructions will ignore the numbers after the '.'
+  movsxb Ma, 65   ;; for bytes only
+  movsxw Ma, 7236 ;; for word only
+  movsxd Ma, -1739 ;; for dwords only 
+
+  movsxb Ma, Mb ;; sign extends only the specified number of bytes(overwrites the higher bytes)
+  movsxw Ma, Mb ;; sign extends only the specified number of bytes(overwrites the higher bytes)
+  movsxd Ma, Mb ;; sign extends only the specified number of bytes(overwrites the higher bytes) 
+  
+  movsxb Ma, a ;; translated to corresponding load and movesxX instruction
+  movsxw Ma, a ;; translated to corresponding load and movesxX instruction
+  movsxd Ma, a ;; translated to corresponding load and movesxX instruction
+  
+  ;; Jump instruction has two formats in truth.
+  ;; One takes the literal address to jump to while the other takes an offset
+  ;; Taking an offset isn't really useful for now
+  ;; So we will only have one type of JMP.
+  jmp _just_a_label ;; only takes labels as the operand.
 
 ;; Here is the thing.
 ;; A procedure or a label can have the same name as an identifier

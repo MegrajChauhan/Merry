@@ -174,7 +174,42 @@ bool masm::Code::read_code()
                 return false;
             break;
         }
-
+        case INST_MOVB:
+        {
+            if (!handle_movX(MOVB))
+                return false;
+            break;
+        }
+        case INST_MOVW:
+        {
+            if (!handle_movX(MOVW))
+                return false;
+            break;
+        }
+        case INST_MOVD:
+        {
+            if (!handle_movX(MOVD))
+                return false;
+            break;
+        }
+        case INST_MOVESXB:
+        {
+            if (!handle_mov(MOVSXB_IMM))
+                return false;
+            break;
+        }
+        case INST_MOVESXW:
+        {
+            if (!handle_mov(MOVSXW_IMM))
+                return false;
+            break;
+        }
+        case INST_MOVESXD:
+        {
+            if (!handle_mov(MOVSXD_IMM))
+                return false;
+            break;
+        }
         default:
             err(fname, t.line, t.col, t.val.length(), _parsing, straytok, ERR_STR, "A stray token that doesn't fit any rules was found.", _l.get_from_line(t.line), "Maybe a fluke? Forgot a keyword?");
             return false;
@@ -399,6 +434,49 @@ bool masm::Code::handle_mov(NodeKind k)
     }
     nodes->push_back(std::move(node));
     return true;
+}
+
+bool masm::Code::handle_movX(NodeKind k)
+{
+    Node node;
+    node.kind = k;
+    node.node = std::make_unique<NodeMov>();
+
+    // we don't really need info for this node and so we ignore the columns and such metadata
+    NodeMov *a = (NodeMov *)node.node.get();
+    auto res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the mov instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    t = res.value();
+    if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the mov instruction.", _l.get_from_line(t.line));
+        return false;
+    }
+    // now for the second register operand
+    res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, _l.get_line(), _l.get_col(), 0, _parsing, syntaxerr, ERR_STR, "Expected a register here after the first operand.", _l.get_from_line(_l.get_line()));
+        return false;
+    }
+    a->reg = regr_map.find(t.type)->second;
+    t = res.value();
+    if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        node.kind = (NodeKind)(k + 1);
+        a->second_oper = regr_map.find(t.type)->second;
+    }
+    else
+    {
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the first operand.", _l.get_from_line(t.line));
+        return false;
+    }
+    nodes->push_back(std::move(node));
+    return true; // that's it!
 }
 
 bool masm::Code::handle_arithmetic_signed(NodeKind k)

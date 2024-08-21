@@ -24,7 +24,7 @@ void masm::CodeGen::handle_arithmetic_reg_imm(msize_t op, NodeArithmetic *a)
     b.bytes.b1 = op; // the opcode
     // 0xFFFFFFFF
     b.bytes.b2 = a->reg;
-    b.full |= std::stoull(std::get<std::string>(a->second_oper));
+    b.full |= std::stoull(std::get<std::string>(a->second_oper)) & 0xFFFFFFFF;
     code.push_back(b);
 }
 
@@ -62,7 +62,7 @@ void masm::CodeGen::handle_arithmetic_reg_var(NodeArithmetic *a, msize_t op)
         b.bytes.b1 = (op + 3);
         break;
     }
-    b.full |= var_addr & 0xFFFFFFFFFFFF;
+    b.full |= (var_addr & 0xFFFFFFFFFFFF);
     code.push_back(b);
 }
 
@@ -172,6 +172,71 @@ bool masm::CodeGen::generate()
         case MOVL_IMM:
             handle_mov_reg_imm(true, (NodeMov *)node.node.get());
             break;
+        case MOVB:
+            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVE_REG8);
+            break;
+        case MOVW:
+            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVE_REG16);
+            break;
+        case MOVD:
+            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVE_REG32);
+            break;
+        case MOVSXB_IMM:
+            handle_arithmetic_reg_imm(OP_MOVESX_IMM8, (NodeMov *)(node.node.get()));
+            break;
+        case MOVSXW_IMM:
+            handle_arithmetic_reg_imm(OP_MOVESX_IMM16, (NodeMov *)(node.node.get()));
+            break;
+        case MOVSXD_IMM:
+            handle_arithmetic_reg_imm(OP_MOVESX_IMM32, (NodeMov *)(node.node.get()));
+            break;
+        case MOVSXB_REG:
+            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVESX_REG8);
+            break;
+        case MOVSXW_REG:
+            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVESX_REG16);
+            break;
+        case MOVSXD_REG:
+            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVESX_REG32);
+            break;
+        case MOVSXB_VAR:
+        {
+            // resuing a function
+            auto v = (NodeMov *)node.node.get();
+            handle_mov_reg_var(v);
+            // add a second instruction
+            GenBinary b;
+            b.bytes.b1 = OP_MOVESX_REG8;
+            b.bytes.b8 = v->reg;
+            b.bytes.b8 <<= 4;
+            b.bytes.b8 |= v->reg;
+            code.push_back(b);
+            break;
+        }
+        case MOVSXW_VAR:
+        {
+            auto v = (NodeMov *)node.node.get();
+            handle_mov_reg_var(v);
+            GenBinary b;
+            b.bytes.b1 = OP_MOVESX_REG16;
+            b.bytes.b8 = v->reg;
+            b.bytes.b8 <<= 4;
+            b.bytes.b8 |= v->reg;
+            code.push_back(b);
+            break;
+        }
+        case MOVSXD_VAR:
+        {
+            auto v = (NodeMov *)node.node.get();
+            handle_mov_reg_var(v);
+            GenBinary b;
+            b.bytes.b1 = OP_MOVESX_REG32;
+            b.bytes.b8 = v->reg;
+            b.bytes.b8 <<= 4;
+            b.bytes.b8 |= v->reg;
+            code.push_back(b);
+            break;
+        }
         }
     }
     for (auto b : code)
@@ -360,6 +425,7 @@ void masm::CodeGen::handle_mov_reg_imm(bool l, NodeMov *n)
 
 void masm::CodeGen::handle_mov_reg_reg(NodeMov *n, msize_t op)
 {
+    // written with idea of potential expansion for other instructions as well.
     GenBinary b;
     b.bytes.b1 = op;
     b.bytes.b8 = n->reg;
