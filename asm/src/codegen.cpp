@@ -158,6 +158,9 @@ bool masm::CodeGen::generate()
         case LFDIV:
             handle_arithmetic_reg_reg(OP_FDIV, (NodeArithmetic *)node.node.get());
             break;
+        case MOV_IMM:
+            handle_mov_reg_imm(false, (NodeMov *)node.node.get());
+            break;
         }
     }
     for (auto b : code)
@@ -315,6 +318,33 @@ void masm::CodeGen::generate_data()
         }
         }
     }
+}
+
+void masm::CodeGen::handle_mov_reg_imm(bool l, NodeMov *n)
+{
+    GenBinary b;
+    b.bytes.b1 = (l) ? OP_MOVE_IMM_64 : OP_MOVE_IMM;
+    if (l)
+    {
+        b.bytes.b8 = n->reg;
+        code.push_back(b);
+        b.full = 0;
+    }
+    auto second = std::get<std::pair<std::string, DataType>>(n->second_oper);
+    switch (second.second)
+    {
+    case BYTE:
+    {
+        b.full |= std::stoull(second.first) & (l ? 0xFFFFFFFFFFFFFFFF : 0xFFFFFFFF);
+        break;
+    }
+    case FLOAT:
+    {
+        b.full |= ((mdword_t)std::stof(second.first)) & (l ? 0xFFFFFFFFFFFFFFFF : 0xFFFFFFFF);
+        break;
+    }
+    }
+    code.push_back(b);
 }
 
 void masm::CodeGen::give_address_to_labels()

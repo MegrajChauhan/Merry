@@ -82,6 +82,11 @@ _just_a_label
 
   ;; No mods for floats
 
+  mov Mf, 56379 ;; 32-bit immediates only
+  mov Me, 7238.544 ;; only 32-bit floating point numbers
+  mov Ma, Mb
+  mov Mc, d ;; translated to load instruction
+
 ;; Here is the thing.
 ;; A procedure or a label can have the same name as an identifier
 ;; The assembler will know which you are referencing based on the context.

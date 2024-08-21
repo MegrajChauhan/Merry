@@ -35,8 +35,8 @@ namespace masm
         SymbolTable *table;
         std::vector<Node> *nodes;
 
-        std::vector<GenBinary> code; // the code
-        std::vector<mbyte_t> data;   // the data
+        std::vector<GenBinary> code;   // the code
+        std::vector<mbyte_t> data;     // the data
         std::vector<mbyte_t> str_data; // for strings
 
         std::unordered_map<std::string, size_t> data_addr;
@@ -57,6 +57,8 @@ namespace masm
         void handle_arithmetic_reg_imm(msize_t op, NodeArithmetic *a);
         void handle_arithmetic_reg_reg(msize_t op, NodeArithmetic *a);
         void handle_arithmetic_reg_var(NodeArithmetic *a, msize_t op);
+
+        void handle_mov_reg_imm(bool l, NodeMov *n);
     };
 };
 

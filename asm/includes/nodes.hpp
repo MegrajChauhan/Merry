@@ -49,6 +49,10 @@ namespace masm
         LFSUB,
         LFMUL,
         LFDIV,
+
+        MOV_IMM,
+        MOV_REG,
+        MOV_VAR,
     };
 
     enum Register
@@ -71,7 +75,6 @@ namespace masm
         Mm5,
     };
 
-    
     struct Procedure
     {
         bool defined;
@@ -91,6 +94,13 @@ namespace masm
     {
         Register reg;
         std::variant<Register, std::string> second_oper;
+    };
+
+    // the same as Arithmetic
+    struct NodeMov : public NodeArithmetic
+    {
+        Register reg;
+        std::variant<Register, std::pair<std::string, DataType>> second_oper;
     };
 
     struct Node

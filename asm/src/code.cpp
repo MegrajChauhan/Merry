@@ -162,6 +162,13 @@ bool masm::Code::read_code()
                 return false;
             break;
         }
+        case INST_MOV:
+        {
+            if (!handle_mov(MOV_IMM))
+                return false;
+            break;
+        }
+
         default:
             err(fname, t.line, t.col, t.val.length(), _parsing, straytok, ERR_STR, "A stray token that doesn't fit any rules was found.", _l.get_from_line(t.line), "Maybe a fluke? Forgot a keyword?");
             return false;
@@ -301,6 +308,75 @@ bool masm::Code::handle_arithmetic_unsigned(NodeKind k)
     {
         node.kind = k;
         a->second_oper = t.val;
+        break;
+    }
+    default:
+    {
+        if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
+        {
+            node.kind = (NodeKind)(k + 1);
+            a->second_oper = regr_map.find(t.type)->second;
+            break;
+        }
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register, variable or another register here after the first operand.", _l.get_from_line(t.line));
+        return false;
+    }
+    }
+    nodes->push_back(std::move(node));
+    return true;
+}
+
+bool masm::Code::handle_mov(NodeKind k)
+{
+    Node node;
+    node.col_st = regr_col;
+    node.line_st = regr_line;
+    node.file = file;
+    node.node = std::make_unique<NodeMov>();
+    NodeMov *a = (NodeMov *)node.node.get();
+    auto res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the mov instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    t = res.value();
+    if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the mov instruction.", _l.get_from_line(t.line));
+        return false;
+    }
+    res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, _l.get_line(), _l.get_col(), 0, _parsing, syntaxerr, ERR_STR, "Expected a register, variable or another register here after the first operand.", _l.get_from_line(_l.get_line()));
+        return false;
+    }
+    a->reg = regr_map.find(t.type)->second;
+    t = res.value();
+    switch (t.type)
+    {
+    case IDENTIFIER:
+    {
+        if (check_var(t.val))
+        {
+            err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "The variable \"" + t.val + "\" doesn't exist.", _l.get_from_line(t.line));
+            return false;
+        }
+        node.kind = (NodeKind)(k + 2);
+        a->second_oper = std::make_pair(t.val, BYTE);
+        break;
+    }
+    case NUM_INT:
+    {
+        node.kind = k;
+        a->second_oper = std::make_pair(t.val, BYTE);
+        break;
+    }
+    case NUM_FLOAT:
+    {
+        node.kind = k;
+        a->second_oper = std::make_pair(t.val, FLOAT);
         break;
     }
     default:
