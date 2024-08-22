@@ -264,6 +264,17 @@ _THRET_T_ merry_runCore(mptr_t core)
             c->pc = (*current & 0xFFFFFFFFFFFF); // the address to the first instruction of the procedure
             merry_execute_call(c);
             break;
+        case OP_CALL_REG:
+            // save the current return address
+            if (merry_stack_push(c->ras, c->pc) == RET_FAILURE)
+            {
+                merry_requestHdlr_panic(MERRY_CALL_DEPTH_REACHED, c->core_id);
+                c->stop_running = mtrue;
+                break;
+            }
+            c->pc = c->registers[(*current & 15)]; // the address to the first instruction of the procedure
+            merry_execute_call(c);
+            break;
         case OP_RET:
             // we just have to pop the topmost
             if (merry_stack_pop(c->ras, &c->pc) == RET_FAILURE)
@@ -278,7 +289,15 @@ _THRET_T_ merry_runCore(mptr_t core)
         case OP_SVA: // [SVA stands for Stack Variable Access]
             merry_execute_sva(c);
             break;
+        case OP_SVA_REG:
+            c->current_inst |= (c->registers[*current & 15] & 0xFFFF);
+            merry_execute_sva(c);
+            break;
         case OP_SVC: // [SVC stands for Stack Variable Change]
+            merry_execute_svc(c);
+            break;
+        case OP_SVC_REG:
+            c->current_inst |= (c->registers[*current & 15] & 0xFFFF);
             merry_execute_svc(c);
             break;
         case OP_PUSH_IMM:
@@ -1493,7 +1512,8 @@ _exec_(svc_mem)
         core->stop_running = mtrue;
         return; // failure
     }
-    if (core->bp < off)
+    // make sure that svc doesn't affect the old value of BP
+    if (core->bp < off || (off == 1))
     {
         merry_requestHdlr_panic(MERRY_INVALID_VARIABLE_ACCESS, core->core_id);
         core->stop_running = mtrue;

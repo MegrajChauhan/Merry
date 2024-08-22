@@ -89,6 +89,13 @@ bool masm::CodeGen::generate()
             code.push_back(b);
             break;
         }
+        case RET:
+        {
+            GenBinary b;
+            b.bytes.b1 = OP_RET;
+            code.push_back(b);
+            break;
+        }
         case ADD_IMM:
             handle_arithmetic_reg_imm(OP_ADD_IMM, (NodeArithmetic *)node.node.get());
             break;
@@ -234,6 +241,27 @@ bool masm::CodeGen::generate()
             b.bytes.b8 = v->reg;
             b.bytes.b8 <<= 4;
             b.bytes.b8 |= v->reg;
+            code.push_back(b);
+            break;
+        }
+        case JMP:
+            handle_jmp(OP_JMP_ADDR, (NodeName *)node.node.get());
+            break;
+        case CALL:
+        {
+            NodeCall *c = (NodeCall *)node.node.get();
+            GenBinary b;
+            b.bytes.b1 = OP_CALL;
+            b.full |= (label_addr[std::get<std::string>(c->_oper)] & 0xFFFFFFFFFFFF);
+            code.push_back(b);
+            break;
+        }
+        case CALL_REG:
+        {
+            NodeCall *c = (NodeCall *)node.node.get();
+            GenBinary b;
+            b.bytes.b1 = OP_CALL_REG;
+            b.full |= (std::get<Register>(c->_oper));
             code.push_back(b);
             break;
         }
@@ -462,6 +490,14 @@ void masm::CodeGen::handle_mov_reg_var(NodeMov *n)
         b.bytes.b1 = OP_LOAD;
         break;
     }
+    code.push_back(b);
+}
+
+void masm::CodeGen::handle_jmp(msize_t op, NodeName *n)
+{
+    GenBinary b;
+    b.bytes.b1 = op;
+    b.full |= (label_addr[n->name] & 0xFFFFFFFFFFFF);
     code.push_back(b);
 }
 

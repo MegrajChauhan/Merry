@@ -54,6 +54,14 @@ bool masm::Code::read_code()
             nodes->push_back(std::move(n));
             break;
         }
+        case INST_RET:
+        {
+            Node n;
+            n.kind = RET;
+            n.node = std::make_unique<Base>();
+            nodes->push_back(std::move(n));
+            break;
+        }
         case INST_ADD:
         {
             if (!handle_arithmetic_unsigned(ADD_IMM))
@@ -207,6 +215,18 @@ bool masm::Code::read_code()
         case INST_MOVESXD:
         {
             if (!handle_mov(MOVSXD_IMM))
+                return false;
+            break;
+        }
+        case INST_JMP:
+        {
+            if (!handle_jmp(JMP))
+                return false;
+            break;
+        }
+        case INST_CALL:
+        {
+            if (!handle_call())
                 return false;
             break;
         }
@@ -569,6 +589,73 @@ bool masm::Code::handle_arithmetic_float(NodeKind k)
         err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register or another register here after the first operand.", _l.get_from_line(t.line));
         return false;
     }
+    nodes->push_back(std::move(node));
+    return true;
+}
+
+bool masm::Code::handle_jmp(NodeKind k)
+{
+    Node node;
+    node.col_st = t.col;
+    node.line_st = t.line;
+    node.file = file;
+    node.kind = k;
+    node.node = std::make_unique<NodeName>();
+    NodeName *n = (NodeName *)node.node.get();
+    auto res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a label here after the branch instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    t = res.value();
+    if (t.type != IDENTIFIER)
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a label here after the branch instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    if (label_list->find(t.val) == label_list->end())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a label here that exists after the branch instruction; Label doesn't exists.", _l.get_from_line(regr_line));
+        return false;
+    }
+    node.line_ed = t.line;
+    n->name = t.val;
+    nodes->push_back(std::move(node));
+    return true;
+}
+
+bool masm::Code::handle_call()
+{
+    Node node;
+    node.col_st = t.col;
+    node.line_st = t.line;
+    node.file = file;
+    node.node = std::make_unique<NodeCall>();
+    NodeCall *n = (NodeCall *)node.node.get();
+    auto res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a label here or a register after the branch instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    t = res.value();
+    if (t.type != IDENTIFIER && !(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a label here or a register after the branch instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    if (t.type == IDENTIFIER && (label_list->find(t.val) == label_list->end()))
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a label here that exists after the branch instruction; Label doesn't exists.", _l.get_from_line(regr_line));
+        return false;
+    }
+    node.kind = (t.type == IDENTIFIER) ? CALL : CALL_REG;
+    node.line_ed = t.line;
+    if (t.type == IDENTIFIER)
+        n->_oper = t.val;
+    else
+        n->_oper = regr_map[(t.type)];
     nodes->push_back(std::move(node));
     return true;
 }

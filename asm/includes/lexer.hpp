@@ -78,6 +78,9 @@ namespace masm
         INST_MOVESXB,
         INST_MOVESXW,
         INST_MOVESXD, // there is no need for 64-bit which should be obvious
+        INST_JMP,
+        INST_CALL,
+        INST_RET,
     };
 
     static std::unordered_map<std::string, TokenType>
@@ -140,6 +143,9 @@ namespace masm
                 {"movsxb", INST_MOVESXB},
                 {"movsxw", INST_MOVESXW},
                 {"movsxd", INST_MOVESXD},
+                {"jmp", INST_JMP},
+                {"call", INST_CALL},
+                {"ret", INST_RET},
                 {"proc", KEY_PROC}};
 
     static std::unordered_map<TokenType, Register>

@@ -73,6 +73,19 @@ namespace masm
         MOVSXD_IMM,
         MOVSXD_REG,
         MOVSXD_VAR,
+
+        JMP,
+        CALL,
+        CALL_REG,
+        RET,
+
+        SVA_IMM,
+        SVA_REG,
+        SVA_VAR,
+
+        SVC_IMM,
+        SVC_REG,
+        SVC_VAR,
     };
 
     enum Register
@@ -121,6 +134,11 @@ namespace masm
     {
         Register reg;
         std::variant<Register, std::pair<std::string, DataType>> second_oper;
+    };
+
+    struct NodeCall : public Base
+    {
+        std::variant<Register, std::string> _oper;
     };
 
     struct Node

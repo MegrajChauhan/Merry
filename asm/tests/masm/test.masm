@@ -47,6 +47,10 @@ _just_a_label
   ;; types is provided, the program has no choice but to perform the sign extension first and
   ;; then proceeding to use the unsigned instructions. For eg: iadd M1, Mm1 assumes a 64-bit
   ;; signed value in both registers. So you will have to perform a sign extension first.
+  ;; for example: say you have to add 7288 and -73 but you have stored -73 as byte in memory
+  ;; you may do
+  movsxb Ma, Ma ;; assuming the operand is already in Ma
+  iadd Ma, 7288 ;; Now it behaves as intended
 
   iadd Mm5, -347 ;; treat as signed
   iadd M1, Mm1
@@ -118,6 +122,20 @@ _just_a_label
   ;; Taking an offset isn't really useful for now
   ;; So we will only have one type of JMP.
   jmp _just_a_label ;; only takes labels as the operand.
+
+  call main ;; There is no rule that says that call should work on procedures only
+            ;; but do make sure that there is a ret somewhere after the label
+  call Ma   ;; Newly added instruction- Will be helpful for function pointers
+  ret
+
+  ;; SVA= Stack Variable Access, SVC = Stack Variable Change
+  ;; floats will be ignored, negative offset and attempts to change BP's old value will result in error
+  sva Ma, 829 ;; Access the variable at offset of 829 from BP and put it in Ma
+  sva Ma, a   ;; The offset is in 'a'
+  sva Ma, Mb  ;; The offset is in Mb
+  svc Ma, 3   ;; Change the variable at offset 3 from BP to the value in Ma
+  svc Ma, a   ;; The offset is in 'a'
+  svc Ma, Mb   ;; The offset is in Mb
 
 ;; Here is the thing.
 ;; A procedure or a label can have the same name as an identifier

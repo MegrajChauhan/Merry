@@ -45,6 +45,11 @@ namespace masm
 
         bool handle_movX(NodeKind k);
 
+        // making sure that this can be re-used
+        bool handle_jmp(NodeKind k);
+
+        bool handle_call();
+
         bool check_var(std::string name);
     };
 };

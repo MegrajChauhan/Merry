@@ -317,6 +317,9 @@ enum
   OP_SVC_MEM,
 
   OP_SYSCALL,
+  OP_CALL_REG,
+  OP_SVA_REG,
+  OP_SVC_REG,
 };
 
 /*
