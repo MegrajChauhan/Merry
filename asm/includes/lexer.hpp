@@ -81,6 +81,8 @@ namespace masm
         INST_JMP,
         INST_CALL,
         INST_RET,
+        INST_SVA,
+        INST_SVC,
     };
 
     static std::unordered_map<std::string, TokenType>
@@ -146,6 +148,8 @@ namespace masm
                 {"jmp", INST_JMP},
                 {"call", INST_CALL},
                 {"ret", INST_RET},
+                {"sva", INST_SVA},
+                {"svc", INST_SVC},
                 {"proc", KEY_PROC}};
 
     static std::unordered_map<TokenType, Register>

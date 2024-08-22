@@ -1474,7 +1474,7 @@ _exec_(svc)
     // the same as sva
     register mqword_t current = core->current_inst;
     register mqword_t off = current & 0xFFFF;
-    if (core->bp < off)
+    if (core->bp < off || off == 1)
     {
         merry_requestHdlr_panic(MERRY_INVALID_VARIABLE_ACCESS, core->core_id);
         core->stop_running = mtrue;

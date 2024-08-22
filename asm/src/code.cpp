@@ -230,6 +230,18 @@ bool masm::Code::read_code()
                 return false;
             break;
         }
+        case INST_SVA:
+        {
+            if (!handle_sva_svc(SVA_IMM))
+                return false;
+            break;
+        }
+        case INST_SVC:
+        {
+            if (!handle_sva_svc(SVC_IMM))
+                return false;
+            break;
+        }
         default:
             err(fname, t.line, t.col, t.val.length(), _parsing, straytok, ERR_STR, "A stray token that doesn't fit any rules was found.", _l.get_from_line(t.line), "Maybe a fluke? Forgot a keyword?");
             return false;
@@ -347,7 +359,7 @@ bool masm::Code::handle_arithmetic_unsigned(NodeKind k)
     res = _l.next_token();
     if (!res.has_value())
     {
-        err(fname, _l.get_line(), _l.get_col(), 0, _parsing, syntaxerr, ERR_STR, "Expected a register, variable or another register here after the first operand.", _l.get_from_line(_l.get_line()));
+        err(fname, _l.get_line(), _l.get_col(), 0, _parsing, syntaxerr, ERR_STR, "Expected a register, variable or immediate here after the first operand.", _l.get_from_line(_l.get_line()));
         return false;
     }
     a->reg = regr_map.find(t.type)->second;
@@ -379,7 +391,7 @@ bool masm::Code::handle_arithmetic_unsigned(NodeKind k)
             a->second_oper = regr_map.find(t.type)->second;
             break;
         }
-        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register, variable or another register here after the first operand.", _l.get_from_line(t.line));
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register, variable or immediate here after the first operand.", _l.get_from_line(t.line));
         return false;
     }
     }
@@ -410,7 +422,7 @@ bool masm::Code::handle_mov(NodeKind k)
     res = _l.next_token();
     if (!res.has_value())
     {
-        err(fname, _l.get_line(), _l.get_col(), 0, _parsing, syntaxerr, ERR_STR, "Expected a register, variable or another register here after the first operand.", _l.get_from_line(_l.get_line()));
+        err(fname, _l.get_line(), _l.get_col(), 0, _parsing, syntaxerr, ERR_STR, "Expected a register, variable or immediate here after the first operand.", _l.get_from_line(_l.get_line()));
         return false;
     }
     a->reg = regr_map.find(t.type)->second;
@@ -419,9 +431,9 @@ bool masm::Code::handle_mov(NodeKind k)
     {
     case IDENTIFIER:
     {
-        if (check_var(t.val))
+        if (check_var(t.val) && check_lbl(t.val))
         {
-            err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "The variable \"" + t.val + "\" doesn't exist.", _l.get_from_line(t.line));
+            err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "The identifier \"" + t.val + "\" doesn't exist.", _l.get_from_line(t.line));
             return false;
         }
         node.kind = (NodeKind)(k + 2);
@@ -448,7 +460,70 @@ bool masm::Code::handle_mov(NodeKind k)
             a->second_oper = regr_map.find(t.type)->second;
             break;
         }
-        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register, variable or another register here after the first operand.", _l.get_from_line(t.line));
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register, variable or immediate here after the first operand.", _l.get_from_line(t.line));
+        return false;
+    }
+    }
+    nodes->push_back(std::move(node));
+    return true;
+}
+
+bool masm::Code::handle_sva_svc(NodeKind k)
+{
+    Node node;
+    node.col_st = regr_col;
+    node.line_st = regr_line;
+    node.file = file;
+    node.node = std::make_unique<NodeSTACK>();
+    NodeSTACK *a = (NodeSTACK *)node.node.get();
+    auto res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the stack instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    t = res.value();
+    if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the stack instruction.", _l.get_from_line(t.line));
+        return false;
+    }
+    res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, _l.get_line(), _l.get_col(), 0, _parsing, syntaxerr, ERR_STR, "Expected a register, variable or immediate here after the first operand.", _l.get_from_line(_l.get_line()));
+        return false;
+    }
+    a->reg = regr_map.find(t.type)->second;
+    t = res.value();
+    switch (t.type)
+    {
+    case IDENTIFIER:
+    {
+        if (check_var(t.val))
+        {
+            err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "The variable \"" + t.val + "\" doesn't exist.", _l.get_from_line(t.line));
+            return false;
+        }
+        node.kind = (NodeKind)(k + 2);
+        a->second_oper = std::make_pair(t.val, BYTE);
+        break;
+    }
+    case NUM_INT:
+    {
+        node.kind = k;
+        a->second_oper = std::make_pair(t.val, BYTE);
+        break;
+    }
+    default:
+    {
+        if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
+        {
+            node.kind = (NodeKind)(k + 1);
+            a->second_oper = regr_map.find(t.type)->second;
+            break;
+        }
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register, variable or immediate here after the first operand.", _l.get_from_line(t.line));
         return false;
     }
     }
@@ -662,6 +737,10 @@ bool masm::Code::handle_call()
 
 bool masm::Code::check_var(std::string var)
 {
-    auto res = table->_var_list.find(var);
-    return res == table->_var_list.end();
+    return table->_var_list.find(var) == table->_var_list.end();
+}
+
+bool masm::Code::check_lbl(std::string var)
+{
+    return (proc_list->find(var) == proc_list->end());
 }

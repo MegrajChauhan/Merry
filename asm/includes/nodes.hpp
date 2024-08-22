@@ -130,11 +130,14 @@ namespace masm
     };
 
     // the same as Arithmetic
-    struct NodeMov : public NodeArithmetic
+    struct NodeMov : public Base
     {
         Register reg;
         std::variant<Register, std::pair<std::string, DataType>> second_oper;
     };
+
+    struct NodeSTACK: public NodeMov
+    {};
 
     struct NodeCall : public Base
     {

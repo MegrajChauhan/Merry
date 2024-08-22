@@ -90,6 +90,9 @@ _just_a_label
   mov Me, 7238.544 ;; only 32-bit floating point numbers
   mov Ma, Mb
   mov Mc, d ;; translated to corresponding load instruction
+  mov Ma, _just_a_label ;; This also works now. The address of the label is stored.
+                        ;; since we allow variables and labels to have the same name
+                        ;; variables will get the priority
 
   movl Mf, 85789375389 ;; 64-bit immediates
   movl Mm4, 378246.437437 ;; 64-bit floating point immediate
@@ -129,7 +132,7 @@ _just_a_label
   ret
 
   ;; SVA= Stack Variable Access, SVC = Stack Variable Change
-  ;; floats will be ignored, negative offset and attempts to change BP's old value will result in error
+  ;; negative offset and attempts to change BP's old value will result in error
   sva Ma, 829 ;; Access the variable at offset of 829 from BP and put it in Ma
   sva Ma, a   ;; The offset is in 'a'
   sva Ma, Mb  ;; The offset is in Mb

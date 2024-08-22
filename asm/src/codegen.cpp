@@ -189,14 +189,32 @@ bool masm::CodeGen::generate()
             handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVE_REG32);
             break;
         case MOVSXB_IMM:
-            handle_arithmetic_reg_imm(OP_MOVESX_IMM8, (NodeMov *)(node.node.get()));
+        {
+            NodeArithmetic a;
+            auto t = (NodeMov *)node.node.get();
+            a.reg = t->reg;
+            a.second_oper = std::get<std::pair<std::string, DataType>>(t->second_oper).first;
+            handle_arithmetic_reg_imm(OP_MOVESX_IMM8, &a);
             break;
+        }
         case MOVSXW_IMM:
-            handle_arithmetic_reg_imm(OP_MOVESX_IMM16, (NodeMov *)(node.node.get()));
+        {
+            NodeArithmetic a;
+            auto t = (NodeMov *)node.node.get();
+            a.reg = t->reg;
+            a.second_oper = std::get<std::pair<std::string, DataType>>(t->second_oper).first;
+            handle_arithmetic_reg_imm(OP_MOVESX_IMM16, &a);
             break;
+        }
         case MOVSXD_IMM:
-            handle_arithmetic_reg_imm(OP_MOVESX_IMM32, (NodeMov *)(node.node.get()));
+        {
+            NodeArithmetic a;
+            auto t = (NodeMov *)node.node.get();
+            a.reg = t->reg;
+            a.second_oper = std::get<std::pair<std::string, DataType>>(t->second_oper).first;
+            handle_arithmetic_reg_imm(OP_MOVESX_IMM32, &a);
             break;
+        }
         case MOVSXB_REG:
             handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVESX_REG8);
             break;
@@ -262,6 +280,40 @@ bool masm::CodeGen::generate()
             GenBinary b;
             b.bytes.b1 = OP_CALL_REG;
             b.full |= (std::get<Register>(c->_oper));
+            code.push_back(b);
+            break;
+        }
+        case SVA_REG:
+            handle_mov_reg_reg((NodeSTACK *)node.node.get(), OP_SVA_REG);
+            break;
+        case SVC_REG:
+            handle_mov_reg_reg((NodeSTACK *)node.node.get(), OP_SVC_REG);
+            break;
+        case SVC_IMM:
+            handle_mov_reg_imm(false, (NodeSTACK *)node.node.get());
+            code[code.size() - 1].bytes.b1 = OP_SVC;
+            break;
+        case SVA_IMM:
+            handle_mov_reg_imm(false, (NodeSTACK *)node.node.get());
+            code[code.size() - 1].bytes.b1 = OP_SVA;
+            break;
+        case SVA_VAR:
+        {
+            GenBinary b;
+            auto n = (NodeSTACK *)node.node.get();
+            b.bytes.b1 = OP_SVA_MEM;
+            b.bytes.b2 = n->reg;
+            b.full |= data_addr[std::get<std::pair<std::string, DataType>>(n->second_oper).first];
+            code.push_back(b);
+            break;
+        }
+        case SVC_VAR:
+        {
+            GenBinary b;
+            auto n = (NodeSTACK *)node.node.get();
+            b.bytes.b1 = OP_SVC_MEM;
+            b.bytes.b2 = n->reg;
+            b.full |= data_addr[std::get<std::pair<std::string, DataType>>(n->second_oper).first];
             code.push_back(b);
             break;
         }
@@ -466,30 +518,39 @@ void masm::CodeGen::handle_mov_reg_var(NodeMov *n)
 {
     GenBinary b;
     auto _s = std::get<std::pair<std::string, DataType>>(n->second_oper);
-    size_t addr = data_addr.find(_s.first)->second;
-    Variable dets = table->variables[table->_var_list[_s.first]];
+    auto _res = table->_var_list.find(_s.first);
+    bool is_lbl = false;
+    if (_res == table->_var_list.end())
+        is_lbl = true;
+    size_t addr = is_lbl ? label_addr[_s.first] : data_addr.find(_s.first)->second;
     b.bytes.b2 = n->reg;
     b.full |= addr;
-    switch (dets.type)
+    if (!is_lbl)
     {
-    case BYTE:
-    case STRING:
-    case RESB:
-        b.bytes.b1 = OP_LOADB;
-        break;
-    case WORD:
-    case RESW:
-        b.bytes.b1 = OP_LOADW;
-        break;
-    case DWORD:
-    case RESD:
-        b.bytes.b1 = OP_LOADD;
-        break;
-    case QWORD:
-    case RESQ:
-        b.bytes.b1 = OP_LOAD;
-        break;
+        Variable dets = table->variables[table->_var_list[_s.first]];
+        switch (dets.type)
+        {
+        case BYTE:
+        case STRING:
+        case RESB:
+            b.bytes.b1 = OP_LOADB;
+            break;
+        case WORD:
+        case RESW:
+            b.bytes.b1 = OP_LOADW;
+            break;
+        case DWORD:
+        case RESD:
+            b.bytes.b1 = OP_LOADD;
+            break;
+        case QWORD:
+        case RESQ:
+            b.bytes.b1 = OP_LOAD;
+            break;
+        }
     }
+    else
+        b.bytes.b1 = OP_MOVE_IMM;
     code.push_back(b);
 }
 

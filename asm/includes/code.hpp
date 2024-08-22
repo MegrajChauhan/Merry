@@ -50,7 +50,10 @@ namespace masm
 
         bool handle_call();
 
+        bool handle_sva_svc(NodeKind k);
+
         bool check_var(std::string name);
+        bool check_lbl(std::string name);
     };
 };
 
