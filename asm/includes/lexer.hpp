@@ -83,6 +83,10 @@ namespace masm
         INST_RET,
         INST_SVA,
         INST_SVC,
+        INST_PUSHA,
+        INST_POPA,
+        INST_PUSH,
+        INST_POP,
     };
 
     static std::unordered_map<std::string, TokenType>
@@ -150,6 +154,10 @@ namespace masm
                 {"ret", INST_RET},
                 {"sva", INST_SVA},
                 {"svc", INST_SVC},
+                {"popa", INST_POPA},
+                {"pusha", INST_PUSHA},
+                {"push", INST_PUSH},
+                {"pop", INST_POP},
                 {"proc", KEY_PROC}};
 
     static std::unordered_map<TokenType, Register>

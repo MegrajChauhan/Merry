@@ -140,6 +140,15 @@ _just_a_label
   svc Ma, a   ;; The offset is in 'a'
   svc Ma, Mb   ;; The offset is in Mb
 
+  pusha
+  popa
+  push 1234 ;; use negatives as well, floats as well
+  pop Ma
+  push d ;; here the assembler will handle the internal translation based on the datatype of the variable
+
+  pop Ma
+  pop c
+
 ;; Here is the thing.
 ;; A procedure or a label can have the same name as an identifier
 ;; The assembler will know which you are referencing based on the context.

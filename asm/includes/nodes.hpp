@@ -86,6 +86,17 @@ namespace masm
         SVC_IMM,
         SVC_REG,
         SVC_VAR,
+
+        PUSHA,
+        POPA,
+
+        PUSH_IMM,
+        PUSH_REG,
+        PUSH_VAR,
+
+        POP_IMM,
+        POP_REG,
+        POP_VAR,
     };
 
     enum Register
@@ -136,12 +147,18 @@ namespace masm
         std::variant<Register, std::pair<std::string, DataType>> second_oper;
     };
 
-    struct NodeSTACK: public NodeMov
-    {};
+    struct NodeSTACK : public NodeMov
+    {
+    };
 
     struct NodeCall : public Base
     {
         std::variant<Register, std::string> _oper;
+    };
+
+    struct NodePushPop : public Base
+    {
+        std::variant<Register, std::string> val;
     };
 
     struct Node

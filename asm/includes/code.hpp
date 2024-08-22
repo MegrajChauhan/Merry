@@ -52,6 +52,8 @@ namespace masm
 
         bool handle_sva_svc(NodeKind k);
 
+        bool handle_push_pop();
+
         bool check_var(std::string name);
         bool check_lbl(std::string name);
     };

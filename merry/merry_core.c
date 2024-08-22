@@ -814,6 +814,30 @@ _THRET_T_ merry_runCore(mptr_t core)
         case OP_SYSCALL:
             merry_execute_syscall(c);
             break;
+        case OP_PUSH_MEMB:
+            merry_execute_push_mem(c, &merry_dmemory_read_byte);
+            break;
+        case OP_PUSH_MEMW:
+            merry_execute_push_mem(c, &merry_dmemory_read_word);
+            break;
+        case OP_PUSH_MEMD:
+            merry_execute_push_mem(c, &merry_dmemory_read_dword);
+            break;
+        case OP_PUSH_MEMQ:
+            merry_execute_push_mem(c, &merry_dmemory_read_qword);
+            break;
+        case OP_POP_MEMB:
+            merry_execute_pop_mem(c, &merry_dmemory_write_byte);
+            break;
+        case OP_POP_MEMW:
+            merry_execute_pop_mem(c, &merry_dmemory_write_word);
+            break;
+        case OP_POP_MEMD:
+            merry_execute_pop_mem(c, &merry_dmemory_write_dword);
+            break;
+        case OP_POP_MEMQ:
+            merry_execute_pop_mem(c, &merry_dmemory_write_qword);
+            break;
         }
     }
 #if defined(_MERRY_HOST_OS_LINUX_)
@@ -1533,7 +1557,7 @@ _exec_(push_imm)
         return; // failure
     }
     core->sp++;
-    core->stack_mem[core->sp] = core->current_inst & 0xFFFFFFFFFFFF;
+    core->stack_mem[core->sp] = merry_core_get_immediate(core);
 }
 
 _exec_(push_reg)
@@ -1935,4 +1959,43 @@ _exec_(syscall)
 #ifdef _USE_LINUX_
     core->registers[Ma] = syscall(core->registers[Ma], core->registers[M1], core->registers[M2], core->registers[M3], core->registers[M4], core->registers[M5]);
 #endif
+}
+
+_lexec_(push_mem, mem_read func)
+{
+    register mqword_t address = core->current_inst & 0xFFFFFFFFFFFF;
+    register mqword_t temp = 0;
+    if (func(core->data_mem, address, temp) == RET_FAILURE)
+    {
+        merry_requestHdlr_panic(core->data_mem->error, core->core_id);
+        core->stop_running = mtrue;
+        return;
+    }
+    if (_is_stack_full_(core))
+    {
+        merry_requestHdlr_panic(MERRY_STACK_OVERFLOW, core->core_id);
+        core->stop_running = mtrue;
+        return; // failure
+    }
+    core->sp++;
+    core->stack_mem[core->sp] = temp;
+}
+
+_lexec_(pop_mem, mem_write func)
+{
+    register mqword_t address = core->current_inst & 0xFFFFFFFFFFFF;
+    if (_is_stack_empty_(core))
+    {
+        merry_requestHdlr_panic(MERRY_STACK_UNDERFLOW, core->core_id);
+        core->stop_running = mtrue;
+        return; // failure
+    }
+    register mqword_t temp = core->stack_mem[core->sp];
+    core->sp--;
+    if (func(core->data_mem, address, temp) == RET_FAILURE)
+    {
+        merry_requestHdlr_panic(core->data_mem->error, core->core_id);
+        core->stop_running = mtrue;
+        return;
+    }
 }

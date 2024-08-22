@@ -182,6 +182,7 @@ _THRET_T_ merry_runCore(mptr_t core);
     _update_flags_(&core->flag);
 
 _MERRY_DEFINE_FUNC_PTR_(mret_t, mem_read, MerryDMemory *, maddress_t, mqptr_t);
+_MERRY_DEFINE_FUNC_PTR_(mret_t, mem_write, MerryDMemory *, maddress_t, mqword_t);
 
 // arithmetic instructions
 _exec_(add_imm);
@@ -290,5 +291,8 @@ _exec_(excg16);
 _exec_(excg32);
 
 _exec_(syscall);
+
+_lexec_(push_mem, mem_read func);
+_lexec_(pop_mem, mem_write func);
 
 #endif
