@@ -178,14 +178,39 @@ _just_a_label
   ;; Ma = Mb + Mc * Md
   lea Ma Mb Mc Md
 
-  load Ma, a
-  load Ma, Mb ;; address in Mb
-  
+  ;; With the load/store regr, regr
+  ;; This translates to 64-bit load internally. Thus, perform logical operations to get the actually needed data
+
+  loadq Ma, a
+  loadq Ma, Mb ;; address in Mb
+  loadd Ma, a
+  loadd Ma, Mb
+  loadw Ma, a
+  loadw Ma, Mb
+  loadb Ma, a
+  loadb Ma, Mb
+
   ;; Here the value in the register is stored in the variable so don't be confused.
   ;; This syntax is just to feel good because it would be odd otherwise(Every other instruction following the opposite syntax of this doesn't feel right to me)
-  store Ma, a
-  store Ma, Mb ;; address in Mb
+  storeq Ma, a
+  storeq Ma, Mb ;; address in Mb(store what is in Ma into the address in Mb)
+  stored Ma, a
+  stored Ma, Mb
+  storew Ma, a
+  storew Ma, Mb
+  storeb Ma, a
+  storeb Ma, Mb
+
+  atm loadq Ma, a
+  atm loadd Ma, a
+  atm loadw Ma, a
+  atm loadb Ma, a
  
+  atm storeq Ma, a
+  atm stored Ma, a
+  atm storew Ma, a
+  atm storeb Ma, a
+  
 ;; Here is the thing.
 ;; A procedure or a label can have the same name as an identifier
 ;; The assembler will know which you are referencing based on the context.

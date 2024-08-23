@@ -242,6 +242,38 @@ bool masm::Code::read_code()
             if (!handle_lea())
                 return false;
             break;
+        case INST_LOADB:
+            if (!handle_load_store(LOADB_REG))
+                return false;
+            break;
+        case INST_LOADW:
+            if (!handle_load_store(LOADW_REG))
+                return false;
+            break;
+        case INST_LOADD:
+            if (!handle_load_store(LOADD_REG))
+                return false;
+            break;
+        case INST_LOADQ:
+            if (!handle_load_store(LOADQ_REG))
+                return false;
+            break;
+        case INST_STOREB:
+            if (!handle_load_store(STOREB_REG))
+                return false;
+            break;
+        case INST_STOREW:
+            if (!handle_load_store(STOREW_REG))
+                return false;
+            break;
+        case INST_STORED:
+            if (!handle_load_store(STORED_REG))
+                return false;
+            break;
+        case INST_STOREQ:
+            if (!handle_load_store(STOREQ_REG))
+                return false;
+            break;
         default:
             err(fname, t.line, t.col, t.val.length(), _parsing, straytok, ERR_STR, "A stray token that doesn't fit any rules was found.", _l.get_from_line(t.line), "Maybe a fluke? Forgot a keyword?");
             return false;
@@ -939,7 +971,59 @@ bool masm::Code::handle_lea()
     return true;
 }
 
-bool masm::Code::handle_load_store(NodeKind k)
+bool masm::Code::handle_load_store(NodeKind k, bool atm)
 {
-    ///////////////
+    Node node;
+    node.node = std::make_unique<NodeLoadStore>();
+    auto n = (NodeLoadStore *)node.node.get();
+    auto res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here in the MEM instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    t = res.value();
+    if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here in the MOV instruction.", _l.get_from_line(t.line));
+        return false;
+    }
+    n->reg = regr_map[t.type];
+    res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register or a variable here in the MEM instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    t = res.value();
+    switch (t.type)
+    {
+    case IDENTIFIER:
+    {
+        if (check_var(t.val))
+        {
+            err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected an identifier here that exists after the MEM instruction.", _l.get_from_line(regr_line));
+            return false;
+        }
+        node.kind = (NodeKind)(k + 1);
+        n->second_oper = t.val;
+        break;
+    }
+    default:
+        if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+        {
+            err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected an identifier or a register here after the MEM instruction.", _l.get_from_line(regr_line));
+            return false;
+        }
+        if (atm)
+        {
+            err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "ATOMIC MEM instructions do not take registers as the second operand.", _l.get_from_line(regr_line));
+            return false;
+        }
+        node.kind = k;
+        n->second_oper = regr_map[t.type];
+        break;
+    }
+    nodes->push_back(std::move(node));
+    return true;
 }

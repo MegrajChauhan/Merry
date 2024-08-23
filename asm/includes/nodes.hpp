@@ -117,10 +117,29 @@ namespace masm
 
         LEA,
 
-        LOAD_IMM,
-        LOAD_VAR,
-        STORE_IMM,
-        STORE_VAR,
+        LOADB_REG,
+        LOADB_VAR,
+
+        LOADW_REG,
+        LOADW_VAR,
+        
+        LOADD_REG,
+        LOADD_VAR,
+        
+        LOADQ_REG,
+        LOADQ_VAR,
+        
+        STOREB_REG,
+        STOREB_VAR,
+        
+        STOREW_REG,
+        STOREW_VAR,
+        
+        STORED_REG,
+        STORED_VAR,
+        
+        STOREQ_REG,
+        STOREQ_VAR,
     };
 
     enum Register

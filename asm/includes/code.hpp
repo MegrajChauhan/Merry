@@ -62,7 +62,7 @@ namespace masm
 
         bool handle_lea();
 
-        bool handle_load_store(NodeKind k);
+        bool handle_load_store(NodeKind k, bool atm = false);
 
         bool check_var(std::string name);
         bool check_lbl(std::string name);

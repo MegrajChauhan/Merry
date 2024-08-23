@@ -392,6 +392,54 @@ bool masm::CodeGen::generate()
         case LEA:
             handle_lea((NodeLea *)node.node.get());
             break;
+        case LOADB_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_LOADB);
+            break;
+        case STOREB_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_STOREB);
+            break;
+        case LOADW_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_LOADW);
+            break;
+        case STOREW_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_STOREW);
+            break;
+        case LOADD_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_LOADD);
+            break;
+        case STORED_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_STORED);
+            break;
+        case LOADQ_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_LOAD);
+            break;
+        case STOREQ_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_STORE);
+            break;
+        case LOADB_REG:
+            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_LOADB_REG);
+            break;
+        case LOADW_REG:
+            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_LOADW_REG);
+            break;
+        case LOADD_REG:
+            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_LOADD_REG);
+            break;
+        case LOADQ_REG:
+            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_LOAD_REG);
+            break;
+        case STOREB_REG:
+            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_STOREB_REG);
+            break;
+        case STOREW_REG:
+            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_STOREW_REG);
+            break;
+        case STORED_REG:
+            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_STORED_REG);
+            break;
+        case STOREQ_REG:
+            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_STORE_REG);
+            break;
         }
     }
     for (auto b : code)
@@ -773,5 +821,26 @@ void masm::CodeGen::handle_lea(NodeLea *n)
     b.bytes.b7 = n->ind;
     b.bytes.b6 = n->base;
     b.bytes.b5 = n->dest;
+    code.push_back(b);
+}
+
+void masm::CodeGen::handle_load_store_reg_var(NodeLoadStore *n, msize_t op)
+{
+    GenBinary b;
+    Variable var = table->variables[table->_var_list[std::get<std::string>(n->second_oper)]];
+    size_t addr = data_addr[std::get<std::string>(n->second_oper)];
+    b.bytes.b1 = op;
+    b.bytes.b2 = n->reg;
+    b.full |= (addr & 0xFFFFFFFFFFFF);
+    code.push_back(b);
+}
+
+void masm::CodeGen::handle_load_store_reg_reg(NodeLoadStore *n, msize_t op)
+{
+    GenBinary b;
+    b.bytes.b1 = op;
+    b.bytes.b8 = n->reg;
+    b.bytes.b8 <<= 4;
+    b.bytes.b8 |= std::get<Register>(n->second_oper);
     code.push_back(b);
 }
