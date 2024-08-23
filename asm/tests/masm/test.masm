@@ -167,6 +167,10 @@ _just_a_label
   inc Ma
   dec Ma
 
+  cmp Ma, 4683
+  cmp Mc, Md
+  cmp M1, d
+
 ;; Here is the thing.
 ;; A procedure or a label can have the same name as an identifier
 ;; The assembler will know which you are referencing based on the context.

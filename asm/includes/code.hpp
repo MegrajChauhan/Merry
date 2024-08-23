@@ -58,6 +58,8 @@ namespace masm
 
         bool handle_logical_inst(NodeKind k, bool limit);
 
+        bool handle_cmp();
+
         bool check_var(std::string name);
         bool check_lbl(std::string name);
     };

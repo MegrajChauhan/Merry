@@ -371,6 +371,9 @@ bool masm::CodeGen::generate()
         case RSHIFT:
             handle_logical_reg_imm(OP_RSHIFT, (NodeLogical *)node.node.get());
             break;
+        case CMP_IMM:
+            handle_logical_reg_imm(OP_CMP_IMM, (NodeLogical *)node.node.get());
+            break;
         case AND_REG:
             handle_logical_reg_reg(OP_AND_REG, (NodeLogical *)node.node.get());
             break;
@@ -379,6 +382,12 @@ bool masm::CodeGen::generate()
             break;
         case XOR_REG:
             handle_logical_reg_reg(OP_XOR_REG, (NodeLogical *)node.node.get());
+            break;
+        case CMP_REG:
+            handle_logical_reg_reg(OP_CMP_REG, (NodeLogical *)node.node.get());
+            break;
+        case CMP_VAR:
+            handle_arithmetic_reg_var((NodeLogical *)node.node.get(), OP_CMP_IMM_MEMB);
             break;
         }
     }
@@ -650,6 +659,7 @@ void masm::CodeGen::give_address_to_labels()
             case AND_IMM:
             case OR_IMM:
             case XOR_IMM:
+            case CMP_IMM:
                 i++;
                 break;
             }

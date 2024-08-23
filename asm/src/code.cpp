@@ -234,6 +234,10 @@ bool masm::Code::read_code()
             if (!handle_logical_inst(RSHIFT, false))
                 return false;
             break;
+        case INST_CMP:
+            if (!handle_cmp())
+                return false;
+            break;
         default:
             err(fname, t.line, t.col, t.val.length(), _parsing, straytok, ERR_STR, "A stray token that doesn't fit any rules was found.", _l.get_from_line(t.line), "Maybe a fluke? Forgot a keyword?");
             return false;
@@ -388,7 +392,6 @@ bool masm::Code::handle_arithmetic_unsigned(NodeKind k)
 bool masm::Code::handle_mov(NodeKind k)
 {
     Node node;
-
     node.node = std::make_unique<NodeMov>();
     NodeMov *a = (NodeMov *)node.node.get();
     auto res = _l.next_token();
@@ -836,4 +839,66 @@ bool masm::Code::handle_logical_inst(NodeKind k, bool limit)
     }
     nodes->push_back(std::move(node));
     return true;
+}
+
+bool masm::Code::handle_cmp()
+{
+    Node node;
+    node.node = std::make_unique<NodeLogical>();
+    auto a = (NodeLogical *)node.node.get();
+    auto res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the CMP instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    t = res.value();
+    if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the CMP instruction.", _l.get_from_line(t.line));
+        return false;
+    }
+    res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, _l.get_line(), _l.get_col(), 0, _parsing, syntaxerr, ERR_STR, "Expected a register, variable or immediate here after the first operand.", _l.get_from_line(_l.get_line()));
+        return false;
+    }
+    a->reg = regr_map.find(t.type)->second;
+    t = res.value();
+    switch (t.type)
+    {
+    case IDENTIFIER:
+    {
+        if (check_var(t.val))
+        {
+            err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "The identifier \"" + t.val + "\" doesn't exist.", _l.get_from_line(t.line));
+            return false;
+        }
+        node.kind = CMP_VAR;
+        a->second_oper = t.val;
+        break;
+    }
+    case NUM_INT:
+    {
+        node.kind = CMP_IMM;
+        a->second_oper = t.val;
+        break;
+    }
+    default:
+    {
+        if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
+        {
+            node.kind = CMP_REG;
+            a->second_oper = regr_map.find(t.type)->second;
+            break;
+        }
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register, variable or immediate here after the first operand.", _l.get_from_line(t.line));
+        return false;
+    }
+    }
+    nodes->push_back(std::move(node));
+    return true;
+    // Yes this entire function is a copy of the MOV instruction
+    // Get offended all you want
 }

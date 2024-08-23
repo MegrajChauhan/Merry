@@ -95,6 +95,7 @@ namespace masm
         INST_XOR,
         INST_LSHIFT,
         INST_RSHIFT,
+        INST_CMP,
     };
 
     static std::unordered_map<std::string, TokenType>
@@ -174,6 +175,7 @@ namespace masm
                 {"xor", INST_XOR},
                 {"lshift", INST_LSHIFT},
                 {"rshift", INST_RSHIFT},
+                {"cmp", INST_CMP},
                 {"proc", KEY_PROC}};
 
     static std::unordered_map<TokenType, Register>

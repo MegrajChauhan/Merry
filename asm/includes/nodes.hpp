@@ -110,6 +110,10 @@ namespace masm
         XOR_REG,
         LSHIFT,
         RSHIFT,
+
+        CMP_IMM,
+        CMP_REG,
+        CMP_VAR,
     };
 
     enum Register
