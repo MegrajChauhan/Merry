@@ -27,17 +27,13 @@ bool masm::Code::read_code()
         switch (t.type)
         {
         case IDENTIFIER:
-        {
             if (!handle_names(false))
                 return false;
             break;
-        }
         case KEY_PROC:
-        {
             if (!handle_names(true))
                 return false;
             break;
-        }
         case INST_HLT:
         {
             Node n;
@@ -63,185 +59,161 @@ bool masm::Code::read_code()
             break;
         }
         case INST_ADD:
-        {
             if (!handle_arithmetic_unsigned(ADD_IMM))
                 return false;
             break;
-        }
         case INST_SUB:
-        {
             if (!handle_arithmetic_unsigned(SUB_IMM))
                 return false;
             break;
-        }
         case INST_MUL:
-        {
             if (!handle_arithmetic_unsigned(MUL_IMM))
                 return false;
             break;
-        }
         case INST_DIV:
-        {
             if (!handle_arithmetic_unsigned(DIV_IMM))
                 return false;
             break;
-        }
         case INST_MOD:
-        {
             if (!handle_arithmetic_unsigned(MOD_IMM))
                 return false;
             break;
-        }
         case INST_IADD:
-        {
             if (!handle_arithmetic_signed(IADD_IMM))
                 return false;
             break;
-        }
         case INST_ISUB:
-        {
             if (!handle_arithmetic_signed(ISUB_IMM))
                 return false;
             break;
-        }
         case INST_IMUL:
-        {
             if (!handle_arithmetic_signed(IMUL_IMM))
                 return false;
             break;
-        }
         case INST_IDIV:
-        {
             if (!handle_arithmetic_signed(IDIV_IMM))
                 return false;
             break;
-        }
         case INST_IMOD:
-        {
             if (!handle_arithmetic_signed(IMOD_IMM))
                 return false;
             break;
-        }
         case INST_ADDF:
-        {
             if (!handle_arithmetic_float(FADD))
                 return false;
             break;
-        }
         case INST_ADDLF:
-        {
             if (!handle_arithmetic_float(LFADD))
                 return false;
             break;
-        }
         case INST_SUBF:
-        {
             if (!handle_arithmetic_float(FSUB))
                 return false;
             break;
-        }
         case INST_SUBLF:
-        {
             if (!handle_arithmetic_float(LFSUB))
                 return false;
             break;
-        }
         case INST_MULF:
-        {
             if (!handle_arithmetic_float(FMUL))
                 return false;
             break;
-        }
         case INST_MULLF:
-        {
             if (!handle_arithmetic_float(LFMUL))
                 return false;
             break;
-        }
         case INST_DIVF:
-        {
             if (!handle_arithmetic_float(FDIV))
                 return false;
             break;
-        }
         case INST_DIVLF:
-        {
             if (!handle_arithmetic_float(LFDIV))
                 return false;
             break;
-        }
         case INST_MOV:
-        {
             if (!handle_mov(MOV_IMM))
                 return false;
             break;
-        }
         case INST_MOVL:
-        {
             if (!handle_mov(MOVL_IMM))
                 return false;
             break;
-        }
         case INST_MOVB:
-        {
             if (!handle_movX(MOVB))
                 return false;
             break;
-        }
         case INST_MOVW:
-        {
             if (!handle_movX(MOVW))
                 return false;
             break;
-        }
         case INST_MOVD:
-        {
             if (!handle_movX(MOVD))
                 return false;
             break;
-        }
         case INST_MOVESXB:
-        {
             if (!handle_mov(MOVSXB_IMM))
                 return false;
             break;
-        }
         case INST_MOVESXW:
-        {
             if (!handle_mov(MOVSXW_IMM))
                 return false;
             break;
-        }
         case INST_MOVESXD:
-        {
             if (!handle_mov(MOVSXD_IMM))
                 return false;
             break;
-        }
         case INST_JMP:
-        {
             if (!handle_jmp(JMP))
                 return false;
             break;
-        }
         case INST_CALL:
-        {
             if (!handle_call())
                 return false;
             break;
-        }
         case INST_SVA:
-        {
             if (!handle_sva_svc(SVA_IMM))
                 return false;
             break;
-        }
         case INST_SVC:
-        {
             if (!handle_sva_svc(SVC_IMM))
                 return false;
             break;
+        case INST_PUSHA:
+        {
+            Node n;
+            n.node = std::make_unique<Base>();
+            n.kind = PUSHA;
+            nodes->push_back(std::move(n));
+            break;
         }
+        case INST_POPA:
+        {
+            Node n;
+            n.node = std::make_unique<Base>();
+            n.kind = POPA;
+            nodes->push_back(std::move(n));
+            break;
+        }
+        case INST_PUSH:
+            if (!handle_push_pop(PUSH_IMM))
+                return false;
+            break;
+        case INST_POP:
+            if (!handle_push_pop(POP_IMM))
+                return false;
+            break;
+        case INST_NOT:
+            if (!handle_single_regr(NOT))
+                return false;
+            break;
+        case INST_INC:
+            if (!handle_single_regr(INC))
+                return false;
+            break;
+        case INST_DEC:
+            if (!handle_single_regr(DEC))
+                return false;
+            break;
         default:
             err(fname, t.line, t.col, t.val.length(), _parsing, straytok, ERR_STR, "A stray token that doesn't fit any rules was found.", _l.get_from_line(t.line), "Maybe a fluke? Forgot a keyword?");
             return false;
@@ -313,11 +285,7 @@ bool masm::Code::handle_names(bool _proc)
     NodeName *n_ = (NodeName *)n.get();
     n_->name = t.val;
     Node node;
-    node.col_st = regr_col;
-    node.file = file;
     node.kind = (_proc) ? PROC_DECLR : LABEL;
-    node.line_ed = t.line;
-    node.line_st = regr_line;
     node.node = std::move(n);
     nodes->push_back(std::move(node));
     if (node.kind == PROC_DECLR)
@@ -339,9 +307,7 @@ bool masm::Code::handle_names(bool _proc)
 bool masm::Code::handle_arithmetic_unsigned(NodeKind k)
 {
     Node node;
-    node.col_st = regr_col;
-    node.line_st = regr_line;
-    node.file = file;
+
     node.node = std::make_unique<NodeArithmetic>();
     NodeArithmetic *a = (NodeArithmetic *)node.node.get();
     auto res = _l.next_token();
@@ -402,9 +368,7 @@ bool masm::Code::handle_arithmetic_unsigned(NodeKind k)
 bool masm::Code::handle_mov(NodeKind k)
 {
     Node node;
-    node.col_st = regr_col;
-    node.line_st = regr_line;
-    node.file = file;
+
     node.node = std::make_unique<NodeMov>();
     NodeMov *a = (NodeMov *)node.node.get();
     auto res = _l.next_token();
@@ -471,9 +435,7 @@ bool masm::Code::handle_mov(NodeKind k)
 bool masm::Code::handle_sva_svc(NodeKind k)
 {
     Node node;
-    node.col_st = regr_col;
-    node.line_st = regr_line;
-    node.file = file;
+
     node.node = std::make_unique<NodeSTACK>();
     NodeSTACK *a = (NodeSTACK *)node.node.get();
     auto res = _l.next_token();
@@ -577,9 +539,7 @@ bool masm::Code::handle_movX(NodeKind k)
 bool masm::Code::handle_arithmetic_signed(NodeKind k)
 {
     Node node;
-    node.col_st = regr_col;
-    node.line_st = regr_line;
-    node.file = file;
+
     node.node = std::make_unique<NodeArithmetic>();
     NodeArithmetic *a = (NodeArithmetic *)node.node.get();
     auto res = _l.next_token();
@@ -629,9 +589,7 @@ bool masm::Code::handle_arithmetic_signed(NodeKind k)
 bool masm::Code::handle_arithmetic_float(NodeKind k)
 {
     Node node;
-    node.col_st = regr_col;
-    node.line_st = regr_line;
-    node.file = file;
+
     node.node = std::make_unique<NodeArithmetic>();
     NodeArithmetic *a = (NodeArithmetic *)node.node.get();
     auto res = _l.next_token();
@@ -671,9 +629,6 @@ bool masm::Code::handle_arithmetic_float(NodeKind k)
 bool masm::Code::handle_jmp(NodeKind k)
 {
     Node node;
-    node.col_st = t.col;
-    node.line_st = t.line;
-    node.file = file;
     node.kind = k;
     node.node = std::make_unique<NodeName>();
     NodeName *n = (NodeName *)node.node.get();
@@ -694,7 +649,7 @@ bool masm::Code::handle_jmp(NodeKind k)
         err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a label here that exists after the branch instruction; Label doesn't exists.", _l.get_from_line(regr_line));
         return false;
     }
-    node.line_ed = t.line;
+
     n->name = t.val;
     nodes->push_back(std::move(node));
     return true;
@@ -703,9 +658,6 @@ bool masm::Code::handle_jmp(NodeKind k)
 bool masm::Code::handle_call()
 {
     Node node;
-    node.col_st = t.col;
-    node.line_st = t.line;
-    node.file = file;
     node.node = std::make_unique<NodeCall>();
     NodeCall *n = (NodeCall *)node.node.get();
     auto res = _l.next_token();
@@ -726,7 +678,7 @@ bool masm::Code::handle_call()
         return false;
     }
     node.kind = (t.type == IDENTIFIER) ? CALL : CALL_REG;
-    node.line_ed = t.line;
+
     if (t.type == IDENTIFIER)
         n->_oper = t.val;
     else
@@ -743,4 +695,93 @@ bool masm::Code::check_var(std::string var)
 bool masm::Code::check_lbl(std::string var)
 {
     return (proc_list->find(var) == proc_list->end());
+}
+
+bool masm::Code::handle_push_pop(NodeKind k)
+{
+    Node node;
+    node.node = std::make_unique<NodePushPop>();
+    auto n = (NodePushPop *)node.node.get();
+    auto res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a label, or a register, or an identifier or an immediate after the STACK instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    t = res.value();
+    switch (t.type)
+    {
+    case IDENTIFIER:
+    {
+        if (check_lbl(t.val) && check_var(t.val))
+        {
+            err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a label or an identifier here that exists after the STACK instruction.", _l.get_from_line(regr_line));
+            return false;
+        }
+        node.kind = (NodeKind)(k + 2);
+        n->val = t.val;
+        break;
+    }
+    case NUM_FLOAT:
+    case NUM_INT:
+    {
+        if (k == POP_IMM)
+        {
+            err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "POP instruction doesn't accept immediates.", _l.get_from_line(regr_line));
+            return false;
+        }
+        node.kind = (k);
+        n->val = t.val;
+        break;
+    }
+    default:
+        if (t.type >= KEY_Ma && t.type <= KEY_Mm5)
+        {
+            node.kind = (NodeKind)(k + 1);
+            n->val = regr_map[t.type];
+            break;
+        }
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a label, identifier,or an immediate here that after the STACK instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+
+    nodes->push_back(std::move(node));
+    return true;
+}
+
+bool masm::Code::handle_single_regr(NodeKind k)
+{
+    Node node;
+    node.node = std::make_unique<NodeSingleRegr>();
+    auto n = (NodeSingleRegr *)node.node.get();
+    auto res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here as the operand.", _l.get_from_line(regr_line));
+        return false;
+    }
+    t = res.value();
+    if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here as the operand.", _l.get_from_line(regr_line));
+        return false;
+    }
+    n->reg = regr_map[t.type];
+    nodes->push_back(std::move(node));
+    return true;
+}
+
+bool masm::Code::handle_logical_inst(NodeKind k, bool limit)
+{
+    Node node;
+    node.node = std::make_unique<NodeLogical>();
+    auto n = (NodeLogical *)node.node.get();
+    auto res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register or an immediate after the LOGICAL instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    t = res.value();
+    n->reg = regr_map[t.type];
 }

@@ -52,7 +52,11 @@ namespace masm
 
         bool handle_sva_svc(NodeKind k);
 
-        bool handle_push_pop();
+        bool handle_push_pop(NodeKind k);
+
+        bool handle_single_regr(NodeKind k);
+
+        bool handle_logical_inst(NodeKind k, bool limit);
 
         bool check_var(std::string name);
         bool check_lbl(std::string name);

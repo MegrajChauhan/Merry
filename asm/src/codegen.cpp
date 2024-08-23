@@ -317,6 +317,45 @@ bool masm::CodeGen::generate()
             code.push_back(b);
             break;
         }
+        case PUSHA:
+        {
+            GenBinary b;
+            b.bytes.b1 = OP_PUSHA;
+            code.push_back(b);
+            break;
+        }
+        case POPA:
+        {
+            GenBinary b;
+            b.bytes.b1 = OP_POPA;
+            code.push_back(b);
+            break;
+        }
+        case PUSH_REG:
+            handle_push_pop_reg(OP_PUSH_REG, (NodePushPop *)node.node.get());
+            break;
+        case POP_REG:
+            handle_push_pop_reg(OP_POP, (NodePushPop *)node.node.get());
+            break;
+        case PUSH_IMM:
+        case POP_IMM: // just to keep the joke alive and stop compiler warnings obviously
+            handle_push_imm((NodePushPop *)node.node.get());
+            break;
+        case PUSH_VAR:
+            handle_push_pop_var(OP_PUSH_MEMB, (NodePushPop *)node.node.get());
+            break;
+        case POP_VAR:
+            handle_push_pop_var(OP_POP_MEMB, (NodePushPop *)node.node.get());
+            break;
+        case NOT:
+            handle_single_regr(OP_NOT, (NodeSingleRegr *)node.node.get());
+            break;
+        case INC:
+            handle_single_regr(OP_INC, (NodeSingleRegr *)node.node.get());
+            break;
+        case DEC:
+            handle_single_regr(OP_DEC, (NodeSingleRegr *)node.node.get());
+            break;
         }
     }
     for (auto b : code)
@@ -582,9 +621,78 @@ void masm::CodeGen::give_address_to_labels()
             switch (l.kind)
             {
             case MOVL_IMM:
+            case PUSH_IMM:
+            case POP_IMM: // again, but for the joke this time
                 i++;
                 break;
             }
         }
     }
+}
+
+void masm::CodeGen::handle_push_pop_reg(msize_t op, NodePushPop *n)
+{
+    GenBinary b;
+    b.bytes.b1 = op;
+    b.bytes.b8 = std::get<Register>(n->val);
+    code.push_back(b);
+}
+
+void masm::CodeGen::handle_push_imm(NodePushPop *n)
+{
+    GenBinary b;
+    b.bytes.b1 = OP_PUSH_IMM;
+    code.push_back(b);
+    b.full = std::stoull(std::get<std::string>(n->val));
+    code.push_back(b);
+}
+
+void masm::CodeGen::handle_push_pop_var(msize_t op, NodePushPop *n)
+{
+    GenBinary b;
+    std::string name = std::get<std::string>(n->val);
+    size_t addr = 0;
+    if ((data_addr.find(name) == data_addr.end()))
+    {
+        // It must be a label
+        addr = label_addr[name];
+        b.bytes.b1 = OP_PUSH_IMM;
+        code.push_back(b);
+        b.full = std::stoull(std::get<std::string>(n->val));
+    }
+    else
+    {
+        addr = data_addr[name];
+        auto dets = table->variables[table->_var_list[name]];
+        switch (dets.type)
+        {
+        case BYTE:
+        case STRING:
+        case RESB:
+            b.bytes.b1 = op;
+            break;
+        case WORD:
+        case RESW:
+            b.bytes.b1 = op + 1;
+            break;
+        case DWORD:
+        case RESD:
+            b.bytes.b1 = op + 2;
+            break;
+        case QWORD:
+        case RESQ:
+            b.bytes.b1 = op + 3;
+            break;
+        }
+        b.full |= (addr & 0xFFFFFFFFFFFF);
+    }
+    code.push_back(b);
+}
+
+void masm::CodeGen::handle_single_regr(msize_t op, NodeSingleRegr *n)
+{
+    GenBinary b;
+    b.bytes.b1 = op;
+    b.bytes.b8 = n->reg;
+    code.push_back(b);
 }

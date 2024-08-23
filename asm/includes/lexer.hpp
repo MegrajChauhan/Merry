@@ -87,6 +87,14 @@ namespace masm
         INST_POPA,
         INST_PUSH,
         INST_POP,
+        INST_NOT,
+        INST_INC,
+        INST_DEC,
+        INST_AND,
+        INST_OR,
+        INST_XOR,
+        INST_LSHIFT,
+        INST_RSHIFT,
     };
 
     static std::unordered_map<std::string, TokenType>
@@ -158,6 +166,14 @@ namespace masm
                 {"pusha", INST_PUSHA},
                 {"push", INST_PUSH},
                 {"pop", INST_POP},
+                {"not", INST_NOT},
+                {"inc", INST_INC},
+                {"dec", INST_DEC},
+                {"and", INST_AND},
+                {"or", INST_OR},
+                {"xor", INST_XOR},
+                {"lshift", INST_LSHIFT},
+                {"rshift", INST_RSHIFT},
                 {"proc", KEY_PROC}};
 
     static std::unordered_map<TokenType, Register>

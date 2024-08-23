@@ -145,9 +145,27 @@ _just_a_label
   push 1234 ;; use negatives as well, floats as well
   pop Ma
   push d ;; here the assembler will handle the internal translation based on the datatype of the variable
+  push _just_a_label ;; push the address of the label
 
   pop Ma
   pop c
+  pop _just_a_label ;; just to be sure, this also works but the thing in DATA memory will be affected. Serious chances of corruption
+  ;; Jokes on you actually. The above in translated to "push _just_a_label". Now! You bad guy trying to be a smart-ass, figure out why
+  ;; your code isn't doing what it says.
+
+  and Ma, 7383
+  and Ma, Mb
+  ;; and Ma, a ;; This doesn't work for logical instructions
+  or Ma, 7383
+  or Ma, Mb
+  xor Ma, 7383
+  xor Ma, Mb
+  lshift Mb, 23
+  rshift Ma, 12
+  
+  not Mf
+  inc Ma
+  dec Ma
 
 ;; Here is the thing.
 ;; A procedure or a label can have the same name as an identifier

@@ -94,9 +94,22 @@ namespace masm
         PUSH_REG,
         PUSH_VAR,
 
-        POP_IMM,
+        POP_IMM, // useless KIND just for there for some reason
         POP_REG,
         POP_VAR,
+
+        NOT,
+        INC,
+        DEC,
+
+        AND_IMM,
+        AND_REG,
+        OR_IMM,
+        OR_REG,
+        XOR_IMM,
+        XOR_REG,
+        LSHIFT,
+        RSHIFT,
     };
 
     enum Register
@@ -161,12 +174,19 @@ namespace masm
         std::variant<Register, std::string> val;
     };
 
+    struct NodeSingleRegr : public Base
+    {
+        Register reg;
+    };
+
+    struct NodeLogical : public NodeArithmetic
+    {
+    };
+
     struct Node
     {
         NodeKind kind;
         std::unique_ptr<Base> node;
-        size_t line_st, line_ed, col_st;
-        std::shared_ptr<std::string> file;
     };
 
 };
