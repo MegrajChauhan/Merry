@@ -214,6 +214,26 @@ bool masm::Code::read_code()
             if (!handle_single_regr(DEC))
                 return false;
             break;
+        case INST_AND:
+            if (!handle_logical_inst(AND_IMM, false))
+                return false;
+            break;
+        case INST_OR:
+            if (!handle_logical_inst(OR_IMM, false))
+                return false;
+            break;
+        case INST_XOR:
+            if (!handle_logical_inst(XOR_IMM, false))
+                return false;
+            break;
+        case INST_LSHIFT:
+            if (!handle_logical_inst(LSHIFT, false))
+                return false;
+            break;
+        case INST_RSHIFT:
+            if (!handle_logical_inst(RSHIFT, false))
+                return false;
+            break;
         default:
             err(fname, t.line, t.col, t.val.length(), _parsing, straytok, ERR_STR, "A stray token that doesn't fit any rules was found.", _l.get_from_line(t.line), "Maybe a fluke? Forgot a keyword?");
             return false;
@@ -784,4 +804,36 @@ bool masm::Code::handle_logical_inst(NodeKind k, bool limit)
     }
     t = res.value();
     n->reg = regr_map[t.type];
+    res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected an immediate or another register after the LOGICAL instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    t = res.value();
+    switch (t.type)
+    {
+    case NUM_INT:
+    {
+        node.kind = (k);
+        n->second_oper = t.val;
+        break;
+    }
+    default:
+        if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
+        {
+            if (limit)
+            {
+                err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "This logical instruction doesn't accept registers as second.", _l.get_from_line(regr_line));
+                return false;
+            }
+            node.kind = (NodeKind)(k + 1);
+            n->second_oper = regr_map[t.type];
+            break;
+        }
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected an immediate or a register here that after the LOGICAL instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    nodes->push_back(std::move(node));
+    return true;
 }

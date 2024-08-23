@@ -356,6 +356,30 @@ bool masm::CodeGen::generate()
         case DEC:
             handle_single_regr(OP_DEC, (NodeSingleRegr *)node.node.get());
             break;
+        case AND_IMM:
+            handle_logical_reg_imm(OP_AND_IMM, (NodeLogical *)node.node.get());
+            break;
+        case OR_IMM:
+            handle_logical_reg_imm(OP_OR_IMM, (NodeLogical *)node.node.get());
+            break;
+        case XOR_IMM:
+            handle_logical_reg_imm(OP_XOR_IMM, (NodeLogical *)node.node.get());
+            break;
+        case LSHIFT:
+            handle_logical_reg_imm(OP_LSHIFT, (NodeLogical *)node.node.get());
+            break;
+        case RSHIFT:
+            handle_logical_reg_imm(OP_RSHIFT, (NodeLogical *)node.node.get());
+            break;
+        case AND_REG:
+            handle_logical_reg_reg(OP_AND_REG, (NodeLogical *)node.node.get());
+            break;
+        case OR_REG:
+            handle_logical_reg_reg(OP_OR_REG, (NodeLogical *)node.node.get());
+            break;
+        case XOR_REG:
+            handle_logical_reg_reg(OP_XOR_REG, (NodeLogical *)node.node.get());
+            break;
         }
     }
     for (auto b : code)
@@ -623,6 +647,9 @@ void masm::CodeGen::give_address_to_labels()
             case MOVL_IMM:
             case PUSH_IMM:
             case POP_IMM: // again, but for the joke this time
+            case AND_IMM:
+            case OR_IMM:
+            case XOR_IMM:
                 i++;
                 break;
             }
@@ -694,5 +721,33 @@ void masm::CodeGen::handle_single_regr(msize_t op, NodeSingleRegr *n)
     GenBinary b;
     b.bytes.b1 = op;
     b.bytes.b8 = n->reg;
+    code.push_back(b);
+}
+
+void masm::CodeGen::handle_logical_reg_imm(msize_t op, NodeLogical *n)
+{
+    GenBinary b;
+    b.bytes.b1 = op;
+    if (op == OP_LSHIFT || op == OP_RSHIFT)
+    {
+        b.bytes.b8 |= std::stoull(std::get<std::string>(n->second_oper)) & 0x40;
+        b.bytes.b7 = n->reg;
+    }
+    else
+    {
+        b.bytes.b8 = n->reg;
+        code.push_back(b);
+        b.full = std::stoull(std::get<std::string>(n->second_oper));
+    }
+    code.push_back(b);
+}
+
+void masm::CodeGen::handle_logical_reg_reg(msize_t op, NodeLogical *n)
+{
+    GenBinary b;
+    b.bytes.b1 = op;
+    b.bytes.b8 = n->reg;
+    b.bytes.b8 <<= 4;
+    b.bytes.b8 |= std::get<Register>(n->second_oper);
     code.push_back(b);
 }

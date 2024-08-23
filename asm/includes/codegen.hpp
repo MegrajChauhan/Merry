@@ -73,6 +73,9 @@ namespace masm
         void handle_push_pop_var(msize_t op, NodePushPop *n);
 
         void handle_single_regr(msize_t op, NodeSingleRegr *n);
+
+        void handle_logical_reg_imm(msize_t op, NodeLogical *n);
+        void handle_logical_reg_reg(msize_t op, NodeLogical *n);
     };
 };
 
