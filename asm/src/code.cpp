@@ -238,6 +238,10 @@ bool masm::Code::read_code()
             if (!handle_cmp())
                 return false;
             break;
+        case INST_LEA:
+            if (!handle_lea())
+                return false;
+            break;
         default:
             err(fname, t.line, t.col, t.val.length(), _parsing, straytok, ERR_STR, "A stray token that doesn't fit any rules was found.", _l.get_from_line(t.line), "Maybe a fluke? Forgot a keyword?");
             return false;
@@ -901,4 +905,41 @@ bool masm::Code::handle_cmp()
     return true;
     // Yes this entire function is a copy of the MOV instruction
     // Get offended all you want
+}
+
+bool masm::Code::handle_lea()
+{
+    Register r[4];
+    std::optional<Token> res;
+    for (size_t i = 0; i < 4; i++)
+    {
+        res = _l.next_token();
+        if (!res.has_value())
+        {
+            err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here in the LEA instruction.", _l.get_from_line(regr_line));
+            return false;
+        }
+        t = res.value();
+        if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+        {
+            err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here in the LEA instruction.", _l.get_from_line(t.line));
+            return false;
+        }
+        r[i] = regr_map[t.type];
+    }
+    Node node;
+    node.kind = LEA;
+    node.node = std::make_unique<NodeLea>();
+    auto n = (NodeLea *)node.node.get();
+    n->dest = r[0];
+    n->base = r[1];
+    n->ind = r[2];
+    n->scale = r[3];
+    nodes->push_back(std::move(node));
+    return true;
+}
+
+bool masm::Code::handle_load_store(NodeKind k)
+{
+    ///////////////
 }

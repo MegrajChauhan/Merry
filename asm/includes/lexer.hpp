@@ -96,6 +96,9 @@ namespace masm
         INST_LSHIFT,
         INST_RSHIFT,
         INST_CMP,
+        INST_LEA,
+        INST_LOAD,
+        INST_STORE,
     };
 
     static std::unordered_map<std::string, TokenType>
@@ -176,6 +179,9 @@ namespace masm
                 {"lshift", INST_LSHIFT},
                 {"rshift", INST_RSHIFT},
                 {"cmp", INST_CMP},
+                {"lea", INST_LEA},
+                {"load", INST_LOAD},
+                {"store", INST_STORE},
                 {"proc", KEY_PROC}};
 
     static std::unordered_map<TokenType, Register>

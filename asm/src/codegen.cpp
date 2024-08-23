@@ -389,6 +389,9 @@ bool masm::CodeGen::generate()
         case CMP_VAR:
             handle_arithmetic_reg_var((NodeLogical *)node.node.get(), OP_CMP_IMM_MEMB);
             break;
+        case LEA:
+            handle_lea((NodeLea *)node.node.get());
+            break;
         }
     }
     for (auto b : code)
@@ -759,5 +762,16 @@ void masm::CodeGen::handle_logical_reg_reg(msize_t op, NodeLogical *n)
     b.bytes.b8 = n->reg;
     b.bytes.b8 <<= 4;
     b.bytes.b8 |= std::get<Register>(n->second_oper);
+    code.push_back(b);
+}
+
+void masm::CodeGen::handle_lea(NodeLea *n)
+{
+    GenBinary b;
+    b.bytes.b1 = OP_LEA;
+    b.bytes.b8 = n->scale;
+    b.bytes.b7 = n->ind;
+    b.bytes.b6 = n->base;
+    b.bytes.b5 = n->dest;
     code.push_back(b);
 }

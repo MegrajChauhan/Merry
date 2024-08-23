@@ -114,6 +114,13 @@ namespace masm
         CMP_IMM,
         CMP_REG,
         CMP_VAR,
+
+        LEA,
+
+        LOAD_IMM,
+        LOAD_VAR,
+        STORE_IMM,
+        STORE_VAR,
     };
 
     enum Register
@@ -184,6 +191,15 @@ namespace masm
     };
 
     struct NodeLogical : public NodeArithmetic
+    {
+    };
+
+    struct NodeLea : public Base
+    {
+        Register dest, base, ind, scale;
+    };
+
+    struct NodeLoadStore : public NodeArithmetic
     {
     };
 

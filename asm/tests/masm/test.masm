@@ -170,7 +170,22 @@ _just_a_label
   cmp Ma, 4683
   cmp Mc, Md
   cmp M1, d
+  
+  ;; Md is the scale
+  ;; Mc is the index
+  ;; Mb is the base
+  ;; Ma is the destination
+  ;; Ma = Mb + Mc * Md
+  lea Ma Mb Mc Md
 
+  load Ma, a
+  load Ma, Mb ;; address in Mb
+  
+  ;; Here the value in the register is stored in the variable so don't be confused.
+  ;; This syntax is just to feel good because it would be odd otherwise(Every other instruction following the opposite syntax of this doesn't feel right to me)
+  store Ma, a
+  store Ma, Mb ;; address in Mb
+ 
 ;; Here is the thing.
 ;; A procedure or a label can have the same name as an identifier
 ;; The assembler will know which you are referencing based on the context.

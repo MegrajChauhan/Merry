@@ -76,6 +76,8 @@ namespace masm
 
         void handle_logical_reg_imm(msize_t op, NodeLogical *n);
         void handle_logical_reg_reg(msize_t op, NodeLogical *n);
+
+        void handle_lea(NodeLea *n);
     };
 };
 
