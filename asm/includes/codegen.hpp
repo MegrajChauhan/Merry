@@ -81,6 +81,10 @@ namespace masm
 
         void handle_load_store_reg_var(NodeLoadStore *n, msize_t op);
         void handle_load_store_reg_reg(NodeLoadStore *n, msize_t op);
+
+        void handle_cmpxchg(NodeCmpxchg *n);
+
+        void handle_excg(NodeExcg *n, msize_t op);
     };
 };
 

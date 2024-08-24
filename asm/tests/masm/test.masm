@@ -211,6 +211,49 @@ _just_a_label
   atm storew Ma, a
   atm storeb Ma, a
   
+  ;; if *Ma == *Mb then *Ma = a else *Mb = *Ma
+  cmpxchg Ma, Mb, a ;; obviously the variable should preferably be byte sized
+  
+  outr  ;; print the content of all registers as signed int
+  uoutr ;; print the content of all registers as signed int 
+
+  cin Ma ;; read a character into Ma
+  cout Ma ;; print a character from Ma
+
+  in Mb ;;read a byte
+  out Mb ;; print the byte
+  inw Mc
+  outw Mc
+  ind Mc
+  outd Mc
+  inq Mc
+  outq Mc
+  
+  uin Mb 
+  uout Mb
+  uinw Mc
+  uoutw Mc
+  uind Mc
+  uoutd Mc
+  uinq Mc
+  uoutq Mc
+
+  inf Ma ;; 32-bit floats
+  inlf Mb ;; 64-bit floats
+  outf Ma
+  outlf Mb
+
+  ;; for the following two instruction, the length of the string must be in Mc
+  sin greet
+  sout name
+
+  ;; excg family of instruction exchanges the said number bytes between the registers
+  ;; upper bytes are conserved
+  excgb Ma, Mb
+  excgw Ma, Mb
+  excgd Ma, Mb
+  excgq Ma, Mb
+
 ;; Here is the thing.
 ;; A procedure or a label can have the same name as an identifier
 ;; The assembler will know which you are referencing based on the context.

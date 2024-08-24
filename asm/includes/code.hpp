@@ -66,6 +66,12 @@ namespace masm
 
         bool handle_atm();
 
+        bool handle_cmpxchg();
+
+        bool handle_sio(NodeKind k);
+
+        bool handle_excg(NodeKind k);
+
         bool check_var(std::string name);
         bool check_lbl(std::string name);
     };

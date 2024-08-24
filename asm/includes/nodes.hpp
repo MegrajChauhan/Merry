@@ -125,30 +125,66 @@ namespace masm
         LOADW_REG,
         LOADW_VAR,
         ALOADW_VAR,
-        
+
         LOADD_REG,
         LOADD_VAR,
         ALOADD_VAR,
-        
+
         LOADQ_REG,
         LOADQ_VAR,
         ALOADQ_VAR,
-        
+
         STOREB_REG,
         STOREB_VAR,
         ASTOREB_VAR,
-        
+
         STOREW_REG,
         STOREW_VAR,
         ASTOREW_VAR,
-        
+
         STORED_REG,
         STORED_VAR,
         ASTORED_VAR,
-        
+
         STOREQ_REG,
         STOREQ_VAR,
         ASTOREQ_VAR,
+
+        CMPXCHG,
+
+        OUTR,
+        UOUTR,
+
+        CIN,
+        COUT,
+        SIN,
+        SOUT,
+        IN,
+        INW,
+        IND,
+        INQ,
+        UIN,
+        UINW,
+        UIND,
+        UINQ,
+        OUT,
+        OUTW,
+        OUTD,
+        OUTQ,
+        UOUT,
+        UOUTW,
+        UOUTD,
+        UOUTQ,
+
+        INF,
+        INLF,
+        OUTF,
+        OUTLF,
+
+        EXCGB,
+        EXCGW,
+        EXCGD,
+        EXCGQ,
     };
 
     enum Register
@@ -186,6 +222,9 @@ namespace masm
         std::string name;
     };
 
+    struct NodeSIO: public NodeName
+    {};
+
     struct NodeArithmetic : public Base
     {
         Register reg;
@@ -197,6 +236,12 @@ namespace masm
     {
         Register reg;
         std::variant<Register, std::pair<std::string, DataType>> second_oper;
+    };
+
+    // reusing this is better
+    struct NodeExcg: public Base
+    {
+        Register r1, r2;
     };
 
     struct NodeSTACK : public NodeMov
@@ -225,6 +270,12 @@ namespace masm
     struct NodeLea : public Base
     {
         Register dest, base, ind, scale;
+    };
+
+    struct NodeCmpxchg : public Base
+    {
+        Register reg1, reg2;
+        std::string var;
     };
 
     struct NodeLoadStore : public NodeArithmetic

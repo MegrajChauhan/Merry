@@ -38,7 +38,6 @@ bool masm::Code::read_code()
         {
             Node n;
             n.kind = HLT;
-            n.node = std::make_unique<Base>();
             nodes->push_back(std::move(n));
             break;
         }
@@ -46,7 +45,6 @@ bool masm::Code::read_code()
         {
             Node n;
             n.kind = NOP;
-            n.node = std::make_unique<Base>();
             nodes->push_back(std::move(n));
             break;
         }
@@ -54,7 +52,6 @@ bool masm::Code::read_code()
         {
             Node n;
             n.kind = RET;
-            n.node = std::make_unique<Base>();
             nodes->push_back(std::move(n));
             break;
         }
@@ -181,7 +178,6 @@ bool masm::Code::read_code()
         case INST_PUSHA:
         {
             Node n;
-            n.node = std::make_unique<Base>();
             n.kind = PUSHA;
             nodes->push_back(std::move(n));
             break;
@@ -189,7 +185,6 @@ bool masm::Code::read_code()
         case INST_POPA:
         {
             Node n;
-            n.node = std::make_unique<Base>();
             n.kind = POPA;
             nodes->push_back(std::move(n));
             break;
@@ -276,6 +271,136 @@ bool masm::Code::read_code()
             break;
         case KEY_ATM:
             if (!handle_atm())
+                return false;
+            break;
+        case INST_CMPXCHG:
+            if (!handle_cmpxchg())
+                return false;
+            break;
+        case INST_OUTR:
+        {
+            Node n;
+            n.kind = OUTR;
+            nodes->push_back(std::move(n));
+            break;
+        }
+        case INST_UOUTR:
+        {
+            Node n;
+            n.kind = UOUTR;
+            nodes->push_back(std::move(n));
+            break;
+        }
+        case INST_CIN:
+            if (!handle_single_regr(CIN))
+                return false;
+            break;
+        case INST_COUT:
+            if (!handle_single_regr(COUT))
+                return false;
+            break;
+        case INST_IN:
+            if (!handle_single_regr(IN))
+                return false;
+            break;
+        case INST_INW:
+            if (!handle_single_regr(INW))
+                return false;
+            break;
+        case INST_IND:
+            if (!handle_single_regr(IND))
+                return false;
+            break;
+        case INST_INQ:
+            if (!handle_single_regr(INQ))
+                return false;
+            break;
+        case INST_UIN:
+            if (!handle_single_regr(UIN))
+                return false;
+            break;
+        case INST_UINW:
+            if (!handle_single_regr(UINW))
+                return false;
+            break;
+        case INST_UIND:
+            if (!handle_single_regr(UIND))
+                return false;
+            break;
+        case INST_UINQ:
+            if (!handle_single_regr(UINQ))
+                return false;
+            break;
+        case INST_OUT:
+            if (!handle_single_regr(OUT))
+                return false;
+            break;
+        case INST_OUTW:
+            if (!handle_single_regr(OUTW))
+                return false;
+            break;
+        case INST_OUTD:
+            if (!handle_single_regr(OUTD))
+                return false;
+            break;
+        case INST_OUTQ:
+            if (!handle_single_regr(OUTQ))
+                return false;
+            break;
+        case INST_UOUT:
+            if (!handle_single_regr(UOUT))
+                return false;
+            break;
+        case INST_UOUTW:
+            if (!handle_single_regr(UOUTW))
+                return false;
+            break;
+        case INST_UOUTD:
+            if (!handle_single_regr(UOUTD))
+                return false;
+            break;
+        case INST_UOUTQ:
+            if (!handle_single_regr(UOUTQ))
+                return false;
+            break;
+        case INST_INF:
+            if (!handle_single_regr(INF))
+                return false;
+            break;
+        case INST_INLF:
+            if (!handle_single_regr(INLF))
+                return false;
+            break;
+        case INST_OUTF:
+            if (!handle_single_regr(OUTF))
+                return false;
+            break;
+        case INST_OUTLF:
+            if (!handle_single_regr(OUTLF))
+                return false;
+            break;
+        case INST_SIN:
+            if (!handle_sio(SIN))
+                return false;
+            break;
+        case INST_SOUT:
+            if (!handle_sio(SOUT))
+                return false;
+            break;
+        case INST_EXCHGB:
+            if (!handle_excg(EXCGB))
+                return false;
+            break;
+        case INST_EXCHGW:
+            if (!handle_excg(EXCGW))
+                return false;
+            break;
+        case INST_EXCHGD:
+            if (!handle_excg(EXCGD))
+                return false;
+            break;
+        case INST_EXCHGQ:
+            if (!handle_excg(EXCGQ))
                 return false;
             break;
         default:
@@ -561,7 +686,6 @@ bool masm::Code::handle_movX(NodeKind k)
     Node node;
     node.kind = k;
     node.node = std::make_unique<NodeMov>();
-
     // we don't really need info for this node and so we ignore the columns and such metadata
     NodeMov *a = (NodeMov *)node.node.get();
     auto res = _l.next_token();
@@ -597,6 +721,46 @@ bool masm::Code::handle_movX(NodeKind k)
     }
     nodes->push_back(std::move(node));
     return true; // that's it!
+}
+
+bool masm::Code::handle_excg(NodeKind k)
+{
+    Node node;
+    node.kind = k;
+    node.node = std::make_unique<NodeExcg>();
+    NodeExcg *a = (NodeExcg *)node.node.get();
+    auto res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the EXCG instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    t = res.value();
+    if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the EXCG instruction.", _l.get_from_line(t.line));
+        return false;
+    }
+    res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, _l.get_line(), _l.get_col(), 0, _parsing, syntaxerr, ERR_STR, "Expected a register here after the first operand.", _l.get_from_line(_l.get_line()));
+        return false;
+    }
+    a->r1 = regr_map.find(t.type)->second;
+    t = res.value();
+    if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        node.kind = (NodeKind)(k);
+        a->r2 = regr_map.find(t.type)->second;
+    }
+    else
+    {
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the first operand.", _l.get_from_line(t.line));
+        return false;
+    }
+    nodes->push_back(std::move(node));
+    return true;
 }
 
 bool masm::Code::handle_arithmetic_signed(NodeKind k)
@@ -811,6 +975,34 @@ bool masm::Code::handle_push_pop(NodeKind k)
     return true;
 }
 
+bool masm::Code::handle_sio(NodeKind k)
+{
+    Node node;
+    node.node = std::make_unique<NodeSIO>();
+    auto n = (NodeSIO *)node.node.get();
+    auto res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected an identifier after the SIO instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    t = res.value();
+    if (t.type != IDENTIFIER)
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected an identifier after the SIO instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    if (check_lbl(t.val) && check_var(t.val))
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected an identifier here that exists after the SIO instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    node.kind = (k);
+    n->name = t.val;
+    nodes->push_back(std::move(node));
+    return true;
+}
+
 bool masm::Code::handle_single_regr(NodeKind k)
 {
     Node node;
@@ -1008,7 +1200,7 @@ bool masm::Code::handle_load_store(NodeKind k, bool atm)
             err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected an identifier here that exists after the MEM instruction.", _l.get_from_line(regr_line));
             return false;
         }
-        node.kind = atm? k: (NodeKind)(k + 1);
+        node.kind = atm ? k : (NodeKind)(k + 1);
         n->second_oper = t.val;
         break;
     }
@@ -1079,5 +1271,53 @@ bool masm::Code::handle_atm()
         err(fname, t.line, t.col, t.val.length(), _parsing, syntaxerr, ERR_STR, "Unknown atomic instruction. Only LOADS and STORES are atomic..", _l.get_from_line(t.line), "Maybe a fluke? Forgot a keyword?");
         return false;
     }
+    return true;
+}
+
+bool masm::Code::handle_cmpxchg()
+{
+    Node node;
+    node.node = std::make_unique<NodeCmpxchg>();
+    node.kind = CMPXCHG;
+    auto n = (NodeCmpxchg *)node.node.get();
+    Register r[2];
+    std::optional<Token> res;
+    for (size_t i = 0; i < 2; i++)
+    {
+        res = _l.next_token();
+        if (!res.has_value())
+        {
+            err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here in the CMPXCHG instruction.", _l.get_from_line(regr_line));
+            return false;
+        }
+        t = res.value();
+        if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+        {
+            err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here in the CMPXCHG instruction.", _l.get_from_line(t.line));
+            return false;
+        }
+        r[i] = regr_map[t.type];
+    }
+    res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a variable here in the CMPXCHG instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    t = res.value();
+    if (t.type != IDENTIFIER)
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a variable here in the CMPXCHG instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    if (check_var(t.val))
+    {
+        err(fname, regr_line, regr_col, regr_col + t.val.length(), _parsing, syntaxerr, ERR_STR, "Expected a variable here that exists in the CMPXCHG instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    n->reg1 = r[0];
+    n->reg2 = r[1];
+    n->var = t.val;
+    nodes->push_back(std::move(node));
     return true;
 }

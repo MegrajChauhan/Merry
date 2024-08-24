@@ -464,6 +464,98 @@ bool masm::CodeGen::generate()
         case STOREQ_REG:
             handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_STORE_REG);
             break;
+        case OUTR:
+        {
+            GenBinary b;
+            b.bytes.b1 = OP_OUTR;
+            code.push_back(b);
+            break;
+        }
+        case UOUTR:
+        {
+            GenBinary b;
+            b.bytes.b1 = OP_UOUTR;
+            code.push_back(b);
+            break;
+        }
+        case CIN:
+            handle_single_regr(OP_CIN, (NodeSingleRegr *)node.node.get());
+            break;
+        case COUT:
+            handle_single_regr(OP_COUT, (NodeSingleRegr *)node.node.get());
+            break;
+        case IN:
+            handle_single_regr(OP_IN, (NodeSingleRegr *)node.node.get());
+            break;
+        case INW:
+            handle_single_regr(OP_INW, (NodeSingleRegr *)node.node.get());
+            break;
+        case IND:
+            handle_single_regr(OP_IND, (NodeSingleRegr *)node.node.get());
+            break;
+        case INQ:
+            handle_single_regr(OP_INQ, (NodeSingleRegr *)node.node.get());
+            break;
+        case OUT:
+            handle_single_regr(OP_OUT, (NodeSingleRegr *)node.node.get());
+            break;
+        case OUTW:
+            handle_single_regr(OP_OUTW, (NodeSingleRegr *)node.node.get());
+            break;
+        case OUTD:
+            handle_single_regr(OP_OUTD, (NodeSingleRegr *)node.node.get());
+            break;
+        case OUTQ:
+            handle_single_regr(OP_OUTQ, (NodeSingleRegr *)node.node.get());
+            break;
+        case UOUT:
+            handle_single_regr(OP_UOUT, (NodeSingleRegr *)node.node.get());
+            break;
+        case UOUTW:
+            handle_single_regr(OP_UOUTW, (NodeSingleRegr *)node.node.get());
+            break;
+        case UOUTD:
+            handle_single_regr(OP_UOUTD, (NodeSingleRegr *)node.node.get());
+            break;
+        case UOUTQ:
+            handle_single_regr(OP_UOUTQ, (NodeSingleRegr *)node.node.get());
+            break;
+        case UIN:
+            handle_single_regr(OP_UINW, (NodeSingleRegr *)node.node.get());
+            break;
+        case UINW:
+            handle_single_regr(OP_UIN, (NodeSingleRegr *)node.node.get());
+            break;
+        case UIND:
+            handle_single_regr(OP_UIND, (NodeSingleRegr *)node.node.get());
+            break;
+        case UINQ:
+            handle_single_regr(OP_UINQ, (NodeSingleRegr *)node.node.get());
+            break;
+        case INF:
+            handle_single_regr(OP_INF32, (NodeSingleRegr *)node.node.get());
+            break;
+        case INLF:
+            handle_single_regr(OP_INF, (NodeSingleRegr *)node.node.get());
+            break;
+        case OUTF:
+            handle_single_regr(OP_OUTF32, (NodeSingleRegr *)node.node.get());
+            break;
+        case OUTLF:
+            handle_single_regr(OP_OUTF, (NodeSingleRegr *)node.node.get());
+            break;
+        case EXCGB:
+            handle_excg((NodeExcg*)node.node.get(), OP_EXCG8);
+            break;
+        case EXCGW:
+            handle_excg((NodeExcg*)node.node.get(), OP_EXCG16);
+            break;
+        case EXCGD:
+            handle_excg((NodeExcg*)node.node.get(), OP_EXCG32);
+            break;
+        case EXCGQ:
+            handle_excg((NodeExcg*)node.node.get(), OP_EXCG);
+            break;
         }
     }
     for (auto b : code)
@@ -866,5 +958,26 @@ void masm::CodeGen::handle_load_store_reg_reg(NodeLoadStore *n, msize_t op)
     b.bytes.b8 = n->reg;
     b.bytes.b8 <<= 4;
     b.bytes.b8 |= std::get<Register>(n->second_oper);
+    code.push_back(b);
+}
+
+void masm::CodeGen::handle_cmpxchg(NodeCmpxchg *n)
+{
+    GenBinary b;
+    b.bytes.b1 = OP_CMPXCHG;
+    b.bytes.b2 = n->reg1;
+    b.bytes.b2 <<= 4;
+    b.bytes.b2 |= n->reg2;
+    b.full |= (std::stoull(n->var) & 0xFFFFFFFFFFFF);
+    code.push_back(b);
+}
+
+void masm::CodeGen::handle_excg(NodeExcg *n, msize_t op)
+{
+    GenBinary b;
+    b.bytes.b1 = op;
+    b.bytes.b8 = n->r1;
+    b.bytes.b8 <<= 4;
+    b.bytes.b8 |= n->r2;
     code.push_back(b);
 }
