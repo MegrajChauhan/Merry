@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <variant>
+#include "symtable.hpp"
 
 namespace masm
 {
@@ -119,27 +120,35 @@ namespace masm
 
         LOADB_REG,
         LOADB_VAR,
+        ALOADB_VAR,
 
         LOADW_REG,
         LOADW_VAR,
+        ALOADW_VAR,
         
         LOADD_REG,
         LOADD_VAR,
+        ALOADD_VAR,
         
         LOADQ_REG,
         LOADQ_VAR,
+        ALOADQ_VAR,
         
         STOREB_REG,
         STOREB_VAR,
+        ASTOREB_VAR,
         
         STOREW_REG,
         STOREW_VAR,
+        ASTOREW_VAR,
         
         STORED_REG,
         STORED_VAR,
+        ASTORED_VAR,
         
         STOREQ_REG,
         STOREQ_VAR,
+        ASTOREQ_VAR,
     };
 
     enum Register

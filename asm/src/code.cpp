@@ -274,6 +274,10 @@ bool masm::Code::read_code()
             if (!handle_load_store(STOREQ_REG))
                 return false;
             break;
+        case KEY_ATM:
+            if (!handle_atm())
+                return false;
+            break;
         default:
             err(fname, t.line, t.col, t.val.length(), _parsing, straytok, ERR_STR, "A stray token that doesn't fit any rules was found.", _l.get_from_line(t.line), "Maybe a fluke? Forgot a keyword?");
             return false;
@@ -583,7 +587,7 @@ bool masm::Code::handle_movX(NodeKind k)
     t = res.value();
     if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
     {
-        node.kind = (NodeKind)(k + 1);
+        node.kind = (NodeKind)(k);
         a->second_oper = regr_map.find(t.type)->second;
     }
     else
@@ -648,10 +652,10 @@ bool masm::Code::handle_arithmetic_signed(NodeKind k)
 bool masm::Code::handle_arithmetic_float(NodeKind k)
 {
     Node node;
-
     node.node = std::make_unique<NodeArithmetic>();
     NodeArithmetic *a = (NodeArithmetic *)node.node.get();
     auto res = _l.next_token();
+    node.kind = (k);
     if (!res.has_value())
     {
         err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the floating-point arithmetic instruction.", _l.get_from_line(regr_line));
@@ -673,7 +677,6 @@ bool masm::Code::handle_arithmetic_float(NodeKind k)
     t = res.value();
     if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
     {
-        node.kind = (NodeKind)(k + 1);
         a->second_oper = regr_map.find(t.type)->second;
     }
     else
@@ -753,7 +756,7 @@ bool masm::Code::check_var(std::string var)
 
 bool masm::Code::check_lbl(std::string var)
 {
-    return (proc_list->find(var) == proc_list->end());
+    return (label_list->find(var) == label_list->end());
 }
 
 bool masm::Code::handle_push_pop(NodeKind k)
@@ -985,7 +988,7 @@ bool masm::Code::handle_load_store(NodeKind k, bool atm)
     t = res.value();
     if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
     {
-        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here in the MOV instruction.", _l.get_from_line(t.line));
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here in the MEM instruction.", _l.get_from_line(t.line));
         return false;
     }
     n->reg = regr_map[t.type];
@@ -1005,7 +1008,7 @@ bool masm::Code::handle_load_store(NodeKind k, bool atm)
             err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected an identifier here that exists after the MEM instruction.", _l.get_from_line(regr_line));
             return false;
         }
-        node.kind = (NodeKind)(k + 1);
+        node.kind = atm? k: (NodeKind)(k + 1);
         n->second_oper = t.val;
         break;
     }
@@ -1025,5 +1028,56 @@ bool masm::Code::handle_load_store(NodeKind k, bool atm)
         break;
     }
     nodes->push_back(std::move(node));
+    return true;
+}
+
+bool masm::Code::handle_atm()
+{
+    auto res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected an instruction after the ATM keyword..", _l.get_from_line(regr_line));
+        return false;
+    }
+    t = res.value();
+    regr;
+    switch (t.type)
+    {
+    case INST_LOADB:
+        if (!handle_load_store(ALOADB_VAR, true))
+            return false;
+        break;
+    case INST_LOADW:
+        if (!handle_load_store(ALOADW_VAR, true))
+            return false;
+        break;
+    case INST_LOADD:
+        if (!handle_load_store(ALOADD_VAR, true))
+            return false;
+        break;
+    case INST_LOADQ:
+        if (!handle_load_store(ALOADQ_VAR, true))
+            return false;
+        break;
+    case INST_STOREB:
+        if (!handle_load_store(ASTOREB_VAR, true))
+            return false;
+        break;
+    case INST_STOREW:
+        if (!handle_load_store(ASTOREW_VAR, true))
+            return false;
+        break;
+    case INST_STORED:
+        if (!handle_load_store(ASTORED_VAR, true))
+            return false;
+        break;
+    case INST_STOREQ:
+        if (!handle_load_store(ASTOREQ_VAR, true))
+            return false;
+        break;
+    default:
+        err(fname, t.line, t.col, t.val.length(), _parsing, syntaxerr, ERR_STR, "Unknown atomic instruction. Only LOADS and STORES are atomic..", _l.get_from_line(t.line), "Maybe a fluke? Forgot a keyword?");
+        return false;
+    }
     return true;
 }

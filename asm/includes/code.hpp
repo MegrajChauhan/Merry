@@ -64,6 +64,8 @@ namespace masm
 
         bool handle_load_store(NodeKind k, bool atm = false);
 
+        bool handle_atm();
+
         bool check_var(std::string name);
         bool check_lbl(std::string name);
     };

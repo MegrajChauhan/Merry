@@ -116,7 +116,7 @@ void masm::Context::analyse_proc()
     {
         if (!p.second.defined)
         {
-            fu_err(*nodes[p.second.ind].file.get(), nodes[p.second.ind].line_st, "Procedure \"" + p.first + "\" was not defined.");
+            note("The procedure \"" + p.first + "\" was not defined.");
             die(1);
         }
     }

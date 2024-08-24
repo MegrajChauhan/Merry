@@ -395,26 +395,50 @@ bool masm::CodeGen::generate()
         case LOADB_VAR:
             handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_LOADB);
             break;
+        case ALOADB_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_LOADB);
+            break;
         case STOREB_VAR:
             handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_STOREB);
+            break;
+        case ASTOREB_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_STOREB);
             break;
         case LOADW_VAR:
             handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_LOADW);
             break;
+        case ALOADW_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_LOADW);
+            break;
         case STOREW_VAR:
             handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_STOREW);
+            break;
+        case ASTOREW_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_STOREW);
             break;
         case LOADD_VAR:
             handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_LOADD);
             break;
+        case ALOADD_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_LOADD);
+            break;
         case STORED_VAR:
             handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_STORED);
+            break;
+        case ASTORED_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_STORED);
             break;
         case LOADQ_VAR:
             handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_LOAD);
             break;
+        case ALOADQ_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_LOAD);
+            break;
         case STOREQ_VAR:
             handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_STORE);
+            break;
+        case ASTOREQ_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_STORE);
             break;
         case LOADB_REG:
             handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_LOADB_REG);
@@ -746,7 +770,7 @@ void masm::CodeGen::handle_push_pop_var(msize_t op, NodePushPop *n)
         addr = label_addr[name];
         b.bytes.b1 = OP_PUSH_IMM;
         code.push_back(b);
-        b.full = std::stoull(std::get<std::string>(n->val));
+        b.full = addr;
     }
     else
     {
