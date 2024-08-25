@@ -37,3 +37,9 @@ dlf long_float -873248.455353
 ;; This will have to wait until basic things are implemented
 ;; The same applies to the following as well
 ;; mov mm1, !(123 << e)
+
+;; dc defines constants
+;; The constants can only be integers or floats
+;; Can have the same as a variable but no two constants can share a name
+;; The assembler will figure out what you mean based on the context.
+dc ABC 23

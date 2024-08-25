@@ -37,6 +37,7 @@ namespace masm
     {
         std::vector<Variable> variables;
         std::unordered_map<std::string, size_t> _var_list; // for quick checking
+        std::unordered_map<std::string, Variable> _const_list;
     };
 };
 

@@ -66,6 +66,12 @@ bool masm::Data::read_data()
                 return false;
             break;
         }
+        case KEY_DC:
+        {
+            if (!handle_defines(BYTE, true))
+                return false;
+            break;
+        }
         case KEY_RB:
         {
             if (!handle_defines(RESB))
@@ -104,7 +110,7 @@ bool masm::Data::read_data()
     return true;
 }
 
-bool masm::Data::handle_defines(DataType t)
+bool masm::Data::handle_defines(DataType t, bool _const)
 {
     Token id, value;
     bool has_value = true;
@@ -138,9 +144,9 @@ bool masm::Data::handle_defines(DataType t)
     var.file = file;
     var.line = id.line;
     var.name = id.val;
-    var.type = t;
+    var.type = (_const ? (value.type == NUM_FLOAT ? FLOAT : BYTE) : t);
     var.value = has_value ? value.val : "0";
-    return add_variable(var);
+    return _const ? add_const(var) : add_variable(var);
 }
 
 bool masm::Data::add_variable(Variable v)
@@ -157,6 +163,20 @@ bool masm::Data::add_variable(Variable v)
     }
     sym->variables.push_back(v);
     sym->_var_list[v.name] = sym->variables.size() - 1;
+    return true;
+}
+
+bool masm::Data::add_const(Variable v)
+{
+    auto res = sym->_const_list.find(v.name);
+    if (res != sym->_const_list.end())
+    {
+        Variable tmp = res->second;
+        ld_err(fname, v.line, _parsing, redefin, ERR_STR, "Redefinition of CONSTANT \"" + v.name + "\"; In line " + std::to_string(tmp.line), l.get_from_line(v.line));
+        fu_err(*tmp.file.get(), tmp.line, "Defined here firstly as a CONSTANT.");
+        return false;
+    }
+    sym->_const_list[v.name] = v;
     return true;
 }
 

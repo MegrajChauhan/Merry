@@ -285,6 +285,8 @@ _just_a_label
 
   loop _just_a_label ;; loops until Mc != 0
 
+  intr 
+
 ;; Here is the thing.
 ;; A procedure or a label can have the same name as an identifier
 ;; The assembler will know which you are referencing based on the context.

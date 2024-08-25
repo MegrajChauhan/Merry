@@ -87,6 +87,12 @@ namespace masm
         void handle_excg(NodeExcg *n, msize_t op);
 
         void handle_one(msize_t op);
+
+        void handle_movsx(NodeMov* n, msize_t op);
+
+        void handle_movsx_var(NodeMov *n, msize_t op);
+
+        void handle_sva_svc_var(NodeSTACK *n, msize_t op);
     };
 };
 

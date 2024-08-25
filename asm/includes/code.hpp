@@ -76,6 +76,7 @@ namespace masm
 
         bool check_var(std::string name);
         bool check_lbl(std::string name);
+        bool check_const(std::string name);
     };
 };
 

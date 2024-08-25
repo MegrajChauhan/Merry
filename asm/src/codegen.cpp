@@ -42,6 +42,13 @@ void masm::CodeGen::handle_arithmetic_reg_var(NodeArithmetic *a, msize_t op)
 {
     GenBinary b;
     std::string var = std::get<std::string>(a->second_oper);
+    if (data_addr.find(var) == data_addr.end())
+    {
+        // must be a constant
+        a->second_oper = table->_const_list[var].value;
+        handle_arithmetic_reg_imm(op, a);
+        return;
+    }
     size_t var_addr = data_addr[std::get<std::string>(a->second_oper)];
     auto var_dets = table->variables[table->_var_list.find(var)->second];
     b.bytes.b8 = a->reg;
@@ -177,32 +184,14 @@ bool masm::CodeGen::generate()
             handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVE_REG32);
             break;
         case MOVSXB_IMM:
-        {
-            NodeArithmetic a;
-            auto t = (NodeMov *)node.node.get();
-            a.reg = t->reg;
-            a.second_oper = std::get<std::pair<std::string, DataType>>(t->second_oper).first;
-            handle_arithmetic_reg_imm(OP_MOVESX_IMM8, &a);
+            handle_movsx((NodeMov *)node.node.get(), OP_MOVESX_IMM8);
             break;
-        }
         case MOVSXW_IMM:
-        {
-            NodeArithmetic a;
-            auto t = (NodeMov *)node.node.get();
-            a.reg = t->reg;
-            a.second_oper = std::get<std::pair<std::string, DataType>>(t->second_oper).first;
-            handle_arithmetic_reg_imm(OP_MOVESX_IMM16, &a);
+            handle_movsx((NodeMov *)node.node.get(), OP_MOVESX_IMM16);
             break;
-        }
         case MOVSXD_IMM:
-        {
-            NodeArithmetic a;
-            auto t = (NodeMov *)node.node.get();
-            a.reg = t->reg;
-            a.second_oper = std::get<std::pair<std::string, DataType>>(t->second_oper).first;
-            handle_arithmetic_reg_imm(OP_MOVESX_IMM32, &a);
+            handle_movsx((NodeMov *)node.node.get(), OP_MOVESX_IMM32);
             break;
-        }
         case MOVSXB_REG:
             handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVESX_REG8);
             break;
@@ -213,43 +202,14 @@ bool masm::CodeGen::generate()
             handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVESX_REG32);
             break;
         case MOVSXB_VAR:
-        {
-            // resuing a function
-            auto v = (NodeMov *)node.node.get();
-            handle_mov_reg_var(v);
-            // add a second instruction
-            GenBinary b;
-            b.bytes.b1 = OP_MOVESX_REG8;
-            b.bytes.b8 = v->reg;
-            b.bytes.b8 <<= 4;
-            b.bytes.b8 |= v->reg;
-            code.push_back(b);
+            handle_movsx_var((NodeMov *)node.node.get(), OP_MOVESX_REG8);
             break;
-        }
         case MOVSXW_VAR:
-        {
-            auto v = (NodeMov *)node.node.get();
-            handle_mov_reg_var(v);
-            GenBinary b;
-            b.bytes.b1 = OP_MOVESX_REG16;
-            b.bytes.b8 = v->reg;
-            b.bytes.b8 <<= 4;
-            b.bytes.b8 |= v->reg;
-            code.push_back(b);
+            handle_movsx_var((NodeMov *)node.node.get(), OP_MOVESX_REG16);
             break;
-        }
         case MOVSXD_VAR:
-        {
-            auto v = (NodeMov *)node.node.get();
-            handle_mov_reg_var(v);
-            GenBinary b;
-            b.bytes.b1 = OP_MOVESX_REG32;
-            b.bytes.b8 = v->reg;
-            b.bytes.b8 <<= 4;
-            b.bytes.b8 |= v->reg;
-            code.push_back(b);
+            handle_movsx_var((NodeMov *)node.node.get(), OP_MOVESX_REG32);
             break;
-        }
         case JMP:
             handle_jmp(OP_JMP_ADDR, (NodeName *)node.node.get());
             break;
@@ -337,25 +297,11 @@ bool masm::CodeGen::generate()
             code[code.size() - 1].bytes.b1 = OP_SVA;
             break;
         case SVA_VAR:
-        {
-            GenBinary b;
-            auto n = (NodeSTACK *)node.node.get();
-            b.bytes.b1 = OP_SVA_MEM;
-            b.bytes.b2 = n->reg;
-            b.full |= data_addr[std::get<std::pair<std::string, DataType>>(n->second_oper).first];
-            code.push_back(b);
+            handle_sva_svc_var((NodeSTACK *)node.node.get(), OP_SVA_MEM);
             break;
-        }
         case SVC_VAR:
-        {
-            GenBinary b;
-            auto n = (NodeSTACK *)node.node.get();
-            b.bytes.b1 = OP_SVC_MEM;
-            b.bytes.b2 = n->reg;
-            b.full |= data_addr[std::get<std::pair<std::string, DataType>>(n->second_oper).first];
-            code.push_back(b);
+            handle_sva_svc_var((NodeSTACK *)node.node.get(), OP_SVC_MEM);
             break;
-        }
         case PUSHA:
             handle_one(OP_PUSHA);
             break;
@@ -634,6 +580,43 @@ bool masm::CodeGen::generate()
     return true;
 }
 
+void masm::CodeGen::handle_movsx(NodeMov *n, msize_t op)
+{
+    NodeArithmetic a;
+    a.reg = n->reg;
+    a.second_oper = std::get<std::pair<std::string, DataType>>(n->second_oper).first;
+    handle_arithmetic_reg_imm(op, &a);
+}
+
+void masm::CodeGen::handle_movsx_var(NodeMov *n, msize_t op)
+{
+    handle_mov_reg_var(n);
+    GenBinary b;
+    b.bytes.b1 = op;
+    b.bytes.b8 = n->reg;
+    b.bytes.b8 <<= 4;
+    b.bytes.b8 |= n->reg;
+    code.push_back(b);
+}
+
+void masm::CodeGen::handle_sva_svc_var(NodeSTACK *n, msize_t op)
+{
+    GenBinary b;
+    b.bytes.b1 = op;
+    b.bytes.b2 = n->reg;
+    auto v = std::get<std::pair<std::string, DataType>>(n->second_oper);
+    if (table->_var_list.find(v.first) == table->_var_list.end())
+    {
+        v.first = table->_const_list[v.first].value;
+        v.second = table->_const_list[v.first].type;
+        handle_mov_reg_imm(false, n);
+        code[code.size() - 1].bytes.b1 = op - 145;
+        return;
+    }
+    b.full |= data_addr[std::get<std::pair<std::string, DataType>>(n->second_oper).first];
+    code.push_back(b);
+}
+
 void masm::CodeGen::handle_one(msize_t op)
 {
     GenBinary b;
@@ -817,7 +800,15 @@ void masm::CodeGen::handle_mov_reg_var(NodeMov *n)
     auto _res = table->_var_list.find(_s.first);
     bool is_lbl = false;
     if (_res == table->_var_list.end())
-        is_lbl = true;
+    {
+        if (table->_const_list.find(_s.first) == table->_const_list.end())
+            is_lbl = true;
+        // is a constant
+        _s.first = table->_const_list[_s.first].value;
+        _s.second = table->_const_list[_s.first].type;
+        handle_mov_reg_imm(false, n);
+        return;
+    }
     size_t addr = is_lbl ? label_addr[_s.first] : data_addr.find(_s.first)->second;
     b.bytes.b2 = n->reg;
     b.full |= addr;

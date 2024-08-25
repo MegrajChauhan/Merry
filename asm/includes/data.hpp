@@ -22,11 +22,13 @@ namespace masm
 
         bool read_data();
 
-        bool handle_defines(DataType t);
+        bool handle_defines(DataType t, bool _const = false);
 
         bool handle_strings();
 
         bool add_variable(Variable v);
+
+        bool add_const(Variable v);
     };
 };
 

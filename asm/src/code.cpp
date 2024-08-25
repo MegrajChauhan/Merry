@@ -616,7 +616,7 @@ bool masm::Code::handle_arithmetic_unsigned(NodeKind k)
     {
     case IDENTIFIER:
     {
-        if (check_var(t.val))
+        if (check_var(t.val) && check_const(t.val))
         {
             err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "The variable \"" + t.val + "\" doesn't exist.", _l.get_from_line(t.line));
             return false;
@@ -676,7 +676,7 @@ bool masm::Code::handle_mov(NodeKind k)
     {
     case IDENTIFIER:
     {
-        if (check_var(t.val) && check_lbl(t.val))
+        if (check_var(t.val) && check_lbl(t.val) && check_const(t.val))
         {
             err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "The identifier \"" + t.val + "\" doesn't exist.", _l.get_from_line(t.line));
             return false;
@@ -716,7 +716,6 @@ bool masm::Code::handle_mov(NodeKind k)
 bool masm::Code::handle_sva_svc(NodeKind k)
 {
     Node node;
-
     node.node = std::make_unique<NodeSTACK>();
     NodeSTACK *a = (NodeSTACK *)node.node.get();
     auto res = _l.next_token();
@@ -743,7 +742,7 @@ bool masm::Code::handle_sva_svc(NodeKind k)
     {
     case IDENTIFIER:
     {
-        if (check_var(t.val))
+        if (check_var(t.val) && check_const(t.val))
         {
             err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "The variable \"" + t.val + "\" doesn't exist.", _l.get_from_line(t.line));
             return false;
@@ -859,7 +858,6 @@ bool masm::Code::handle_excg(NodeKind k)
 bool masm::Code::handle_arithmetic_signed(NodeKind k)
 {
     Node node;
-
     node.node = std::make_unique<NodeArithmetic>();
     NodeArithmetic *a = (NodeArithmetic *)node.node.get();
     auto res = _l.next_token();
@@ -884,6 +882,16 @@ bool masm::Code::handle_arithmetic_signed(NodeKind k)
     t = res.value();
     switch (t.type)
     {
+    case IDENTIFIER:
+    {
+        if (check_const(t.val))
+        {
+            err(fname, _l.get_line(), _l.get_col(), 0, _parsing, syntaxerr, ERR_STR, "This constant doesn't exist- Was this supposed to be a variable?.", _l.get_from_line(_l.get_line()));
+            return false;
+        }
+        t.val = table->_const_list[t.val].value;
+        // fall through to the next case
+    }
     case NUM_INT:
     {
         node.kind = k;
@@ -997,7 +1005,6 @@ bool masm::Code::handle_call()
         return false;
     }
     node.kind = (t.type == IDENTIFIER) ? CALL : CALL_REG;
-
     if (t.type == IDENTIFIER)
         n->_oper = t.val;
     else
@@ -1016,6 +1023,11 @@ bool masm::Code::check_lbl(std::string var)
     return (label_list->find(var) == label_list->end());
 }
 
+bool masm::Code::check_const(std::string var)
+{
+    return (table->_const_list.find(var) == table->_const_list.end());
+}
+
 bool masm::Code::handle_push_pop(NodeKind k)
 {
     Node node;
@@ -1032,10 +1044,16 @@ bool masm::Code::handle_push_pop(NodeKind k)
     {
     case IDENTIFIER:
     {
-        if (check_lbl(t.val) && check_var(t.val))
+        if (check_lbl(t.val) && check_var(t.val) && check_const(t.val))
         {
             err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a label or an identifier here that exists after the STACK instruction.", _l.get_from_line(regr_line));
             return false;
+        }
+        if (!check_const(t.val))
+        {
+            node.kind = k;
+            n->val = table->_const_list[t.val].value;
+            break;
         }
         node.kind = (NodeKind)(k + 2);
         n->val = t.val;
@@ -1140,6 +1158,16 @@ bool masm::Code::handle_logical_inst(NodeKind k, bool limit)
     t = res.value();
     switch (t.type)
     {
+    case IDENTIFIER:
+    {
+        if (check_const(t.val))
+        {
+            err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "This constant doesn't exist and variables aren't allowed.", _l.get_from_line(regr_line));
+            return false;
+        }
+        t.val = table->_const_list[t.val].value;
+        // fall through to next case
+    }
     case NUM_INT:
     {
         node.kind = (k);
@@ -1194,7 +1222,7 @@ bool masm::Code::handle_cmp()
     {
     case IDENTIFIER:
     {
-        if (check_var(t.val))
+        if (check_var(t.val) && check_const(t.val))
         {
             err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "The identifier \"" + t.val + "\" doesn't exist.", _l.get_from_line(t.line));
             return false;
