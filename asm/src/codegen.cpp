@@ -253,6 +253,57 @@ bool masm::CodeGen::generate()
         case JMP:
             handle_jmp(OP_JMP_ADDR, (NodeName *)node.node.get());
             break;
+        case JNZ:
+            handle_jmp(OP_JNZ, (NodeName *)node.node.get());
+            break;
+        case JZ:
+            handle_jmp(OP_JZ, (NodeName *)node.node.get());
+            break;
+        case JNE:
+            handle_jmp(OP_JNE, (NodeName *)node.node.get());
+            break;
+        case JE:
+            handle_jmp(OP_JE, (NodeName *)node.node.get());
+            break;
+        case JNC:
+            handle_jmp(OP_JNC, (NodeName *)node.node.get());
+            break;
+        case JC:
+            handle_jmp(OP_JC, (NodeName *)node.node.get());
+            break;
+        case JNO:
+            handle_jmp(OP_JNO, (NodeName *)node.node.get());
+            break;
+        case JO:
+            handle_jmp(OP_JO, (NodeName *)node.node.get());
+            break;
+        case JNN:
+            handle_jmp(OP_JNN, (NodeName *)node.node.get());
+            break;
+        case JN:
+            handle_jmp(OP_JN, (NodeName *)node.node.get());
+            break;
+        case JNG:
+            handle_jmp(OP_JNG, (NodeName *)node.node.get());
+            break;
+        case JG:
+            handle_jmp(OP_JG, (NodeName *)node.node.get());
+            break;
+        case JNS:
+            handle_jmp(OP_JNS, (NodeName *)node.node.get());
+            break;
+        case JS:
+            handle_jmp(OP_JS, (NodeName *)node.node.get());
+            break;
+        case JSE:
+            handle_jmp(OP_JSE, (NodeName *)node.node.get());
+            break;
+        case JGE:
+            handle_jmp(OP_JE, (NodeName *)node.node.get());
+            break;
+        case LOOP:
+            handle_jmp(OP_LOOP, (NodeName *)node.node.get());
+            break;
         case CALL:
         {
             NodeCall *c = (NodeCall *)node.node.get();

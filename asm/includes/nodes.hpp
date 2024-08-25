@@ -196,6 +196,26 @@ namespace masm
         CLN,
         CLC,
         CLO,
+
+        JNZ,
+        JZ,
+        JNE,
+        JE,
+        JNC,
+        JC,
+        JNO,
+        JO,
+        JNN,
+        JN,
+        JNG,
+        JG,
+        JNS,
+        JS,
+        JGE,
+        JSE,
+
+        LOOP,
+
     };
 
     enum Register
@@ -233,8 +253,9 @@ namespace masm
         std::string name;
     };
 
-    struct NodeSIO: public NodeName
-    {};
+    struct NodeSIO : public NodeName
+    {
+    };
 
     struct NodeArithmetic : public Base
     {
@@ -250,7 +271,7 @@ namespace masm
     };
 
     // reusing this is better
-    struct NodeExcg: public Base
+    struct NodeExcg : public Base
     {
         Register r1, r2;
     };

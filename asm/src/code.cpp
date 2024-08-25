@@ -169,6 +169,74 @@ bool masm::Code::read_code()
             if (!handle_jmp(JMP))
                 return false;
             break;
+        case INST_JNZ:
+            if (!handle_jmp(JNZ))
+                return false;
+            break;
+        case INST_JZ:
+            if (!handle_jmp(JZ))
+                return false;
+            break;
+        case INST_JNE:
+            if (!handle_jmp(JNE))
+                return false;
+            break;
+        case INST_JE:
+            if (!handle_jmp(JE))
+                return false;
+            break;
+        case INST_JNC:
+            if (!handle_jmp(JNC))
+                return false;
+            break;
+        case INST_JC:
+            if (!handle_jmp(JC))
+                return false;
+            break;
+        case INST_JNO:
+            if (!handle_jmp(JNO))
+                return false;
+            break;
+        case INST_JO:
+            if (!handle_jmp(JO))
+                return false;
+            break;
+        case INST_JNN:
+            if (!handle_jmp(JNN))
+                return false;
+            break;
+        case INST_JN:
+            if (!handle_jmp(JN))
+                return false;
+            break;
+        case INST_JNG:
+            if (!handle_jmp(JNG))
+                return false;
+            break;
+        case INST_JG:
+            if (!handle_jmp(JG))
+                return false;
+            break;
+        case INST_JNS:
+            if (!handle_jmp(JNS))
+                return false;
+            break;
+        case INST_JS:
+            if (!handle_jmp(JS))
+                return false;
+            break;
+        case INST_JGE:
+            if (!handle_jmp(JGE))
+                return false;
+            break;
+        case INST_JSE:
+            if (!handle_jmp(JSE))
+                return false;
+            break;
+        case INST_LOOP:
+            if (!handle_jmp(LOOP))
+                return false;
+            break;
         case INST_CALL:
             if (!handle_call())
                 return false;

@@ -266,6 +266,25 @@ _just_a_label
   clc    ;; clear carry flag
   clo    ;; clear overflow flag
 
+  jnz _just_a_label
+  jz _just_a_label
+  jne _just_a_label
+  je _just_a_label
+  jnc _just_a_label
+  jc _just_a_label
+  jno _just_a_label
+  jo _just_a_label
+  jnn _just_a_label
+  jn _just_a_label
+  jng _just_a_label
+  jg _just_a_label
+  jns _just_a_label
+  js _just_a_label
+  jge _just_a_label
+  jse _just_a_label
+
+  loop _just_a_label ;; loops until Mc != 0
+
 ;; Here is the thing.
 ;; A procedure or a label can have the same name as an identifier
 ;; The assembler will know which you are referencing based on the context.
