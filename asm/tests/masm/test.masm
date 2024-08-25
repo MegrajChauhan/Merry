@@ -254,6 +254,18 @@ _just_a_label
   excgd Ma, Mb
   excgq Ma, Mb
 
+  ;; The same as movX but the upper bytes are not affected
+  moveb Ma, Mb
+  movew Mc, Md
+  moved Me, Mf
+
+  cflags ;; clear the flags register
+  reset  ;; reset all registers to 0
+  clz    ;; clear zero flag
+  cln    ;; clear negative flag
+  clc    ;; clear carry flag
+  clo    ;; clear overflow flag
+
 ;; Here is the thing.
 ;; A procedure or a label can have the same name as an identifier
 ;; The assembler will know which you are referencing based on the context.

@@ -85,6 +85,8 @@ namespace masm
         void handle_cmpxchg(NodeCmpxchg *n);
 
         void handle_excg(NodeExcg *n, msize_t op);
+
+        void handle_one(msize_t op);
     };
 };
 

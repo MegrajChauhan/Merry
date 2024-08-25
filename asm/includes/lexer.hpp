@@ -136,6 +136,15 @@ namespace masm
         INST_EXCHGW,
         INST_EXCHGD,
         INST_EXCHGQ,
+        INST_MOVEB,
+        INST_MOVEW,
+        INST_MOVED,
+        INST_CFLAGS,
+        INST_RESET,
+        INST_CLZ,
+        INST_CLN,
+        INST_CLC,
+        INST_CLO,
         KEY_ATM,
     };
 
@@ -257,6 +266,12 @@ namespace masm
                 {"excgw", INST_EXCHGW},
                 {"excgd", INST_EXCHGD},
                 {"excgq", INST_EXCHGQ},
+                {"cflags", INST_CFLAGS},
+                {"reset", INST_RESET},
+                {"clz", INST_CLZ},
+                {"cln", INST_CLN},
+                {"clc", INST_CLC},
+                {"clo", INST_CLO},
                 {"atm", KEY_ATM},
                 {"proc", KEY_PROC}};
 

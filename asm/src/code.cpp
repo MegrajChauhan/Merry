@@ -35,26 +35,32 @@ bool masm::Code::read_code()
                 return false;
             break;
         case INST_HLT:
-        {
-            Node n;
-            n.kind = HLT;
-            nodes->push_back(std::move(n));
+            handle_one(HLT);
             break;
-        }
         case INST_NOP:
-        {
-            Node n;
-            n.kind = NOP;
-            nodes->push_back(std::move(n));
+            handle_one(NOP);
             break;
-        }
         case INST_RET:
-        {
-            Node n;
-            n.kind = RET;
-            nodes->push_back(std::move(n));
+            handle_one(RET);
             break;
-        }
+        case INST_CFLAGS:
+            handle_one(CFLAGS);
+            break;
+        case INST_RESET:
+            handle_one(NRESET);
+            break;
+        case INST_CLZ:
+            handle_one(CLZ);
+            break;
+        case INST_CLN:
+            handle_one(CLN);
+            break;
+        case INST_CLC:
+            handle_one(CLC);
+            break;
+        case INST_CLO:
+            handle_one(CLO);
+            break;
         case INST_ADD:
             if (!handle_arithmetic_unsigned(ADD_IMM))
                 return false;
@@ -403,12 +409,31 @@ bool masm::Code::read_code()
             if (!handle_excg(EXCGQ))
                 return false;
             break;
+        case INST_MOVEB:
+            if (!handle_movX(MOVEB))
+                return false;
+            break;
+        case INST_MOVEW:
+            if (!handle_movX(MOVEW))
+                return false;
+            break;
+        case INST_MOVED:
+            if (!handle_movX(MOVED))
+                return false;
+            break;
         default:
             err(fname, t.line, t.col, t.val.length(), _parsing, straytok, ERR_STR, "A stray token that doesn't fit any rules was found.", _l.get_from_line(t.line), "Maybe a fluke? Forgot a keyword?");
             return false;
         }
     }
     return true;
+}
+
+void masm::Code::handle_one(NodeKind k)
+{
+    Node node;
+    node.kind = k;
+    nodes->push_back(std::move(node));
 }
 
 bool masm::Code::handle_names(bool _proc)

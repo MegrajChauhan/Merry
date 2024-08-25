@@ -76,26 +76,14 @@ bool masm::CodeGen::generate()
         switch (node.kind)
         {
         case NOP:
-        {
-            GenBinary b;
-            b.full = 0;
-            code.push_back(b);
+            handle_one(OP_NOP);
             break;
-        }
         case HLT:
-        {
-            GenBinary b;
-            b.bytes.b1 = OP_HALT;
-            code.push_back(b);
+            handle_one(OP_HALT);
             break;
-        }
         case RET:
-        {
-            GenBinary b;
-            b.bytes.b1 = OP_RET;
-            code.push_back(b);
+            handle_one(OP_RET);
             break;
-        }
         case ADD_IMM:
             handle_arithmetic_reg_imm(OP_ADD_IMM, (NodeArithmetic *)node.node.get());
             break;
@@ -318,19 +306,11 @@ bool masm::CodeGen::generate()
             break;
         }
         case PUSHA:
-        {
-            GenBinary b;
-            b.bytes.b1 = OP_PUSHA;
-            code.push_back(b);
+            handle_one(OP_PUSHA);
             break;
-        }
         case POPA:
-        {
-            GenBinary b;
-            b.bytes.b1 = OP_POPA;
-            code.push_back(b);
+            handle_one(OP_POPA);
             break;
-        }
         case PUSH_REG:
             handle_push_pop_reg(OP_PUSH_REG, (NodePushPop *)node.node.get());
             break;
@@ -465,19 +445,11 @@ bool masm::CodeGen::generate()
             handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_STORE_REG);
             break;
         case OUTR:
-        {
-            GenBinary b;
-            b.bytes.b1 = OP_OUTR;
-            code.push_back(b);
+            handle_one(OP_OUTR);
             break;
-        }
         case UOUTR:
-        {
-            GenBinary b;
-            b.bytes.b1 = OP_UOUTR;
-            code.push_back(b);
+            handle_one(OP_UOUTR);
             break;
-        }
         case CIN:
             handle_single_regr(OP_CIN, (NodeSingleRegr *)node.node.get());
             break;
@@ -545,16 +517,43 @@ bool masm::CodeGen::generate()
             handle_single_regr(OP_OUTF, (NodeSingleRegr *)node.node.get());
             break;
         case EXCGB:
-            handle_excg((NodeExcg*)node.node.get(), OP_EXCG8);
+            handle_excg((NodeExcg *)node.node.get(), OP_EXCG8);
             break;
         case EXCGW:
-            handle_excg((NodeExcg*)node.node.get(), OP_EXCG16);
+            handle_excg((NodeExcg *)node.node.get(), OP_EXCG16);
             break;
         case EXCGD:
-            handle_excg((NodeExcg*)node.node.get(), OP_EXCG32);
+            handle_excg((NodeExcg *)node.node.get(), OP_EXCG32);
             break;
         case EXCGQ:
-            handle_excg((NodeExcg*)node.node.get(), OP_EXCG);
+            handle_excg((NodeExcg *)node.node.get(), OP_EXCG);
+            break;
+        case MOVEB:
+            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOV8);
+            break;
+        case MOVEW:
+            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOV16);
+            break;
+        case MOVED:
+            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOV32);
+            break;
+        case CFLAGS:
+            handle_one(OP_CFLAGS);
+            break;
+        case NRESET:
+            handle_one(OP_RESET);
+            break;
+        case CLZ:
+            handle_one(OP_CLZ);
+            break;
+        case CLN:
+            handle_one(OP_CLN);
+            break;
+        case CLC:
+            handle_one(OP_CLC);
+            break;
+        case CLO:
+            handle_one(OP_CLO);
             break;
         }
     }
@@ -582,6 +581,13 @@ bool masm::CodeGen::generate()
         printf("%s: %lX\n", l.first.c_str(), l.second);
     }
     return true;
+}
+
+void masm::CodeGen::handle_one(msize_t op)
+{
+    GenBinary b;
+    b.bytes.b1 = op;
+    code.push_back(b);
 }
 
 void masm::CodeGen::generate_data()

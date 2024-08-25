@@ -35,6 +35,8 @@ namespace masm
 
         bool handle_names(bool _proc);
 
+        void handle_one(NodeKind k);
+
         bool handle_arithmetic_unsigned(NodeKind k);
 
         bool handle_mov(NodeKind k);

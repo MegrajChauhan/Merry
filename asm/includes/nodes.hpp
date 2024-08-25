@@ -185,6 +185,17 @@ namespace masm
         EXCGW,
         EXCGD,
         EXCGQ,
+
+        MOVEB,
+        MOVEW,
+        MOVED,
+
+        CFLAGS,
+        NRESET,
+        CLZ,
+        CLN,
+        CLC,
+        CLO,
     };
 
     enum Register
