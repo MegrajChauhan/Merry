@@ -8,12 +8,14 @@ Merry is  a 64-bit Virtual Machine that emulates a non-existsent CPU. Merry has 
 # Building the VM:
 In order to build the VM, you need MAKE.
 ```bash
-git clone https://www.github.com/MegrajChauhan/MerryV2
-cd MerryV2
+git clone https://www.github.com/MegrajChauhan/Merry
+cd Merry
 mkdir build
 make all dirs=build/ # use this instead of the build.sh
 ```
 "gcc" is the compiler needed for the compilation of the VM while "g++" is needed for the assembler.
+
+**NOTE:** Please do not use the assembler just yet because it doesn't work at all.
 
 # Running Programs:
 In order to make merry run any program, first go into the directory where the compiled executable resides and type the following command:
@@ -24,10 +26,6 @@ This will make merry read the input file and start executing it.
 
 # Things to know:
 Merry is still in development and hence it is appreciated for feedback on test failures. Many features are yet to be implemented. 
-
-# Run Tests:
-Goto **_example/run_** to look at example programs involving the assembly language. 
-The syntax is inspired by x86_64 Nasm assembly which should be well knowm.
 
 # Note:
 Previously when we had a simpler input file format, we used the Zeta assembler as our assembler to assemble the programs but now it will not suffice. We have a more complicated input file format now.

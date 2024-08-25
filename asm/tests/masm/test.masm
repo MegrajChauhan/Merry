@@ -69,7 +69,7 @@ _just_a_label
 
   ;; NOTE: The assembler ignores all commas so you can do whatever you want.
   
-  ;; FLoating point instructions don't take anything other than registers as operands
+  ;; FLoating point instructions don't take anything other than registers and variables as operands
   ;; Having immediates would be convinient, isn't it?
   ;; I am getting new ideas as I develop the assembler so in future
   addf M1, M2 ;; 32-bit floating point values
@@ -83,6 +83,19 @@ _just_a_label
 
   divf M1, M2 
   divlf M1, M2
+
+  ;; must be defined as "df" or "dlf"
+  addf M1, float ;; 32-bit floating point values
+  addlf M1, long_float ;; 64-bit floating point values
+
+  subf M1, float 
+  sublf M1, long_float
+
+  mulf M1, float
+  mullf M1, long_float
+
+  divf M1, float 
+  divlf M1, long_float
 
   ;; No mods for floats
 
@@ -285,7 +298,17 @@ _just_a_label
 
   loop _just_a_label ;; loops until Mc != 0
 
-  intr 
+  intr ABC
+  intr 123
+
+  sete _just_a_label ;; set exception function(a function that will be called when calle is executed)
+  calle
+
+  ;; The convention for this is that the program should provide the arguments in order:
+  ;; Ma, M1, M2, M3, M4, M4, M5
+  ;; The order of the arguments can be looked up in the ABI for the platform.
+  ;; Ma is the syscall number
+  syscall
 
 ;; Here is the thing.
 ;; A procedure or a label can have the same name as an identifier

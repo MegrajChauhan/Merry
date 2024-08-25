@@ -61,6 +61,12 @@ bool masm::Code::read_code()
         case INST_CLO:
             handle_one(CLO);
             break;
+        case INST_CALLE:
+            handle_one(CALLE);
+            break;
+        case INST_SYSCALL:
+            handle_one(SYSCALL);
+            break;
         case INST_ADD:
             if (!handle_arithmetic_unsigned(ADD_IMM))
                 return false;
@@ -237,6 +243,10 @@ bool masm::Code::read_code()
             if (!handle_jmp(LOOP))
                 return false;
             break;
+        case INST_SETE:
+            if (!handle_jmp(SETE))
+                return false;
+            break;
         case INST_CALL:
             if (!handle_call())
                 return false;
@@ -250,19 +260,11 @@ bool masm::Code::read_code()
                 return false;
             break;
         case INST_PUSHA:
-        {
-            Node n;
-            n.kind = PUSHA;
-            nodes->push_back(std::move(n));
+            handle_one(PUSHA);
             break;
-        }
         case INST_POPA:
-        {
-            Node n;
-            n.kind = POPA;
-            nodes->push_back(std::move(n));
+            handle_one(POPA);
             break;
-        }
         case INST_PUSH:
             if (!handle_push_pop(PUSH_IMM))
                 return false;
@@ -352,19 +354,11 @@ bool masm::Code::read_code()
                 return false;
             break;
         case INST_OUTR:
-        {
-            Node n;
-            n.kind = OUTR;
-            nodes->push_back(std::move(n));
+            handle_one(OUTR);
             break;
-        }
         case INST_UOUTR:
-        {
-            Node n;
-            n.kind = UOUTR;
-            nodes->push_back(std::move(n));
+            handle_one(UOUTR);
             break;
-        }
         case INST_CIN:
             if (!handle_single_regr(CIN))
                 return false;
@@ -487,6 +481,10 @@ bool masm::Code::read_code()
             break;
         case INST_MOVED:
             if (!handle_movX(MOVED))
+                return false;
+            break;
+        case INST_INTR:
+            if (!handle_intr())
                 return false;
             break;
         default:
@@ -935,7 +933,7 @@ bool masm::Code::handle_arithmetic_float(NodeKind k)
     res = _l.next_token();
     if (!res.has_value())
     {
-        err(fname, _l.get_line(), _l.get_col(), 0, _parsing, syntaxerr, ERR_STR, "Expected a register or another register here after the first operand.", _l.get_from_line(_l.get_line()));
+        err(fname, _l.get_line(), _l.get_col(), 0, _parsing, syntaxerr, ERR_STR, "Expected a register or a variable here after the first operand.", _l.get_from_line(_l.get_line()));
         return false;
     }
     a->reg = regr_map.find(t.type)->second;
@@ -944,9 +942,19 @@ bool masm::Code::handle_arithmetic_float(NodeKind k)
     {
         a->second_oper = regr_map.find(t.type)->second;
     }
+    else if (t.type == IDENTIFIER)
+    {
+        if (check_var(t.val))
+        {
+            err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a variable here after the first operand that exists.", _l.get_from_line(t.line));
+            return false;
+        }
+        a->second_oper = t.val;
+        node.kind = (NodeKind)(k + 8);
+    }
     else
     {
-        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register or another register here after the first operand.", _l.get_from_line(t.line));
+        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register or a variable here after the first operand.", _l.get_from_line(t.line));
         return false;
     }
     nodes->push_back(std::move(node));
@@ -976,7 +984,6 @@ bool masm::Code::handle_jmp(NodeKind k)
         err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a label here that exists after the branch instruction; Label doesn't exists.", _l.get_from_line(regr_line));
         return false;
     }
-
     n->name = t.val;
     nodes->push_back(std::move(node));
     return true;
@@ -1082,6 +1089,44 @@ bool masm::Code::handle_push_pop(NodeKind k)
         return false;
     }
 
+    nodes->push_back(std::move(node));
+    return true;
+}
+
+bool masm::Code::handle_intr()
+{
+    Node node;
+    node.node = std::make_unique<NodeIntr>();
+    auto n = (NodeIntr *)node.node.get();
+    auto res = _l.next_token();
+    if (!res.has_value())
+    {
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a constant, or an immediate after the INTR instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
+    t = res.value();
+    switch (t.type)
+    {
+    case IDENTIFIER:
+    {
+        if (check_const(t.val))
+        {
+            err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a consant here that exists after the INTR instruction.", _l.get_from_line(regr_line));
+            return false;
+        }
+        n->val = table->_const_list[t.val].value;
+    }
+    case NUM_FLOAT:
+    case NUM_INT:
+    {
+        node.kind = (INTR);
+        n->val = t.val;
+        break;
+    }
+    default:
+        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a constant or an immediate here that after the INTR instruction.", _l.get_from_line(regr_line));
+        return false;
+    }
     nodes->push_back(std::move(node));
     return true;
 }

@@ -93,6 +93,8 @@ namespace masm
         void handle_movsx_var(NodeMov *n, msize_t op);
 
         void handle_sva_svc_var(NodeSTACK *n, msize_t op);
+
+        void handle_float_var(NodeArithmetic *n, msize_t op);
     };
 };
 

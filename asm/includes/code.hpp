@@ -74,6 +74,8 @@ namespace masm
 
         bool handle_excg(NodeKind k);
 
+        bool handle_intr();
+
         bool check_var(std::string name);
         bool check_lbl(std::string name);
         bool check_const(std::string name);

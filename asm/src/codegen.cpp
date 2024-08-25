@@ -552,6 +552,47 @@ bool masm::CodeGen::generate()
         case CLO:
             handle_one(OP_CLO);
             break;
+        case INTR:
+        {
+            GenBinary b;
+            b.bytes.b1 = OP_INTR;
+            b.full |= (std::stoull(((NodeIntr *)node.node.get())->val) & 0xFFFF);
+            code.push_back(b);
+            break;
+        }
+        case FADD_MEM:
+            handle_float_var((NodeArithmetic *)node.node.get(), OP_FADD32_MEM);
+            break;
+        case FSUB_MEM:
+            handle_float_var((NodeArithmetic *)node.node.get(), OP_FSUB32_MEM);
+            break;
+        case FMUL_MEM:
+            handle_float_var((NodeArithmetic *)node.node.get(), OP_FMUL32_MEM);
+            break;
+        case FDIV_MEM:
+            handle_float_var((NodeArithmetic *)node.node.get(), OP_FDIV32_MEM);
+            break;
+        case LFADD_MEM:
+            handle_float_var((NodeArithmetic *)node.node.get(), OP_FADD_MEM);
+            break;
+        case LFSUB_MEM:
+            handle_float_var((NodeArithmetic *)node.node.get(), OP_FSUB_MEM);
+            break;
+        case LFMUL_MEM:
+            handle_float_var((NodeArithmetic *)node.node.get(), OP_FMUL_MEM);
+            break;
+        case LFDIV_MEM:
+            handle_float_var((NodeArithmetic *)node.node.get(), OP_FDIV_MEM);
+            break;
+        case CALLE:
+            handle_one(OP_CALL_EXCP);
+            break;
+        case SETE:
+            handle_jmp(OP_SET_EXCP, (NodeName *)node.node.get());
+            break;
+        case SYSCALL:
+            handle_one(OP_SYSCALL);
+            break;
         }
     }
     for (auto b : code)
@@ -578,6 +619,15 @@ bool masm::CodeGen::generate()
         printf("%s: %lX\n", l.first.c_str(), l.second);
     }
     return true;
+}
+
+void masm::CodeGen::handle_float_var(NodeArithmetic *n, msize_t op)
+{
+    GenBinary b;
+    b.bytes.b1 = op;
+    b.bytes.b2 = n->reg;
+    b.full |= (std::stoull(std::get<std::string>(n->second_oper)) & 0xFFFFFFFFFFFF);
+    code.push_back(b);
 }
 
 void masm::CodeGen::handle_movsx(NodeMov *n, msize_t op)

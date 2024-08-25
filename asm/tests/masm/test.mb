@@ -4,6 +4,22 @@ data tests/masm/test.mdat ;; Include the "test.mdat" data file and put its conte
 code tests/masm/test.masm ;; The code
 code tests/masm/test2.masm
 
+;; depends <another .mb file to include here>
+
+;; Here the <THING TO DO> means one of the above command obviously
+;; defined <CONSTANT/VARIABLE> <THING TO DO>
+;; ndefined <CONSTANT/VARIABLE> <THING TO DO>
+
+;; ;; Thanks to the way the input file format is created, there can be multiple entries
+;; entry <ENTRY LABEL OR PROCEDURE>
+;; entry <ANOTHER ENTRY LABEL OR PROCEDURE>
+
+;; ;; eepe = EAT entry per entry(meaning how many times to copy the above two in final binary)
+;; eepe <A NUMBER>
+
+;; ;; eepe but just for ENTRY
+;; teepe <ENTRY> <A NUMBER>
+
 ;; Include the files as necessary just like above
 ;; For now these are the only two things that can be done with this file type
 ;; In future, maybe this file does more than just this

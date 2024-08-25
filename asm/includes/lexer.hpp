@@ -163,6 +163,10 @@ namespace masm
         INST_JGE,
         INST_JSE,
         INST_LOOP,
+        INST_INTR,
+        INST_SETE,
+        INST_SYSCALL,
+        INST_CALLE,
         KEY_ATM,
     };
 
@@ -308,6 +312,10 @@ namespace masm
                 {"jge", INST_JGE},
                 {"jse", INST_JSE},
                 {"loop", INST_LOOP},
+                {"intr", INST_INTR},
+                {"sete", INST_SETE},
+                {"calle", INST_CALLE},
+                {"syscall", INST_SYSCALL},
                 {"atm", KEY_ATM},
                 {"proc", KEY_PROC}};
 

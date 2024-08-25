@@ -50,6 +50,14 @@ namespace masm
         LFSUB,
         LFMUL,
         LFDIV,
+        FADD_MEM,
+        FSUB_MEM,
+        FMUL_MEM,
+        FDIV_MEM,
+        LFADD_MEM,
+        LFSUB_MEM,
+        LFMUL_MEM,
+        LFDIV_MEM,
 
         MOV_IMM,
         MOV_REG,
@@ -215,6 +223,11 @@ namespace masm
         JSE,
 
         LOOP,
+        INTR,
+
+        SETE,
+        CALLE,
+        SYSCALL,
 
     };
 
@@ -251,6 +264,11 @@ namespace masm
     struct NodeName : public Base
     {
         std::string name;
+    };
+
+    struct NodeIntr : public Base
+    {
+        std::string val;
     };
 
     struct NodeSIO : public NodeName
