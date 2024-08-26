@@ -70,6 +70,8 @@ void masm::Context::start()
         {
         case MB_DATA:
         {
+            if (skip)
+                break;
             Data d;
             std::string _file = inp_file_lexer.get_a_group();
             if (_file.empty() && inp_file_lexer.eof())
@@ -85,6 +87,8 @@ void masm::Context::start()
         }
         case MB_CODE:
         {
+            if (skip)
+                break;
             Code _c;
             std::string _file = inp_file_lexer.get_a_group();
             if (_file.empty() && inp_file_lexer.eof())
@@ -100,6 +104,8 @@ void masm::Context::start()
         }
         case KEY_DEPENDS:
         {
+            if (skip)
+                break;
             std::string _file = inp_file_lexer.get_a_group();
             if (_file.empty() && inp_file_lexer.eof())
             {
@@ -115,11 +121,122 @@ void masm::Context::start()
         case KEY_DEFINED:
             handle_defined();
             break;
+        case KEY_NDEFINED:
+            handle_ndefined();
+            break;
+        case KEY_ENTRY:
+        {
+            if (skip)
+                break;
+            auto res = inp_file_lexer.next_token();
+            if (!res.has_value())
+            {
+                err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected a label or a procedure name after 'entry'.", inp_file_lexer.extract_line());
+                die(1);
+            }
+            t = res.value();
+            if (t.type != IDENTIFIER)
+            {
+                err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected a label or a procedure name after 'entry'.", inp_file_lexer.extract_line());
+                die(1);
+            }
+            entries.push_back(t.val);
+            break;
+        }
+        case KEY_EEPE:
+        {
+            if (skip)
+                break;
+            auto res = inp_file_lexer.next_token();
+            if (!res.has_value())
+            {
+                err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected an integer value after 'eepe'.", inp_file_lexer.extract_line());
+                die(1);
+            }
+            t = res.value();
+            if (t.type != NUM_INT)
+            {
+                err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected an integer value after 'eepe'.", inp_file_lexer.extract_line());
+                die(1);
+            }
+            eepe = t.val;
+            break;
+        }
+        case KEY_TEEPE:
+        {
+            if (skip)
+                break;
+            auto res = inp_file_lexer.next_token();
+            if (!res.has_value())
+            {
+                err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected an integer value after 'eepe'.", inp_file_lexer.extract_line());
+                die(1);
+            }
+            t = res.value();
+            if (t.type != IDENTIFIER)
+            {
+                err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected a label value after 'teepe'.", inp_file_lexer.extract_line());
+                die(1);
+            }
+            std::string id = t.val;
+            res = inp_file_lexer.next_token();
+            if (!res.has_value())
+            {
+                err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected an integer value after 'eepe'.", inp_file_lexer.extract_line());
+                die(1);
+            }
+            t = res.value();
+            if (t.type != NUM_INT)
+            {
+                err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected an integer value after 'eepe'.", inp_file_lexer.extract_line());
+                die(1);
+            }
+            teepe[id] = t.val;
+            break;
+        }
+        case KEY_END:
+        {
+            if (_end_queue.empty())
+            {
+                note("It may seem that a stary END keyword was found.");
+                die(1);
+            }
+            _end_queue.pop_back();
+            if (_end_queue.empty())
+                skip = false;
+            break;
+        }
         }
     }
+    if (!_end_queue.empty())
+    {
+        note("It may seem that one END keyword is missing.");
+        die(1);
+    }
     analyse_proc();
+    confirm_entries();
     gen.setup_codegen(&table, &nodes);
     gen.generate();
+}
+
+void masm::Context::confirm_entries()
+{
+    for (auto e : entries)
+    {
+        if (labels.find(e) == labels.end())
+        {
+            note("The entry '" + e + "' doesn't exist.");
+            die(1);
+        }
+    }
+    for (auto te : teepe)
+    {
+        if (labels.find(te.first) == labels.end())
+        {
+            note("The entry '" + te.first + "' doesn't exist.");
+            die(1);
+        }
+    }
 }
 
 void masm::ChildContext::start()
@@ -140,6 +257,8 @@ void masm::ChildContext::start()
         {
         case MB_DATA:
         {
+            if (skip)
+                break;
             Data d;
             std::string _file = inp_file_lexer.get_a_group();
             if (_file.empty() && inp_file_lexer.eof())
@@ -155,6 +274,8 @@ void masm::ChildContext::start()
         }
         case MB_CODE:
         {
+            if (skip)
+                break;
             Code _c;
             std::string _file = inp_file_lexer.get_a_group();
             if (_file.empty() && inp_file_lexer.eof())
@@ -170,6 +291,8 @@ void masm::ChildContext::start()
         }
         case KEY_DEPENDS:
         {
+            if (skip)
+                break;
             std::string _file = inp_file_lexer.get_a_group();
             if (_file.empty() && inp_file_lexer.eof())
             {
@@ -185,7 +308,97 @@ void masm::ChildContext::start()
         case KEY_DEFINED:
             handle_defined();
             break;
+        case KEY_NDEFINED:
+            handle_ndefined();
+            break;
+        case KEY_ENTRY:
+        {
+            if (skip)
+                break;
+            auto res = inp_file_lexer.next_token();
+            if (!res.has_value())
+            {
+                err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected a label or a procedure name after 'entry'.", inp_file_lexer.extract_line());
+                die(1);
+            }
+            t = res.value();
+            if (t.type != IDENTIFIER)
+            {
+                err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected a label or a procedure name after 'entry'.", inp_file_lexer.extract_line());
+                die(1);
+            }
+            entries->push_back(t.val);
+            break;
         }
+        case KEY_EEPE:
+        {
+            if (skip)
+                break;
+            auto res = inp_file_lexer.next_token();
+            if (!res.has_value())
+            {
+                err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected an integer value after 'eepe'.", inp_file_lexer.extract_line());
+                die(1);
+            }
+            t = res.value();
+            if (t.type != NUM_INT)
+            {
+                err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected an integer value after 'eepe'.", inp_file_lexer.extract_line());
+                die(1);
+            }
+            *eepe = t.val;
+            break;
+        }
+        case KEY_TEEPE:
+        {
+            if (skip)
+                break;
+            auto res = inp_file_lexer.next_token();
+            if (!res.has_value())
+            {
+                err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected an integer value after 'eepe'.", inp_file_lexer.extract_line());
+                die(1);
+            }
+            t = res.value();
+            if (t.type != IDENTIFIER)
+            {
+                err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected a label value after 'teepe'.", inp_file_lexer.extract_line());
+                die(1);
+            }
+            std::string id = t.val;
+            res = inp_file_lexer.next_token();
+            if (!res.has_value())
+            {
+                err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected an integer value after 'eepe'.", inp_file_lexer.extract_line());
+                die(1);
+            }
+            t = res.value();
+            if (t.type != NUM_INT)
+            {
+                err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected an integer value after 'eepe'.", inp_file_lexer.extract_line());
+                die(1);
+            }
+            (*teepe)[id] = t.val;
+            break;
+        }
+        case KEY_END:
+        {
+            if (_end_queue.empty())
+            {
+                note("It may seem that a stary END keyword was found.");
+                die(1);
+            }
+            _end_queue.pop_back();
+            if (_end_queue.empty())
+                skip = false;
+            break;
+        }
+        }
+    }
+    if (!_end_queue.empty())
+    {
+        note("It may seem that one END keyword is missing. In file " + inp_file);
+        die(1);
     }
 }
 
@@ -223,7 +436,7 @@ void masm::Context::analyse_proc()
     }
 }
 
-void masm::ChildContext::setup_structure(std::unordered_map<std::string, size_t> *tp, SymbolTable *t, std::unordered_map<std::string, bool> *fl, std::vector<std::string> *_fl, std::vector<Node> *n, std::unordered_map<std::string, Procedure> *pl, std::unordered_map<std::string, size_t> *ll, std::vector<std::string> *e)
+void masm::ChildContext::setup_structure(std::unordered_map<std::string, std::string> *tp, SymbolTable *t, std::unordered_map<std::string, bool> *fl, std::vector<std::string> *_fl, std::vector<Node> *n, std::unordered_map<std::string, Procedure> *pl, std::unordered_map<std::string, size_t> *ll, std::vector<std::string> *e)
 {
     table = t;
     filelist = fl;
@@ -238,6 +451,9 @@ void masm::ChildContext::setup_structure(std::unordered_map<std::string, size_t>
 void masm::Context::handle_defined()
 {
     auto tok = inp_file_lexer.next_token();
+    _end_queue.push_back(true);
+    if (skip)
+        return;
     if (!tok.has_value())
     {
         note("Expected a constant or a variable after 'defined'.");
@@ -259,13 +475,15 @@ void masm::Context::handle_defined()
         // a constant hence it is defined
         return;
     }
-    // doesn't exist so skip until newline
-    inp_file_lexer.rid_until('\n');
+    skip = true;
 }
 
 void masm::Context::handle_ndefined()
 {
     auto tok = inp_file_lexer.next_token();
+    _end_queue.push_back(true);
+    if (skip)
+        return;
     if (!tok.has_value())
     {
         note("Expected a constant or a variable after 'defined'.");
@@ -285,8 +503,7 @@ void masm::Context::handle_ndefined()
             return;
         }
     }
-    // exists so skip until newline
-    inp_file_lexer.rid_until('\n');
+    skip = true;
 }
 
 void masm::ChildContext::handle_ndefined()

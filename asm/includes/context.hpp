@@ -37,11 +37,14 @@ namespace masm
         std::unordered_map<std::string, Procedure> proc_list; // the list of all procedures
         std::unordered_map<std::string, size_t> labels;
 
-        size_t eepe = 1;
-        std::unordered_map<std::string, size_t> teepe;
+        std::string eepe = "1";
+        std::unordered_map<std::string, std::string> teepe;
         std::vector<std::string> entries;
 
         CodeGen gen;
+
+        std::vector<bool> _end_queue;
+        bool skip = false;
 
     public:
         Context() = default;
@@ -59,7 +62,7 @@ namespace masm
 
         void analyse_proc(); // check if any procedure was left undefined
 
-        void add_dependency(std::string fname);
+        void confirm_entries();
     };
 
     class ChildContext : public Context
@@ -78,15 +81,17 @@ namespace masm
         std::unordered_map<std::string, Procedure> *proc_list; // the list of all procedures
         std::unordered_map<std::string, size_t> *labels;
 
-        size_t *eepe;
-        std::unordered_map<std::string, size_t> *teepe;
+        std::string *eepe;
+        std::unordered_map<std::string, std::string> *teepe;
         std::vector<std::string> *entries;
 
+        std::vector<bool> _end_queue;
+        bool skip = false;
     public:
         ChildContext() = default;
-        ChildContext(size_t *ee) : eepe(ee) {}
+        ChildContext(std::string *ee) : eepe(ee) {}
 
-        void setup_structure(std::unordered_map<std::string, size_t> *tep, SymbolTable *t, std::unordered_map<std::string, bool> *fl, std::vector<std::string> *_fl, std::vector<Node> *n, std::unordered_map<std::string, Procedure> *pl, std::unordered_map<std::string, size_t> *ll, std::vector<std::string> *e);
+        void setup_structure(std::unordered_map<std::string, std::string> *tep, SymbolTable *t, std::unordered_map<std::string, bool> *fl, std::vector<std::string> *_fl, std::vector<Node> *n, std::unordered_map<std::string, Procedure> *pl, std::unordered_map<std::string, size_t> *ll, std::vector<std::string> *e);
 
         void start() override;
 

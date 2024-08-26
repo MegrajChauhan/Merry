@@ -170,6 +170,10 @@ namespace masm
         KEY_ATM,
         KEY_DEPENDS,
         KEY_DEFINED,
+        KEY_END,
+        KEY_ENTRY,
+        KEY_EEPE,
+        KEY_TEEPE,
         KEY_NDEFINED,
     };
 
@@ -323,6 +327,10 @@ namespace masm
                 {"proc", KEY_PROC},
                 {"defined", KEY_DEFINED},
                 {"ndefined", KEY_NDEFINED},
+                {"end", KEY_END},
+                {"entry", KEY_ENTRY},
+                {"eepe", KEY_EEPE},
+                {"teepe", KEY_TEEPE},
                 {"depends", KEY_DEPENDS}};
 
     static std::unordered_map<TokenType, Register>

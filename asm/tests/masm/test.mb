@@ -7,8 +7,8 @@ code tests/masm/test2.masm
 ;; depends <another .mb file to include here>
 
 ;; Here the <THING TO DO> means one of the above command obviously
-;; defined <CONSTANT/VARIABLE> <THING TO DO>
-;; ndefined <CONSTANT/VARIABLE> <THING TO DO>
+;; defined <CONSTANT/VARIABLE> <THING TO DO> end
+;; ndefined <CONSTANT/VARIABLE> <THING TO DO> end
 
 ;; ;; Thanks to the way the input file format is created, there can be multiple entries
 ;; ;; The first entry that is given is the main thread that will start
@@ -19,7 +19,7 @@ code tests/masm/test2.masm
 ;; eepe <A NUMBER>
 
 ;; ;; eepe but just for ENTRY
-;; teepe <ENTRY> <A NUMBER>
+;; teepe <ENTRY> <A NUMBER> ;; if <ENTRY> doesn't exist, a new entry is created
 
 ;; Here is a more detailed explanation:
 ;; The file format allows you to start with multiple threads from the start.
