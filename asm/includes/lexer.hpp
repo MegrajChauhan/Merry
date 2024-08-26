@@ -168,6 +168,9 @@ namespace masm
         INST_SYSCALL,
         INST_CALLE,
         KEY_ATM,
+        KEY_DEPENDS,
+        KEY_DEFINED,
+        KEY_NDEFINED,
     };
 
     static std::unordered_map<std::string, TokenType>
@@ -317,7 +320,10 @@ namespace masm
                 {"calle", INST_CALLE},
                 {"syscall", INST_SYSCALL},
                 {"atm", KEY_ATM},
-                {"proc", KEY_PROC}};
+                {"proc", KEY_PROC},
+                {"defined", KEY_DEFINED},
+                {"ndefined", KEY_NDEFINED},
+                {"depends", KEY_DEPENDS}};
 
     static std::unordered_map<TokenType, Register>
         regr_map =

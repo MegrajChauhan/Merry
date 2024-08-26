@@ -37,6 +37,10 @@ namespace masm
         std::unordered_map<std::string, Procedure> proc_list; // the list of all procedures
         std::unordered_map<std::string, size_t> labels;
 
+        size_t eepe = 1;
+        std::unordered_map<std::string, size_t> teepe;
+        std::vector<std::string> entries;
+
         CodeGen gen;
 
     public:
@@ -46,11 +50,50 @@ namespace masm
 
         void read_file(std::string file);
 
-        void start();
+        virtual void handle_defined();
+        virtual void handle_ndefined();
 
-        void setup_for_new_file(std::string npath);
+        virtual void start();
+
+        virtual void setup_for_new_file(std::string npath);
 
         void analyse_proc(); // check if any procedure was left undefined
+
+        void add_dependency(std::string fname);
+    };
+
+    class ChildContext : public Context
+    {
+        std::string inp_file;
+        std::string curr_file;
+        FileType curr_file_type;
+        SymbolTable *table;
+        std::string curr_file_conts;
+        std::string inp_file_conts;
+        std::unordered_map<std::string, bool> *filelist;
+        std::vector<std::string> *flist;
+        Lexer inp_file_lexer;
+
+        std::vector<Node> *nodes;
+        std::unordered_map<std::string, Procedure> *proc_list; // the list of all procedures
+        std::unordered_map<std::string, size_t> *labels;
+
+        size_t *eepe;
+        std::unordered_map<std::string, size_t> *teepe;
+        std::vector<std::string> *entries;
+
+    public:
+        ChildContext() = default;
+        ChildContext(size_t *ee) : eepe(ee) {}
+
+        void setup_structure(std::unordered_map<std::string, size_t> *tep, SymbolTable *t, std::unordered_map<std::string, bool> *fl, std::vector<std::string> *_fl, std::vector<Node> *n, std::unordered_map<std::string, Procedure> *pl, std::unordered_map<std::string, size_t> *ll, std::vector<std::string> *e);
+
+        void start() override;
+
+        void setup_for_new_file(std::string npath) override;
+
+        void handle_defined() override;
+        void handle_ndefined() override;
     };
 };
 

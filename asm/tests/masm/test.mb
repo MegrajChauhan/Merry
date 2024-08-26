@@ -11,6 +11,7 @@ code tests/masm/test2.masm
 ;; ndefined <CONSTANT/VARIABLE> <THING TO DO>
 
 ;; ;; Thanks to the way the input file format is created, there can be multiple entries
+;; ;; The first entry that is given is the main thread that will start
 ;; entry <ENTRY LABEL OR PROCEDURE>
 ;; entry <ANOTHER ENTRY LABEL OR PROCEDURE>
 
@@ -19,6 +20,27 @@ code tests/masm/test2.masm
 
 ;; ;; eepe but just for ENTRY
 ;; teepe <ENTRY> <A NUMBER>
+
+;; Here is a more detailed explanation:
+;; The file format allows you to start with multiple threads from the start.
+;; Hence, you can have multiple "main" functions.
+;; Here is an example:
+;; entry my_main
+;; eepe 12
+;; The above two will result in 12 threads being created which will run from the start.
+;; All 12 will start from the same address.
+;; If you want to have different threads to start from different address then just 
+;; add more entries.
+;; Here is another example:
+;; entry main_1
+;; entry ur_mon
+;; entry sum
+;; WIth the above three lines, you have three entries at different addresses defined.
+;; eepe 3
+;; With the above line, there will be 3 threads per entry i.e 3 threads running main_1 and so on for the other 2.
+;; teepe ur_mon 5
+;; This above line will overwrite the 3 just for ur_mon and there will now be 5 threads for this address.
+;; Note that if you use eepe once again after this, the effect of teepe is overwritten.
 
 ;; Include the files as necessary just like above
 ;; For now these are the only two things that can be done with this file type
