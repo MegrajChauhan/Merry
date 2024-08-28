@@ -1,6 +1,6 @@
 #include "emit.hpp"
 
-void masm::Emit::emit(std::string output, std::string *epval, std::unordered_map<std::string, std::string> *tep, std::vector<std::string> *entry, std::vector<GenBinary> *_c, std::vector<mbyte_t> *_d, std::vector<mbyte_t> *_s)
+void masm::Emit::emit(std::string output, std::string *epval, std::unordered_map<std::string, std::string> *tep, std::vector<std::string> *entry, std::vector<GenBinary> *_c, std::vector<mbyte_t> *_d, std::vector<mbyte_t> *_s, std::unordered_map<std::string, size_t> *lbaddr)
 {
     f.open(output, std::ios::out | std::ios::binary);
     if (!f.is_open())
@@ -14,6 +14,7 @@ void masm::Emit::emit(std::string output, std::string *epval, std::unordered_map
     code = _c;
     data = _d;
     str_data = _s;
+    lbl_addr = lbaddr;
 }
 
 void masm::Emit::add_header()
@@ -26,7 +27,11 @@ void masm::Emit::add_header()
         f << v;
     }
     // EAT
-    
+    b.val = EAT_cont.size() * 8;
+    for (auto v : b.b)
+    {
+        f << v;
+    }
     // the SsT
     // For now, we only have data and string and hence 32 bytes at most
     f << 0x00 << 0x00 << 0x00 << 0x00 << 0x00 << 0x00 << 0x00;
@@ -34,5 +39,73 @@ void masm::Emit::add_header()
         f << 32;
     else
         f << 16;
-    
+    // ST size is 0 for now
+    b.val = 0;
+    for (auto v : b.b)
+    {
+        f << v;
+    }
 }
+
+void masm::Emit::analyze_eat()
+{
+    size_t eepe_to_num = std::stoull(*eepe);
+    for (auto _e : *entries)
+    {
+        auto _r = teepe->find(_e);
+        size_t times = 0;
+        if (_r != teepe->end())
+            times = std::stoull(_r->second);
+        else
+            times = eepe_to_num;
+        size_t addr = (*lbl_addr)[_e];
+        for (size_t i = 0; i < times; i++)
+            EAT_cont.push_back(addr);
+    }
+}
+
+void masm::Emit::add_EAT()
+{
+    for (auto _e : EAT_cont)
+    {
+        ByteSwap b;
+        b.val = _e;
+        for (auto v : b.b)
+        {
+            f << v;
+        }
+    }
+}
+
+void masm::Emit::add_instructions()
+{
+    for (auto _i : *code)
+    {
+        // f << _i.bytes.b8;
+        // f << _i.bytes.b7;
+        // f << _i.bytes.b6;
+        // f << _i.bytes.b5;
+        // f << _i.bytes.b4;
+        // f << _i.bytes.b3;
+        // f << _i.bytes.b2;
+        // f << _i.bytes.b1;
+    }
+}
+
+void masm::Emit::add_SsT()
+{
+    // for now we only have data and string so no debugging please
+    // As for the debug sections, the assembler will have to define its own conventions on how
+    // each section is structured which will take time so we avoid it for now
+    // Let's just get a working assembler for now
+    /// TODO: Actually solve the port problem in VM!
+    // std::pair<size_t, size_t> e;
+    // e.first = data->size(); // we put data first
+    // e.second = 0; // we only deal with data for now so 0 in first byte
+    // e.second = (1ULL << 48); // RIM flag
+}
+
+/**
+ * For now, we may have emitted the multiple features of the file format but they will be in
+ * place as needed.
+ */

@@ -40,12 +40,12 @@ namespace masm
         std::vector<mbyte_t> str_data; // for strings
 
         std::unordered_map<std::string, size_t> data_addr;
-        std::unordered_map<std::string, size_t> label_addr;
+        std::unordered_map<std::string, size_t> *label_addr;
 
     public:
         CodeGen() = default;
 
-        void setup_codegen(SymbolTable *_t, std::vector<Node> *_n);
+        void setup_codegen(SymbolTable *_t, std::vector<Node> *_n, std::unordered_map<std::string, size_t> *lb);
 
         bool generate();
 
@@ -88,7 +88,7 @@ namespace masm
 
         void handle_one(msize_t op);
 
-        void handle_movsx(NodeMov* n, msize_t op);
+        void handle_movsx(NodeMov *n, msize_t op);
 
         void handle_movsx_var(NodeMov *n, msize_t op);
 

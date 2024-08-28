@@ -1,9 +1,10 @@
 #include "codegen.hpp"
 
-void masm::CodeGen::setup_codegen(SymbolTable *_t, std::vector<Node> *_n)
+void masm::CodeGen::setup_codegen(SymbolTable *_t, std::vector<Node> *_n, std::unordered_map<std::string, size_t>* lb)
 {
     nodes = _n;
     table = _t;
+    label_addr = lb;
 }
 
 /**
@@ -269,7 +270,7 @@ bool masm::CodeGen::generate()
             NodeCall *c = (NodeCall *)node.node.get();
             GenBinary b;
             b.bytes.b1 = OP_CALL;
-            b.full |= (label_addr[std::get<std::string>(c->_oper)] & 0xFFFFFFFFFFFF);
+            b.full |= ((*label_addr)[std::get<std::string>(c->_oper)] & 0xFFFFFFFFFFFF);
             code.push_back(b);
             break;
         }
@@ -609,7 +610,7 @@ bool masm::CodeGen::generate()
         std::cout << ((int)b) << "\n";
     }
     printf("\n");
-    for (auto l : label_addr)
+    for (auto l : *label_addr)
     {
         printf("%s: %lX\n", l.first.c_str(), l.second);
     }
@@ -859,7 +860,7 @@ void masm::CodeGen::handle_mov_reg_var(NodeMov *n)
         handle_mov_reg_imm(false, n);
         return;
     }
-    size_t addr = is_lbl ? label_addr[_s.first] : data_addr.find(_s.first)->second;
+    size_t addr = is_lbl ? (*label_addr)[_s.first] : data_addr.find(_s.first)->second;
     b.bytes.b2 = n->reg;
     b.full |= addr;
     if (!is_lbl)
@@ -895,7 +896,7 @@ void masm::CodeGen::handle_jmp(msize_t op, NodeName *n)
 {
     GenBinary b;
     b.bytes.b1 = op;
-    b.full |= (label_addr[n->name] & 0xFFFFFFFFFFFF);
+    b.full |= ((*label_addr)[n->name] & 0xFFFFFFFFFFFF);
     code.push_back(b);
 }
 
@@ -909,7 +910,7 @@ void masm::CodeGen::give_address_to_labels()
         case LABEL:
         {
             NodeName *n = (NodeName *)l.node.get();
-            label_addr[n->name] = i;
+            (*label_addr)[n->name] = i;
             i++;
             break;
         }
@@ -957,7 +958,7 @@ void masm::CodeGen::handle_push_pop_var(msize_t op, NodePushPop *n)
     if ((data_addr.find(name) == data_addr.end()))
     {
         // It must be a label
-        addr = label_addr[name];
+        addr = (*label_addr)[name];
         b.bytes.b1 = OP_PUSH_IMM;
         code.push_back(b);
         b.full = addr;

@@ -26,12 +26,31 @@ namespace masm
         std::vector<mbyte_t> *str_data;
         std::fstream f;
 
+        size_t ISS = 0;   // Instruction Section Size
+        size_t EAT_S = 0; // EAT Size
+        size_t SsT_S = 0; // SsT Size
+        size_t ST_S = 0;  // ST size
+
+        std::vector<size_t> EAT_cont;
+        std::vector<std::pair<size_t, size_t>> SsT_cont;
+        std::vector<std::vector<mbyte_t> *> sections;
+
+        std::unordered_map<std::string, size_t> *lbl_addr;
+
     public:
         Emit() = default;
 
-        void emit(std::string output, std::string *epval, std::unordered_map<std::string, std::string> *tep, std::vector<std::string> *entry, std::vector<GenBinary> *_c, std::vector<mbyte_t> *_d, std::vector<mbyte_t> *_s);
+        void emit(std::string output, std::string *epval, std::unordered_map<std::string, std::string> *tep, std::vector<std::string> *entry, std::vector<GenBinary> *_c, std::vector<mbyte_t> *_d, std::vector<mbyte_t> *_s, std::unordered_map<std::string, size_t> *lbaddr);
 
         void add_header();
+
+        void add_EAT();
+
+        void add_SsT();
+
+        void add_instructions();
+
+        void analyze_eat();
     };
 };
 

@@ -36,6 +36,7 @@ namespace masm
         std::vector<Node> nodes;
         std::unordered_map<std::string, Procedure> proc_list; // the list of all procedures
         std::unordered_map<std::string, size_t> labels;
+        std::unordered_map<std::string, size_t> label_addr;
 
         std::string eepe = "1";
         std::unordered_map<std::string, std::string> teepe;
@@ -81,6 +82,7 @@ namespace masm
         std::unordered_map<std::string, Procedure> *proc_list; // the list of all procedures
         std::unordered_map<std::string, size_t> *labels;
 
+        std::unordered_map<std::string, size_t> *label_addr;
         std::string *eepe;
         std::unordered_map<std::string, std::string> *teepe;
         std::vector<std::string> *entries;
@@ -91,7 +93,7 @@ namespace masm
         ChildContext() = default;
         ChildContext(std::string *ee) : eepe(ee) {}
 
-        void setup_structure(std::unordered_map<std::string, std::string> *tep, SymbolTable *t, std::unordered_map<std::string, bool> *fl, std::vector<std::string> *_fl, std::vector<Node> *n, std::unordered_map<std::string, Procedure> *pl, std::unordered_map<std::string, size_t> *ll, std::vector<std::string> *e);
+        void setup_structure(std::unordered_map<std::string, size_t>* la, std::unordered_map<std::string, std::string> *tep, SymbolTable *t, std::unordered_map<std::string, bool> *fl, std::vector<std::string> *_fl, std::vector<Node> *n, std::unordered_map<std::string, Procedure> *pl, std::unordered_map<std::string, size_t> *ll, std::vector<std::string> *e);
 
         void start() override;
 

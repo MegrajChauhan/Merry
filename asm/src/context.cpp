@@ -114,7 +114,7 @@ void masm::Context::start()
             }
             ChildContext cont(&eepe);
             cont.init_context(std::filesystem::current_path() / _file);
-            cont.setup_structure(&teepe, &table, &filelist, &flist, &nodes, &proc_list, &labels, &entries);
+            cont.setup_structure(&label_addr, &teepe, &table, &filelist, &flist, &nodes, &proc_list, &labels, &entries);
             cont.start();
             break;
         }
@@ -215,7 +215,10 @@ void masm::Context::start()
     }
     analyse_proc();
     confirm_entries();
-    gen.setup_codegen(&table, &nodes);
+    /// NOTE: The following change that I made to "label_addr" is an idiotic move
+    // It would have been better with just one function.
+    // I am too lazy to change it back so a good lesson.
+    gen.setup_codegen(&table, &nodes, &label_addr);
     gen.generate();
 }
 
@@ -301,7 +304,7 @@ void masm::ChildContext::start()
             }
             ChildContext cont(eepe);
             cont.init_context(std::filesystem::current_path() / _file);
-            cont.setup_structure(teepe, table, filelist, flist, nodes, proc_list, labels, entries);
+            cont.setup_structure(label_addr, teepe, table, filelist, flist, nodes, proc_list, labels, entries);
             cont.start();
             break;
         }
@@ -436,7 +439,7 @@ void masm::Context::analyse_proc()
     }
 }
 
-void masm::ChildContext::setup_structure(std::unordered_map<std::string, std::string> *tp, SymbolTable *t, std::unordered_map<std::string, bool> *fl, std::vector<std::string> *_fl, std::vector<Node> *n, std::unordered_map<std::string, Procedure> *pl, std::unordered_map<std::string, size_t> *ll, std::vector<std::string> *e)
+void masm::ChildContext::setup_structure(std::unordered_map<std::string, size_t> *lb, std::unordered_map<std::string, std::string> *tp, SymbolTable *t, std::unordered_map<std::string, bool> *fl, std::vector<std::string> *_fl, std::vector<Node> *n, std::unordered_map<std::string, Procedure> *pl, std::unordered_map<std::string, size_t> *ll, std::vector<std::string> *e)
 {
     table = t;
     filelist = fl;
@@ -446,6 +449,7 @@ void masm::ChildContext::setup_structure(std::unordered_map<std::string, std::st
     labels = ll;
     entries = e;
     teepe = tp;
+    label_addr = lb;
 }
 
 void masm::Context::handle_defined()
