@@ -24,7 +24,7 @@ namespace masm
                 mbyte_t b1, b2, b3, b5, b6, b4, b7, b8;
 #endif
             } bytes;
-            unsigned long long full;
+            unsigned long long full = 0;
         };
     };
 

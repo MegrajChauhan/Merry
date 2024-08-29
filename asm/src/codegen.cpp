@@ -793,6 +793,11 @@ void masm::CodeGen::generate_data()
         }
         }
     }
+    while ((data.size() % 8) != 0)
+    {
+        data.push_back(0);
+        start++;
+    }
     for (auto var : table->variables)
     {
         switch (var.type)
@@ -809,6 +814,8 @@ void masm::CodeGen::generate_data()
         }
         }
     }
+    while ((str_data.size() % 8) != 0)
+        str_data.push_back(0);
 }
 
 void masm::CodeGen::handle_mov_reg_imm(bool l, NodeMov *n)
@@ -920,7 +927,6 @@ void masm::CodeGen::give_address_to_labels()
         {
             NodeName *n = (NodeName *)l.node.get();
             (*label_addr)[n->name] = i;
-            i++;
             break;
         }
         default:

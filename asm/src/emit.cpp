@@ -114,23 +114,33 @@ void masm::Emit::add_SsT()
     // Let's just get a working assembler for now
     /// TODO: Actually solve the port problem in VM!
     ByteSwap b;
-    b.val = data->size();
+    size_t j = data->size();
+    for (int i = 7; i >= 0; i--)
+    {
+        mbyte_t v = ((j >> (i * 8)) & 255);
+        f << v;
+    }
+    b.val = 0;
+    b.b[1] = 1; // RIM flag
     for (auto v : b.b)
         f << v;
-    b.b[0] = 1; // RIM flag
-    for (auto v : b.b)
-        f << b.b;
     sections.push_back(data);
     if (!str_data->empty())
     {
-        b.val = str_data->size();
+        j = str_data->size();
+        for (int i = 7; i >= 0; i--)
+        {
+            mbyte_t v = ((j >> (i * 8)) & 255);
+            f << v;
+        }
+        b.val = 0;
+        b.b[1] = 1; // RIM flag
+        b.b[2] = 1; // RAS flag
         for (auto v : b.b)
-            f << b.b;
-        b.b[0] = 1; // RIM flag
-        b.b[1] = 1; // RAS flag
-        for (auto v : b.b)
-            f << b.b;
+            f << v;
+        sections.push_back(str_data);
     }
+    f << 0xAAAAAAAABBBBBBBB;
 }
 
 void masm::Emit::add_sections()

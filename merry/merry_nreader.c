@@ -260,7 +260,7 @@ mret_t merry_reader_read_instructions(MerryReader *r)
     msize_t number_of_pages = inst_count / _MERRY_MEMORY_QS_PER_PAGE_;
     msize_t extra_addrs = inst_count % _MERRY_MEMORY_QS_PER_PAGE_;
     r->inst.inst_page_count = number_of_pages + (extra_addrs > 0 ? 1 : 0);
-    if ((r->inst.instructions = (mqptr_t*)merry_reader_get_mem_from_os(r->inst.inst_page_count)) == NULL)
+    if ((r->inst.instructions = (mqptr_t *)merry_reader_get_mem_from_os(r->inst.inst_page_count)) == NULL)
         return RET_FAILURE;
     for (msize_t i = 0; i < number_of_pages; i++)
     {
@@ -372,7 +372,7 @@ mret_t merry_reader_read_sections(MerryReader *r)
     msize_t number_of_pages = data_count / _MERRY_MEMORY_QS_PER_PAGE_;
     msize_t extra_addrs = data_count % _MERRY_MEMORY_QS_PER_PAGE_;
     r->data_page_count = number_of_pages + (extra_addrs > 0 ? 1 : 0);
-    if ((r->inst.instructions = (mqptr_t*)merry_reader_get_mem_from_os(r->data_page_count)) == NULL)
+    if ((r->data = (mbptr_t *)merry_reader_get_mem_from_os(r->data_page_count)) == NULL)
         return RET_FAILURE;
     msize_t current_index = 0, current_off = 0;
     for (msize_t i = 0; i < r->sst.sst_entry_count; i++)
@@ -429,19 +429,19 @@ mret_t merry_reader_read_sections(MerryReader *r)
         case _OTHER:
         case _DATA:
         {
-            if (current_section.ras == mtrue || (_MERRY_BYTE_ORDER_ == _MERRY_LITTLE_ENDIAN_))
+            if (current_section.ras == mtrue)
             {
                 while (current_section.section_len > 0)
                 {
                     msize_t current_page_cap = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - current_off;
                     if (current_page_cap >= current_section.section_len)
                     {
-                        if (fread((r->data[current_index] + current_off), 1, current_page_cap, r->f) != current_section.section_len)
+                        if (fread((r->data[current_index] + current_off), 1, current_section.section_len, r->f) != current_section.section_len)
                         {
                             rlog("Internal Error: Failed to read data.\n", NULL);
                             return RET_FAILURE;
                         }
-                        if ((current_off + current_page_cap) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_)
+                        if ((current_off + current_section.section_len) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_)
                         {
                             current_off = 0;
                             current_index++;
@@ -450,7 +450,7 @@ mret_t merry_reader_read_sections(MerryReader *r)
                         {
                             current_off += current_section.section_len;
                         }
-                        current_section.section_len -= current_section.section_len;
+                        current_section.section_len -= current_section.section_len; // basically 0 every time
                     }
                     else
                     {
@@ -465,7 +465,7 @@ mret_t merry_reader_read_sections(MerryReader *r)
                     }
                 }
             }
-            else
+            else if (current_section.rim == mtrue)
             {
                 while (current_section.section_len > 0)
                 {
@@ -473,7 +473,7 @@ mret_t merry_reader_read_sections(MerryReader *r)
                     msize_t to_read = current_page_cap / 8;
                     if (current_page_cap < current_section.section_len)
                     {
-                        if (fread((r->data + current_off), 8, to_read, r->f) != to_read)
+                        if (fread((r->data[current_index] + current_off), 8, to_read, r->f) != to_read)
                         {
                             rlog("Internal Error: Failed to read data.\n", NULL);
                             return RET_FAILURE;
@@ -484,7 +484,8 @@ mret_t merry_reader_read_sections(MerryReader *r)
                     }
                     else
                     {
-                        if (fread((r->data + current_off), 8, to_read, r->f) != to_read)
+                        to_read = current_section.section_len / 8;
+                        if (fread((r->data[current_index] + current_off), 8, to_read, r->f) != to_read)
                         {
                             rlog("Internal Error: Failed to read data.\n", NULL);
                             return RET_FAILURE;
