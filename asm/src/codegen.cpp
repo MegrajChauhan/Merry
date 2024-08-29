@@ -1,6 +1,6 @@
 #include "codegen.hpp"
 
-void masm::CodeGen::setup_codegen(SymbolTable *_t, std::vector<Node> *_n, std::unordered_map<std::string, size_t>* lb)
+void masm::CodeGen::setup_codegen(SymbolTable *_t, std::vector<Node> *_n, std::unordered_map<std::string, size_t> *lb)
 {
     nodes = _n;
     table = _t;
@@ -556,8 +556,13 @@ bool masm::CodeGen::generate()
         case INTR:
         {
             GenBinary b;
+            auto n = (NodeIntr *)node.node.get();
+            auto res = table->_const_list.find(n->val);
             b.bytes.b1 = OP_INTR;
-            b.full |= (std::stoull(((NodeIntr *)node.node.get())->val) & 0xFFFF);
+            if (res == table->_const_list.end())
+                b.full |= (std::stoull(((NodeIntr *)node.node.get())->val) & 0xFFFF);
+            else
+                b.full |= (std::stoull(res->second.value)) & 0xFFFF;
             code.push_back(b);
             break;
         }
@@ -596,29 +601,29 @@ bool masm::CodeGen::generate()
             break;
         }
     }
-    for (auto b : code)
-    {
-        printf("%lX\n", b.full);
-    }
-    printf("\n");
-    for (auto b : data)
-    {
-        std::cout << ((int)b) << "\n";
-    }
-    for (auto b : str_data)
-    {
-        std::cout << ((int)b) << "\n";
-    }
-    printf("\n");
-    for (auto l : *label_addr)
-    {
-        printf("%s: %lX\n", l.first.c_str(), l.second);
-    }
-    printf("\n");
-    for (auto l : data_addr)
-    {
-        printf("%s: %lX\n", l.first.c_str(), l.second);
-    }
+    // for (auto b : code)
+    // {
+    //     printf("%lX\n", b.full);
+    // }
+    // printf("\n");
+    // for (auto b : data)
+    // {
+    //     std::cout << ((int)b) << "\n";
+    // }
+    // for (auto b : str_data)
+    // {
+    //     std::cout << ((int)b) << "\n";
+    // }
+    // printf("\n");
+    // for (auto l : *label_addr)
+    // {
+    //     printf("%s: %lX\n", l.first.c_str(), l.second);
+    // }
+    // printf("\n");
+    // for (auto l : data_addr)
+    // {
+    //     printf("%s: %lX\n", l.first.c_str(), l.second);
+    // }
     return true;
 }
 
@@ -627,7 +632,7 @@ void masm::CodeGen::handle_float_var(NodeArithmetic *n, msize_t op)
     GenBinary b;
     b.bytes.b1 = op;
     b.bytes.b2 = n->reg;
-    b.full |= (std::stoull(std::get<std::string>(n->second_oper)) & 0xFFFFFFFFFFFF);
+    b.full |= (data_addr[std::get<std::string>(n->second_oper)]) & 0xFFFFFFFFFFFF;
     code.push_back(b);
 }
 
@@ -854,11 +859,15 @@ void masm::CodeGen::handle_mov_reg_var(NodeMov *n)
     {
         if (table->_const_list.find(_s.first) == table->_const_list.end())
             is_lbl = true;
-        // is a constant
-        _s.first = table->_const_list[_s.first].value;
-        _s.second = table->_const_list[_s.first].type;
-        handle_mov_reg_imm(false, n);
-        return;
+        else
+        {
+            // is a constant
+            _s.first = table->_const_list[_s.first].value;
+            _s.second = table->_const_list[_s.first].type;
+            n->second_oper = _s;
+            handle_mov_reg_imm(false, n);
+            return;
+        }
     }
     size_t addr = is_lbl ? (*label_addr)[_s.first] : data_addr.find(_s.first)->second;
     b.bytes.b2 = n->reg;
@@ -1079,4 +1088,19 @@ void masm::CodeGen::handle_excg(NodeExcg *n, msize_t op)
     b.bytes.b8 <<= 4;
     b.bytes.b8 |= n->r2;
     code.push_back(b);
+}
+
+std::vector<masm::GenBinary> *masm::CodeGen::get_code()
+{
+    return &code;
+}
+
+std::vector<mbyte_t> *masm::CodeGen::get_data()
+{
+    return &data;
+}
+
+std::vector<mbyte_t> *masm::CodeGen::get_str_data()
+{
+    return &str_data;
 }

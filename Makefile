@@ -18,7 +18,7 @@ usage:
 	
 all: __pretest directories ${OUTPUT_FILES_NAME}
 	${CC} ${FLAGS} ${OUTPUT_FILES_NAME} main.c merry/arithmetic.S ${INC_DIRS} -o ${OUTPUT_DIR}mvm
-# g++ -Iasm/includes asm/src/* asm/main.cpp -o ${OUTPUT_DIR}masm
+	make -C asm all dirs=../build/
 
 # The command for building the assembler is the simplest for now but hey! it works!
 
@@ -31,7 +31,7 @@ ${OUTPUT_DIR}%.o: %.c
 # Create necessary directories
 directories:
 	mkdir -p ${OUTPUT_DIR}
-	${foreach f, ${SRC_DIR}, ${shell "mkdir -p ${OUTPUT_DIR}${f}"}}
+	${foreach f, ${SRC_DIR}, ${shell mkdir -p ${OUTPUT_DIR}${f}}}
 
 clean:
 	rm -rf ${OUTPUT_DIR}

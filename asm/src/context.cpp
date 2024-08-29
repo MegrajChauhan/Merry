@@ -224,6 +224,11 @@ void masm::Context::start()
 
 void masm::Context::confirm_entries()
 {
+    if (entries.empty())
+    {
+        note("No entries were provided. At least one entry must be provided.");
+        die(1);
+    }
     for (auto e : entries)
     {
         if (labels.find(e) == labels.end())
@@ -270,7 +275,7 @@ void masm::ChildContext::start()
                 die(1);
             }
             setup_for_new_file(_file);
-            d.setup_for_read(table, std::make_shared<std::string>((flist[flist->size() - 1])), std::make_shared<std::string>(curr_file_conts));
+            d.setup_for_read(table, std::make_shared<std::string>(((*flist)[flist->size() - 1])), std::make_shared<std::string>(curr_file_conts));
             if (!d.read_data())
                 die(1);
             break;
@@ -287,7 +292,7 @@ void masm::ChildContext::start()
                 die(1);
             }
             setup_for_new_file(_file);
-            _c.setup_code_read(nodes, proc_list, std::make_shared<std::string>((flist[flist->size() - 1])), std::make_shared<std::string>(curr_file_conts), table, labels);
+            _c.setup_code_read(nodes, proc_list, std::make_shared<std::string>(((*flist)[flist->size() - 1])), std::make_shared<std::string>(curr_file_conts), table, labels);
             if (!_c.read_code())
                 die(1);
             break;
@@ -562,4 +567,29 @@ void masm::ChildContext::handle_defined()
     }
     // doesn't exist so skip until newline or another defined or ndefined
     inp_file_lexer.rid_until('\n');
+}
+
+std::unordered_map<std::string, size_t> *masm::Context::get_lbl_addr()
+{
+    return &label_addr;
+}
+
+std::unordered_map<std::string, std::string> *masm::Context::get_teepe()
+{
+    return &teepe;
+}
+
+std::string *masm::Context::get_eepe()
+{
+    return &eepe;
+}
+
+std::vector<std::string> *masm::Context::get_entries()
+{
+    return &entries;
+}
+
+masm::CodeGen *masm::Context::get_codegen()
+{
+    return &gen;
 }

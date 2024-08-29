@@ -15,30 +15,44 @@ void masm::Emit::emit(std::string output, std::string *epval, std::unordered_map
     data = _d;
     str_data = _s;
     lbl_addr = lbaddr;
+    analyze_eat();
+    add_header();
+    add_EAT();
+    add_instructions();
+    add_SsT();
+    add_sections();
+    f.close();
 }
 
 void masm::Emit::add_header()
 {
-    f << 0x4D << 0x49 << 0x4E << 0x00 << 0x00 << 0x00 << 0x00 << 0x00; // we currently have no support for options
-    ByteSwap b;
-    b.val = code->size() * 8;
-    for (auto v : b.b)
+    mbyte_t header[8] = {'M', 'I', 'N', 0, 0, 0, 0, 0};
+    for (auto v : header)
     {
         f << v;
+    }
+    ByteSwap b;
+    b.val = code->size() * 8;
+    for (int i = 7; i >= 0; i--)
+    {
+        f << b.b[i];
     }
     // EAT
     b.val = EAT_cont.size() * 8;
-    for (auto v : b.b)
+    for (int i = 7; i >= 0; i--)
     {
-        f << v;
+        f << b.b[i];
     }
     // the SsT
     // For now, we only have data and string and hence 32 bytes at most
-    f << 0x00 << 0x00 << 0x00 << 0x00 << 0x00 << 0x00 << 0x00;
     if (!str_data->empty())
-        f << 32;
+        b.val = 32;
     else
-        f << 16;
+        b.val = 16;
+    for (int i = 7; i >= 0; i--)
+    {
+        f << b.b[i];
+    }
     // ST size is 0 for now
     b.val = 0;
     for (auto v : b.b)
@@ -59,7 +73,7 @@ void masm::Emit::analyze_eat()
         else
             times = eepe_to_num;
         size_t addr = (*lbl_addr)[_e];
-        for (size_t i = 0; i < times; i++)
+        for (int i = 0; i < times; i++)
             EAT_cont.push_back(addr);
     }
 }
@@ -70,9 +84,9 @@ void masm::Emit::add_EAT()
     {
         ByteSwap b;
         b.val = _e;
-        for (auto v : b.b)
+        for (int i = 7; i >= 0; i--)
         {
-            f << v;
+            f << b.b[i];
         }
     }
 }
@@ -81,14 +95,14 @@ void masm::Emit::add_instructions()
 {
     for (auto _i : *code)
     {
-        // f << _i.bytes.b8;
-        // f << _i.bytes.b7;
-        // f << _i.bytes.b6;
-        // f << _i.bytes.b5;
-        // f << _i.bytes.b4;
-        // f << _i.bytes.b3;
-        // f << _i.bytes.b2;
-        // f << _i.bytes.b1;
+        f << _i.bytes.b8;
+        f << _i.bytes.b7;
+        f << _i.bytes.b6;
+        f << _i.bytes.b5;
+        f << _i.bytes.b4;
+        f << _i.bytes.b3;
+        f << _i.bytes.b2;
+        f << _i.bytes.b1;
     }
 }
 
@@ -99,10 +113,35 @@ void masm::Emit::add_SsT()
     // each section is structured which will take time so we avoid it for now
     // Let's just get a working assembler for now
     /// TODO: Actually solve the port problem in VM!
-    // std::pair<size_t, size_t> e;
-    // e.first = data->size(); // we put data first
-    // e.second = 0; // we only deal with data for now so 0 in first byte
-    // e.second = (1ULL << 48); // RIM flag
+    ByteSwap b;
+    b.val = data->size();
+    for (auto v : b.b)
+        f << v;
+    b.b[0] = 1; // RIM flag
+    for (auto v : b.b)
+        f << b.b;
+    sections.push_back(data);
+    if (!str_data->empty())
+    {
+        b.val = str_data->size();
+        for (auto v : b.b)
+            f << b.b;
+        b.b[0] = 1; // RIM flag
+        b.b[1] = 1; // RAS flag
+        for (auto v : b.b)
+            f << b.b;
+    }
+}
+
+void masm::Emit::add_sections()
+{
+    for (auto _s : sections)
+    {
+        for (auto _v : *_s)
+        {
+            f << _v;
+        }
+    }
 }
 
 /**

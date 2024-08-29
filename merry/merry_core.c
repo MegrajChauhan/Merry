@@ -1964,8 +1964,8 @@ _exec_(syscall)
 _lexec_(push_mem, mem_read func)
 {
     register mqword_t address = core->current_inst & 0xFFFFFFFFFFFF;
-    register mqword_t temp = 0;
-    if (func(core->data_mem, address, temp) == RET_FAILURE)
+    mqword_t temp = 0;
+    if (func(core->data_mem, address, &temp) == RET_FAILURE)
     {
         merry_requestHdlr_panic(core->data_mem->error, core->core_id);
         core->stop_running = mtrue;

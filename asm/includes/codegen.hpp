@@ -47,6 +47,12 @@ namespace masm
 
         void setup_codegen(SymbolTable *_t, std::vector<Node> *_n, std::unordered_map<std::string, size_t> *lb);
 
+        std::vector<GenBinary> *get_code();
+
+        std::vector<mbyte_t> *get_data();
+
+        std::vector<mbyte_t> *get_str_data();
+
         bool generate();
 
         // why would this fail??

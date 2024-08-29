@@ -50,6 +50,16 @@ namespace masm
     public:
         Context() = default;
 
+        std::unordered_map<std::string, size_t> *get_lbl_addr();
+
+        std::string *get_eepe();
+
+        std::unordered_map<std::string, std::string>* get_teepe();
+
+        std::vector<std::string>* get_entries();
+
+        CodeGen* get_codegen();
+
         void init_context(std::string path);
 
         void read_file(std::string file);
@@ -89,11 +99,12 @@ namespace masm
 
         std::vector<bool> _end_queue;
         bool skip = false;
+
     public:
         ChildContext() = default;
         ChildContext(std::string *ee) : eepe(ee) {}
 
-        void setup_structure(std::unordered_map<std::string, size_t>* la, std::unordered_map<std::string, std::string> *tep, SymbolTable *t, std::unordered_map<std::string, bool> *fl, std::vector<std::string> *_fl, std::vector<Node> *n, std::unordered_map<std::string, Procedure> *pl, std::unordered_map<std::string, size_t> *ll, std::vector<std::string> *e);
+        void setup_structure(std::unordered_map<std::string, size_t> *la, std::unordered_map<std::string, std::string> *tep, SymbolTable *t, std::unordered_map<std::string, bool> *fl, std::vector<std::string> *_fl, std::vector<Node> *n, std::unordered_map<std::string, Procedure> *pl, std::unordered_map<std::string, size_t> *ll, std::vector<std::string> *e);
 
         void start() override;
 

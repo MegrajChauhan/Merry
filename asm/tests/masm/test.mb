@@ -1,8 +1,8 @@
 ;; ;; This is the "build script" for the project
 
-data tests/masm/test.mdat ;; Include the "test.mdat" data file and put its contents at first
-code tests/masm/test.masm ;; The code
-code tests/masm/test2.masm
+data asm/tests/masm/test.mdat ;; Include the "test.mdat" data file and put its contents at first
+code asm/tests/masm/test.masm ;; The code
+code asm/tests/masm/test2.masm
 
 ;; depends <another .mb file to include here>
 
@@ -12,7 +12,7 @@ code tests/masm/test2.masm
 
 ;; ;; Thanks to the way the input file format is created, there can be multiple entries
 ;; ;; The first entry that is given is the main thread that will start
-;; entry <ENTRY LABEL OR PROCEDURE>
+entry _just_a_label
 ;; entry <ANOTHER ENTRY LABEL OR PROCEDURE>
 
 ;; ;; eepe = EAT entry per entry(meaning how many times to copy the above two in final binary)

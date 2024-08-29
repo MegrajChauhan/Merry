@@ -32,7 +32,7 @@ namespace masm
         size_t ST_S = 0;  // ST size
 
         std::vector<size_t> EAT_cont;
-        std::vector<std::pair<size_t, size_t>> SsT_cont;
+        std::vector<std::pair<size_t, size_t>> SsT_cont; // will need in the future
         std::vector<std::vector<mbyte_t> *> sections;
 
         std::unordered_map<std::string, size_t> *lbl_addr;
@@ -51,6 +51,8 @@ namespace masm
         void add_instructions();
 
         void analyze_eat();
+
+        void add_sections();
     };
 };
 

@@ -2,9 +2,9 @@
 
 # Variable definitions
 CC = g++
-FLAGS = -Wall -Wextra -MMD -MP -O3
+FLAGS = -Wall -Wextra -MMD -MP -O3 -std=c++20
 DIRS = includes
-SRC_DIR = merry/abs/ merry/
+SRC_DIR = src/
 INC_DIRS = ${addprefix -I, ${DIRS}}
 INC_DIRS += -I../utils -I../merry/core
 
@@ -24,16 +24,15 @@ all: directories ${OUTPUT_FILES_NAME}
 
 # The command for building the assembler is the simplest for now but hey! it works!
 
-${OUTPUT_DIR}${SRC_DIR}%.o: ${SRC_DIR}%.c 
+${OUTPUT_DIR}${SRC_DIR}%.o: ${SRC_DIR}%.cpp 
 	${CC} ${FLAGS} ${INC_DIRS} -c $< -o $@
 
-${OUTPUT_DIR}%.o: %.c
+${OUTPUT_DIR}%.o: %.cpp
 	${CC} ${FLAGS} ${INC_DIRS} -c $< -o $@
 
 # Create necessary directories
 directories:
-	mkdir -p ${OUTPUT_DIR}
-	${foreach f, ${SRC_DIR}, ${shell "mkdir -p ${OUTPUT_DIR}${f}"}}
+	${foreach f, ${SRC_DIR}, ${shell mkdir -p ${OUTPUT_DIR}${f}}}
 
 clean:
 	rm -rf ${OUTPUT_DIR}
