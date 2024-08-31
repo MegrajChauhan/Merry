@@ -1,0 +1,3 @@
+proc __builtin_mem_init
+
+__builtin_mem_init

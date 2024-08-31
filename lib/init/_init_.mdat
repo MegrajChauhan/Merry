@@ -1,0 +1,7 @@
+
+rb __option_count     1 ;; The number of options the program has received
+rb __host_arch_id     1 ;; Host's architecture id(assigned by the VM)
+rb __host_os_id       1 ;; Host OS's ID(assigned by the VM)
+rb __res_byte         1 ;; Reserving for future use 
+rd __option_mem_start 1 ;; To store the address for where our options reside
+rd __free_mem_start   1 ;; To store the address for where our free memory starts

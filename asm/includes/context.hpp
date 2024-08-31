@@ -12,6 +12,7 @@
 #include "nodes.hpp"
 #include "code.hpp"
 #include "codegen.hpp"
+#include "merry_config.h"
 
 namespace masm
 {
@@ -54,11 +55,11 @@ namespace masm
 
         std::string *get_eepe();
 
-        std::unordered_map<std::string, std::string>* get_teepe();
+        std::unordered_map<std::string, std::string> *get_teepe();
 
-        std::vector<std::string>* get_entries();
+        std::vector<std::string> *get_entries();
 
-        CodeGen* get_codegen();
+        CodeGen *get_codegen();
 
         void init_context(std::string path);
 
@@ -69,7 +70,7 @@ namespace masm
 
         virtual void start();
 
-        virtual void setup_for_new_file(std::string npath);
+        virtual bool setup_for_new_file(std::string npath);
 
         void analyse_proc(); // check if any procedure was left undefined
 
@@ -108,10 +109,21 @@ namespace masm
 
         void start() override;
 
-        void setup_for_new_file(std::string npath) override;
+        bool setup_for_new_file(std::string npath) override;
 
         void handle_defined() override;
         void handle_ndefined() override;
+    };
+
+    // The below will make sure to transform the lib paths for standard library
+    // Obviously it requires that the library is installed into the system
+    // This assembler certainly isn't worthy just yet
+    static std::unordered_map<std::string, std::string> _std_paths = {
+#ifdef _USE_LINUX_
+        {"_init_.masm","lib/init/_init_.masm"},
+        {"_init_.mb","lib/init/_init_.mb"},
+        {"_init_.mdat","lib/init/_init_.mdat"},
+#endif
     };
 };
 

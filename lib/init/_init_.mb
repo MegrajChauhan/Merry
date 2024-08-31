@@ -1,0 +1,9 @@
+;; The initializer for the "stdlib". In quotes because there is no meaning to it yet.
+
+data _init_.mdat
+code _init_.masm
+
+;; No entries obviously
+;; No teepe or eepe needed either
+
+depends stdmem.mb

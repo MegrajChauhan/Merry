@@ -1,0 +1,8 @@
+;; Basic information
+;; We are building a very basic memory allocator
+;; So basic in fact it is unsafe to use
+
+rw __mem_allocated 1 ;; number of bytes allocated so far 
+
+dc __magic_num 
+

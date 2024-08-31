@@ -1,0 +1,49 @@
+;; We are treating addresses as dwords which is because that is more than we will probably ever need
+
+proc __builtin_std_init
+proc __builtin_save_state
+proc __builtin_restore_state
+proc __builtin_pass_options
+proc __builtin_quick_state_save
+proc __builtin_quick_state_restore
+
+;; The following must be the first procedure called
+;; __builtin_std_init takes two arguments
+;; One in Ma as the address to the ARGC
+;; another in Mb as the address to the ARGV
+__builtin_std_init
+    storeb Mm1, __option_count    ;; store option count
+    stored Md,  __option_mem_start ;; save option address
+    stored Mm5, __free_mem_start  ;; for allocations
+    storeb Mm4, __host_arch_id
+    storeb Mm3, __host_os_id
+    call __builtin_pass_options
+    call __builtin_mem_init ;; initialize the memory allocator
+    ret
+
+__builtin_save_state
+    pusha ;; we need to perform some more things here obviously
+    ret
+
+__builtin_quick_state_save
+    pusha
+    ret
+
+__builtin_quick_state_restore
+    popa
+    ret
+
+__builtin_restore_state
+    popa
+    ret
+
+__builtin_pass_options
+    call __builtin_quick_state_save
+    loadb M1, __option_count
+    loadd M2, __option_mem_start
+    storeb M1, Ma
+    stored M2, Mb
+    call __builtin_quick_state_restore
+    ret 
+
+ 

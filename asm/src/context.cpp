@@ -7,7 +7,10 @@ void masm::Context::init_context(std::string path)
         note("The given input file is not a valid input file.");
         die(1);
     }
-    inp_file = std::filesystem::current_path() / path;
+    if (_std_paths.find(path) == _std_paths.end())
+        inp_file = std::filesystem::current_path() / path;
+    else
+        inp_file = _std_paths.find(path)->second;
     if (!std::filesystem::exists(inp_file))
     {
         note("The given input file " + inp_file + " doesn't exist.");
@@ -79,10 +82,12 @@ void masm::Context::start()
                 err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected a data file after 'data' that needs to be read.", inp_file_lexer.extract_line());
                 die(1);
             }
-            setup_for_new_file(_file);
-            d.setup_for_read(&table, std::make_shared<std::string>((flist[flist.size() - 1])), std::make_shared<std::string>(curr_file_conts));
-            if (!d.read_data())
-                die(1);
+            if (setup_for_new_file(_file))
+            {
+                d.setup_for_read(&table, std::make_shared<std::string>((flist[flist.size() - 1])), std::make_shared<std::string>(curr_file_conts));
+                if (!d.read_data())
+                    die(1);
+            }
             break;
         }
         case MB_CODE:
@@ -96,10 +101,12 @@ void masm::Context::start()
                 err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected a code file after 'code' that needs to be read.", inp_file_lexer.extract_line());
                 die(1);
             }
-            setup_for_new_file(_file);
-            _c.setup_code_read(&nodes, &proc_list, std::make_shared<std::string>((flist[flist.size() - 1])), std::make_shared<std::string>(curr_file_conts), &table, &labels);
-            if (!_c.read_code())
-                die(1);
+            if (setup_for_new_file(_file))
+            {
+                _c.setup_code_read(&nodes, &proc_list, std::make_shared<std::string>((flist[flist.size() - 1])), std::make_shared<std::string>(curr_file_conts), &table, &labels);
+                if (!_c.read_code())
+                    die(1);
+            }
             break;
         }
         case KEY_DEPENDS:
@@ -274,10 +281,12 @@ void masm::ChildContext::start()
                 err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected a data file after 'data' that needs to be read.", inp_file_lexer.extract_line());
                 die(1);
             }
-            setup_for_new_file(_file);
-            d.setup_for_read(table, std::make_shared<std::string>(((*flist)[flist->size() - 1])), std::make_shared<std::string>(curr_file_conts));
-            if (!d.read_data())
-                die(1);
+            if (setup_for_new_file(_file))
+            {
+                d.setup_for_read(table, std::make_shared<std::string>(((*flist)[flist->size() - 1])), std::make_shared<std::string>(curr_file_conts));
+                if (!d.read_data())
+                    die(1);
+            }
             break;
         }
         case MB_CODE:
@@ -291,10 +300,12 @@ void masm::ChildContext::start()
                 err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col(), inp_file_lexer.get_col() + 1, building, syntaxerr, ERR_STR, "Expected a code file after 'code' that needs to be read.", inp_file_lexer.extract_line());
                 die(1);
             }
-            setup_for_new_file(_file);
-            _c.setup_code_read(nodes, proc_list, std::make_shared<std::string>(((*flist)[flist->size() - 1])), std::make_shared<std::string>(curr_file_conts), table, labels);
-            if (!_c.read_code())
-                die(1);
+            if (setup_for_new_file(_file))
+            {
+                _c.setup_code_read(nodes, proc_list, std::make_shared<std::string>(((*flist)[flist->size() - 1])), std::make_shared<std::string>(curr_file_conts), table, labels);
+                if (!_c.read_code())
+                    die(1);
+            }
             break;
         }
         case KEY_DEPENDS:
@@ -410,26 +421,28 @@ void masm::ChildContext::start()
     }
 }
 
-void masm::Context::setup_for_new_file(std::string npath)
+bool masm::Context::setup_for_new_file(std::string npath)
 {
     npath = (std::filesystem::current_path() / npath);
     auto res = filelist.find(npath);
     if (res != filelist.end())
-        return; // file already included
+        return false; // file already included
     read_file(npath);
     filelist[npath] = true;
     flist.push_back(npath);
+    return true;
 }
 
-void masm::ChildContext::setup_for_new_file(std::string npath)
+bool masm::ChildContext::setup_for_new_file(std::string npath)
 {
     npath = (std::filesystem::current_path() / npath);
     auto res = filelist->find(npath);
     if (res != filelist->end())
-        return; // file already included
+        return false; // file already included
     read_file(npath);
     (*filelist)[npath] = true;
     flist->push_back(npath);
+    return true;
 }
 
 void masm::Context::analyse_proc()
