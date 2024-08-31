@@ -36,15 +36,17 @@
 #define _PC_OF_ 9                   // get the PC of some core
 #define _REGR_OF_ 10                // get the requested register
 #define _CONTINUE_CORE_ 11          // continue the core that previously hit breakpoint
+#define _IO_PORT_NUM_ 12 // 
 
 // Signals
-#define _NEW_CORE_ 0          // a new core was added
-#define _NEW_OS_ 1            // a new OS was created
-#define _ERROR_ENCOUNTERED_ 2 // an error was encountered
-#define _TERMINATING_ 3       // about to exit[after this signal the connection is closed]
-#define _REPLY_ 4             // a reply for some request
-#define _HIT_BP_ 5            // some core hit a break point
-#define _CORE_TERMINATING_ 6  // a core is executing the halt instruction
-#define _ADDED_MEM_ 7         // a new data memory page was allocated
+#define _NEW_CORE_ 0             // a new core was added
+#define _NEW_OS_ 1               // a new OS was created
+#define _ERROR_ENCOUNTERED_ 2    // an error was encountered
+#define _TERMINATING_ 3          // about to exit[after this signal the connection is closed]
+#define _REPLY_ 4                // a reply for some request
+#define _HIT_BP_ 5               // some core hit a break point
+#define _CORE_TERMINATING_ 6     // a core is executing the halt instruction
+#define _ADDED_MEM_ 7            // a new data memory page was allocated
+#define _NEW_PROC_IO_PORT_NUM_ 8 // a new OS is being created, new IO port numbers are needed 
 
 #endif

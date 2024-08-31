@@ -1,6 +1,6 @@
 #include "merry_dbg.h"
 
-MerryListener *merry_init_listener(mbool_t notify_os)
+MerryListener *merry_init_listener(mbool_t notify_os, msize_t port_num)
 {
     MerryListener *dbg = (MerryListener *)malloc(sizeof(MerryListener));
     if (dbg == NULL)
@@ -11,14 +11,15 @@ MerryListener *merry_init_listener(mbool_t notify_os)
         free(dbg);
     dbg->_addr.sin_family = AF_INET;
     dbg->_addr.sin_addr.s_addr = INADDR_ANY;
-    dbg->_addr.sin_port = _MERRY_DEFAULT_LISTEN_PORT_;
+    dbg->_addr.sin_port = port_num;
 #endif
     dbg->notify_os = notify_os;
     dbg->stop = mfalse;
+    dbg->t1 = dbg->t2 = 0;
     return dbg;
 }
 
-MerrySender *merry_init_sender(mbool_t notify_os)
+MerrySender *merry_init_sender(mbool_t notify_os, msize_t port_num)
 {
     MerrySender *dbg = (MerrySender *)malloc(sizeof(MerrySender));
     if (dbg == NULL)
@@ -29,7 +30,7 @@ MerrySender *merry_init_sender(mbool_t notify_os)
         free(dbg);
     dbg->_addr.sin_family = AF_INET;
     dbg->_addr.sin_addr.s_addr = INADDR_ANY;
-    dbg->_addr.sin_port = _MERRY_DEFAULT_SEND_PORT_;
+    dbg->_addr.sin_port = port_num;
 #endif
     if ((dbg->cond = merry_cond_init()) == RET_NULL)
         goto err;
@@ -117,7 +118,7 @@ _THRET_T_ merry_start_listening(mptr_t _list)
 #endif
         if (dbg->stop == mtrue)
         {
-            printf("Listener stopped.\n");
+            // printf("Listener stopped.\n");
             break;
         }
         if (read_into_buf == 0)
@@ -161,6 +162,19 @@ _THRET_T_ merry_start_listening(mptr_t _list)
             arg_id = dbg->sig[15];
             addr = dbg->sig[14] & 15;
             break;
+        case _IO_PORT_NUM_:
+        {
+            msize_t ip, op;
+            ip = dbg->sig[1];
+            ip <<= 8;
+            ip |= dbg->sig[2];
+            op = dbg->sig[3];
+            op <<= 8;
+            op |= dbg->sig[4];
+            atomic_exchange(&dbg->t1, ip);
+            atomic_exchange(&dbg->t2, op);
+            continue;
+        }
         }
         merry_requestHdlr_push_request_dbg(_REQ_INTR, op, arg_id, addr);
     }
@@ -200,7 +214,7 @@ _THRET_T_ merry_start_sending(mptr_t _send)
                     send(dbg->_send_fd, node.value.sig, _MERRY_PER_EXCG_BUF_LEN_, 0);
                 }
             }
-            printf("Sender stopped.\n");
+            // printf("Sender stopped.\n");
             break;
         }
         merry_sender_pop_sig(dbg, &node); // this should work

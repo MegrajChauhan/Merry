@@ -98,9 +98,9 @@ static Merry os;
 #define merry_manager_mem_read_inst(inst_mem, address, store_in) merry_memory_read(inst_mem, address, store_in)
 
 mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _wait_for_conn);
-mret_t merry_os_init_reader_provided(MerryReader *r);
+mret_t merry_os_init_reader_provided(MerryReader *r, msize_t iport, msize_t oport);
 
-void merry_os_start_dbg(mbool_t _flag);
+void merry_os_start_dbg(mbool_t _flag, msize_t in_port, msize_t out_port);
 
 void merry_os_produce_dump(mstr_t _output_filename);
 
@@ -124,7 +124,7 @@ void merry_os_handle_error(merrot_t error);
 
 void merry_os_handle_internal_module_error(merrot_t error_num);
 
-void merry_os_new_proc_init();
+void merry_os_new_proc_init(msize_t ip, msize_t op);
 
 void merry_os_notify_dbg(mqword_t sig, mbyte_t arg, mbyte_t arg2);
 
@@ -133,6 +133,8 @@ mqword_t merry_os_get_dbg_sig(mbptr_t sig);
 void merry_os_set_dbg_sig(mqword_t _sig, mbptr_t sig);
 
 void merry_os_notice(mbool_t _type);
+
+void merry_os_get_io_port_direct(msize_t *ip, msize_t *op);
 
 mqword_t merry_os_get_ret();
 

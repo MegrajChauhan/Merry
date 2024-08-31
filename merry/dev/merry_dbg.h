@@ -73,6 +73,7 @@ struct MerryListener
     mbyte_t sig[_MERRY_PER_EXCG_BUF_LEN_];
     mbool_t notify_os;
     mbool_t stop;
+    msize_t t1, t2;
 };
 
 struct MerrySender
@@ -90,9 +91,9 @@ struct MerrySender
 
 extern void merry_os_notice(mbool_t _type);
 
-MerryListener *merry_init_listener(mbool_t notify_os);
+MerryListener *merry_init_listener(mbool_t notify_os, msize_t port_num);
 
-MerrySender *merry_init_sender(mbool_t notify_os);
+MerrySender *merry_init_sender(mbool_t notify_os, msize_t port_num);
 
 void merry_destroy_listener(MerryListener *dbg);
 

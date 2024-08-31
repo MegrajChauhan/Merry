@@ -64,7 +64,7 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _
     os.sender_running = mfalse;
     /// NOTE: Don't mind the nested if-conditions if you will.
     if (os.reader->de_flag == mtrue)
-        merry_os_start_dbg(_wait_for_conn);
+        merry_os_start_dbg(_wait_for_conn, _MERRY_DEFAULT_LISTEN_PORT_, _MERRY_DEFAULT_SEND_PORT_);
     os.cores[0]->registers[Mm1] = count;        // Mm1 will have the number of options
     os.cores[0]->registers[Md] = _t + 1;        // Md will have the address to the first byte
     os.cores[0]->registers[Mm5] = len + _t + 1; // Mm5 contains the address of the first byte that is free and can be manipulated by the program
@@ -83,7 +83,7 @@ failure:
     return RET_FAILURE;
 }
 
-mret_t merry_os_init_reader_provided(MerryReader *r)
+mret_t merry_os_init_reader_provided(MerryReader *r, msize_t iport, msize_t oport)
 {
     // we need to put the options into the memory
     os._os_id = os._os_id + 1;
@@ -107,7 +107,7 @@ mret_t merry_os_init_reader_provided(MerryReader *r)
     if (merry_requestHdlr_init(_MERRY_REQUEST_QUEUE_LEN_, os._cond) == RET_FAILURE)
         goto failure;
     if (os.reader->dfe_flag == mtrue)
-        merry_os_start_dbg(os.reader->dfw_flag);
+        merry_os_start_dbg(os.reader->dfw_flag, iport, oport);
     os.stop = mfalse;
     os.core_threads = (MerryThread **)malloc(sizeof(MerryThread *) * (os.core_count));
     if (os.core_threads == RET_NULL)
@@ -119,16 +119,16 @@ failure:
     return RET_FAILURE;
 }
 
-void merry_os_start_dbg(mbool_t _flag)
+void merry_os_start_dbg(mbool_t _flag, msize_t in_port, msize_t out_port)
 {
     /// NOTE: Don't mind the nested if-conditions if you will.
     if (os.reader->de_flag == mtrue)
     {
         // Initialize debugger threads
-        os.listener = merry_init_listener(_flag);
+        os.listener = merry_init_listener(_flag, in_port);
         if (os.listener != RET_NULL)
         {
-            os.sender = merry_init_sender(_flag);
+            os.sender = merry_init_sender(_flag, out_port);
             if (os.sender != RET_NULL)
             {
                 os.listener_th = merry_thread_init();
@@ -533,6 +533,8 @@ _os_exec_(newprocess)
 {
     // This will start a new process
     merry_requestHdlr_acquire();
+    msize_t iport, oport;
+    merry_os_get_io_port_direct(&iport, &oport);
     os->reader->eat.EAT[0] = os->cores[request->id]->pc; // we don't mind this to change here
     fflush(stdout);
     fflush(stderr);
@@ -547,7 +549,7 @@ _os_exec_(newprocess)
     if (p.pid == 0)
     {
         // We are in the child process
-        merry_os_new_proc_init();
+        merry_os_new_proc_init(iport, oport);
         merry_os_start_vm(NULL);
         msize_t r = os->ret;
         merry_os_destroy();
@@ -639,7 +641,24 @@ void merry_os_notify_dbg(mqword_t sig, mbyte_t arg, mbyte_t arg2)
     merry_sender_push_sig(os.sender, _to_send);
 }
 
-void merry_os_new_proc_init()
+void merry_os_get_io_port_direct(msize_t *ip, msize_t *op)
+{
+    if (os.listener_running != mtrue || os.sender_running != mtrue || os.reader->dfe_flag == mfalse)
+    {
+        *ip = *op = 0;
+        return;
+    }
+    mbyte_t _to_send[_MERRY_PER_EXCG_BUF_LEN_];
+    _to_send[0] = _NEW_PROC_IO_PORT_NUM_;
+    merry_sender_push_sig(os.sender, _to_send);
+    while (os.listener->t1 == 0 && os.listener->t2 == 0)
+    {
+    }
+    *ip = os.listener->t1;
+    *op = os.listener->t2;
+}
+
+void merry_os_new_proc_init(msize_t ip, msize_t op)
 {
     // Here, we reinitialize everything from scratch.
     // In case of Linux, the OS thread is replicated in the new process
@@ -649,7 +668,7 @@ void merry_os_new_proc_init()
     merry_requestHdlr_release();
     merry_os_new_proc_cleanup();
     os.reader->eat.eat_entry_count = 1;
-    if (merry_os_init_reader_provided(os.reader) == RET_FAILURE)
+    if (merry_os_init_reader_provided(os.reader, ip, op) == RET_FAILURE)
     {
         rlog("Internal Error: Failed to start new process.\n", NULL);
         exit(EXIT_FAILURE);
@@ -778,7 +797,7 @@ void merry_os_set_dbg_sig(mqword_t _sig, mbptr_t sig)
 
 void merry_os_notice(mbool_t _type)
 {
-    printf("DID: %lu\n", _type);
+    // printf("DID: %lu\n", _type);
     if (_type == mtrue)
         atomic_exchange(&os.listener_running, mtrue);
     else if (_type == mfalse)
