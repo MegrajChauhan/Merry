@@ -161,15 +161,16 @@ void merry_print_help()
         "--                            --> Provide Command Line Options for your Program\n"
         "--dump-file=[PATH],-df=[PATH] --> Tell the VM to produce a dumpfile\n"
         "                                  If '=' is given, a file name is expected otherwise no need.\n"
-        "-F, --freeze                  --> If DE flag is set; causes the VM to wait for connection for debugging.",
+        "-F, --freeze                  --> If DE flag is set; causes the VM to wait for connection for debugging.\n",
         NULL);
 }
 
 void merry_destroy_parser(MerryCLP *clp)
 {
+    if (clp == NULL)
+        return;
     if (clp->_options_ != NULL)
         free(clp->_options_);
-
     free(clp);
 }
 

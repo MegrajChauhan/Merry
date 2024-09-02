@@ -27,10 +27,10 @@
 #include <stdio.h>
 
 #define err_log(msg, ...) fprintf(stderr, msg, __VA_ARGS__)
-#define inerr_log(msg) err_log(msg, "")
+#define inerr_log(msg) err_log(msg, NULL)
 
 #define log(msg, ...) fprintf(stdout, msg, __VA_ARGS__)
-#define inlog(msg) log(msg, "")
+#define inlog(msg) log(msg, NULL)
 
 #define _MERRY_LOG_INFO_ 0
 #define _MERRY_LOG_WARN_ 1

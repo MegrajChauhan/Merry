@@ -163,31 +163,56 @@ std::optional<masm::Token> masm::Lexer::group_num()
         val += c;
         consume();
     }
-    while (std::isdigit(c) || c == '.')
+    char _c = peek();
+    if (std::isdigit(c) && c == '0' && (_c == 'x' || _c == 'b' || _c == 'o'))
     {
-        if (c == '.')
-        {
-            if (ignore_dots)
-                break;
-            d_count++;
-        }
-        if (d_count > 1)
-        {
-            err(*filepath.get(), line, st, col, _lexing, syntaxerr, ERR_STR, "More than one '.' are not allowed.", extract_line());
-            return {};
-        }
-        val += c;
+        // These are not normal numbers
+        // We will do something that shouldn't be done in real assemblers intended for commercial purposes
+        // We will read these numbers, convert to integers and convert back to string
+        // This way we avoid changing a lot of the code
         consume();
-    }
-    if (d_count > 0)
-    {
-        if (val.ends_with('.'))
-            // we will be forgiving and add a '0'
-            val += '0';
-        t.type = NUM_FLOAT;
+        switch (_c)
+        {
+        case 'x':
+            val = read_hex(val.starts_with('-'));
+            break;
+        case 'o':
+            val = read_oct(val.starts_with('-'));
+            break;
+        case 'b':
+            val = read_bin(val.starts_with('-'));
+            break;
+        }
+        t.type = NUM_INT;
     }
     else
-        t.type = NUM_INT;
+    {
+        while (std::isdigit(c) || c == '.')
+        {
+            if (c == '.')
+            {
+                if (ignore_dots)
+                    break;
+                d_count++;
+            }
+            if (d_count > 1)
+            {
+                err(*filepath.get(), line, st, col, _lexing, syntaxerr, ERR_STR, "More than one '.' are not allowed.", extract_line());
+                return {};
+            }
+            val += c;
+            consume();
+        }
+        if (d_count > 0)
+        {
+            if (val.ends_with('.'))
+                // we will be forgiving and add a '0'
+                val += '0';
+            t.type = NUM_FLOAT;
+        }
+        else
+            t.type = NUM_INT;
+    }
     t.col = st;
     t.line = line;
     t.val = val;
@@ -277,4 +302,61 @@ std::optional<masm::Token> masm::Lexer::gather_quote_string()
 void masm::Lexer::set_flag_ignore_dots(bool val)
 {
     ignore_dots = val;
+}
+
+std::string masm::Lexer::read_hex(bool neg)
+{
+    std::string h = neg ? "-0x" : "0x";
+    consume();
+    if (!(std::isdigit(c) || (c >= 'A' && c <= 'F')))
+    {
+        note("Invalid Hexadecimal value: Where are the numbers?");
+        die(1);
+    }
+    while (std::isdigit(c) || (c >= 'A' && c <= 'F'))
+    {
+        h += c;
+        consume();
+    }
+    long long tmp = std::stoll(h, NULL, 16);
+    h = std::to_string(tmp);
+    return h;
+}
+
+std::string masm::Lexer::read_oct(bool neg)
+{
+    std::string h = neg ? "-0o" : "0o";
+    consume();
+    if (!(c >= '0' && c <= '7'))
+    {
+        note("Invalid Octal value: Where are the numbers?");
+        die(1);
+    }
+    while ((c >= '0' && c <= '7'))
+    {
+        h += c;
+        consume();
+    }
+    long long tmp = std::stoll(h, NULL, 8);
+    h = std::to_string(tmp);
+    return h;
+}
+
+std::string masm::Lexer::read_bin(bool neg)
+{
+    std::string h = neg ? "-0b" : "0b";
+    consume();
+    if (!(c == '0' || c == '1'))
+    {
+        note("Invalid Binary value: Where are the numbers?");
+        die(1);
+    }
+    while ((c == '0' || c == '1'))
+    {
+        h += c;
+        consume();
+    }
+    long long tmp = std::stoll(h, NULL, 2);
+    h = std::to_string(tmp);
+    return h;
 }

@@ -404,6 +404,12 @@ namespace masm
         std::optional<masm::Token> gather_quote_string();
 
         void set_flag_ignore_dots(bool val);
+
+        std::string read_hex(bool neg);
+
+        std::string read_oct(bool neg);
+
+        std::string read_bin(bool neg);
     };
 };
 

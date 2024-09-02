@@ -5,20 +5,23 @@
 #include <merry_types.h>
 #include <stdlib.h>
 #include <windows.h>
+#include "merry_temp.h"
 
 // we also need the pid
-// #define _MERRY_PROCESS_CREATION_SUCCESS_ 0
-// #define _MERRY_PROCESS_CREATION_FAILURE_ -1
+#define _MERRY_PROCESS_CREATION_SUCCESS_ 0
+#define _MERRY_PROCESS_CREATION_FAILURE_ -1
 
-// typedef __pid_t mpid_t;
-// typedef struct MerryProcess MerryProcess;
+typedef __pid_t mpid_t;
+typedef struct MerryProcess MerryProcess;
 
-// struct MerryProcess
-// {
-//     mpid_t pid;
-// };
+// This is based on my research and hence maybe wrong or not work at all
+struct MerryProcess
+{
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+};
 
-// MerryProcess merry_create_process();
+MerryProcess merry_create_process();
 
 // mpid_t merry_get_pid();
 

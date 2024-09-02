@@ -535,6 +535,13 @@ _os_exec_(newprocess)
     merry_requestHdlr_acquire();
     msize_t iport, oport;
     merry_os_get_io_port_direct(&iport, &oport);
+    if (iport == oport == 0)
+    {
+        os->reader->dfe_flag = mfalse; // we won't take any more connections
+        os->cores[request->id]->registers[Ma] = 1;
+        merry_requestHdlr_release();
+        return RET_FAILURE;
+    }
     os->reader->eat.EAT[0] = os->cores[request->id]->pc; // we don't mind this to change here
     fflush(stdout);
     fflush(stderr);
@@ -548,15 +555,24 @@ _os_exec_(newprocess)
     }
     if (p.pid == 0)
     {
-        // We are in the child process
-        merry_os_new_proc_init(iport, oport);
-        merry_os_start_vm(NULL);
-        msize_t r = os->ret;
-        merry_os_destroy();
-        exit(r);
+        merry_os_set_env(iport, oport, request->id);
+        msize_t argc;
+        mstr_t *argv;
+        merry_get_cmd_options(&argc, &argv);
+        execl(/*Do something about this*/ "mvm", *argv);
+        os->cores[request->id]->registers[Ma] = 1; // we failed
+    }
+#elif _USE_WIN_
+    merry_os_set_env(iport, oport, request->id);
+    if (merry_create_process(&p) == mfalse)
+    {
+        merry_requestHdlr_release();
+        os->cores[request->id]->registers[Ma] = 1;
+        return RET_FAILURE;
     }
 #endif
     merry_requestHdlr_release();
+    os->cores[request->id]->registers[Ma] = 0;
     merry_os_notify_dbg(_NEW_OS_, 0, 0);
     return RET_SUCCESS;
 }
@@ -656,6 +672,7 @@ void merry_os_get_io_port_direct(msize_t *ip, msize_t *op)
     }
     *ip = os.listener->t1;
     *op = os.listener->t2;
+    os.listener->t1 = os.listener->t2 = 0;
 }
 
 void merry_os_new_proc_init(msize_t ip, msize_t op)
@@ -666,7 +683,6 @@ void merry_os_new_proc_init(msize_t ip, msize_t op)
     // I do believe that mutexes and condition variables are different for different processes unless provided with attributes
     fflush(stdin);
     merry_requestHdlr_release();
-    merry_os_new_proc_cleanup();
     os.reader->eat.eat_entry_count = 1;
     if (merry_os_init_reader_provided(os.reader, ip, op) == RET_FAILURE)
     {
@@ -811,4 +827,32 @@ void merry_os_notice(mbool_t _type)
 mqword_t merry_os_get_ret()
 {
     return os.ret;
+}
+
+void merry_os_set_env(msize_t ip, msize_t op, msize_t id)
+{
+#ifdef _USE_WIN_
+    char tmp[16];
+    sprintf(tmp, "%d", ip);
+    SetEnvironmentVariable("_MERRY_CHILD_DEBUG_", os->reader->dfe_flag == mtrue ? "yes" : "no");
+    SetEnvironmentVariable("_MERRY_CHILD_FREEZE_", os->reader->dfw_flag == mtrue ? "yes" : "no");
+    SetEnvironmentVariable("_MERRY_IPORT_", tmp);
+    sprintf(tmp, "%d", op);
+    SetEnvironmentVariable("_MERRY_OPORT_", tmp);
+    sprintf(tmp, "%llu", os->reader->eat.EAT[request->id]);
+    SetEnvironmentVariable("_MERRY_ADDR_", tmp);
+    SetEnvironmentVariable("_MERRY_CHILD_SURVEY_", "yes");
+#elif defined(_USE_LINUX_)
+    char tmp[16];
+    sprintf(tmp, "%d", ip);
+    setenv("_MERRY_CHILD_DEBUG_", os.reader->dfe_flag == mtrue ? "yes" : "no", 1);
+    setenv("_MERRY_CHILD_FREEZE_", os.reader->dfw_flag == mtrue ? "yes" : "no", 1);
+    setenv("_MERRY_IPORT_", tmp, 1);
+    sprintf(tmp, "%d", op);
+    setenv("_MERRY_OPORT_", tmp, 1);
+    sprintf(tmp, "%llu", os.reader->eat.EAT[id]);
+    setenv("_MERRY_ADDR_", tmp, 1);
+    setenv("_MERRY_CHILD_SURVEY_", "yes", 1);
+
+#endif
 }
