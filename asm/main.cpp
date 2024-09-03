@@ -2,9 +2,9 @@
 #include "emit.hpp"
 
 // The format for the VERSION is v<Major>.<Minor>.<Patch>-<State>.<update_count>
-#define VERSION "Masm- v0.0.0-test.0"
+#define VERSION "Masm- v0.0.1-test.3"
 
-static std::string version_message = "Zeta: An Assembler for the Merry Virtual Machine.\n"
+static std::string version_message = "Masm: An Assembler for the Merry Virtual Machine.\n"
                                      "Latest version: ";
 
 class Masm
@@ -108,6 +108,14 @@ void Masm::parse_args()
             options["output"] = given_options[i + 1];
             i++;
         }
+        else if (given_options[i] == "-ed")
+            options["enable_debugging"] = "";
+        else if(given_options[i] == "-dst")
+            options["disable_st"] = "";
+        else if(given_options[i] == "-cd")
+            options["child_debug"] = "";
+        else if(given_options[i] == "-cdw")
+            options["child_debug_wait"] = "";
         else
         {
             // it is a file name

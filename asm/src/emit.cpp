@@ -24,6 +24,14 @@ void masm::Emit::emit(std::string output, std::string *epval, std::unordered_map
     f.close();
 }
 
+void masm::Emit::set_for_debug(bool ed, bool gST, bool _cd, bool _cdf)
+{
+    enable_dbg = ed;
+    gen_ST = gST;
+    cd = _cd;
+    cdf = _cdf;
+}
+
 void masm::Emit::add_header()
 {
     mbyte_t header[8] = {'M', 'I', 'N', 0, 0, 0, 0, 0};

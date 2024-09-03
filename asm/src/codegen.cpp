@@ -1096,6 +1096,34 @@ void masm::CodeGen::handle_excg(NodeExcg *n, msize_t op)
     code.push_back(b);
 }
 
+void masm::CodeGen::generate_ST()
+{
+    // The first thing is the labels
+    size_t i = 0;
+    for (auto l : *label_addr)
+    {
+        symd[(*label_addr)[l.first]] = i;
+        for (char c : l.first)
+        {
+            ST.push_back(c);
+            i++;
+        }
+        ST.push_back(0);
+        i++;
+    }
+    for (auto l : data_addr)
+    {
+        symd[(data_addr)[l.first]] = i;
+        for (char c : l.first)
+        {
+            ST.push_back(c);
+            i++;
+        }
+        ST.push_back(0);
+        i++;
+    }
+}
+
 std::vector<masm::GenBinary> *masm::CodeGen::get_code()
 {
     return &code;
@@ -1109,4 +1137,14 @@ std::vector<mbyte_t> *masm::CodeGen::get_data()
 std::vector<mbyte_t> *masm::CodeGen::get_str_data()
 {
     return &str_data;
+}
+
+std::unordered_map<size_t, size_t> *masm::CodeGen::get_symd()
+{
+    return &symd;
+}
+
+std::vector<mbyte_t> *masm::CodeGen::get_ST()
+{
+    return &ST;
 }
