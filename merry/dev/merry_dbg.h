@@ -38,6 +38,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#elif defined(_USE_WIN_)
+#include <windows.h>
 #endif
 
 #define _MERRY_DEFAULT_LISTEN_PORT_ 4048
@@ -69,6 +71,10 @@ struct MerryListener
     int _fd;
     int _listen_fd;
     struct sockaddr_in _addr;
+#elif defined(_USE_WIN_)
+    SOCKET _fd;
+    SOCKET _listen_fd;
+    struct sockaddr_in _addr;
 #endif
     mbyte_t sig[_MERRY_PER_EXCG_BUF_LEN_];
     mbool_t notify_os;
@@ -80,6 +86,9 @@ struct MerrySender
 {
 #ifdef _USE_LINUX_
     int _send_fd;
+    struct sockaddr_in _addr;
+#elif defined(_USE_WIN_)
+    SOCKET _send_fd;
     struct sockaddr_in _addr;
 #endif
     MerrySendQueue *queue;

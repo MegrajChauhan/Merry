@@ -189,14 +189,15 @@ void merry_os_destroy()
         }
         free(os.core_threads);
     }
-    merry_destroy_listener(os.listener);
     merry_destroy_sender(os.sender);
+    merry_destroy_listener(os.listener);
     merry_thread_destroy(os.listener_th);
     merry_thread_destroy(os.sender_th);
     merry_destroy_reader(os.reader);
     merry_requestHdlr_destroy();
 }
 
+/*UN-USED OR DEPRECATED*/
 void merry_os_new_proc_cleanup()
 {
     merry_mutex_destroy(os._lock);
@@ -675,6 +676,7 @@ void merry_os_get_io_port_direct(msize_t *ip, msize_t *op)
     os.listener->t1 = os.listener->t2 = 0;
 }
 
+/*UN-USED AND DEPRECATED*/
 void merry_os_new_proc_init(msize_t ip, msize_t op)
 {
     // Here, we reinitialize everything from scratch.

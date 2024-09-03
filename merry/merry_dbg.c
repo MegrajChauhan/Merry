@@ -8,7 +8,22 @@ MerryListener *merry_init_listener(mbool_t notify_os, msize_t port_num)
 #ifdef _USE_LINUX_
     dbg->_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (dbg->_fd == -1)
+    {
         free(dbg);
+        return NULL;
+    }
+    dbg->_addr.sin_family = AF_INET;
+    dbg->_addr.sin_addr.s_addr = INADDR_ANY;
+    dbg->_addr.sin_port = port_num;
+#elif defined(_USE_WIN_)
+    WSADATA _data;
+    WSAStartup(MAKEWORD(2, 2), &_data);
+    dbg->_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (dbg->_fd == INVALID_SOCKET)
+    {
+        free(dbg);
+        return;
+    }
     dbg->_addr.sin_family = AF_INET;
     dbg->_addr.sin_addr.s_addr = INADDR_ANY;
     dbg->_addr.sin_port = port_num;
@@ -31,6 +46,17 @@ MerrySender *merry_init_sender(mbool_t notify_os, msize_t port_num)
     dbg->_addr.sin_family = AF_INET;
     dbg->_addr.sin_addr.s_addr = INADDR_ANY;
     dbg->_addr.sin_port = port_num;
+#elif defined(_USE_WIN_)
+    dbg->_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (dbg->_fd == INVALID_SOCKET)
+    {
+        free(dbg);
+        return;
+    }
+    dbg->_addr.sin_family = AF_INET;
+    dbg->_addr.sin_addr.s_addr = INADDR_ANY;
+    dbg->_addr.sin_port = port_num;
+
 #endif
     if ((dbg->cond = merry_cond_init()) == RET_NULL)
         goto err;
@@ -58,6 +84,10 @@ void merry_destroy_listener(MerryListener *dbg)
 #ifdef _USE_LINUX_
     close(dbg->_fd);
     close(dbg->_listen_fd);
+#elif defined(_USE_WIN_)
+    WSACleanup();
+    closesocket(dbg->_fd);
+    closesocket(dbg->_listen_fd);
 #endif
     free(dbg);
 }
@@ -71,9 +101,12 @@ void merry_destroy_sender(MerrySender *dbg)
     _MERRY_DESTROY_QUEUE_NOPTR_(dbg->queue);
 #ifdef _USE_LINUX_
     close(dbg->_send_fd);
+#elif defined(_USE_WIN_)
+    closesocket(dbg->_send_fd);
 #endif
 }
 
+/*Un-used and deprecated*/
 void merry_cleanup_sender(MerrySender *dbg)
 {
     if (dbg == NULL)
@@ -105,6 +138,23 @@ _THRET_T_ merry_start_listening(mptr_t _list)
         perror("DEBUGGER ACCEPT");
         return NULL;
     }
+#elif defined(_USE_LINUX_)
+    int addrlen = sizeof(dbg->_addr);
+    if (bind(dbg->_fd, (struct sockaddr *)&dbg->_addr, addrlen) == SOCKET_ERROR)
+    {
+        printf("DEBUGGER CONNECT failed with error: %d\n", WSAGetLastError());
+        return NULL;
+    }
+    if (listen(dbg->_fd, 5) == SOCKET_ERROR)
+    {
+        printf("DEBUGGER LISTEN failed with error: %d\n", WSAGetLastError());
+        return NULL;
+    }
+    if ((dbg->_listen_fd = accept(dbg->_fd, (struct sockaddr *)&dbg->_addr, &addrlen)) == INVALID_SOCKET)
+    {
+        printf("DEBUGGER ACCEPT failed with error: %d\n", WSAGetLastError());
+        return NULL;
+    }
 #endif
     if (dbg->notify_os == mtrue)
         merry_os_notice(mtrue);
@@ -115,12 +165,11 @@ _THRET_T_ merry_start_listening(mptr_t _list)
     {
 #ifdef _USE_LINUX_
         read_into_buf = read(dbg->_listen_fd, dbg->sig, _MERRY_PER_EXCG_BUF_LEN_);
+#elif defined(_USE_WIN_)
+        read_into_buf = recv(dbg->_listen_fd, dbg->sig, _MERRY_PER_EXCG_BUF_LEN_, 0);
 #endif
         if (dbg->stop == mtrue)
-        {
-            // printf("Listener stopped.\n");
             break;
-        }
         if (read_into_buf == 0)
             continue;
         // merry_requestHdlr_push_request_dbg(_REQ_INTR);
@@ -194,6 +243,11 @@ _THRET_T_ merry_start_sending(mptr_t _send)
         usleep(50);
     }
     // we keep trying until we connect
+#elif defined(_USE_WIN_)
+    while (connect(dbg->_send_fd, (struct sockaddr *)&dbg->_addr, sizeof(dbg->_addr)) == SOCKET_ERROR)
+    {
+        Sleep(1); // sleep for 1 millisecond but keep trying
+    }
 #endif
     if (dbg->notify_os == mtrue)
         merry_os_notice(mfalse);
