@@ -21,6 +21,11 @@ void masm::Emit::emit(std::string output, std::string *epval, std::unordered_map
     add_instructions();
     add_SsT();
     add_sections();
+    if (gen_ST)
+    {
+        add_symd();
+        add_ST();
+    }
     f.close();
 }
 
@@ -34,7 +39,13 @@ void masm::Emit::set_for_debug(bool ed, bool gST, bool _cd, bool _cdf)
 
 void masm::Emit::add_header()
 {
-    mbyte_t header[8] = {'M', 'I', 'N', 0, 0, 0, 0, 0};
+    mbyte_t header[8] = {'M', 'I', 'N', 0, 0, 0};
+    header[6] = cdf ? 1 : 0;
+    header[6] <<= 1;
+    header[6] |= cd ? 1 : 0;
+    header[6] <<= 1;
+    header[6] |= gen_ST ? 1 : 0;
+    header[7] = enable_dbg ? 1 : 0;
     for (auto v : header)
     {
         f << v;
@@ -53,16 +64,16 @@ void masm::Emit::add_header()
     }
     // the SsT
     // For now, we only have data and string and hence 32 bytes at most
+    b.val = 16;
     if (!str_data->empty())
-        b.val = 32;
-    else
-        b.val = 16;
+        b.val += 16;
+    if (gen_ST)
+        b.val += 16;
     for (int i = 7; i >= 0; i--)
     {
         f << b.b[i];
     }
-    // ST size is 0 for now
-    b.val = 0;
+    b.val = gen_ST ? ST->size() : 0;
     for (auto v : b.b)
     {
         f << v;
@@ -120,7 +131,6 @@ void masm::Emit::add_SsT()
     // As for the debug sections, the assembler will have to define its own conventions on how
     // each section is structured which will take time so we avoid it for now
     // Let's just get a working assembler for now
-    /// TODO: Actually solve the port problem in VM!
     ByteSwap b;
     size_t j = data->size();
     for (int i = 7; i >= 0; i--)
@@ -148,7 +158,18 @@ void masm::Emit::add_SsT()
             f << v;
         sections.push_back(str_data);
     }
-    f << 0xAAAAAAAABBBBBBBB;
+    if (gen_ST)
+    {
+        j = symd->size();
+        for (int i = 7; i >= 0; i--)
+        {
+            mbyte_t v = ((j >> (i * 8)) & 255);
+            f << v;
+        }
+        b.b[0] = 2;
+        for (auto v : b.b)
+            f << v;
+    }
 }
 
 void masm::Emit::add_sections()
@@ -159,6 +180,34 @@ void masm::Emit::add_sections()
         {
             f << _v;
         }
+    }
+}
+
+void masm::Emit::init_for_debug(std::vector<mbyte_t> *st, std::unordered_map<size_t, size_t> *_symd)
+{
+    ST = st;
+    symd = _symd;
+}
+
+void masm::Emit::add_ST()
+{
+    for (auto _c : *ST)
+    {
+        f << _c;
+    }
+}
+
+void masm::Emit::add_symd()
+{
+    ByteSwap b;
+    for (auto _e : *symd)
+    {
+        b.val = _e.first;
+        for (int i = 7; i >= 0; i--)
+            f << b.b[i];
+        b.val = _e.second;
+        for (int i = 7; i >= 0; i--)
+            f << b.b[i];
     }
 }
 

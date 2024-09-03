@@ -725,7 +725,6 @@ void merry_os_dump_core_dets(FILE *f)
         fprintf(f, "\tPC(At the time of termination):%lX\n", c->pc);
         fprintf(f, "\tIR(At the time of termination):%lX\n", c->current_inst);
         fprintf(f, "\tSTACK SIZE:Static Stack(Upwards):1MB\n");
-        continue;
         fprintf(f, "\tException Address(Set by the program):%lX(%s)\n", c->exception_address, c->excp_set == mtrue ? (sym = merry_reader_get_symbol(os.reader, c->exception_address)) == NULL ? "NO SYMBOL FOUND" : (mstr_t)sym : "EXCP NOT SET");
         fprintf(f, "\tFLAGS REGISTER:\n");
         fprintf(f, "\t\tCARRY    :%lu\n", c->flag.carry);

@@ -1,3 +1,7 @@
+/*
+  An issue: Due to the way the assembler works, right now, it assumes every host
+  to be little endian and I am too lazy to fix that(Imagine going to dozens of files and thousands of lines to find some missing lines, augh!!!)
+*/
 #include "context.hpp"
 #include "emit.hpp"
 
@@ -30,6 +34,7 @@ int main(int argc, char **argv)
     masm::Emit _e;
     Masm _asm(argc, argv);
     std::pair<bool, std::string> input_filename, output_filename;
+    bool ed = false, dst = false, cd = false, cdf = false;
     _asm.parse_args();
     if (_asm.get_option("help").first)
     {
@@ -47,6 +52,10 @@ int main(int argc, char **argv)
         _asm.print_help();
         return -1;
     }
+    ed = _asm.get_option("enable_debugging").first;
+    dst = _asm.get_option("disable_st").first;
+    cd = _asm.get_option("child_debug").first;
+    cdf = _asm.get_option("child_debug_wait").first;
     output_filename = _asm.get_option("output");
     input_filename = _asm.get_option("input");
     _c.init_context(input_filename.second);
@@ -55,6 +64,10 @@ int main(int argc, char **argv)
     if (!_output_fname.ends_with(".mbin"))
         _output_fname += ".mbin";
     masm::CodeGen *g = _c.get_codegen();
+    if (!dst)
+        g->generate_ST();
+    _e.set_for_debug(ed, !dst, cd, cdf);
+    _e.init_for_debug(g->get_ST(), g->get_symd());
     _e.emit(_output_fname, _c.get_eepe(), _c.get_teepe(), _c.get_entries(), g->get_code(), g->get_data(), g->get_str_data(), _c.get_lbl_addr());
     return 0;
 }
@@ -78,9 +91,13 @@ void Masm::print_help()
 {
     std::cout << "Usage: masm <path_to_file> [OPTIONS]<Additional Arguments>\n";
     std::cout << "OPTIONS INCLUDE:\n";
-    std::cout << "   -h, -help --> Display this help\n";
-    std::cout << "   -v, --version --> Display the current version\n";
-    std::cout << "   -o --> Specify the output file name\n";
+    std::cout << "   -h, -help    --> Display this help\n";
+    std::cout << "   -v,--version --> Display the current version\n";
+    std::cout << "   -o           --> Specify the output file name";
+    std::cout << "   -ed          --> Enable Debugging";
+    std::cout << "   -dst         --> Disable Symbol Table and hence SYMD from being generated";
+    std::cout << "   -cd          --> Enable Child Debug thus allowing child processes to be debugged as well.";
+    std::cout << "   -cdw         --> Enable Child Debug Freeze that works like --freeze but for child processes\n";
 }
 
 void Masm::parse_args()
@@ -110,11 +127,11 @@ void Masm::parse_args()
         }
         else if (given_options[i] == "-ed")
             options["enable_debugging"] = "";
-        else if(given_options[i] == "-dst")
+        else if (given_options[i] == "-dst")
             options["disable_st"] = "";
-        else if(given_options[i] == "-cd")
+        else if (given_options[i] == "-cd")
             options["child_debug"] = "";
-        else if(given_options[i] == "-cdw")
+        else if (given_options[i] == "-cdw")
             options["child_debug_wait"] = "";
         else
         {

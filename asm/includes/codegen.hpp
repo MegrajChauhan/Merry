@@ -43,8 +43,6 @@ namespace masm
 
         std::unordered_map<std::string, size_t> data_addr;
         std::unordered_map<std::string, size_t> *label_addr;
-        
-        bool _gST = false;
 
     public:
         CodeGen() = default;
@@ -67,8 +65,6 @@ namespace masm
         void generate_data();
 
         void generate_ST();
-
-        void generate_symd();
 
         void give_address_to_labels();
 
