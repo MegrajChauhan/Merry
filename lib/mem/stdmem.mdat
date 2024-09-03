@@ -1,0 +1,21 @@
+;; struct bucket;
+;; struct stdmem
+;;{
+;;   QWORD _Mstd_full_avai_mem;
+;;   QWORD _Mstd_mem_allocated;
+;;   bucket* _Mstd_head_start;
+;;};
+
+;; struct bucket
+;;{
+;;   BYTE  _Mstd_bucket_full;
+;;   QWORD _Mstd_bucket_len;
+;;   bucket *nxt;
+;;};
+
+rq _Mstd_full_avai_mem 1 ;; Store the number of bytes that we have to play with
+rq _Mstd_mem_allocated 1 ;; The number of bytes that we have played with
+rq _Mstd_head_start 1    ;; The start addr of the first allocated space
+
+
+rc _Mstd_NULL -1

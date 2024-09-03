@@ -123,9 +123,9 @@ namespace masm
     // This assembler certainly isn't worthy just yet
     static std::unordered_map<std::string, std::string> _std_paths = {
 #ifdef _USE_LINUX_
-        {"_init_.masm", "lib/init/_init_.masm"},
-        {"_init_.mb", "lib/init/_init_.mb"},
-        {"_init_.mdat", "lib/init/_init_.mdat"},
+        {"stdinit.masm", "lib/init/stdinit.masm"},
+        {"stdinit.mb", "lib/init/stdinit.mb"},
+        {"stdinit.mdat", "lib/init/stdinit.mdat"},
 #endif
     };
 };

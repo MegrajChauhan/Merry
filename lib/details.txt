@@ -1,0 +1,15 @@
+Conventions:
+The variables for the library will begin as _Mstd
+The procedures for the library will begin as __builtin
+Any constants will be named as __MSTD
+Any procedures that hide or abstract the __builtin* procedures will use the same name but without the __builtin
+
+The procedures take arguments as follow:
+1st arg -> M1
+2nd arg -> M2
+3rd arg -> M3
+4th arg -> Mm1
+5th arg -> Mm2
+
+NOTES:
+Any reserved memory will be reused in the future. These reserves are being made to make everything 8-byte aligned.

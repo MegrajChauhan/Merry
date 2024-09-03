@@ -1,20 +1,18 @@
-######################################################################
-############                The New Format                ############
-######################################################################
+### The New File Format
 
 ### Flags
-                      |------------------------ reserved
-                      |    |------------------- reserved
-                      |    |    |-------------- reserved
-                      |    |    |    |--------- DE (Debugging Enabled) flag: Tells the VM to be ready for debugging.
-                      |    |    |    |    |---- STE (Symbol Table Enable) flag: Indicates that the ST should be read and is available.
+                      :------------------------ reserved
+                      :    :------------------- reserved
+                      :    :    :-------------- reserved
+                      :    :    :    :--------- DE (Debugging Enabled) flag: Tells the VM to be ready for debugging.
+                      :    :    :    :    :---- STE (Symbol Table Enable) flag: Indicates that the ST should be read and is available.
      0x4D 0x49 0x4E 0x00 0x00 0x00 0x00 0x00
 
 ### Sections and Sizes
 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 -> The instruction section's size\
 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 -> The EAT's size\
 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 -> The SsT's size\
-0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 -> The ST's size\
+0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 -> The ST's size
 
 ### EAT (Execution Address Table)
 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 -> The EAT\
@@ -89,3 +87,15 @@ Apart from the DE flag and STE flag, we have two new flags: DFE flag and DFW fla
 Position: second last bit of the second last byte.
 **DFW flag:** DFW\(Debug Follow Wait) tells what the **--freeze, -f** options do to the new processes. 
 Position: third last bit of the second last byte.
+
+# Flags and Type representations as well as Positions
+**DFE flag:** The 2nd last bit of the 7th byte of the header.
+**DFW flag:** The 3nd last bit of the 7th byte of the header.
+**Data:** If the section is data then the 3 bits = 0. 
+**Info:** If the section is info then the 3 bits = 1. 
+**Symd:** If the section is symd then the 3 bits = 2. 
+**Other:** If the section is other then the 3 bits = 3.
+**RIM:** Last bit of the 9th byte of the respective SsT entry 
+**RAS:** Last bit of the 10th byte of the respective SsT entry 
+
+**Note:** The purpose of the ST index in the entry is to give the section a name. This can be used by the assembler to pass specific named sections.

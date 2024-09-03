@@ -22,6 +22,7 @@ This document describes the conventions used for debugging and signaling in the 
 |          09| `_PC_OF_`                  | Get the PC (Program Counter) of some core          |
 |          10| `_REGR_OF_`                | Get the requested register                         |
 |          11| `_CONTINUE_CORE_`          | Continue the core that previously hit a breakpoint |
+|          12| `_IO_PORT_NUM`             | A new process is being created and based on the flags, the VM requests a new set of IO ports to use for debugging the child|
 
 ## Signal Definitions
 
