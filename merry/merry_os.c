@@ -70,6 +70,7 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _
     os.cores[0]->registers[Mm5] = len + _t + 1; // Mm5 contains the address of the first byte that is free and can be manipulated by the program
     os.cores[0]->registers[Mm4] = _MERRY_HOST_ID_ARCH_;
     os.cores[0]->registers[Mm3] = _MERRY_HOST_ID_OS_;
+    os.cores[0]->registers[Mm2] = os.data_mem->number_of_pages; // Number of pages that the program can manipulate
     os.stop = mfalse;
     os.core_threads = (MerryThread **)malloc(sizeof(MerryThread *) * (os.core_count));
     if (os.core_threads == RET_NULL)

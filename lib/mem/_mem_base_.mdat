@@ -3,6 +3,9 @@
 ;; So basic in fact it is unsafe to use
 
 rw __mem_allocated 1 ;; number of bytes allocated so far 
+rw __mem
 
-dc __magic_num 
+dc __magic_num 0xAABBCCDDEEFF0011 ;; The magic number that will be used to see if anyone messed with the metadata
+
+
 

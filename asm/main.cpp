@@ -55,7 +55,7 @@ int main(int argc, char **argv)
     if (!_output_fname.ends_with(".mbin"))
         _output_fname += ".mbin";
     masm::CodeGen *g = _c.get_codegen();
-    _e.emit(_output_fname, _c.get_eepe(), _c.get_teepe(), _c.get_entries(), g->get_code(), g->get_data(), g->get_str_data(), _c.get_lbl_addr());    
+    _e.emit(_output_fname, _c.get_eepe(), _c.get_teepe(), _c.get_entries(), g->get_code(), g->get_data(), g->get_str_data(), _c.get_lbl_addr());
     return 0;
 }
 

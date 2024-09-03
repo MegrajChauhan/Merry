@@ -3,6 +3,7 @@
 
 #include "lexer.hpp"
 #include "symtable.hpp"
+#include "expr.hpp"
 
 namespace masm
 {
@@ -14,11 +15,12 @@ namespace masm
         SymbolTable *sym;
         bool read_again = true;
         Token old_tok; // resuse token
+        Expr evaluator;
 
     public:
         Data() = default;
 
-        void setup_for_read(SymbolTable* t, std::shared_ptr<std::string> f, std::shared_ptr<std::string> fconts);
+        void setup_for_read(SymbolTable *t, std::shared_ptr<std::string> f, std::shared_ptr<std::string> fconts);
 
         bool read_data();
 

@@ -43,3 +43,5 @@ dlf long_float -873248.455353
 ;; Can have the same as a variable but no two constants can share a name
 ;; The assembler will figure out what you mean based on the context.
 dc ABC 23
+
+db exp [a * b - (4/3+(3+c))]

@@ -10,6 +10,12 @@
 
 #define c *curr
 
+/**
+ * Rules of an expression:
+ * To be an expression, it must be within '[]'
+ * The expression are normal within the '[]'
+ */
+
 namespace masm
 {
     enum TokenType
@@ -20,6 +26,7 @@ namespace masm
         IDENTIFIER,
         NUM_INT,
         NUM_FLOAT,
+        EXPR,
         STR,
         KEY_DB,
         KEY_DW,
@@ -175,11 +182,53 @@ namespace masm
         KEY_EEPE,
         KEY_TEEPE,
         KEY_NDEFINED,
+        OPER_PLUS,
+        OPER_MINUS,
+        OPER_MUL,
+        OPER_DIV,
+        OPER_OPEN_PAREN,
+        OPER_CLOSE_PAREN,
+        OPER_AND,  // &&
+        OPER_OR,   // ||
+        OPER_XOR,  // ^
+        OPER_NOT,  // !
+        OPER_LS,   // >>
+        OPER_RS,   // <<
+        OPER_LAND, // &
+        OPER_LOR,  // |
+        OPER_LNOT, // ~
+        OPER_LT,   // <
+        OPER_GT,   // >
+        OPER_LE,   // <=
+        OPER_GE,   // >=
+        OPER_EQ,   // ==
+        OPER_NEQ,  // !=
     };
 
     static std::unordered_map<std::string, TokenType>
         iden_map =
             {
+                {"AND", OPER_AND},
+                {"&", OPER_LAND},
+                {"OR", OPER_OR},
+                {"|", OPER_LOR},
+                {"XOR", OPER_XOR},
+                {"!", OPER_NOT},
+                {"~", OPER_LNOT},
+                {"<", OPER_LS},
+                {">", OPER_RS},
+                {"LT", OPER_LT},
+                {"GT", OPER_GT},
+                {"LE", OPER_LE},
+                {"GE", OPER_GE},
+                {"EQ", OPER_EQ},
+                {"NEQ", OPER_NEQ},
+                {"(", OPER_OPEN_PAREN},
+                {")", OPER_CLOSE_PAREN},
+                {"/", OPER_DIV},
+                {"*", OPER_MUL},
+                {"-", OPER_MINUS},
+                {"+", OPER_PLUS},
                 {"data", MB_DATA},
                 {"code", MB_CODE},
                 {"db", KEY_DB},
@@ -362,6 +411,7 @@ namespace masm
         std::string val;
         TokenType type;
         size_t line, col;
+        std::vector<Token> expr;
     };
 
     class Lexer
@@ -377,7 +427,7 @@ namespace masm
 
         void setup_lexer(std::shared_ptr<std::string> conts, std::shared_ptr<std::string> path);
 
-        std::optional<Token> next_token();
+        std::optional<Token> next_token(bool _is_expr = false);
 
         char peek(size_t by = 1);
 

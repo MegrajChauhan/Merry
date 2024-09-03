@@ -29,6 +29,7 @@ void masm::Context::init_context(std::string path)
         inp_file_conts += l + '\n';
     }
     ins.close();
+    evaluator.add_table(&table);
 }
 
 void masm::Context::read_file(std::string file)
@@ -482,12 +483,26 @@ void masm::Context::handle_defined()
         die(1);
     }
     Token t = tok.value();
-    if (t.type != IDENTIFIER)
+    if (t.type != IDENTIFIER && t.type != EXPR)
     {
-        note("Expected a constant or a variable after 'defined'.");
+        note("Expected a constant, expression or a variable after 'defined'.");
         die(1);
     }
-    if (table._var_list.find(t.val) == table._var_list.end())
+    if (t.type == EXPR)
+    {
+        evaluator.add_expr(t.expr);
+        auto _r = evaluator.evaluate();
+        // In the case of defined an ndefined, the expression must evaluate to either 1 or 0
+        // In defined, 1 would mean that the expression is evaluated but otherwise in the case of ndefined
+        if (!_r.has_value())
+        {
+            fu_err(curr_file, t.line, "While evaluating expression here.");
+            die(1);
+        }
+        if (std::stoull(_r.value()) == 1)
+            return;
+    }
+    else if (table._var_list.find(t.val) == table._var_list.end())
     {
         if (table._const_list.find(t.val) == table._const_list.end())
         {
@@ -517,7 +532,19 @@ void masm::Context::handle_ndefined()
         note("Expected a constant or a variable after 'defined'.");
         die(1);
     }
-    if (!(table._var_list.find(t.val) == table._var_list.end()))
+    if (t.type == EXPR)
+    {
+        evaluator.add_expr(t.expr);
+        auto _r = evaluator.evaluate();
+        if (!_r.has_value())
+        {
+            fu_err(curr_file, t.line, "While evaluating expression here.");
+            die(1);
+        }
+        if (std::stoull(_r.value()) == 0)
+            return;
+    }
+    else if (!(table._var_list.find(t.val) == table._var_list.end()))
     {
         if (!(table._const_list.find(t.val) == table._const_list.end()))
         {
@@ -542,7 +569,21 @@ void masm::ChildContext::handle_ndefined()
         note("Expected a constant or a variable after 'defined'.");
         die(1);
     }
-    if (!(table->_var_list.find(t.val) == table->_var_list.end()))
+    if (t.type == EXPR)
+    {
+        evaluator.add_expr(t.expr);
+        auto _r = evaluator.evaluate();
+        // In the case of defined an ndefined, the expression must evaluate to either 1 or 0
+        // In defined, 1 would mean that the expression is evaluated but otherwise in the case of ndefined
+        if (!_r.has_value())
+        {
+            fu_err(curr_file, t.line, "While evaluating expression here.");
+            die(1);
+        }
+        if (std::stoull(_r.value()) == 0)
+            return;
+    }
+    else if (!(table->_var_list.find(t.val) == table->_var_list.end()))
     {
         if (!(table->_const_list.find(t.val) == table->_const_list.end()))
         {
@@ -568,7 +609,21 @@ void masm::ChildContext::handle_defined()
         note("Expected a constant or a variable after 'defined'.");
         die(1);
     }
-    if (table->_var_list.find(t.val) == table->_var_list.end())
+    if (t.type == EXPR)
+    {
+        evaluator.add_expr(t.expr);
+        auto _r = evaluator.evaluate();
+        // In the case of defined an ndefined, the expression must evaluate to either 1 or 0
+        // In defined, 1 would mean that the expression is evaluated but otherwise in the case of ndefined
+        if (!_r.has_value())
+        {
+            fu_err(curr_file, t.line, "While evaluating expression here.");
+            die(1);
+        }
+        if (std::stoull(_r.value()) == 1)
+            return;
+    }
+    else if (table->_var_list.find(t.val) == table->_var_list.end())
     {
         if (table->_const_list.find(t.val) == table->_const_list.end())
         {

@@ -57,7 +57,7 @@ std::string masm::Lexer::extract_line()
     return std::string(st + 1, ed);
 }
 
-std::optional<masm::Token> masm::Lexer::next_token()
+std::optional<masm::Token> masm::Lexer::next_token(bool _is_expr)
 {
     Token t;
     t.type = MB_C;
@@ -82,7 +82,7 @@ std::optional<masm::Token> masm::Lexer::next_token()
             while (std::isspace(c))
                 consume();
         }
-        else if (std::isalpha(c) || c == '_')
+        else if (std::isalpha(c) || c == '_' || c == ':' || c == '@')
         {
             t = group_word();
             break;
@@ -93,6 +93,67 @@ std::optional<masm::Token> masm::Lexer::next_token()
             if (!res.has_value())
                 return {};
             t = res.value();
+            break;
+        }
+        else if (c == '-')
+        {
+            // if the above condition didn't work then this is a sole minus sign
+            t.type = OPER_MINUS;
+            break;
+        }
+        else if (c == '+')
+        {
+            t.type = OPER_PLUS;
+            break;
+        }
+        else if (c == '*')
+        {
+            t.type = OPER_MUL;
+            break;
+        }
+        else if (c == '/')
+        {
+            t.type = OPER_DIV;
+            break;
+        }
+        else if (c == '(')
+        {
+            t.type = OPER_OPEN_PAREN;
+            break;
+        }
+        else if (c == ')')
+        {
+            t.type = OPER_CLOSE_PAREN;
+            break;
+        }
+        else if (c == '&')
+        {
+            t.type = OPER_LAND;
+            break;
+        }
+        else if (c == '|')
+        {
+            t.type = OPER_LOR;
+            break;
+        }
+        else if (c == '!')
+        {
+            t.type = OPER_NOT;
+            break;
+        }
+        else if (c == '<')
+        {
+            t.type = OPER_LS;
+            break;
+        }
+        else if (c == '>')
+        {
+            t.type = OPER_RS;
+            break;
+        }
+        else if (c == '~')
+        {
+            t.type = OPER_LNOT;
             break;
         }
         else if (c == '\"')
@@ -106,6 +167,35 @@ std::optional<masm::Token> masm::Lexer::next_token()
         else if (c == ',')
         {
             consume();
+        }
+        else if (c == '[')
+        {
+            t.col = col;
+            t.line = line;
+            consume();
+            while (curr != end && c != ']')
+            {
+                if (c == '[' && _is_expr)
+                {
+                    err(*filepath.get(), line, col, col + 1, _lexing, syntaxerr, ERR_STR, "Nested expressions aren't a thing here.", extract_line());
+                    return {};
+                }
+                auto _t = next_token();
+                if (!_t.has_value())
+                {
+                    err(*filepath.get(), line, col, col + 1, _lexing, syntaxerr, ERR_STR, "Expected an identifier, constant or an operator.", extract_line());
+                    return {};
+                }
+                t.expr.push_back(_t.value());
+            }
+            if (curr == end && *(curr - 1) != ']')
+            {
+                err(*filepath.get(), line, col, col + 1, _lexing, syntaxerr, ERR_STR, "Expression must end with a ']' but reached EOF.", extract_line());
+                return {};
+            }
+            t.type = EXPR;
+            consume();
+            break;
         }
         else
         {
@@ -133,7 +223,7 @@ masm::Token masm::Lexer::group_word()
 {
     std::string wrd;
     size_t st = col;
-    while (std::isalnum(c) || c == '_')
+    while (std::isalnum(c) || c == '_' || c == ':' || c == '@')
     {
         wrd += c;
         consume();

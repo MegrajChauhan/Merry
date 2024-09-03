@@ -13,6 +13,7 @@
 #include "code.hpp"
 #include "codegen.hpp"
 #include "merry_config.h"
+#include "expr.hpp"
 
 namespace masm
 {
@@ -49,6 +50,8 @@ namespace masm
         bool skip = false;
 
     public:
+        Expr evaluator; // This is okay
+        
         Context() = default;
 
         std::unordered_map<std::string, size_t> *get_lbl_addr();
@@ -120,9 +123,9 @@ namespace masm
     // This assembler certainly isn't worthy just yet
     static std::unordered_map<std::string, std::string> _std_paths = {
 #ifdef _USE_LINUX_
-        {"_init_.masm","lib/init/_init_.masm"},
-        {"_init_.mb","lib/init/_init_.mb"},
-        {"_init_.mdat","lib/init/_init_.mdat"},
+        {"_init_.masm", "lib/init/_init_.masm"},
+        {"_init_.mb", "lib/init/_init_.mb"},
+        {"_init_.mdat", "lib/init/_init_.mdat"},
 #endif
     };
 };

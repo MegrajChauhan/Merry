@@ -9,6 +9,7 @@ void masm::Code::setup_code_read(std::vector<Node> *n, std::unordered_map<std::s
     _l.setup_lexer(fcont, fn);
     table = sym;
     label_list = lbl_list;
+    evaluator.add_table(sym);
 }
 
 bool masm::Code::read_code()
@@ -587,7 +588,6 @@ bool masm::Code::handle_names(bool _proc)
 bool masm::Code::handle_arithmetic_unsigned(NodeKind k)
 {
     Node node;
-
     node.node = std::make_unique<NodeArithmetic>();
     NodeArithmetic *a = (NodeArithmetic *)node.node.get();
     auto res = _l.next_token();
@@ -622,6 +622,17 @@ bool masm::Code::handle_arithmetic_unsigned(NodeKind k)
         node.kind = (NodeKind)(k + 2);
         a->second_oper = t.val;
         break;
+    }
+    case EXPR:
+    {
+        evaluator.add_expr(t.expr);
+        auto _r = evaluator.evaluate();
+        if (!_r.has_value())
+        {
+            fu_err(fname, t.line, "While evaluating the expression here.");
+            return false;
+        }
+        t.val = _r.value();
     }
     case NUM_INT:
     {
@@ -689,6 +700,17 @@ bool masm::Code::handle_mov(NodeKind k)
         a->second_oper = std::make_pair(t.val, BYTE);
         break;
     }
+    case EXPR:
+    {
+        evaluator.add_expr(t.expr);
+        auto _r = evaluator.evaluate();
+        if (!_r.has_value())
+        {
+            fu_err(fname, t.line, "While evaluating the expression here.");
+            return false;
+        }
+        t.val = _r.value();
+    }
     case NUM_FLOAT:
     {
         node.kind = k;
@@ -748,6 +770,17 @@ bool masm::Code::handle_sva_svc(NodeKind k)
         node.kind = (NodeKind)(k + 2);
         a->second_oper = std::make_pair(t.val, BYTE);
         break;
+    }
+    case EXPR:
+    {
+        evaluator.add_expr(t.expr);
+        auto _r = evaluator.evaluate();
+        if (!_r.has_value())
+        {
+            fu_err(fname, t.line, "While evaluating the expression here.");
+            return false;
+        }
+        t.val = _r.value();
     }
     case NUM_INT:
     {
@@ -889,6 +922,17 @@ bool masm::Code::handle_arithmetic_signed(NodeKind k)
         }
         t.val = table->_const_list[t.val].value;
         // fall through to the next case
+    }
+    case EXPR:
+    {
+        evaluator.add_expr(t.expr);
+        auto _r = evaluator.evaluate();
+        if (!_r.has_value())
+        {
+            fu_err(fname, t.line, "While evaluating the expression here.");
+            return false;
+        }
+        t.val = _r.value();
     }
     case NUM_INT:
     {
@@ -1066,6 +1110,17 @@ bool masm::Code::handle_push_pop(NodeKind k)
         n->val = t.val;
         break;
     }
+    case EXPR:
+    {
+        evaluator.add_expr(t.expr);
+        auto _r = evaluator.evaluate();
+        if (!_r.has_value())
+        {
+            fu_err(fname, t.line, "While evaluating the expression here.");
+            return false;
+        }
+        t.val = _r.value();
+    }
     case NUM_FLOAT:
     case NUM_INT:
     {
@@ -1115,6 +1170,17 @@ bool masm::Code::handle_intr()
             return false;
         }
         n->val = table->_const_list[t.val].value;
+    }
+    case EXPR:
+    {
+        evaluator.add_expr(t.expr);
+        auto _r = evaluator.evaluate();
+        if (!_r.has_value())
+        {
+            fu_err(fname, t.line, "While evaluating the expression here.");
+            return false;
+        }
+        t.val = _r.value();
     }
     case NUM_FLOAT:
     case NUM_INT:
@@ -1213,6 +1279,17 @@ bool masm::Code::handle_logical_inst(NodeKind k, bool limit)
         t.val = table->_const_list[t.val].value;
         // fall through to next case
     }
+    case EXPR:
+    {
+        evaluator.add_expr(t.expr);
+        auto _r = evaluator.evaluate();
+        if (!_r.has_value())
+        {
+            fu_err(fname, t.line, "While evaluating the expression here.");
+            return false;
+        }
+        t.val = _r.value();
+    }
     case NUM_INT:
     {
         node.kind = (k);
@@ -1275,6 +1352,17 @@ bool masm::Code::handle_cmp()
         node.kind = CMP_VAR;
         a->second_oper = t.val;
         break;
+    }
+    case EXPR:
+    {
+        evaluator.add_expr(t.expr);
+        auto _r = evaluator.evaluate();
+        if (!_r.has_value())
+        {
+            fu_err(fname, t.line, "While evaluating the expression here.");
+            return false;
+        }
+        t.val = _r.value();
     }
     case NUM_INT:
     {
