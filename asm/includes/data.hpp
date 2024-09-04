@@ -3,7 +3,6 @@
 
 #include "lexer.hpp"
 #include "symtable.hpp"
-#include "expr.hpp"
 
 namespace masm
 {
@@ -15,7 +14,6 @@ namespace masm
         SymbolTable *sym;
         bool read_again = true;
         Token old_tok; // resuse token
-        Expr evaluator;
 
     public:
         Data() = default;

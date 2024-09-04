@@ -25,15 +25,15 @@ namespace masm
 
     class Context
     {
+        SymbolTable table;
         std::string inp_file;
         std::string curr_file;
         FileType curr_file_type;
-        SymbolTable table;
         std::string curr_file_conts;
         std::string inp_file_conts;
+        Lexer inp_file_lexer;
         std::unordered_map<std::string, bool> filelist;
         std::vector<std::string> flist;
-        Lexer inp_file_lexer;
 
         std::vector<Node> nodes;
         std::unordered_map<std::string, Procedure> proc_list; // the list of all procedures
@@ -51,6 +51,7 @@ namespace masm
 
     public:
         Expr evaluator; // This is okay
+        std::unordered_map<std::string, size_t> data_addr; // this too
         
         Context() = default;
 
@@ -64,9 +65,9 @@ namespace masm
 
         CodeGen *get_codegen();
 
-        void init_context(std::string path);
+        virtual void init_context(std::string path);
 
-        void read_file(std::string file);
+        virtual void read_file(std::string file);
 
         virtual void handle_defined();
         virtual void handle_ndefined();
@@ -109,10 +110,13 @@ namespace masm
     public:
         ChildContext() = default;
         ChildContext(std::string *ee) : eepe(ee) {}
+        void init_context(std::string path) override;
 
         void setup_structure(std::unordered_map<std::string, size_t> *la, std::unordered_map<std::string, std::string> *tep, SymbolTable *t, std::unordered_map<std::string, bool> *fl, std::vector<std::string> *_fl, std::vector<Node> *n, std::unordered_map<std::string, Procedure> *pl, std::unordered_map<std::string, size_t> *ll, std::vector<std::string> *e);
 
         void start() override;
+        
+        void read_file(std::string file) override;
 
         bool setup_for_new_file(std::string npath) override;
 
@@ -128,6 +132,8 @@ namespace masm
         {"stdinit.masm", "lib/init/stdinit.masm"},
         {"stdinit.mb", "lib/init/stdinit.mb"},
         {"stdinit.mdat", "lib/init/stdinit.mdat"},
+        {"stdutils.masm", "lib/utils/stdutils.masm"},
+        {"stddefs.mdat", "lib/utils/stddefs.mdat"},
 #endif
     };
 };

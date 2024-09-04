@@ -9,6 +9,7 @@
 #include "merry_config.h"
 #include "merry_types.h"
 #include "merry_opcodes.h"
+#include "expr.hpp"
 
 namespace masm
 {
@@ -41,13 +42,14 @@ namespace masm
         std::vector<mbyte_t> ST;       // Symbol Table
         std::unordered_map<size_t, size_t> symd;
 
-        std::unordered_map<std::string, size_t> data_addr;
+        std::unordered_map<std::string, size_t> *data_addr;
         std::unordered_map<std::string, size_t> *label_addr;
+                    Expr e;
 
     public:
         CodeGen() = default;
 
-        void setup_codegen(SymbolTable *_t, std::vector<Node> *_n, std::unordered_map<std::string, size_t> *lb);
+        void setup_codegen(SymbolTable *_t, std::vector<Node> *_n, std::unordered_map<std::string, size_t> *lb, std::unordered_map<std::string, size_t> *data_addr);
 
         std::vector<GenBinary> *get_code();
 

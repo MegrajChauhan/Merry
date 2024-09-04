@@ -1,0 +1,6 @@
+code ../stdtest/stdinittest.masm
+data ../stdtest/stdinittest.mdat
+
+depends stdinit.mb
+
+entry Main

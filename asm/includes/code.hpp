@@ -2,8 +2,8 @@
 #define _CODE_
 
 #include "lexer.hpp"
-#include "nodes.hpp"
 #include "symtable.hpp"
+#include "nodes.hpp"
 
 #define regr            \
     regr_line = t.line; \

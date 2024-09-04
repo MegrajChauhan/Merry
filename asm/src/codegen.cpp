@@ -1,10 +1,13 @@
 #include "codegen.hpp"
 
-void masm::CodeGen::setup_codegen(SymbolTable *_t, std::vector<Node> *_n, std::unordered_map<std::string, size_t> *lb)
+void masm::CodeGen::setup_codegen(SymbolTable *_t, std::vector<Node> *_n, std::unordered_map<std::string, size_t> *lb, std::unordered_map<std::string, size_t> *data_addr)
 {
     nodes = _n;
     table = _t;
     label_addr = lb;
+    this->data_addr = data_addr;
+    e.add_addr(data_addr);
+    e.add_table(_t);
 }
 
 /**
@@ -43,14 +46,14 @@ void masm::CodeGen::handle_arithmetic_reg_var(NodeArithmetic *a, msize_t op)
 {
     GenBinary b;
     std::string var = std::get<std::string>(a->second_oper);
-    if (data_addr.find(var) == data_addr.end())
+    if (data_addr->find(var) == data_addr->end())
     {
         // must be a constant
         a->second_oper = table->_const_list[var].value;
         handle_arithmetic_reg_imm(op, a);
         return;
     }
-    size_t var_addr = data_addr[std::get<std::string>(a->second_oper)];
+    size_t var_addr = (*data_addr)[std::get<std::string>(a->second_oper)];
     auto var_dets = table->variables[table->_var_list.find(var)->second];
     b.bytes.b8 = a->reg;
     switch (var_dets.type)
@@ -76,9 +79,6 @@ void masm::CodeGen::handle_arithmetic_reg_var(NodeArithmetic *a, msize_t op)
 
 bool masm::CodeGen::generate()
 {
-    // first generate for the data
-    generate_data();
-    give_address_to_labels();
     for (auto &node : *nodes)
     {
         switch (node.kind)
@@ -453,7 +453,7 @@ bool masm::CodeGen::generate()
             b.bytes.b2 = x->reg1;
             b.bytes.b2 <<= 4;
             b.bytes.b2 |= x->reg2;
-            b.full |= data_addr[x->var] & 0xFFFFFFFFFFFF;
+            b.full |= (*data_addr)[x->var] & 0xFFFFFFFFFFFF;
             code.push_back(b);
             break;
         }
@@ -473,7 +473,7 @@ bool masm::CodeGen::generate()
         {
             GenBinary b;
             b.bytes.b1 = OP_SIN;
-            b.full |= ((data_addr)[((NodeSIO *)node.node.get())->name] & 0xFFFFFFFFFFFF);
+            b.full |= ((*data_addr)[((NodeSIO *)node.node.get())->name] & 0xFFFFFFFFFFFF);
             code.push_back(b);
             break;
         }
@@ -481,7 +481,7 @@ bool masm::CodeGen::generate()
         {
             GenBinary b;
             b.bytes.b1 = OP_SOUT;
-            b.full |= ((data_addr)[((NodeSIO *)node.node.get())->name] & 0xFFFFFFFFFFFF);
+            b.full |= ((*data_addr)[((NodeSIO *)node.node.get())->name] & 0xFFFFFFFFFFFF);
             code.push_back(b);
             break;
         }
@@ -686,7 +686,7 @@ void masm::CodeGen::handle_float_var(NodeArithmetic *n, msize_t op)
     GenBinary b;
     b.bytes.b1 = op;
     b.bytes.b2 = n->reg;
-    b.full |= (data_addr[std::get<std::string>(n->second_oper)]) & 0xFFFFFFFFFFFF;
+    b.full |= ((*data_addr)[std::get<std::string>(n->second_oper)]) & 0xFFFFFFFFFFFF;
     code.push_back(b);
 }
 
@@ -723,7 +723,7 @@ void masm::CodeGen::handle_sva_svc_var(NodeSTACK *n, msize_t op)
         code[code.size() - 1].bytes.b1 = op - 145;
         return;
     }
-    b.full |= data_addr[std::get<std::pair<std::string, DataType>>(n->second_oper).first];
+    b.full |= (*data_addr)[std::get<std::pair<std::string, DataType>>(n->second_oper).first];
     code.push_back(b);
 }
 
@@ -739,18 +739,29 @@ void masm::CodeGen::generate_data()
     size_t start = 0;
     for (auto var : table->variables)
     {
+        if (var.is_expr)
+        {
+            e.add_expr(var.expr);
+            auto res = e.evaluate();
+            if (!res.has_value())
+            {
+                note(std::string("While evaluating expression here in line ") + std::string(std::to_string(var.line)));
+                die(1);
+            }
+            var.value = res.value();
+        }
         switch (var.type)
         {
         case BYTE:
         {
-            data_addr[var.name] = start;
+            (*data_addr)[var.name] = start;
             data.push_back(std::stoull(var.value) & 0xFF);
             start++;
             break;
         }
         case WORD:
         {
-            data_addr[var.name] = start;
+            (*data_addr)[var.name] = start;
             mword_t v = std::stoull(var.value);
             data.push_back(v & 0xFF);
             data.push_back((v >> 8) & 0xFF);
@@ -759,7 +770,7 @@ void masm::CodeGen::generate_data()
         }
         case DWORD:
         {
-            data_addr[var.name] = start;
+            (*data_addr)[var.name] = start;
             mdword_t v = std::stoull(var.value);
             data.push_back(v & 0xFF);
             data.push_back((v >> 8) & 0xFF);
@@ -770,7 +781,7 @@ void masm::CodeGen::generate_data()
         }
         case QWORD:
         {
-            data_addr[var.name] = start;
+            (*data_addr)[var.name] = start;
             mqword_t v = std::stoull(var.value);
             data.push_back(v & 0xFF);
             data.push_back((v >> 8) & 0xFF);
@@ -785,7 +796,7 @@ void masm::CodeGen::generate_data()
         }
         case FLOAT:
         {
-            data_addr[var.name] = start;
+            (*data_addr)[var.name] = start;
             mdword_t v = (mdword_t)(std::stof(var.value));
             data.push_back(v & 0xFF);
             data.push_back((v >> 8) & 0xFF);
@@ -796,7 +807,7 @@ void masm::CodeGen::generate_data()
         }
         case LFLOAT:
         {
-            data_addr[var.name] = start;
+            (*data_addr)[var.name] = start;
             mqword_t v = (mqword_t)(std::stod(var.value));
             data.push_back(v & 0xFF);
             data.push_back((v >> 8) & 0xFF);
@@ -811,7 +822,7 @@ void masm::CodeGen::generate_data()
         }
         case RESB:
         {
-            data_addr[var.name] = start;
+            (*data_addr)[var.name] = start;
             size_t len = std::stoull(var.value);
             for (size_t i = 0; i < len; i++)
                 data.push_back(0);
@@ -820,7 +831,7 @@ void masm::CodeGen::generate_data()
         }
         case RESW:
         {
-            data_addr[var.name] = start;
+            (*data_addr)[var.name] = start;
             size_t len = std::stoull(var.value) * 2;
             for (size_t i = 0; i < len; i++)
                 data.push_back(0);
@@ -829,7 +840,7 @@ void masm::CodeGen::generate_data()
         }
         case RESD:
         {
-            data_addr[var.name] = start;
+            (*data_addr)[var.name] = start;
             size_t len = std::stoull(var.value) * 4;
             for (size_t i = 0; i < len; i++)
                 data.push_back(0);
@@ -838,7 +849,7 @@ void masm::CodeGen::generate_data()
         }
         case RESQ:
         {
-            data_addr[var.name] = start;
+            (*data_addr)[var.name] = start;
             size_t len = std::stoull(var.value) * 8;
             for (size_t i = 0; i < len; i++)
                 data.push_back(0);
@@ -858,7 +869,7 @@ void masm::CodeGen::generate_data()
         {
         case STRING:
         {
-            data_addr[var.name] = start;
+            (*data_addr)[var.name] = start;
             for (auto _c : var.value)
             {
                 str_data.push_back(_c);
@@ -930,7 +941,7 @@ void masm::CodeGen::handle_mov_reg_var(NodeMov *n)
             return;
         }
     }
-    size_t addr = is_lbl ? (*label_addr)[_s.first] : data_addr.find(_s.first)->second;
+    size_t addr = is_lbl ? (*label_addr)[_s.first] : data_addr->find(_s.first)->second;
     b.bytes.b2 = n->reg;
     b.full |= addr;
     if (!is_lbl)
@@ -1026,7 +1037,7 @@ void masm::CodeGen::handle_push_pop_var(msize_t op, NodePushPop *n)
     GenBinary b;
     std::string name = std::get<std::string>(n->val);
     size_t addr = 0;
-    if ((data_addr.find(name) == data_addr.end()))
+    if ((data_addr->find(name) == data_addr->end()))
     {
         // It must be a label
         addr = (*label_addr)[name];
@@ -1036,7 +1047,7 @@ void masm::CodeGen::handle_push_pop_var(msize_t op, NodePushPop *n)
     }
     else
     {
-        addr = data_addr[name];
+        addr = (*data_addr)[name];
         auto dets = table->variables[table->_var_list[name]];
         switch (dets.type)
         {
@@ -1114,7 +1125,7 @@ void masm::CodeGen::handle_load_store_reg_var(NodeLoadStore *n, msize_t op)
 {
     GenBinary b;
     Variable var = table->variables[table->_var_list[std::get<std::string>(n->second_oper)]];
-    size_t addr = data_addr[std::get<std::string>(n->second_oper)];
+    size_t addr = (*data_addr)[std::get<std::string>(n->second_oper)];
     b.bytes.b1 = op;
     b.bytes.b2 = n->reg;
     b.full |= (addr & 0xFFFFFFFFFFFF);
@@ -1167,9 +1178,9 @@ void masm::CodeGen::generate_ST()
         ST.push_back(0);
         i++;
     }
-    for (auto l : data_addr)
+    for (auto l : *data_addr)
     {
-        symd[(data_addr)[l.first]] = i;
+        symd[(*data_addr)[l.first]] = i;
         for (char _c : l.first)
         {
             ST.push_back(_c);

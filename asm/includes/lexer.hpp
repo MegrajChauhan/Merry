@@ -5,10 +5,11 @@
 #include <memory>
 #include <optional>
 #include <unordered_map>
+#include <vector>
 #include "error.hpp"
-#include "nodes.hpp"
+#include "defs.hpp"
 
-#define c *curr
+#define _curr (*curr)
 
 /**
  * Rules of an expression:
@@ -18,193 +19,6 @@
 
 namespace masm
 {
-    enum TokenType
-    {
-        MB_C, // pseudotoken
-        MB_DATA,
-        MB_CODE,
-        IDENTIFIER,
-        NUM_INT,
-        NUM_FLOAT,
-        EXPR,
-        STR,
-        KEY_DB,
-        KEY_DW,
-        KEY_DD,
-        KEY_DQ,
-        KEY_DS,
-        KEY_DF,
-        KEY_DC,
-        KEY_DLF,
-        KEY_RB,
-        KEY_RW,
-        KEY_RD,
-        KEY_RQ,
-        OPER_DOT, // a pseudotoken
-        KEY_PROC,
-        KEY_Ma,
-        KEY_Mb,
-        KEY_Mc,
-        KEY_Md,
-        KEY_Me,
-        KEY_Mf,
-        KEY_M1,
-        KEY_M2,
-        KEY_M3,
-        KEY_M4,
-        KEY_M5,
-        KEY_Mm1,
-        KEY_Mm2,
-        KEY_Mm3,
-        KEY_Mm4,
-        KEY_Mm5,
-        INST_NOP,
-        INST_HLT,
-        INST_ADD,
-        INST_SUB,
-        INST_MUL,
-        INST_DIV,
-        INST_MOD,
-        INST_IADD,
-        INST_ISUB,
-        INST_IMUL,
-        INST_IDIV,
-        INST_IMOD,
-        INST_ADDF,
-        INST_SUBF,
-        INST_MULF,
-        INST_DIVF,
-        INST_ADDLF,
-        INST_SUBLF,
-        INST_MULLF,
-        INST_DIVLF,
-        INST_MOV,
-        INST_MOVL,
-        INST_MOVB,
-        INST_MOVW,
-        INST_MOVD,
-        INST_MOVESXB,
-        INST_MOVESXW,
-        INST_MOVESXD, // there is no need for 64-bit which should be obvious
-        INST_JMP,
-        INST_CALL,
-        INST_RET,
-        INST_SVA,
-        INST_SVC,
-        INST_PUSHA,
-        INST_POPA,
-        INST_PUSH,
-        INST_POP,
-        INST_NOT,
-        INST_INC,
-        INST_DEC,
-        INST_AND,
-        INST_OR,
-        INST_XOR,
-        INST_LSHIFT,
-        INST_RSHIFT,
-        INST_CMP,
-        INST_LEA,
-        INST_LOADB,
-        INST_STOREB,
-        INST_LOADW,
-        INST_STOREW,
-        INST_LOADD,
-        INST_STORED,
-        INST_LOADQ,
-        INST_STOREQ,
-        INST_CMPXCHG,
-        INST_OUTR,
-        INST_UOUTR,
-        INST_CIN,
-        INST_COUT,
-        INST_SIN,
-        INST_SOUT,
-        INST_IN,
-        INST_INW,
-        INST_IND,
-        INST_INQ,
-        INST_UIN,
-        INST_UINW,
-        INST_UIND,
-        INST_UINQ,
-        INST_OUT,
-        INST_OUTW,
-        INST_OUTD,
-        INST_OUTQ,
-        INST_UOUT,
-        INST_UOUTW,
-        INST_UOUTD,
-        INST_UOUTQ,
-        INST_INF,
-        INST_OUTF,
-        INST_INLF,
-        INST_OUTLF,
-        INST_EXCHGB,
-        INST_EXCHGW,
-        INST_EXCHGD,
-        INST_EXCHGQ,
-        INST_MOVEB,
-        INST_MOVEW,
-        INST_MOVED,
-        INST_CFLAGS,
-        INST_RESET,
-        INST_CLZ,
-        INST_CLN,
-        INST_CLC,
-        INST_CLO,
-        INST_JNZ,
-        INST_JZ,
-        INST_JNE,
-        INST_JE,
-        INST_JNC,
-        INST_JC,
-        INST_JNO,
-        INST_JO,
-        INST_JNN,
-        INST_JN,
-        INST_JNG,
-        INST_JG,
-        INST_JNS,
-        INST_JS,
-        INST_JGE,
-        INST_JSE,
-        INST_LOOP,
-        INST_INTR,
-        INST_SETE,
-        INST_SYSCALL,
-        INST_CALLE,
-        KEY_ATM,
-        KEY_DEPENDS,
-        KEY_DEFINED,
-        KEY_END,
-        KEY_ENTRY,
-        KEY_EEPE,
-        KEY_TEEPE,
-        KEY_NDEFINED,
-        OPER_PLUS,
-        OPER_MINUS,
-        OPER_MUL,
-        OPER_DIV,
-        OPER_OPEN_PAREN,
-        OPER_CLOSE_PAREN,
-        OPER_AND,  // &&
-        OPER_OR,   // ||
-        OPER_XOR,  // ^
-        OPER_NOT,  // !
-        OPER_LS,   // >>
-        OPER_RS,   // <<
-        OPER_LAND, // &
-        OPER_LOR,  // |
-        OPER_LNOT, // ~
-        OPER_LT,   // <
-        OPER_GT,   // >
-        OPER_LE,   // <=
-        OPER_GE,   // >=
-        OPER_EQ,   // ==
-        OPER_NEQ,  // !=
-    };
-
     static std::unordered_map<std::string, TokenType>
         iden_map =
             {
@@ -223,6 +37,7 @@ namespace masm
                 {"GE", OPER_GE},
                 {"EQ", OPER_EQ},
                 {"NEQ", OPER_NEQ},
+                {"PTR", OPER_PTR},
                 {"(", OPER_OPEN_PAREN},
                 {")", OPER_CLOSE_PAREN},
                 {"/", OPER_DIV},
@@ -385,6 +200,14 @@ namespace masm
                 {"teepe", KEY_TEEPE},
                 {"depends", KEY_DEPENDS}};
 
+    struct Token
+    {
+        std::string val;
+        TokenType type;
+        size_t line, col;
+        std::vector<Token> expr;
+    };
+
     static std::unordered_map<TokenType, Register>
         regr_map =
             {
@@ -404,14 +227,6 @@ namespace masm
                 {KEY_Mm3, Mm3},
                 {KEY_Mm4, Mm4},
                 {KEY_Mm5, Mm5},
-    };
-
-    struct Token
-    {
-        std::string val;
-        TokenType type;
-        size_t line, col;
-        std::vector<Token> expr;
     };
 
     class Lexer

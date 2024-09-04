@@ -2,15 +2,12 @@
 
 void masm::Context::init_context(std::string path)
 {
+    inp_file = path;
     if (!path.ends_with(".mb"))
     {
         note("The given input file is not a valid input file.");
         die(1);
     }
-    if (_std_paths.find(path) == _std_paths.end())
-        inp_file = std::filesystem::current_path() / path;
-    else
-        inp_file = _std_paths.find(path)->second;
     if (!std::filesystem::exists(inp_file))
     {
         note("The given input file " + inp_file + " doesn't exist.");
@@ -32,7 +29,60 @@ void masm::Context::init_context(std::string path)
     evaluator.add_table(&table);
 }
 
+void masm::ChildContext::init_context(std::string path)
+{
+    inp_file = path;
+    if (!path.ends_with(".mb"))
+    {
+        note("The given input file is not a valid input file.");
+        die(1);
+    }
+    if (!std::filesystem::exists(inp_file))
+    {
+        note("The given input file " + inp_file + " doesn't exist.");
+        die(1);
+    }
+    if (std::filesystem::is_directory(inp_file))
+    {
+        note("The given input file is a directory and not a file.");
+        die(1);
+    }
+    std::fstream ins(inp_file, std::ios::in);
+    while (!ins.eof())
+    {
+        std::string l;
+        std::getline(ins, l);
+        inp_file_conts += l + '\n';
+    }
+    ins.close();
+    evaluator.add_table(table);
+}
+
 void masm::Context::read_file(std::string file)
+{
+    std::fstream _s(file, std::ios::in);
+    curr_file = file;
+    if (file.ends_with(".mdat"))
+        curr_file_type = DATA;
+    else if (file.ends_with(".masm"))
+        curr_file_type = CODE;
+    else
+    {
+        err(inp_file, inp_file_lexer.get_line(), inp_file_lexer.get_col() - file.length(), inp_file_lexer.get_col(), building, invalext, ERR_STR, "Unknown file type. Expected \".mdat\" or \".masm\"", inp_file_lexer.extract_line());
+        die(1);
+    }
+    curr_file_type = (file.ends_with(".mdat") ? DATA : CODE);
+    curr_file_conts = "";
+    while (!_s.eof())
+    {
+        std::string l;
+        std::getline(_s, l);
+        curr_file_conts += l + '\n';
+    }
+    _s.close();
+}
+
+void masm::ChildContext::read_file(std::string file)
 {
     std::fstream _s(file, std::ios::in);
     curr_file = file;
@@ -121,7 +171,12 @@ void masm::Context::start()
                 die(1);
             }
             ChildContext cont(&eepe);
-            cont.init_context(std::filesystem::current_path() / _file);
+            std::string _p = _file;
+            if (_std_paths.find(_p) == _std_paths.end())
+                _p = std::filesystem::current_path() / _p;
+            else
+                _p = "../" + _std_paths.find(_p)->second;
+            cont.init_context(_p);
             cont.setup_structure(&label_addr, &teepe, &table, &filelist, &flist, &nodes, &proc_list, &labels, &entries);
             cont.start();
             break;
@@ -223,11 +278,13 @@ void masm::Context::start()
     }
     analyse_proc();
     confirm_entries();
+    gen.setup_codegen(&table, &nodes, &label_addr, &data_addr);
+    gen.generate_data();
+    gen.give_address_to_labels();
     make_node_analysis();
     /// NOTE: The following change that I made to "label_addr" is an idiotic move
     // It would have been better with just one function.
     // I am too lazy to change it back so a good lesson.
-    gen.setup_codegen(&table, &nodes, &label_addr);
     gen.generate();
 }
 
@@ -321,7 +378,12 @@ void masm::ChildContext::start()
                 die(1);
             }
             ChildContext cont(eepe);
-            cont.init_context(std::filesystem::current_path() / _file);
+            std::string _p = _file;
+            if (_std_paths.find(_p) == _std_paths.end())
+                _p = std::filesystem::current_path() / _p;
+            else
+                _p = _std_paths.find(_p)->second;
+            cont.init_context(_p);
             cont.setup_structure(label_addr, teepe, table, filelist, flist, nodes, proc_list, labels, entries);
             cont.start();
             break;
@@ -425,7 +487,10 @@ void masm::ChildContext::start()
 
 bool masm::Context::setup_for_new_file(std::string npath)
 {
-    npath = (std::filesystem::current_path() / npath);
+    if (_std_paths.find(npath) == _std_paths.end())
+        npath = std::filesystem::current_path() / npath;
+    else
+        inp_file = "../" + _std_paths.find(npath)->second;
     auto res = filelist.find(npath);
     if (res != filelist.end())
         return false; // file already included
@@ -437,7 +502,10 @@ bool masm::Context::setup_for_new_file(std::string npath)
 
 bool masm::ChildContext::setup_for_new_file(std::string npath)
 {
-    npath = (std::filesystem::current_path() / npath);
+    if (_std_paths.find(npath) == _std_paths.end())
+        npath = std::filesystem::current_path() / npath;
+    else
+        inp_file =  "../" +  _std_paths.find(npath)->second;
     auto res = filelist->find(npath);
     if (res != filelist->end())
         return false; // file already included
@@ -826,6 +894,11 @@ void masm::Context::make_node_analysis()
             auto r = table._const_list.find(var_name.first);
             if (r == table._const_list.end())
             {
+                if (n.kind == MOV_VAR || n.kind == MOVL_VAR)
+                {
+                    if ((labels.find(var_name.first) != labels.end()))
+                        break;
+                }
                 fu_err(*n._file.get(), n.line, "The variable '" + var_name.first + "' doesn't exist.");
                 die(1);
             }

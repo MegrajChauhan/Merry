@@ -1,0 +1,7 @@
+;; Standard definitions
+
+dc _MSTD_NULL_ -1
+
+dc _MSTD_FAILURE_ -1
+dc _MSTD_SUCCESS_ 0
+;; Any other returns may signify something

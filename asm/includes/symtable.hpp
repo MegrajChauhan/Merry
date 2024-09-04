@@ -5,28 +5,17 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
+#include "defs.hpp"
+#include "lexer.hpp"
 
 namespace masm
 {
-    enum DataType
-    {
-        BYTE,
-        WORD,
-        DWORD,
-        QWORD,
-        FLOAT,
-        LFLOAT,
-        STRING,
-        RESB,
-        RESW,
-        RESD,
-        RESQ
-    };
-
     struct Variable
     {
         std::string name;
         std::string value;
+        std::vector<Token> expr;
+        bool is_expr = false;
         DataType type;
         size_t line;
         std::shared_ptr<std::string> file;

@@ -1,0 +1,10 @@
+proc Main
+
+Main
+    call __builtin_std_init
+    mov Ma, [PTR argc]
+    mov Mb, [PTR argv]
+    call __builtin_std_get_cmd_options
+    loadb Ma, Ma
+    out Ma
+    halt

@@ -1,0 +1,12 @@
+;; Some quick and useful procedures 
+
+proc __builtin_quick_save
+proc __builtin_quick_restore
+
+__builtin_quick_save
+    pusha
+    ret
+
+__builtin_quick_restore
+    popa
+    ret

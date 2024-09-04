@@ -2,7 +2,7 @@
 
 # Variable definitions
 CC = g++
-FLAGS = -Wall -Wextra -MMD -MP -O3 -std=c++20
+FLAGS = -Wall -Wextra -MMD -MP -O3 -std=c++20 -g
 DIRS = includes
 SRC_DIR = src/
 INC_DIRS = ${addprefix -I, ${DIRS}}

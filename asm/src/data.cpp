@@ -6,7 +6,6 @@ void masm::Data::setup_for_read(SymbolTable *t, std::shared_ptr<std::string> f, 
     file = f;
     fname = *f.get();
     l.setup_lexer(fconts, f);
-    evaluator.add_table(t);
 }
 
 bool masm::Data::read_data()
@@ -137,15 +136,7 @@ bool masm::Data::handle_defines(DataType t, bool _const)
         // Yes, db, dw etc can also have floats but they are ignored in the final conversion
         if (value.type == EXPR)
         {
-            evaluator.add_expr(value.expr);
-            auto _r = evaluator.evaluate();
-            if (!_r.has_value())
-            {
-                fu_err(fname, value.line, "While evaluating expression here.");
-                return false;
-            }
-            value.val = _r.value();
-            value.type = NUM_FLOAT;
+            var.is_expr = true;
         }
         else if (value.type != NUM_INT && value.type != NUM_FLOAT)
         {
@@ -159,6 +150,7 @@ bool masm::Data::handle_defines(DataType t, bool _const)
     var.name = id.val;
     var.type = (_const ? (value.type == NUM_FLOAT ? FLOAT : BYTE) : t);
     var.value = has_value ? value.val : "0";
+    var.expr = value.expr;
     return _const ? add_const(var) : add_variable(var);
 }
 

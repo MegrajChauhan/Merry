@@ -46,19 +46,19 @@ int main(int argc, char **argv)
         std::cout << version_message + VERSION << std::endl;
         return 0;
     }
-    if (!_asm.get_option("input").first)
-    {
-        std::cerr << "Error: No input file provided\n";
-        _asm.print_help();
-        return -1;
-    }
+    // if (!_asm.get_option("input").first)
+    // {
+    //     std::cerr << "Error: No input file provided\n";
+    //     _asm.print_help();
+    //     return -1;
+    // }
     ed = _asm.get_option("enable_debugging").first;
     dst = _asm.get_option("disable_st").first;
     cd = _asm.get_option("child_debug").first;
     cdf = _asm.get_option("child_debug_wait").first;
     output_filename = _asm.get_option("output");
     input_filename = _asm.get_option("input");
-    _c.init_context(input_filename.second);
+    _c.init_context("../stdtest/stdinittest.mb");
     _c.start();
     std::string _output_fname = output_filename.first ? output_filename.second : "a.mbin";
     if (!_output_fname.ends_with(".mbin"))
@@ -79,12 +79,12 @@ Masm::Masm(int argc, char **argv)
     {
         given_options.push_back(argv[i]);
     }
-    if (argc < 2)
-    {
-        std::cerr << "Error: not enough arguments\n";
-        print_help();
-        exit(EXIT_FAILURE);
-    }
+    // if (argc < 2)
+    // {
+    //     std::cerr << "Error: not enough arguments\n";
+    //     print_help();
+    //     exit(EXIT_FAILURE);
+    // }
 }
 
 void Masm::print_help()

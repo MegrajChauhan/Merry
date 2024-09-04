@@ -15,48 +15,80 @@
  * or
  *
  */
+
+enum Associativity
+{
+    LEFT,
+    RIGHT,
+    NONE
+};
+
 static int get_precedence(masm::TokenType t)
 {
     switch (t)
     {
-    case masm::TokenType::OPER_OR:
+    case masm::TokenType::OPER_OR: // ||
         return 0;
-    case masm::TokenType::OPER_AND:
+    case masm::TokenType::OPER_AND: // &&
         return 1;
-    case masm::TokenType::OPER_LOR:
+    case masm::TokenType::OPER_LOR: // |
         return 2;
-    case masm::TokenType::OPER_XOR:
+    case masm::TokenType::OPER_XOR: // ^
         return 3;
-    case masm::TokenType::OPER_LAND:
+    case masm::TokenType::OPER_LAND: // &
         return 4;
-    case masm::TokenType::OPER_LNOT:
-        return 5;
-    case masm::TokenType::OPER_EQ:
-    case masm::TokenType::OPER_NEQ:
+    case masm::TokenType::OPER_EQ:  // ==
+    case masm::TokenType::OPER_NEQ: // !=
         return 6;
+    case masm::TokenType::OPER_GT: // >
+    case masm::TokenType::OPER_LT: // <
+    case masm::TokenType::OPER_GE: // >=
+    case masm::TokenType::OPER_LE: // <=
+        return 7;
+    case masm::TokenType::OPER_LS: // <<
+    case masm::TokenType::OPER_RS: // >>
+        return 8;
+    case masm::TokenType::OPER_PLUS:  // +
+    case masm::TokenType::OPER_MINUS: // -
+        return 9;
+    case masm::TokenType::OPER_MUL: // *
+    case masm::TokenType::OPER_DIV: // /
+        return 10;
+    case masm::TokenType::OPER_LNOT: // ~(bitwise not)
+    case masm::TokenType::OPER_NOT:  // !
+        return 11;
+    }
+    return -1;
+}
+
+static Associativity get_associativity(masm::TokenType t)
+{
+    switch (t)
+    {
+    case masm::TokenType::OPER_OR:
+    case masm::TokenType::OPER_AND:
+    case masm::TokenType::OPER_LOR:
+    case masm::TokenType::OPER_XOR:
+    case masm::TokenType::OPER_LAND:
     case masm::TokenType::OPER_GT:
     case masm::TokenType::OPER_LT:
     case masm::TokenType::OPER_GE:
     case masm::TokenType::OPER_LE:
-        return 7;
+    case masm::TokenType::OPER_EQ:
+    case masm::TokenType::OPER_NEQ:
     case masm::TokenType::OPER_LS:
     case masm::TokenType::OPER_RS:
-        return 8;
     case masm::TokenType::OPER_PLUS:
     case masm::TokenType::OPER_MINUS:
-        return 9;
     case masm::TokenType::OPER_MUL:
     case masm::TokenType::OPER_DIV:
-        return 10;
+        return LEFT;
+    case masm::TokenType::OPER_LNOT:
     case masm::TokenType::OPER_NOT:
-        return 11;
+        return RIGHT;
     }
+    return NONE;
 }
-
-/*
-  To keep things simple and easy, we will skip precedence completely.
-  We may take the precedence to be left to right for all operators
-*/
 
 void masm::Expr::add_expr(std::vector<Token> _e)
 {
@@ -68,15 +100,24 @@ void masm::Expr::add_table(SymbolTable *t)
     table = t;
 }
 
+void masm::Expr::add_addr(std::unordered_map<std::string, size_t> *addr)
+{
+    data_addr = addr;
+}
+
 std::optional<std::string> masm::Expr::evaluate()
 {
     std::string res;
+    bool _addr = false;
     for (auto t : expr)
     {
         switch (t.type)
         {
         case TokenType::OPER_OPEN_PAREN:
             opers.push(t.type);
+            break;
+        case TokenType::OPER_PTR:
+            _addr = true;
             break;
         case TokenType::NUM_INT:
         case TokenType::NUM_FLOAT:
@@ -99,7 +140,22 @@ std::optional<std::string> masm::Expr::evaluate()
                     note("Unexpected token in expression.");
                     return {};
                 }
-                operads.push(std::stod(v.value));
+                if (v.is_expr)
+                {
+                    Expr e;
+                    e.add_addr(data_addr);
+                    e.add_expr(v.expr);
+                    e.add_table(table);
+                    auto _r = e.evaluate();
+                    if (!_r.has_value())
+                        return {};
+                    table->variables[res->second].value = _r.value();
+                    table->variables[res->second].is_expr = false;
+                }
+                if (_addr)
+                    operads.push((double)((*data_addr)[t.val]));
+                else
+                    operads.push(std::stod(v.value));
             }
             else
             {
@@ -109,8 +165,26 @@ std::optional<std::string> masm::Expr::evaluate()
                     note("Expected a variable or a constant that exists.");
                     return {};
                 }
+                if (res1->second.type == EXPR)
+                {
+                    Expr e;
+                    e.add_addr(data_addr);
+                    e.add_expr(res1->second.expr);
+                    e.add_table(table);
+                    auto _r = e.evaluate();
+                    if (!_r.has_value())
+                        return {};
+                    table->_const_list[res1->second.name].value = _r.value();
+                    table->_const_list[res1->second.name].is_expr = false;
+                }
+                if (_addr)
+                {
+                    note("You cannot have addresses to constants.");
+                    return {};
+                }
                 operads.push(std::stod(res1->second.value));
             }
+            _addr = false;
             break;
         }
         case TokenType::OPER_NOT:
@@ -137,7 +211,7 @@ std::optional<std::string> masm::Expr::evaluate()
         case TokenType::OPER_MUL:
         case TokenType::OPER_DIV:
         {
-            if (!opers.empty() && (get_precedence(opers.top()) >= get_precedence(t.type)))
+            if (!opers.empty() && ((get_precedence(opers.top()) >= get_precedence(t.type) && get_associativity(opers.top()) == LEFT) || (get_precedence(opers.top()) > get_precedence(t.type) && get_associativity(opers.top()) == RIGHT)))
                 if (!perform())
                     return {};
             opers.push(t.type);
@@ -155,6 +229,7 @@ std::optional<std::string> masm::Expr::evaluate()
                 note("Invalid expression: Stray PARENTHESIS.");
                 return {};
             }
+            opers.pop();
             break;
         }
         default:
@@ -167,7 +242,7 @@ std::optional<std::string> masm::Expr::evaluate()
         if (!perform())
             return {};
     }
-    if (!operads.empty())
+    if (!operads.empty() || _addr)
     {
         note("Invalid expression.");
         return {};

@@ -1,0 +1,5 @@
+code stdutils.masm
+data stdinit.mdat
+code stdinit.masm
+
+;; The simplest that you can get with this

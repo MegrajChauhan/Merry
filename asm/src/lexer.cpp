@@ -15,7 +15,7 @@ void masm::Lexer::consume()
 {
     if (curr == end)
         return;
-    if (c == '\n')
+    if (_curr == '\n')
     {
         line++;
         col = 0;
@@ -35,7 +35,7 @@ void masm::Lexer::rid_until(char until)
 {
     while (curr != end)
     {
-        if (c != until)
+        if (_curr != until)
             consume();
         else
             break;
@@ -63,7 +63,7 @@ std::optional<masm::Token> masm::Lexer::next_token(bool _is_expr)
     t.type = MB_C;
     while (curr != end)
     {
-        if (c == ';')
+        if (_curr == ';')
         {
             if (peek() == ';')
             {
@@ -77,17 +77,17 @@ std::optional<masm::Token> masm::Lexer::next_token(bool _is_expr)
                 return {};
             }
         }
-        else if (std::isspace(c))
+        else if (std::isspace(_curr))
         {
-            while (std::isspace(c))
+            while (std::isspace(_curr))
                 consume();
         }
-        else if (std::isalpha(c) || c == '_' || c == ':' || c == '@')
+        else if (std::isalpha(_curr) || _curr == '_' || _curr == ':' || _curr == '@')
         {
             t = group_word();
             break;
         }
-        else if (std::isdigit(c) || (c == '-' && std::isdigit(peek())))
+        else if (std::isdigit(_curr) || (_curr == '-' && std::isdigit(peek())))
         {
             auto res = group_num();
             if (!res.has_value())
@@ -95,68 +95,68 @@ std::optional<masm::Token> masm::Lexer::next_token(bool _is_expr)
             t = res.value();
             break;
         }
-        else if (c == '-')
+        else if (_curr == '-')
         {
             // if the above condition didn't work then this is a sole minus sign
             t.type = OPER_MINUS;
             break;
         }
-        else if (c == '+')
+        else if (_curr == '+')
         {
             t.type = OPER_PLUS;
             break;
         }
-        else if (c == '*')
+        else if (_curr == '*')
         {
             t.type = OPER_MUL;
             break;
         }
-        else if (c == '/')
+        else if (_curr == '/')
         {
             t.type = OPER_DIV;
             break;
         }
-        else if (c == '(')
+        else if (_curr == '(')
         {
             t.type = OPER_OPEN_PAREN;
             break;
         }
-        else if (c == ')')
+        else if (_curr == ')')
         {
             t.type = OPER_CLOSE_PAREN;
             break;
         }
-        else if (c == '&')
+        else if (_curr == '&')
         {
             t.type = OPER_LAND;
             break;
         }
-        else if (c == '|')
+        else if (_curr == '|')
         {
             t.type = OPER_LOR;
             break;
         }
-        else if (c == '!')
+        else if (_curr == '!')
         {
             t.type = OPER_NOT;
             break;
         }
-        else if (c == '<')
+        else if (_curr == '<')
         {
             t.type = OPER_LS;
             break;
         }
-        else if (c == '>')
+        else if (_curr == '>')
         {
             t.type = OPER_RS;
             break;
         }
-        else if (c == '~')
+        else if (_curr == '~')
         {
             t.type = OPER_LNOT;
             break;
         }
-        else if (c == '\"')
+        else if (_curr == '\"')
         {
             auto res = gather_quote_string();
             if (!res.has_value())
@@ -164,18 +164,18 @@ std::optional<masm::Token> masm::Lexer::next_token(bool _is_expr)
             t = res.value();
             break;
         }
-        else if (c == ',')
+        else if (_curr == ',')
         {
             consume();
         }
-        else if (c == '[')
+        else if (_curr == '[')
         {
             t.col = col;
             t.line = line;
             consume();
-            while (curr != end && c != ']')
+            while (curr != end && _curr != ']')
             {
-                if (c == '[' && _is_expr)
+                if (_curr == '[' && _is_expr)
                 {
                     err(*filepath.get(), line, col, col + 1, _lexing, syntaxerr, ERR_STR, "Nested expressions aren't a thing here.", extract_line());
                     return {};
@@ -199,7 +199,7 @@ std::optional<masm::Token> masm::Lexer::next_token(bool _is_expr)
         }
         else
         {
-            if (c == '.' && ignore_dots)
+            if (_curr == '.' && ignore_dots)
             {
                 t.col = col;
                 t.line = line;
@@ -223,9 +223,9 @@ masm::Token masm::Lexer::group_word()
 {
     std::string wrd;
     size_t st = col;
-    while (std::isalnum(c) || c == '_' || c == ':' || c == '@')
+    while (std::isalnum(_curr) || _curr == '_' || _curr == ':' || _curr == '@')
     {
-        wrd += c;
+        wrd += _curr;
         consume();
     }
     auto res = iden_map.find(wrd);
@@ -248,13 +248,13 @@ std::optional<masm::Token> masm::Lexer::group_num()
     int d_count = 0;
     std::string val;
     size_t st = col;
-    if (c == '-')
+    if (_curr == '-')
     {
-        val += c;
+        val += _curr;
         consume();
     }
     char _c = peek();
-    if (std::isdigit(c) && c == '0' && (_c == 'x' || _c == 'b' || _c == 'o'))
+    if (std::isdigit(_curr) && _curr == '0' && (_c == 'x' || _c == 'b' || _c == 'o'))
     {
         // These are not normal numbers
         // We will do something that shouldn't be done in real assemblers intended for commercial purposes
@@ -277,9 +277,9 @@ std::optional<masm::Token> masm::Lexer::group_num()
     }
     else
     {
-        while (std::isdigit(c) || c == '.')
+        while (std::isdigit(_curr) || _curr == '.')
         {
-            if (c == '.')
+            if (_curr == '.')
             {
                 if (ignore_dots)
                     break;
@@ -290,7 +290,7 @@ std::optional<masm::Token> masm::Lexer::group_num()
                 err(*filepath.get(), line, st, col, _lexing, syntaxerr, ERR_STR, "More than one '.' are not allowed.", extract_line());
                 return {};
             }
-            val += c;
+            val += _curr;
             consume();
         }
         if (d_count > 0)
@@ -312,14 +312,14 @@ std::optional<masm::Token> masm::Lexer::group_num()
 std::string masm::Lexer::get_a_group()
 {
     std::string grp;
-    if (std::isspace(c))
+    if (std::isspace(_curr))
     {
-        while (std::isspace(c))
+        while (std::isspace(_curr))
             consume();
     }
-    while (!std::isspace(c) && curr != end && c != ';')
+    while (!std::isspace(_curr) && curr != end && _curr != ';')
     {
-        grp += c;
+        grp += _curr;
         consume();
     }
     return grp;
@@ -367,12 +367,12 @@ std::optional<masm::Token> masm::Lexer::gather_quote_string()
     // This function is called when a "\"" comes across
     consume(); // get rid of it
     // The things inside the quote will last until the next line too
-    while (curr != end && c != '\"')
+    while (curr != end && _curr != '\"')
     {
-        str += c;
+        str += _curr;
         consume();
     }
-    if (c != '\"')
+    if (_curr != '\"')
     {
         // The only thing that can happen is we reached EOF
         err(*filepath.get(), l, st, st + 1, _lexing, syntaxerr, ERR_STR, "This quote was never terminated.", get_from_line(l));
@@ -398,14 +398,14 @@ std::string masm::Lexer::read_hex(bool neg)
 {
     std::string h = neg ? "-0x" : "0x";
     consume();
-    if (!(std::isdigit(c) || (c >= 'A' && c <= 'F')))
+    if (!(std::isdigit(_curr) || (_curr >= 'A' && _curr <= 'F')))
     {
         note("Invalid Hexadecimal value: Where are the numbers?");
         die(1);
     }
-    while (std::isdigit(c) || (c >= 'A' && c <= 'F'))
+    while (std::isdigit(_curr) || (_curr >= 'A' && _curr <= 'F'))
     {
-        h += c;
+        h += _curr;
         consume();
     }
     long long tmp = std::stoll(h, NULL, 16);
@@ -417,14 +417,14 @@ std::string masm::Lexer::read_oct(bool neg)
 {
     std::string h = neg ? "-0o" : "0o";
     consume();
-    if (!(c >= '0' && c <= '7'))
+    if (!(_curr >= '0' && _curr <= '7'))
     {
         note("Invalid Octal value: Where are the numbers?");
         die(1);
     }
-    while ((c >= '0' && c <= '7'))
+    while ((_curr >= '0' && _curr <= '7'))
     {
-        h += c;
+        h += _curr;
         consume();
     }
     long long tmp = std::stoll(h, NULL, 8);
@@ -436,14 +436,14 @@ std::string masm::Lexer::read_bin(bool neg)
 {
     std::string h = neg ? "-0b" : "0b";
     consume();
-    if (!(c == '0' || c == '1'))
+    if (!(_curr == '0' || _curr == '1'))
     {
         note("Invalid Binary value: Where are the numbers?");
         die(1);
     }
-    while ((c == '0' || c == '1'))
+    while ((_curr == '0' || _curr == '1'))
     {
-        h += c;
+        h += _curr;
         consume();
     }
     long long tmp = std::stoll(h, NULL, 2);
