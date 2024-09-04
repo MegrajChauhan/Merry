@@ -9,7 +9,6 @@ void masm::Code::setup_code_read(std::vector<Node> *n, std::unordered_map<std::s
     _l.setup_lexer(fcont, fn);
     table = sym;
     label_list = lbl_list;
-    evaluator.add_table(sym);
 }
 
 bool masm::Code::read_code()
@@ -299,11 +298,11 @@ bool masm::Code::read_code()
                 return false;
             break;
         case INST_LSHIFT:
-            if (!handle_logical_inst(LSHIFT, false))
+            if (!handle_logical_inst(LSHIFT, true))
                 return false;
             break;
         case INST_RSHIFT:
-            if (!handle_logical_inst(RSHIFT, false))
+            if (!handle_logical_inst(RSHIFT, true))
                 return false;
             break;
         case INST_CMP:
@@ -499,6 +498,8 @@ bool masm::Code::read_code()
 void masm::Code::handle_one(NodeKind k)
 {
     Node node;
+    node.line = _l.get_line();
+    node._file = file;
     node.kind = k;
     nodes->push_back(std::move(node));
 }
@@ -588,6 +589,8 @@ bool masm::Code::handle_names(bool _proc)
 bool masm::Code::handle_arithmetic_unsigned(NodeKind k)
 {
     Node node;
+    node.line = _l.get_line();
+    node._file = file;
     node.node = std::make_unique<NodeArithmetic>();
     NodeArithmetic *a = (NodeArithmetic *)node.node.get();
     auto res = _l.next_token();
@@ -614,25 +617,15 @@ bool masm::Code::handle_arithmetic_unsigned(NodeKind k)
     {
     case IDENTIFIER:
     {
-        if (check_var(t.val) && check_const(t.val))
-        {
-            err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "The variable \"" + t.val + "\" doesn't exist.", _l.get_from_line(t.line));
-            return false;
-        }
         node.kind = (NodeKind)(k + 2);
         a->second_oper = t.val;
         break;
     }
     case EXPR:
     {
-        evaluator.add_expr(t.expr);
-        auto _r = evaluator.evaluate();
-        if (!_r.has_value())
-        {
-            fu_err(fname, t.line, "While evaluating the expression here.");
-            return false;
-        }
-        t.val = _r.value();
+        node.kind = (NodeKind)(k + 3);
+        a->second_oper = t.expr;
+        break;
     }
     case NUM_INT:
     {
@@ -659,6 +652,8 @@ bool masm::Code::handle_arithmetic_unsigned(NodeKind k)
 bool masm::Code::handle_mov(NodeKind k)
 {
     Node node;
+    node.line = _l.get_line();
+    node._file = file;
     node.node = std::make_unique<NodeMov>();
     NodeMov *a = (NodeMov *)node.node.get();
     auto res = _l.next_token();
@@ -685,11 +680,6 @@ bool masm::Code::handle_mov(NodeKind k)
     {
     case IDENTIFIER:
     {
-        if (check_var(t.val) && check_lbl(t.val) && check_const(t.val))
-        {
-            err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "The identifier \"" + t.val + "\" doesn't exist.", _l.get_from_line(t.line));
-            return false;
-        }
         node.kind = (NodeKind)(k + 2);
         a->second_oper = std::make_pair(t.val, BYTE);
         break;
@@ -702,14 +692,9 @@ bool masm::Code::handle_mov(NodeKind k)
     }
     case EXPR:
     {
-        evaluator.add_expr(t.expr);
-        auto _r = evaluator.evaluate();
-        if (!_r.has_value())
-        {
-            fu_err(fname, t.line, "While evaluating the expression here.");
-            return false;
-        }
-        t.val = _r.value();
+        node.kind = (NodeKind)(k + 3);
+        a->second_oper = t.expr;
+        break;
     }
     case NUM_FLOAT:
     {
@@ -736,6 +721,8 @@ bool masm::Code::handle_mov(NodeKind k)
 bool masm::Code::handle_sva_svc(NodeKind k)
 {
     Node node;
+    node.line = _l.get_line();
+    node._file = file;
     node.node = std::make_unique<NodeSTACK>();
     NodeSTACK *a = (NodeSTACK *)node.node.get();
     auto res = _l.next_token();
@@ -762,25 +749,15 @@ bool masm::Code::handle_sva_svc(NodeKind k)
     {
     case IDENTIFIER:
     {
-        if (check_var(t.val) && check_const(t.val))
-        {
-            err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "The variable \"" + t.val + "\" doesn't exist.", _l.get_from_line(t.line));
-            return false;
-        }
         node.kind = (NodeKind)(k + 2);
         a->second_oper = std::make_pair(t.val, BYTE);
         break;
     }
     case EXPR:
     {
-        evaluator.add_expr(t.expr);
-        auto _r = evaluator.evaluate();
-        if (!_r.has_value())
-        {
-            fu_err(fname, t.line, "While evaluating the expression here.");
-            return false;
-        }
-        t.val = _r.value();
+        node.kind = (NodeKind)(k + 3);
+        a->second_oper = t.expr;
+        break;
     }
     case NUM_INT:
     {
@@ -889,6 +866,8 @@ bool masm::Code::handle_excg(NodeKind k)
 bool masm::Code::handle_arithmetic_signed(NodeKind k)
 {
     Node node;
+    node.line = _l.get_line();
+    node._file = file;
     node.node = std::make_unique<NodeArithmetic>();
     NodeArithmetic *a = (NodeArithmetic *)node.node.get();
     auto res = _l.next_token();
@@ -913,26 +892,17 @@ bool masm::Code::handle_arithmetic_signed(NodeKind k)
     t = res.value();
     switch (t.type)
     {
-    case IDENTIFIER:
-    {
-        if (check_const(t.val))
-        {
-            err(fname, _l.get_line(), _l.get_col(), 0, _parsing, syntaxerr, ERR_STR, "This constant doesn't exist- Was this supposed to be a variable?.", _l.get_from_line(_l.get_line()));
-            return false;
-        }
-        t.val = table->_const_list[t.val].value;
-        // fall through to the next case
-    }
     case EXPR:
     {
-        evaluator.add_expr(t.expr);
-        auto _r = evaluator.evaluate();
-        if (!_r.has_value())
-        {
-            fu_err(fname, t.line, "While evaluating the expression here.");
-            return false;
-        }
-        t.val = _r.value();
+        node.kind = (NodeKind)(k + 3);
+        a->second_oper = t.expr;
+        break;
+    }
+    case IDENTIFIER:
+    {
+        node.kind = (NodeKind)(k + 2);
+        a->second_oper = t.val;
+        break;
     }
     case NUM_INT:
     {
@@ -959,6 +929,8 @@ bool masm::Code::handle_arithmetic_signed(NodeKind k)
 bool masm::Code::handle_arithmetic_float(NodeKind k)
 {
     Node node;
+    node.line = _l.get_line();
+    node._file = file;
     node.node = std::make_unique<NodeArithmetic>();
     NodeArithmetic *a = (NodeArithmetic *)node.node.get();
     auto res = _l.next_token();
@@ -988,11 +960,6 @@ bool masm::Code::handle_arithmetic_float(NodeKind k)
     }
     else if (t.type == IDENTIFIER)
     {
-        if (check_var(t.val))
-        {
-            err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a variable here after the first operand that exists.", _l.get_from_line(t.line));
-            return false;
-        }
         a->second_oper = t.val;
         node.kind = (NodeKind)(k + 8);
     }
@@ -1008,6 +975,8 @@ bool masm::Code::handle_arithmetic_float(NodeKind k)
 bool masm::Code::handle_jmp(NodeKind k)
 {
     Node node;
+    node.line = _l.get_line();
+    node._file = file;
     node.kind = k;
     node.node = std::make_unique<NodeName>();
     NodeName *n = (NodeName *)node.node.get();
@@ -1023,11 +992,6 @@ bool masm::Code::handle_jmp(NodeKind k)
         err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a label here after the branch instruction.", _l.get_from_line(regr_line));
         return false;
     }
-    if (label_list->find(t.val) == label_list->end())
-    {
-        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a label here that exists after the branch instruction; Label doesn't exists.", _l.get_from_line(regr_line));
-        return false;
-    }
     n->name = t.val;
     nodes->push_back(std::move(node));
     return true;
@@ -1036,6 +1000,8 @@ bool masm::Code::handle_jmp(NodeKind k)
 bool masm::Code::handle_call()
 {
     Node node;
+    node.line = _l.get_line();
+    node._file = file;
     node.node = std::make_unique<NodeCall>();
     NodeCall *n = (NodeCall *)node.node.get();
     auto res = _l.next_token();
@@ -1048,11 +1014,6 @@ bool masm::Code::handle_call()
     if (t.type != IDENTIFIER && !(t.type >= KEY_Ma && t.type <= KEY_Mm5))
     {
         err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a label here or a register after the branch instruction.", _l.get_from_line(regr_line));
-        return false;
-    }
-    if (t.type == IDENTIFIER && (label_list->find(t.val) == label_list->end()))
-    {
-        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a label here that exists after the branch instruction; Label doesn't exists.", _l.get_from_line(regr_line));
         return false;
     }
     node.kind = (t.type == IDENTIFIER) ? CALL : CALL_REG;
@@ -1082,6 +1043,8 @@ bool masm::Code::check_const(std::string var)
 bool masm::Code::handle_push_pop(NodeKind k)
 {
     Node node;
+    node.line = _l.get_line();
+    node._file = file;
     node.node = std::make_unique<NodePushPop>();
     auto n = (NodePushPop *)node.node.get();
     auto res = _l.next_token();
@@ -1095,31 +1058,20 @@ bool masm::Code::handle_push_pop(NodeKind k)
     {
     case IDENTIFIER:
     {
-        if (check_lbl(t.val) && check_var(t.val) && check_const(t.val))
-        {
-            err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a label or an identifier here that exists after the STACK instruction.", _l.get_from_line(regr_line));
-            return false;
-        }
-        if (!check_const(t.val))
-        {
-            node.kind = k;
-            n->val = table->_const_list[t.val].value;
-            break;
-        }
         node.kind = (NodeKind)(k + 2);
         n->val = t.val;
         break;
     }
     case EXPR:
     {
-        evaluator.add_expr(t.expr);
-        auto _r = evaluator.evaluate();
-        if (!_r.has_value())
+        if (k == POP_IMM)
         {
-            fu_err(fname, t.line, "While evaluating the expression here.");
+            err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "POP instruction doesn't accept expressions.", _l.get_from_line(regr_line));
             return false;
         }
-        t.val = _r.value();
+        node.kind = (NodeKind)(k + 3);
+        n->val = t.expr;
+        break;
     }
     case NUM_FLOAT:
     case NUM_INT:
@@ -1151,6 +1103,8 @@ bool masm::Code::handle_push_pop(NodeKind k)
 bool masm::Code::handle_intr()
 {
     Node node;
+    node.line = _l.get_line();
+    node._file = file;
     node.node = std::make_unique<NodeIntr>();
     auto n = (NodeIntr *)node.node.get();
     auto res = _l.next_token();
@@ -1162,25 +1116,17 @@ bool masm::Code::handle_intr()
     t = res.value();
     switch (t.type)
     {
-    case IDENTIFIER:
-    {
-        if (check_const(t.val))
-        {
-            err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a consant here that exists after the INTR instruction.", _l.get_from_line(regr_line));
-            return false;
-        }
-        n->val = table->_const_list[t.val].value;
-    }
     case EXPR:
     {
-        evaluator.add_expr(t.expr);
-        auto _r = evaluator.evaluate();
-        if (!_r.has_value())
-        {
-            fu_err(fname, t.line, "While evaluating the expression here.");
-            return false;
-        }
-        t.val = _r.value();
+        node.kind = INTR_EXPR;
+        n->val = t.expr;
+        break;
+    }
+    case IDENTIFIER:
+    {
+        node.kind = INTR_VAR;
+        n->val = t.val;
+        break;
     }
     case NUM_FLOAT:
     case NUM_INT:
@@ -1200,6 +1146,8 @@ bool masm::Code::handle_intr()
 bool masm::Code::handle_sio(NodeKind k)
 {
     Node node;
+    node.line = _l.get_line();
+    node._file = file;
     node.node = std::make_unique<NodeSIO>();
     auto n = (NodeSIO *)node.node.get();
     auto res = _l.next_token();
@@ -1212,11 +1160,6 @@ bool masm::Code::handle_sio(NodeKind k)
     if (t.type != IDENTIFIER)
     {
         err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected an identifier after the SIO instruction.", _l.get_from_line(regr_line));
-        return false;
-    }
-    if (check_lbl(t.val) && check_var(t.val))
-    {
-        err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected an identifier here that exists after the SIO instruction.", _l.get_from_line(regr_line));
         return false;
     }
     node.kind = (k);
@@ -1250,6 +1193,8 @@ bool masm::Code::handle_single_regr(NodeKind k)
 bool masm::Code::handle_logical_inst(NodeKind k, bool limit)
 {
     Node node;
+    node.line = _l.get_line();
+    node._file = file;
     node.node = std::make_unique<NodeLogical>();
     auto n = (NodeLogical *)node.node.get();
     auto res = _l.next_token();
@@ -1269,26 +1214,17 @@ bool masm::Code::handle_logical_inst(NodeKind k, bool limit)
     t = res.value();
     switch (t.type)
     {
-    case IDENTIFIER:
-    {
-        if (check_const(t.val))
-        {
-            err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "This constant doesn't exist and variables aren't allowed.", _l.get_from_line(regr_line));
-            return false;
-        }
-        t.val = table->_const_list[t.val].value;
-        // fall through to next case
-    }
     case EXPR:
     {
-        evaluator.add_expr(t.expr);
-        auto _r = evaluator.evaluate();
-        if (!_r.has_value())
-        {
-            fu_err(fname, t.line, "While evaluating the expression here.");
-            return false;
-        }
-        t.val = _r.value();
+        node.kind = (NodeKind)(k + 3);
+        n->second_oper = t.expr;
+        break;
+    }
+    case IDENTIFIER:
+    {
+        node.kind = (NodeKind)(k + 2);
+        n->second_oper = t.val;
+        break;
     }
     case NUM_INT:
     {
@@ -1318,6 +1254,8 @@ bool masm::Code::handle_logical_inst(NodeKind k, bool limit)
 bool masm::Code::handle_cmp()
 {
     Node node;
+    node.line = _l.get_line();
+    node._file = file;
     node.node = std::make_unique<NodeLogical>();
     auto a = (NodeLogical *)node.node.get();
     auto res = _l.next_token();
@@ -1344,25 +1282,15 @@ bool masm::Code::handle_cmp()
     {
     case IDENTIFIER:
     {
-        if (check_var(t.val) && check_const(t.val))
-        {
-            err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "The identifier \"" + t.val + "\" doesn't exist.", _l.get_from_line(t.line));
-            return false;
-        }
         node.kind = CMP_VAR;
         a->second_oper = t.val;
         break;
     }
     case EXPR:
     {
-        evaluator.add_expr(t.expr);
-        auto _r = evaluator.evaluate();
-        if (!_r.has_value())
-        {
-            fu_err(fname, t.line, "While evaluating the expression here.");
-            return false;
-        }
-        t.val = _r.value();
+        node.kind = (CMP_EXPR);
+        a->second_oper = t.expr;
+        break;
     }
     case NUM_INT:
     {
@@ -1423,6 +1351,8 @@ bool masm::Code::handle_lea()
 bool masm::Code::handle_load_store(NodeKind k, bool atm)
 {
     Node node;
+    node.line = _l.get_line();
+    node._file = file;
     node.node = std::make_unique<NodeLoadStore>();
     auto n = (NodeLoadStore *)node.node.get();
     auto res = _l.next_token();
@@ -1449,11 +1379,6 @@ bool masm::Code::handle_load_store(NodeKind k, bool atm)
     {
     case IDENTIFIER:
     {
-        if (check_var(t.val))
-        {
-            err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected an identifier here that exists after the MEM instruction.", _l.get_from_line(regr_line));
-            return false;
-        }
         node.kind = atm ? k : (NodeKind)(k + 1);
         n->second_oper = t.val;
         break;
@@ -1531,6 +1456,8 @@ bool masm::Code::handle_atm()
 bool masm::Code::handle_cmpxchg()
 {
     Node node;
+    node.line = _l.get_line();
+    node._file = file;
     node.node = std::make_unique<NodeCmpxchg>();
     node.kind = CMPXCHG;
     auto n = (NodeCmpxchg *)node.node.get();
@@ -1562,11 +1489,6 @@ bool masm::Code::handle_cmpxchg()
     if (t.type != IDENTIFIER)
     {
         err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected a variable here in the CMPXCHG instruction.", _l.get_from_line(regr_line));
-        return false;
-    }
-    if (check_var(t.val))
-    {
-        err(fname, regr_line, regr_col, regr_col + t.val.length(), _parsing, syntaxerr, ERR_STR, "Expected a variable here that exists in the CMPXCHG instruction.", _l.get_from_line(regr_line));
         return false;
     }
     n->reg1 = r[0];

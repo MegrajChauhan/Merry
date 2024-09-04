@@ -6,6 +6,7 @@
 #include <memory>
 #include <variant>
 #include "symtable.hpp"
+#include "lexer.hpp"
 
 namespace masm
 {
@@ -18,29 +19,44 @@ namespace masm
         ADD_IMM,
         ADD_REG,
         ADD_MEM,
+        ADD_EXPR,
         SUB_IMM,
         SUB_REG,
         SUB_MEM,
+        SUB_EXPR,
         MUL_IMM,
         MUL_REG,
         MUL_MEM,
+        MUL_EXPR,
         DIV_IMM,
         DIV_REG,
         DIV_MEM,
+        DIV_EXPR,
         MOD_IMM,
         MOD_REG,
         MOD_MEM,
+        MOD_EXPR,
 
         IADD_IMM,
         IADD_REG,
+        IADD_VAR,
+        IADD_EXPR,
         ISUB_IMM,
         ISUB_REG,
+        ISUB_VAR,
+        ISUB_EXPR,
         IMUL_IMM,
         IMUL_REG,
+        IMUL_VAR,
+        IMUL_EXPR,
         IDIV_IMM,
         IDIV_REG,
+        IDIV_VAR,
+        IDIV_EXPR,
         IMOD_IMM,
         IMOD_REG,
+        IMOD_VAR,
+        IMOD_EXPR,
 
         FADD,
         FSUB,
@@ -62,10 +78,12 @@ namespace masm
         MOV_IMM,
         MOV_REG,
         MOV_VAR,
+        MOV_EXPR,
 
         MOVL_IMM,
         MOVL_REG,
         MOVL_VAR,
+        MOVL_EXPR,
 
         MOVB,
         MOVW,
@@ -74,14 +92,17 @@ namespace masm
         MOVSXB_IMM,
         MOVSXB_REG,
         MOVSXB_VAR,
+        MOVSXB_EXPR,
 
         MOVSXW_IMM,
         MOVSXW_REG,
         MOVSXW_VAR,
+        MOVSXW_EXPR,
 
         MOVSXD_IMM,
         MOVSXD_REG,
         MOVSXD_VAR,
+        MOVSXD_EXPR,
 
         JMP,
         CALL,
@@ -91,10 +112,12 @@ namespace masm
         SVA_IMM,
         SVA_REG,
         SVA_VAR,
+        SVA_EXPR,
 
         SVC_IMM,
         SVC_REG,
         SVC_VAR,
+        SVC_EXPR,
 
         PUSHA,
         POPA,
@@ -102,6 +125,7 @@ namespace masm
         PUSH_IMM,
         PUSH_REG,
         PUSH_VAR,
+        PUSH_EXPR,
 
         POP_IMM, // useless KIND just for there for some reason
         POP_REG,
@@ -113,16 +137,29 @@ namespace masm
 
         AND_IMM,
         AND_REG,
+        AND_VAR,
+        AND_EXPR,
         OR_IMM,
         OR_REG,
+        OR_VAR,
+        OR_EXPR,
         XOR_IMM,
         XOR_REG,
+        XOR_VAR,
+        XOR_EXPR,
         LSHIFT,
+        LSHIFT_X, // pseudo node type
+        LSHIFT_VAR,
+        LSHIFT_EXPR,
         RSHIFT,
+        RSHIFT_X, // pseudo node type
+        RSHIFT_VAR,
+        RSHIFT_EXPR,
 
         CMP_IMM,
         CMP_REG,
         CMP_VAR,
+        CMP_EXPR,
 
         LEA,
 
@@ -224,6 +261,8 @@ namespace masm
 
         LOOP,
         INTR,
+        INTR_EXPR,
+        INTR_VAR,
 
         SETE,
         CALLE,
@@ -268,7 +307,7 @@ namespace masm
 
     struct NodeIntr : public Base
     {
-        std::string val;
+        std::variant<std::string, std::vector<Token>> val;
     };
 
     struct NodeSIO : public NodeName
@@ -278,14 +317,14 @@ namespace masm
     struct NodeArithmetic : public Base
     {
         Register reg;
-        std::variant<Register, std::string> second_oper;
+        std::variant<Register, std::string, std::vector<Token>> second_oper;
     };
 
     // the same as Arithmetic
     struct NodeMov : public Base
     {
         Register reg;
-        std::variant<Register, std::pair<std::string, DataType>> second_oper;
+        std::variant<Register, std::pair<std::string, DataType>, std::vector<Token>> second_oper;
     };
 
     // reusing this is better
@@ -305,7 +344,7 @@ namespace masm
 
     struct NodePushPop : public Base
     {
-        std::variant<Register, std::string> val;
+        std::variant<Register, std::string, std::vector<Token>> val;
     };
 
     struct NodeSingleRegr : public Base
@@ -336,6 +375,8 @@ namespace masm
     {
         NodeKind kind;
         std::unique_ptr<Base> node;
+        std::shared_ptr<std::string> _file;
+        size_t line;
     };
 
 };

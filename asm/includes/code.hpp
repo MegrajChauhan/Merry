@@ -4,7 +4,6 @@
 #include "lexer.hpp"
 #include "nodes.hpp"
 #include "symtable.hpp"
-#include "expr.hpp"
 
 #define regr            \
     regr_line = t.line; \
@@ -26,8 +25,6 @@ namespace masm
         size_t regr_line, regr_col;
 
         SymbolTable *table;
-        Expr evaluator;
-
     public:
         Code() = default;
 

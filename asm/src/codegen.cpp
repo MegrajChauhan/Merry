@@ -19,13 +19,13 @@ void masm::CodeGen::setup_codegen(SymbolTable *_t, std::vector<Node> *_n, std::u
  * Even with that, the function should get well over 600 lines of code.
  */
 
-void masm::CodeGen::handle_arithmetic_reg_imm(msize_t op, NodeArithmetic *a)
+void masm::CodeGen::handle_arithmetic_reg_imm(msize_t op, NodeArithmetic *a, size_t _a)
 {
     GenBinary b;
     b.bytes.b1 = op; // the opcode
     // 0xFFFFFFFF
     b.bytes.b2 = a->reg;
-    b.full |= std::stoull(std::get<std::string>(a->second_oper)) & 0xFFFFFFFF;
+    b.full |= std::stoull(std::get<std::string>(a->second_oper)) & _a;
     code.push_back(b);
 }
 
@@ -89,77 +89,128 @@ bool masm::CodeGen::generate()
         case HLT:
             handle_one(OP_HALT);
             break;
-        case RET:
-            handle_one(OP_RET);
-            break;
         case ADD_IMM:
             handle_arithmetic_reg_imm(OP_ADD_IMM, (NodeArithmetic *)node.node.get());
-            break;
-        case SUB_IMM:
-            handle_arithmetic_reg_imm(OP_SUB_IMM, (NodeArithmetic *)node.node.get());
-            break;
-        case MUL_IMM:
-            handle_arithmetic_reg_imm(OP_MUL_IMM, (NodeArithmetic *)node.node.get());
-            break;
-        case DIV_IMM:
-            handle_arithmetic_reg_imm(OP_DIV_IMM, (NodeArithmetic *)node.node.get());
-            break;
-        case MOD_IMM:
-            handle_arithmetic_reg_imm(OP_MOD_IMM, (NodeArithmetic *)node.node.get());
             break;
         case ADD_REG:
             handle_arithmetic_reg_reg(OP_ADD_REG, (NodeArithmetic *)node.node.get());
             break;
-        case SUB_REG:
-            handle_arithmetic_reg_reg(OP_SUB_REG, (NodeArithmetic *)node.node.get());
-            break;
-        case MUL_REG:
-            handle_arithmetic_reg_reg(OP_MUL_REG, (NodeArithmetic *)node.node.get());
-            break;
-        case DIV_REG:
-            handle_arithmetic_reg_reg(OP_DIV_REG, (NodeArithmetic *)node.node.get());
-            break;
-        case MOD_REG:
-            handle_arithmetic_reg_reg(OP_MOD_REG, (NodeArithmetic *)node.node.get());
-            break;
         case ADD_MEM:
             handle_arithmetic_reg_var((NodeArithmetic *)node.node.get(), OP_ADD_MEMB);
+            break;
+        case SUB_IMM:
+            handle_arithmetic_reg_imm(OP_SUB_IMM, (NodeArithmetic *)node.node.get());
+            break;
+        case SUB_REG:
+            handle_arithmetic_reg_reg(OP_SUB_REG, (NodeArithmetic *)node.node.get());
             break;
         case SUB_MEM:
             handle_arithmetic_reg_var((NodeArithmetic *)node.node.get(), OP_SUB_MEMB);
             break;
+        case MUL_IMM:
+            handle_arithmetic_reg_imm(OP_MUL_IMM, (NodeArithmetic *)node.node.get());
+            break;
+        case MUL_REG:
+            handle_arithmetic_reg_reg(OP_MUL_REG, (NodeArithmetic *)node.node.get());
+            break;
         case MUL_MEM:
             handle_arithmetic_reg_var((NodeArithmetic *)node.node.get(), OP_MUL_MEMB);
+            break;
+        case DIV_IMM:
+            handle_arithmetic_reg_imm(OP_DIV_IMM, (NodeArithmetic *)node.node.get());
+            break;
+        case DIV_REG:
+            handle_arithmetic_reg_reg(OP_DIV_REG, (NodeArithmetic *)node.node.get());
             break;
         case DIV_MEM:
             handle_arithmetic_reg_var((NodeArithmetic *)node.node.get(), OP_DIV_MEMB);
             break;
+        case MOD_IMM:
+            handle_arithmetic_reg_imm(OP_MOD_IMM, (NodeArithmetic *)node.node.get());
+            break;
+        case MOD_REG:
+            handle_arithmetic_reg_reg(OP_MOD_REG, (NodeArithmetic *)node.node.get());
+            break;
         case MOD_MEM:
             handle_arithmetic_reg_var((NodeArithmetic *)node.node.get(), OP_MOD_MEMB);
+            break;
+        case IADD_IMM:
+            handle_arithmetic_reg_imm(OP_IADD_IMM, (NodeArithmetic *)node.node.get(), 0xFFFFFFFF);
+            break;
+        case IADD_REG:
+            handle_arithmetic_reg_reg(OP_IADD_REG, (NodeArithmetic *)node.node.get());
+            break;
+        case ISUB_IMM:
+            handle_arithmetic_reg_imm(OP_ISUB_IMM, (NodeArithmetic *)node.node.get(), 0xFFFFFFFF);
+            break;
+        case ISUB_REG:
+            handle_arithmetic_reg_reg(OP_ISUB_REG, (NodeArithmetic *)node.node.get());
+            break;
+        case IMUL_IMM:
+            handle_arithmetic_reg_imm(OP_IMUL_IMM, (NodeArithmetic *)node.node.get(), 0xFFFFFFFF);
+            break;
+        case IMUL_REG:
+            handle_arithmetic_reg_reg(OP_IMUL_REG, (NodeArithmetic *)node.node.get());
+            break;
+        case IDIV_IMM:
+            handle_arithmetic_reg_imm(OP_IDIV_IMM, (NodeArithmetic *)node.node.get(), 0xFFFFFFFF);
+            break;
+        case IDIV_REG:
+            handle_arithmetic_reg_reg(OP_IDIV_REG, (NodeArithmetic *)node.node.get());
+            break;
+        case IMOD_IMM:
+            handle_arithmetic_reg_imm(OP_IMOD_IMM, (NodeArithmetic *)node.node.get(), 0xFFFFFFFF);
+            break;
+        case IMOD_REG:
+            handle_arithmetic_reg_reg(OP_IMOD_REG, (NodeArithmetic *)node.node.get());
             break;
         case FADD:
             handle_arithmetic_reg_reg(OP_FADD32, (NodeArithmetic *)node.node.get());
             break;
-        case LFADD:
-            handle_arithmetic_reg_reg(OP_FADD, (NodeArithmetic *)node.node.get());
-            break;
         case FSUB:
             handle_arithmetic_reg_reg(OP_FSUB32, (NodeArithmetic *)node.node.get());
-            break;
-        case LFSUB:
-            handle_arithmetic_reg_reg(OP_FSUB, (NodeArithmetic *)node.node.get());
             break;
         case FMUL:
             handle_arithmetic_reg_reg(OP_FMUL32, (NodeArithmetic *)node.node.get());
             break;
-        case LFMUL:
-            handle_arithmetic_reg_reg(OP_FMUL, (NodeArithmetic *)node.node.get());
-            break;
         case FDIV:
             handle_arithmetic_reg_reg(OP_FDIV32, (NodeArithmetic *)node.node.get());
             break;
+        case LFADD:
+            handle_arithmetic_reg_reg(OP_FADD, (NodeArithmetic *)node.node.get());
+            break;
+        case LFSUB:
+            handle_arithmetic_reg_reg(OP_FSUB, (NodeArithmetic *)node.node.get());
+            break;
+        case LFMUL:
+            handle_arithmetic_reg_reg(OP_FMUL, (NodeArithmetic *)node.node.get());
+            break;
         case LFDIV:
             handle_arithmetic_reg_reg(OP_FDIV, (NodeArithmetic *)node.node.get());
+            break;
+        case FADD_MEM:
+            handle_float_var((NodeArithmetic *)node.node.get(), OP_FADD32_MEM);
+            break;
+        case FSUB_MEM:
+            handle_float_var((NodeArithmetic *)node.node.get(), OP_FSUB32_MEM);
+            break;
+        case FMUL_MEM:
+            handle_float_var((NodeArithmetic *)node.node.get(), OP_FMUL32_MEM);
+            break;
+        case FDIV_MEM:
+            handle_float_var((NodeArithmetic *)node.node.get(), OP_FDIV32_MEM);
+            break;
+        case LFADD_MEM:
+            handle_float_var((NodeArithmetic *)node.node.get(), OP_FADD_MEM);
+            break;
+        case LFSUB_MEM:
+            handle_float_var((NodeArithmetic *)node.node.get(), OP_FSUB_MEM);
+            break;
+        case LFMUL_MEM:
+            handle_float_var((NodeArithmetic *)node.node.get(), OP_FMUL_MEM);
+            break;
+        case LFDIV_MEM:
+            handle_float_var((NodeArithmetic *)node.node.get(), OP_FDIV_MEM);
             break;
         case MOV_IMM:
             handle_mov_reg_imm(false, (NodeMov *)node.node.get());
@@ -187,26 +238,26 @@ bool masm::CodeGen::generate()
         case MOVSXB_IMM:
             handle_movsx((NodeMov *)node.node.get(), OP_MOVESX_IMM8);
             break;
-        case MOVSXW_IMM:
-            handle_movsx((NodeMov *)node.node.get(), OP_MOVESX_IMM16);
-            break;
-        case MOVSXD_IMM:
-            handle_movsx((NodeMov *)node.node.get(), OP_MOVESX_IMM32);
-            break;
         case MOVSXB_REG:
             handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVESX_REG8);
-            break;
-        case MOVSXW_REG:
-            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVESX_REG16);
-            break;
-        case MOVSXD_REG:
-            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVESX_REG32);
             break;
         case MOVSXB_VAR:
             handle_movsx_var((NodeMov *)node.node.get(), OP_MOVESX_REG8);
             break;
+        case MOVSXW_IMM:
+            handle_movsx((NodeMov *)node.node.get(), OP_MOVESX_IMM16);
+            break;
+        case MOVSXW_REG:
+            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVESX_REG16);
+            break;
         case MOVSXW_VAR:
             handle_movsx_var((NodeMov *)node.node.get(), OP_MOVESX_REG16);
+            break;
+        case MOVSXD_IMM:
+            handle_movsx((NodeMov *)node.node.get(), OP_MOVESX_IMM32);
+            break;
+        case MOVSXD_REG:
+            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVESX_REG32);
             break;
         case MOVSXD_VAR:
             handle_movsx_var((NodeMov *)node.node.get(), OP_MOVESX_REG32);
@@ -214,91 +265,43 @@ bool masm::CodeGen::generate()
         case JMP:
             handle_jmp(OP_JMP_ADDR, (NodeName *)node.node.get());
             break;
-        case JNZ:
-            handle_jmp(OP_JNZ, (NodeName *)node.node.get());
-            break;
-        case JZ:
-            handle_jmp(OP_JZ, (NodeName *)node.node.get());
-            break;
-        case JNE:
-            handle_jmp(OP_JNE, (NodeName *)node.node.get());
-            break;
-        case JE:
-            handle_jmp(OP_JE, (NodeName *)node.node.get());
-            break;
-        case JNC:
-            handle_jmp(OP_JNC, (NodeName *)node.node.get());
-            break;
-        case JC:
-            handle_jmp(OP_JC, (NodeName *)node.node.get());
-            break;
-        case JNO:
-            handle_jmp(OP_JNO, (NodeName *)node.node.get());
-            break;
-        case JO:
-            handle_jmp(OP_JO, (NodeName *)node.node.get());
-            break;
-        case JNN:
-            handle_jmp(OP_JNN, (NodeName *)node.node.get());
-            break;
-        case JN:
-            handle_jmp(OP_JN, (NodeName *)node.node.get());
-            break;
-        case JNG:
-            handle_jmp(OP_JNG, (NodeName *)node.node.get());
-            break;
-        case JG:
-            handle_jmp(OP_JG, (NodeName *)node.node.get());
-            break;
-        case JNS:
-            handle_jmp(OP_JNS, (NodeName *)node.node.get());
-            break;
-        case JS:
-            handle_jmp(OP_JS, (NodeName *)node.node.get());
-            break;
-        case JSE:
-            handle_jmp(OP_JSE, (NodeName *)node.node.get());
-            break;
-        case JGE:
-            handle_jmp(OP_JE, (NodeName *)node.node.get());
-            break;
-        case LOOP:
-            handle_jmp(OP_LOOP, (NodeName *)node.node.get());
-            break;
         case CALL:
         {
-            NodeCall *c = (NodeCall *)node.node.get();
+            NodeCall *_c = (NodeCall *)node.node.get();
             GenBinary b;
             b.bytes.b1 = OP_CALL;
-            b.full |= ((*label_addr)[std::get<std::string>(c->_oper)] & 0xFFFFFFFFFFFF);
+            b.full |= ((*label_addr)[std::get<std::string>(_c->_oper)] & 0xFFFFFFFFFFFF);
             code.push_back(b);
             break;
         }
         case CALL_REG:
         {
-            NodeCall *c = (NodeCall *)node.node.get();
+            NodeCall *_c = (NodeCall *)node.node.get();
             GenBinary b;
             b.bytes.b1 = OP_CALL_REG;
-            b.full |= (std::get<Register>(c->_oper));
+            b.full |= (std::get<Register>(_c->_oper));
             code.push_back(b);
             break;
         }
-        case SVA_REG:
-            handle_mov_reg_reg((NodeSTACK *)node.node.get(), OP_SVA_REG);
-            break;
-        case SVC_REG:
-            handle_mov_reg_reg((NodeSTACK *)node.node.get(), OP_SVC_REG);
-            break;
-        case SVC_IMM:
-            handle_mov_reg_imm(false, (NodeSTACK *)node.node.get());
-            code[code.size() - 1].bytes.b1 = OP_SVC;
+        case RET:
+            handle_one(OP_RET);
             break;
         case SVA_IMM:
             handle_mov_reg_imm(false, (NodeSTACK *)node.node.get());
             code[code.size() - 1].bytes.b1 = OP_SVA;
             break;
+        case SVA_REG:
+            handle_mov_reg_reg((NodeSTACK *)node.node.get(), OP_SVA_REG);
+            break;
         case SVA_VAR:
             handle_sva_svc_var((NodeSTACK *)node.node.get(), OP_SVA_MEM);
+            break;
+        case SVC_IMM:
+            handle_mov_reg_imm(false, (NodeSTACK *)node.node.get());
+            code[code.size() - 1].bytes.b1 = OP_SVC;
+            break;
+        case SVC_REG:
+            handle_mov_reg_reg((NodeSTACK *)node.node.get(), OP_SVC_REG);
             break;
         case SVC_VAR:
             handle_sva_svc_var((NodeSTACK *)node.node.get(), OP_SVC_MEM);
@@ -309,18 +312,18 @@ bool masm::CodeGen::generate()
         case POPA:
             handle_one(OP_POPA);
             break;
-        case PUSH_REG:
-            handle_push_pop_reg(OP_PUSH_REG, (NodePushPop *)node.node.get());
-            break;
-        case POP_REG:
-            handle_push_pop_reg(OP_POP, (NodePushPop *)node.node.get());
-            break;
         case PUSH_IMM:
         case POP_IMM: // just to keep the joke alive and stop compiler warnings obviously
             handle_push_imm((NodePushPop *)node.node.get());
             break;
+        case PUSH_REG:
+            handle_push_pop_reg(OP_PUSH_REG, (NodePushPop *)node.node.get());
+            break;
         case PUSH_VAR:
             handle_push_pop_var(OP_PUSH_MEMB, (NodePushPop *)node.node.get());
+            break;
+        case POP_REG:
+            handle_push_pop_reg(OP_POP, (NodePushPop *)node.node.get());
             break;
         case POP_VAR:
             handle_push_pop_var(OP_POP_MEMB, (NodePushPop *)node.node.get());
@@ -337,11 +340,20 @@ bool masm::CodeGen::generate()
         case AND_IMM:
             handle_logical_reg_imm(OP_AND_IMM, (NodeLogical *)node.node.get());
             break;
+        case AND_REG:
+            handle_logical_reg_reg(OP_AND_REG, (NodeLogical *)node.node.get());
+            break;
         case OR_IMM:
             handle_logical_reg_imm(OP_OR_IMM, (NodeLogical *)node.node.get());
             break;
+        case OR_REG:
+            handle_logical_reg_reg(OP_OR_REG, (NodeLogical *)node.node.get());
+            break;
         case XOR_IMM:
             handle_logical_reg_imm(OP_XOR_IMM, (NodeLogical *)node.node.get());
+            break;
+        case XOR_REG:
+            handle_logical_reg_reg(OP_XOR_REG, (NodeLogical *)node.node.get());
             break;
         case LSHIFT:
             handle_logical_reg_imm(OP_LSHIFT, (NodeLogical *)node.node.get());
@@ -352,15 +364,6 @@ bool masm::CodeGen::generate()
         case CMP_IMM:
             handle_logical_reg_imm(OP_CMP_IMM, (NodeLogical *)node.node.get());
             break;
-        case AND_REG:
-            handle_logical_reg_reg(OP_AND_REG, (NodeLogical *)node.node.get());
-            break;
-        case OR_REG:
-            handle_logical_reg_reg(OP_OR_REG, (NodeLogical *)node.node.get());
-            break;
-        case XOR_REG:
-            handle_logical_reg_reg(OP_XOR_REG, (NodeLogical *)node.node.get());
-            break;
         case CMP_REG:
             handle_logical_reg_reg(OP_CMP_REG, (NodeLogical *)node.node.get());
             break;
@@ -370,17 +373,17 @@ bool masm::CodeGen::generate()
         case LEA:
             handle_lea((NodeLea *)node.node.get());
             break;
+        case LOADB_REG:
+            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_LOADB_REG);
+            break;
         case LOADB_VAR:
             handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_LOADB);
             break;
         case ALOADB_VAR:
             handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_LOADB);
             break;
-        case STOREB_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_STOREB);
-            break;
-        case ASTOREB_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_STOREB);
+        case LOADW_REG:
+            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_LOADW_REG);
             break;
         case LOADW_VAR:
             handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_LOADW);
@@ -388,11 +391,8 @@ bool masm::CodeGen::generate()
         case ALOADW_VAR:
             handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_LOADW);
             break;
-        case STOREW_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_STOREW);
-            break;
-        case ASTOREW_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_STOREW);
+        case LOADD_REG:
+            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_LOADD_REG);
             break;
         case LOADD_VAR:
             handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_LOADD);
@@ -400,11 +400,8 @@ bool masm::CodeGen::generate()
         case ALOADD_VAR:
             handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_LOADD);
             break;
-        case STORED_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_STORED);
-            break;
-        case ASTORED_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_STORED);
+        case LOADQ_REG:
+            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_LOAD_REG);
             break;
         case LOADQ_VAR:
             handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_LOAD);
@@ -412,36 +409,54 @@ bool masm::CodeGen::generate()
         case ALOADQ_VAR:
             handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_LOAD);
             break;
+        case STOREB_REG:
+            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_STOREB_REG);
+            break;
+        case STOREB_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_STOREB);
+            break;
+        case ASTOREB_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_STOREB);
+            break;
+        case STOREW_REG:
+            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_STOREW_REG);
+            break;
+        case STOREW_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_STOREW);
+            break;
+        case ASTOREW_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_STOREW);
+            break;
+        case STORED_REG:
+            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_STORED_REG);
+            break;
+        case STORED_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_STORED);
+            break;
+        case ASTORED_VAR:
+            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_STORED);
+            break;
+        case STOREQ_REG:
+            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_STORE_REG);
+            break;
         case STOREQ_VAR:
             handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_STORE);
             break;
         case ASTOREQ_VAR:
             handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_STORE);
             break;
-        case LOADB_REG:
-            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_LOADB_REG);
+        case CMPXCHG:
+        {
+            NodeCmpxchg *x = (NodeCmpxchg *)node.node.get();
+            GenBinary b;
+            b.bytes.b1 = OP_CMPXCHG;
+            b.bytes.b2 = x->reg1;
+            b.bytes.b2 <<= 4;
+            b.bytes.b2 |= x->reg2;
+            b.full |= data_addr[x->var] & 0xFFFFFFFFFFFF;
+            code.push_back(b);
             break;
-        case LOADW_REG:
-            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_LOADW_REG);
-            break;
-        case LOADD_REG:
-            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_LOADD_REG);
-            break;
-        case LOADQ_REG:
-            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_LOAD_REG);
-            break;
-        case STOREB_REG:
-            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_STOREB_REG);
-            break;
-        case STOREW_REG:
-            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_STOREW_REG);
-            break;
-        case STORED_REG:
-            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_STORED_REG);
-            break;
-        case STOREQ_REG:
-            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_STORE_REG);
-            break;
+        }
         case OUTR:
             handle_one(OP_OUTR);
             break;
@@ -454,6 +469,22 @@ bool masm::CodeGen::generate()
         case COUT:
             handle_single_regr(OP_COUT, (NodeSingleRegr *)node.node.get());
             break;
+        case SIN:
+        {
+            GenBinary b;
+            b.bytes.b1 = OP_SIN;
+            b.full |= ((data_addr)[((NodeSIO *)node.node.get())->name] & 0xFFFFFFFFFFFF);
+            code.push_back(b);
+            break;
+        }
+        case SOUT:
+        {
+            GenBinary b;
+            b.bytes.b1 = OP_SOUT;
+            b.full |= ((data_addr)[((NodeSIO *)node.node.get())->name] & 0xFFFFFFFFFFFF);
+            code.push_back(b);
+            break;
+        }
         case IN:
             handle_single_regr(OP_IN, (NodeSingleRegr *)node.node.get());
             break;
@@ -465,6 +496,18 @@ bool masm::CodeGen::generate()
             break;
         case INQ:
             handle_single_regr(OP_INQ, (NodeSingleRegr *)node.node.get());
+            break;
+        case UIN:
+            handle_single_regr(OP_UINW, (NodeSingleRegr *)node.node.get());
+            break;
+        case UINW:
+            handle_single_regr(OP_UIN, (NodeSingleRegr *)node.node.get());
+            break;
+        case UIND:
+            handle_single_regr(OP_UIND, (NodeSingleRegr *)node.node.get());
+            break;
+        case UINQ:
+            handle_single_regr(OP_UINQ, (NodeSingleRegr *)node.node.get());
             break;
         case OUT:
             handle_single_regr(OP_OUT, (NodeSingleRegr *)node.node.get());
@@ -489,18 +532,6 @@ bool masm::CodeGen::generate()
             break;
         case UOUTQ:
             handle_single_regr(OP_UOUTQ, (NodeSingleRegr *)node.node.get());
-            break;
-        case UIN:
-            handle_single_regr(OP_UINW, (NodeSingleRegr *)node.node.get());
-            break;
-        case UINW:
-            handle_single_regr(OP_UIN, (NodeSingleRegr *)node.node.get());
-            break;
-        case UIND:
-            handle_single_regr(OP_UIND, (NodeSingleRegr *)node.node.get());
-            break;
-        case UINQ:
-            handle_single_regr(OP_UINQ, (NodeSingleRegr *)node.node.get());
             break;
         case INF:
             handle_single_regr(OP_INF32, (NodeSingleRegr *)node.node.get());
@@ -553,48 +584,71 @@ bool masm::CodeGen::generate()
         case CLO:
             handle_one(OP_CLO);
             break;
+        case JNZ:
+            handle_jmp(OP_JNZ, (NodeName *)node.node.get());
+            break;
+        case JZ:
+            handle_jmp(OP_JZ, (NodeName *)node.node.get());
+            break;
+        case JNE:
+            handle_jmp(OP_JNE, (NodeName *)node.node.get());
+            break;
+        case JE:
+            handle_jmp(OP_JE, (NodeName *)node.node.get());
+            break;
+        case JNC:
+            handle_jmp(OP_JNC, (NodeName *)node.node.get());
+            break;
+        case JC:
+            handle_jmp(OP_JC, (NodeName *)node.node.get());
+            break;
+        case JNO:
+            handle_jmp(OP_JNO, (NodeName *)node.node.get());
+            break;
+        case JO:
+            handle_jmp(OP_JO, (NodeName *)node.node.get());
+            break;
+        case JNN:
+            handle_jmp(OP_JNN, (NodeName *)node.node.get());
+            break;
+        case JN:
+            handle_jmp(OP_JN, (NodeName *)node.node.get());
+            break;
+        case JNG:
+            handle_jmp(OP_JNG, (NodeName *)node.node.get());
+            break;
+        case JG:
+            handle_jmp(OP_JG, (NodeName *)node.node.get());
+            break;
+        case JNS:
+            handle_jmp(OP_JNS, (NodeName *)node.node.get());
+            break;
+        case JS:
+            handle_jmp(OP_JS, (NodeName *)node.node.get());
+            break;
+        case JSE:
+            handle_jmp(OP_JSE, (NodeName *)node.node.get());
+            break;
+        case JGE:
+            handle_jmp(OP_JE, (NodeName *)node.node.get());
+            break;
+        case LOOP:
+            handle_jmp(OP_LOOP, (NodeName *)node.node.get());
+            break;
         case INTR:
         {
             GenBinary b;
             auto n = (NodeIntr *)node.node.get();
-            auto res = table->_const_list.find(n->val);
             b.bytes.b1 = OP_INTR;
-            if (res == table->_const_list.end())
-                b.full |= (std::stoull(((NodeIntr *)node.node.get())->val) & 0xFFFF);
-            else
-                b.full |= (std::stoull(res->second.value)) & 0xFFFF;
+            b.full |= (std::stoull(std::get<std::string>(n->val))) & 0xFFFF;
             code.push_back(b);
             break;
         }
-        case FADD_MEM:
-            handle_float_var((NodeArithmetic *)node.node.get(), OP_FADD32_MEM);
-            break;
-        case FSUB_MEM:
-            handle_float_var((NodeArithmetic *)node.node.get(), OP_FSUB32_MEM);
-            break;
-        case FMUL_MEM:
-            handle_float_var((NodeArithmetic *)node.node.get(), OP_FMUL32_MEM);
-            break;
-        case FDIV_MEM:
-            handle_float_var((NodeArithmetic *)node.node.get(), OP_FDIV32_MEM);
-            break;
-        case LFADD_MEM:
-            handle_float_var((NodeArithmetic *)node.node.get(), OP_FADD_MEM);
-            break;
-        case LFSUB_MEM:
-            handle_float_var((NodeArithmetic *)node.node.get(), OP_FSUB_MEM);
-            break;
-        case LFMUL_MEM:
-            handle_float_var((NodeArithmetic *)node.node.get(), OP_FMUL_MEM);
-            break;
-        case LFDIV_MEM:
-            handle_float_var((NodeArithmetic *)node.node.get(), OP_FDIV_MEM);
+        case SETE:
+            handle_jmp(OP_SET_EXCP, (NodeName *)node.node.get());
             break;
         case CALLE:
             handle_one(OP_CALL_EXCP);
-            break;
-        case SETE:
-            handle_jmp(OP_SET_EXCP, (NodeName *)node.node.get());
             break;
         case SYSCALL:
             handle_one(OP_SYSCALL);
@@ -894,10 +948,12 @@ void masm::CodeGen::handle_mov_reg_var(NodeMov *n)
             b.bytes.b1 = OP_LOADW;
             break;
         case DWORD:
+        case FLOAT:
         case RESD:
             b.bytes.b1 = OP_LOADD;
             break;
         case QWORD:
+        case LFLOAT:
         case RESQ:
             b.bytes.b1 = OP_LOAD;
             break;
@@ -1103,9 +1159,9 @@ void masm::CodeGen::generate_ST()
     for (auto l : *label_addr)
     {
         symd[(*label_addr)[l.first]] = i;
-        for (char c : l.first)
+        for (char _c : l.first)
         {
-            ST.push_back(c);
+            ST.push_back(_c);
             i++;
         }
         ST.push_back(0);
@@ -1114,9 +1170,9 @@ void masm::CodeGen::generate_ST()
     for (auto l : data_addr)
     {
         symd[(data_addr)[l.first]] = i;
-        for (char c : l.first)
+        for (char _c : l.first)
         {
-            ST.push_back(c);
+            ST.push_back(_c);
             i++;
         }
         ST.push_back(0);

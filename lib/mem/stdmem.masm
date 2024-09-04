@@ -1,0 +1,5 @@
+proc __builtin_stdmem_init
+
+;; stdinit initializes the internal variables for us
+__builtin_stdmem_init
+    

@@ -223,6 +223,7 @@ void masm::Context::start()
     }
     analyse_proc();
     confirm_entries();
+    make_node_analysis();
     /// NOTE: The following change that I made to "label_addr" is an idiotic move
     // It would have been better with just one function.
     // I am too lazy to change it back so a good lesson.
@@ -660,4 +661,255 @@ std::vector<std::string> *masm::Context::get_entries()
 masm::CodeGen *masm::Context::get_codegen()
 {
     return &gen;
+}
+
+void masm::Context::make_node_analysis()
+{
+    for (auto &n : nodes)
+    {
+        switch (n.kind)
+        {
+        case ADD_MEM:
+        case SUB_MEM:
+        case MUL_MEM:
+        case DIV_MEM:
+        case MOD_MEM:
+        case FADD_MEM:
+        case FSUB_MEM:
+        case FMUL_MEM:
+        case FDIV_MEM:
+        case LFADD_MEM:
+        case LFSUB_MEM:
+        case LFMUL_MEM:
+        case LFDIV_MEM:
+        {
+            auto _n = (NodeArithmetic *)n.node.get();
+            std::string var_name = std::get<std::string>(_n->second_oper);
+            if (table._var_list.find(var_name) == table._var_list.end())
+            {
+                // could be a constant
+                if (table._const_list.find(var_name) == table._const_list.end())
+                {
+                    fu_err(*n._file.get(), n.line, "The variable '" + var_name + "' doesn't exist.");
+                    die(1);
+                }
+            }
+            break;
+        }
+        case LOADB_VAR:
+        case LOADW_VAR:
+        case LOADD_VAR:
+        case LOADQ_VAR:
+        case STOREB_VAR:
+        case STOREW_VAR:
+        case STORED_VAR:
+        case STOREQ_VAR:
+        case ALOADB_VAR:
+        case ALOADW_VAR:
+        case ALOADD_VAR:
+        case ALOADQ_VAR:
+        case ASTOREB_VAR:
+        case ASTOREW_VAR:
+        case ASTORED_VAR:
+        case ASTOREQ_VAR:
+        {
+            auto _n = (NodeArithmetic *)n.node.get();
+            std::string var_name = std::get<std::string>(_n->second_oper);
+            if (table._var_list.find(var_name) == table._var_list.end())
+            {
+                fu_err(*n._file.get(), n.line, "The variable '" + var_name + "' doesn't exist.");
+                die(1);
+            }
+            break;
+        }
+        case ADD_EXPR:
+        case SUB_EXPR:
+        case MUL_EXPR:
+        case DIV_EXPR:
+        case MOD_EXPR:
+        case IADD_EXPR:
+        case ISUB_EXPR:
+        case IMUL_EXPR:
+        case IDIV_EXPR:
+        case IMOD_EXPR:
+        case AND_EXPR:
+        case OR_EXPR:
+        case XOR_EXPR:
+        case LSHIFT_EXPR:
+        case RSHIFT_EXPR:
+        case CMP_EXPR:
+        {
+            auto _n = (NodeArithmetic *)n.node.get();
+            auto expr = std::get<std::vector<Token>>(_n->second_oper);
+            evaluator.add_expr(expr);
+            auto v = evaluator.evaluate();
+            if (!v.has_value())
+            {
+                fu_err(*n._file.get(), expr[0].line, "While evaluating the expression here.");
+                die(1);
+            }
+            n.kind = (NodeKind)(n.kind - 3);
+            _n->second_oper = v.value();
+            break;
+        }
+        case MOV_EXPR:
+        case MOVSXB_EXPR:
+        case MOVSXW_EXPR:
+        case MOVSXD_EXPR:
+        case MOVL_EXPR:
+        case SVA_EXPR:
+        case SVC_EXPR:
+        {
+            auto _n = (NodeMov *)n.node.get();
+            auto expr = std::get<std::vector<Token>>(_n->second_oper);
+            evaluator.add_expr(expr);
+            auto v = evaluator.evaluate();
+            if (!v.has_value())
+            {
+                fu_err(*n._file.get(), expr[0].line, "While evaluating the expression here.");
+                die(1);
+            }
+            n.kind = (NodeKind)(n.kind - 3);
+            _n->second_oper = std::make_pair(v.value(), BYTE);
+            break;
+        }
+        case PUSH_EXPR:
+        {
+            auto _n = (NodePushPop *)n.node.get();
+            auto expr = std::get<std::vector<Token>>(_n->val);
+            evaluator.add_expr(expr);
+            auto v = evaluator.evaluate();
+            if (!v.has_value())
+            {
+                fu_err(*n._file.get(), expr[0].line, "While evaluating the expression here.");
+                die(1);
+            }
+            n.kind = (NodeKind)(n.kind - 3);
+            _n->val = v.value();
+            break;
+        }
+        case IADD_VAR:
+        case ISUB_VAR:
+        case IMUL_VAR:
+        case IDIV_VAR:
+        case IMOD_VAR:
+        case AND_VAR:
+        case OR_VAR:
+        case XOR_VAR:
+        case LSHIFT_VAR:
+        case RSHIFT_VAR:
+        case CMP_VAR:
+        {
+            auto _n = (NodeArithmetic *)n.node.get();
+            std::string var_name = std::get<std::string>(_n->second_oper);
+            auto r = table._const_list.find(var_name);
+            // must be a constant
+            if (r == table._const_list.end())
+            {
+                fu_err(*n._file.get(), n.line, "The constant '" + var_name + "' doesn't exist.");
+                die(1);
+            }
+            n.kind = (NodeKind)(n.kind - 2);
+            _n->second_oper = r->second.value;
+            break;
+        }
+        case MOV_VAR:
+        case MOVSXB_VAR:
+        case MOVSXW_VAR:
+        case MOVSXD_VAR:
+        case MOVL_VAR:
+        case SVA_VAR:
+        case SVC_VAR:
+        {
+            auto _n = (NodeMov *)n.node.get();
+            auto var_name = std::get<std::pair<std::string, DataType>>(_n->second_oper);
+            auto r = table._const_list.find(var_name.first);
+            if (r == table._const_list.end())
+            {
+                fu_err(*n._file.get(), n.line, "The variable '" + var_name.first + "' doesn't exist.");
+                die(1);
+            }
+            break;
+        }
+        case JMP:
+        case JNZ:
+        case JZ:
+        case JNE:
+        case JE:
+        case JNC:
+        case JC:
+        case JNO:
+        case JO:
+        case JNN:
+        case JN:
+        case JNG:
+        case JG:
+        case JNS:
+        case JS:
+        case JGE:
+        case JSE:
+        case CALL:
+        case LOOP:
+        case SETE:
+        {
+            auto _n = (NodeCall *)n.node.get();
+            std::string name = std::get<std::string>(_n->_oper);
+            if (labels.find(name) == labels.end())
+            {
+                fu_err(*n._file.get(), n.line, "This label to branch into doesn't exist: " + name);
+                die(1);
+            }
+            break;
+        }
+        case CMPXCHG:
+        {
+            auto _n = (NodeCmpxchg *)n.node.get();
+            if (table._var_list.find(_n->var) == table._var_list.end())
+            {
+                fu_err(*n._file.get(), n.line, "This variable doesn't exist: " + _n->var);
+                die(1);
+            }
+            break;
+        }
+        case SIN:
+        case SOUT:
+        {
+            auto _n = (NodeSIO *)n.node.get();
+            if (table._var_list.find(_n->name) == table._var_list.end())
+            {
+                fu_err(*n._file.get(), n.line, "This variable doesn't exist: " + _n->name);
+                die(1);
+            }
+            break;
+        }
+        case INTR_VAR:
+        {
+            auto _n = (NodeIntr *)n.node.get();
+            auto name = std::get<std::string>(_n->val);
+            if (table._const_list.find(name) == table._const_list.end())
+            {
+                fu_err(*n._file.get(), n.line, "This constant doesn't exist: " + name);
+                die(1);
+            }
+            n.kind = INTR;
+            _n->val = table._const_list.find(name)->second.value;
+            break;
+        }
+        case INTR_EXPR:
+        {
+            auto _n = (NodeIntr *)n.node.get();
+            auto expr = std::get<std::vector<Token>>(_n->val);
+            evaluator.add_expr(expr);
+            auto v = evaluator.evaluate();
+            if (!v.has_value())
+            {
+                fu_err(*n._file.get(), expr[0].line, "While evaluating the expression here.");
+                die(1);
+            }
+            n.kind = INTR;
+            _n->val = v.value();
+            break;
+        }
+        }
+    }
 }

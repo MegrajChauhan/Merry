@@ -68,7 +68,7 @@ namespace masm
 
         void give_address_to_labels();
 
-        void handle_arithmetic_reg_imm(msize_t op, NodeArithmetic *a);
+        void handle_arithmetic_reg_imm(msize_t op, NodeArithmetic *a, size_t _a = 0xFFFFFFFFFFFF);
         void handle_arithmetic_reg_reg(msize_t op, NodeArithmetic *a);
         void handle_arithmetic_reg_var(NodeArithmetic *a, msize_t op);
 

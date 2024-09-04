@@ -78,6 +78,8 @@ namespace masm
         void analyse_proc(); // check if any procedure was left undefined
 
         void confirm_entries();
+
+        void make_node_analysis();
     };
 
     class ChildContext : public Context
