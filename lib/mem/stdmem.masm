@@ -1,0 +1,86 @@
+proc __builtin_std_mem_init
+proc __builtin_std_alloc
+proc __builtin_std_mem_check_free_blocks
+
+;; ARGS: None, RETURN: Nothing
+__builtin_std_mem_init
+    call __builtin_quick_save
+    
+    ;; First initialize the internal values
+    loadq Ma, _Mstd_free_mem_start_addr
+    storeq Ma, _Mstd_allocable_mem_start
+
+    mov Ma, _MSTD_NULL_
+    storeq Ma, _Mstd_allocated_mem_head
+    storeq Ma, _Mstd_free_mem_head
+
+    mov Ma, 0
+    storeq Ma, _Mstd_allocated_mem
+
+    ;; Getting the actual size
+    loadq Ma, _Mstd_num_of_pages
+    mul Ma, _MSTD_MEM_PAGE_LEN
+
+    sub Ma, _Mstd_allocable_mem_start 
+    storeq Ma, _Mstd_allocable_mem_len ;; This gives us the length
+
+    call __builtin_quick_restore
+    ret
+
+;; Checks if we have any fitting free block
+;; RETURNS: In M1
+__builtin_std_mem_check_free_blocks
+    loadq M1, _Mstd_free_mem_head
+    cmp M1, _MSTD_NULL_
+    je _std_mem_check_done
+    
+    ;; Loop through the free blocks to find any fitting block
+_std_mem_check_loop
+    movl M2, M1
+    sub M2, _MSTD_MEM_METADATA_BLOCK_LEN
+    loadq Mm1, M2
+    cmp Mm1, Ma
+    je _std_mem_check_done ;; found one
+    sub M1, _MSTD_MEM_METADATA_NXT_
+    loadq M1, M1
+    cmp M1, _MSTD_NULL_
+    je _std_mem_check_done
+    jmp _std_mem_check_loop ;; keep going until _MSTD_NULL_
+
+_std_mem_check_done
+    ret
+
+;; ARGS: Ma = number of bytes
+;; RETURNS: Ma = PTR to the allocated memory
+__builtin_std_alloc
+    call __builtin_quick_save
+    
+    ;; Quick mem align
+    call __builtin_align_value
+ 
+    ;; Protection Checks
+    cmp Ma, 0
+    mov Ma, _MSTD_NULL_
+    storeq Ma, _Mstd_mem_intermediate
+    je _std_mem_alloc_done
+
+    ;; Check for free blocks
+    call __builtin_std_mem_check_free_blocks
+    cmp M1, _MSTD_NULL_
+    storeq M1, _Mstd_mem_intermediate
+    jne _std_mem_alloc_done
+
+    ;; Being here indicates no free block
+    ;; check if we have enough allocable memory
+    push Ma
+    add Ma, _MSTD_MEM_METADATA_BLOCK_LEN
+    cmp Ma, _Mstd_allocable_mem_len
+    jse _std_mem_enough_mem
+
+_std_mem_enough_mem
+
+_std_mem_alloc_done
+    call __builtin_quick_restore
+    loadq Ma, _Mstd_mem_intermediate
+    ret
+;;  _Mstd_mem_intermediate

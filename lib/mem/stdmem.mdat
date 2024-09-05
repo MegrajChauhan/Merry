@@ -1,0 +1,20 @@
+rq _Mstd_allocable_mem_len 1   ;; The memory that we can allocate with
+rq _Mstd_allocated_mem 1       ;; The memory that we have already allocated  
+
+rq _Mstd_allocable_mem_start 1 ;; The start of the free memory
+rq _Mstd_allocable_mem_end 1   ;; The end of the total occupied memory(Doesn't indicate the end of free memory)
+rq _Mstd_allocated_mem_head 1  ;; Pointer to the first allocated byte
+rq _Mstd_free_mem_head 1       ;; Pointer to the free head
+
+rq _Mstd_mem_intermediate 1    ;; This is something that shouldn't be used by other procedures
+
+;; Each allocated block is gonna have the following metadata 
+;; BYTE _reserve   ;; Reserved byte
+;; WORD _block_len ;; The number of allocated bytes
+;; QWORD* nxt      ;; Pointer to the next block
+
+dc _MSTD_MEM_METADATA_LEN_ 16
+dc _MSTD_MEM_METADATA_BLOCK_LEN 16
+dc _MSTD_MEM_METADATA_NXT_ 8
+
+dc _MSTD_MEM_PAGE_LEN 0x100000 ;; The length of one page

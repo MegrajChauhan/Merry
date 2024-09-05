@@ -29,8 +29,8 @@
 #include <merry_config.h>
 
 // boolean types
-#define mtrue 1
-#define mfalse 0
+#define mtrue 0
+#define mfalse 1
 
 // for function returns
 #define RET_SUCCESS mtrue
