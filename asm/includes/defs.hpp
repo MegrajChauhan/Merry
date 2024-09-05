@@ -3,7 +3,7 @@
 
 namespace masm
 {
-     enum DataType
+    enum DataType
     {
         BYTE,
         WORD,
@@ -18,7 +18,7 @@ namespace masm
         RESQ,
     };
 
-        enum NodeKind
+    enum NodeKind
     {
         PROC_DECLR,
         LABEL,
@@ -298,7 +298,7 @@ namespace masm
         Mm5,
     };
 
-        enum TokenType
+    enum TokenType
     {
         MB_C, // pseudotoken
         MB_DATA,

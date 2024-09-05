@@ -7,4 +7,7 @@ Main
     call __builtin_std_get_cmd_options
     loadb Ma, Ma
     out Ma
+    mov Ma, 10
+    cout Ma
+    mov Ma, 0
     halt

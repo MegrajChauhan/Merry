@@ -1457,7 +1457,8 @@ _exec_(call)
         core->stop_running = mtrue;
         return;
     }
-    core->stack_mem[(core->sp++)] = core->bp; // save the BP
+    (core->sp++);
+    core->stack_mem[(core->sp)] = core->bp; // save the BP
     core->bp = core->sp;
 }
 
