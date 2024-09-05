@@ -27,6 +27,7 @@ void masm::Context::init_context(std::string path)
     }
     ins.close();
     evaluator.add_table(&table);
+    evaluator.add_addr(&data_addr);
 }
 
 void masm::ChildContext::init_context(std::string path)
@@ -55,7 +56,6 @@ void masm::ChildContext::init_context(std::string path)
         inp_file_conts += l + '\n';
     }
     ins.close();
-    evaluator.add_table(table);
 }
 
 void masm::Context::read_file(std::string file)
@@ -175,9 +175,11 @@ void masm::Context::start()
             if (_std_paths.find(_p) == _std_paths.end())
                 _p = std::filesystem::current_path() / _p;
             else
-                _p = "../" + _std_paths.find(_p)->second;
+                _p = _std_paths.find(_p)->second;
             cont.init_context(_p);
-            cont.setup_structure(&label_addr, &teepe, &table, &filelist, &flist, &nodes, &proc_list, &labels, &entries);
+            cont.setup_structure(&data_addr, &label_addr, &teepe, &table, &filelist, &flist, &nodes, &proc_list, &labels, &entries);
+            cont.evaluator.add_addr(&data_addr);
+            cont.evaluator.add_table(&table);
             cont.start();
             break;
         }
@@ -280,8 +282,8 @@ void masm::Context::start()
     confirm_entries();
     gen.setup_codegen(&table, &nodes, &label_addr, &data_addr);
     gen.generate_data();
-    gen.give_address_to_labels();
     make_node_analysis();
+    gen.give_address_to_labels();
     /// NOTE: The following change that I made to "label_addr" is an idiotic move
     // It would have been better with just one function.
     // I am too lazy to change it back so a good lesson.
@@ -384,7 +386,9 @@ void masm::ChildContext::start()
             else
                 _p = _std_paths.find(_p)->second;
             cont.init_context(_p);
-            cont.setup_structure(label_addr, teepe, table, filelist, flist, nodes, proc_list, labels, entries);
+            cont.setup_structure(data_addr, label_addr, teepe, table, filelist, flist, nodes, proc_list, labels, entries);
+            cont.evaluator.add_addr(data_addr);
+            cont.evaluator.add_table(table);
             cont.start();
             break;
         }
@@ -490,10 +494,15 @@ bool masm::Context::setup_for_new_file(std::string npath)
     if (_std_paths.find(npath) == _std_paths.end())
         npath = std::filesystem::current_path() / npath;
     else
-        inp_file = "../" + _std_paths.find(npath)->second;
+        npath = _std_paths.find(npath)->second;
     auto res = filelist.find(npath);
     if (res != filelist.end())
         return false; // file already included
+    if (!std::filesystem::exists(npath))
+    {
+        note("The file " + npath + " doesn't exist.");
+        return false;
+    }
     read_file(npath);
     filelist[npath] = true;
     flist.push_back(npath);
@@ -505,10 +514,15 @@ bool masm::ChildContext::setup_for_new_file(std::string npath)
     if (_std_paths.find(npath) == _std_paths.end())
         npath = std::filesystem::current_path() / npath;
     else
-        inp_file =  "../" +  _std_paths.find(npath)->second;
+        npath = _std_paths.find(npath)->second;
     auto res = filelist->find(npath);
     if (res != filelist->end())
         return false; // file already included
+    if (!std::filesystem::exists(npath))
+    {
+        note("The file " + npath + " doesn't exist.");
+        return false;
+    }
     read_file(npath);
     (*filelist)[npath] = true;
     flist->push_back(npath);
@@ -527,7 +541,7 @@ void masm::Context::analyse_proc()
     }
 }
 
-void masm::ChildContext::setup_structure(std::unordered_map<std::string, size_t> *lb, std::unordered_map<std::string, std::string> *tp, SymbolTable *t, std::unordered_map<std::string, bool> *fl, std::vector<std::string> *_fl, std::vector<Node> *n, std::unordered_map<std::string, Procedure> *pl, std::unordered_map<std::string, size_t> *ll, std::vector<std::string> *e)
+void masm::ChildContext::setup_structure(std::unordered_map<std::string, size_t> *da, std::unordered_map<std::string, size_t> *lb, std::unordered_map<std::string, std::string> *tp, SymbolTable *t, std::unordered_map<std::string, bool> *fl, std::vector<std::string> *_fl, std::vector<Node> *n, std::unordered_map<std::string, Procedure> *pl, std::unordered_map<std::string, size_t> *ll, std::vector<std::string> *e)
 {
     table = t;
     filelist = fl;
@@ -538,6 +552,7 @@ void masm::ChildContext::setup_structure(std::unordered_map<std::string, size_t>
     entries = e;
     teepe = tp;
     label_addr = lb;
+    data_addr = da;
 }
 
 void masm::Context::handle_defined()
@@ -821,10 +836,24 @@ void masm::Context::make_node_analysis()
             break;
         }
         case MOV_EXPR:
+        case MOVL_EXPR:
+        {
+            auto _n = (NodeMov *)n.node.get();
+            auto expr = std::get<std::vector<Token>>(_n->second_oper);
+            evaluator.add_expr(expr);
+            auto v = evaluator.evaluate();
+            if (!v.has_value())
+            {
+                fu_err(*n._file.get(), expr[0].line, "While evaluating the expression here.");
+                die(1);
+            }
+            n.kind = MOVL_IMM;
+            _n->second_oper = std::make_pair(v.value(), BYTE);
+            break;
+        }
         case MOVSXB_EXPR:
         case MOVSXW_EXPR:
         case MOVSXD_EXPR:
-        case MOVL_EXPR:
         case SVA_EXPR:
         case SVC_EXPR:
         {
@@ -902,6 +931,11 @@ void masm::Context::make_node_analysis()
                 fu_err(*n._file.get(), n.line, "The variable '" + var_name.first + "' doesn't exist.");
                 die(1);
             }
+            if (n.kind == MOV_VAR || n.kind == MOVL_VAR)
+            {
+                n.kind = MOVL_IMM;
+                _n->second_oper = std::make_pair(r->second.value, BYTE);
+            }
             break;
         }
         case JMP:
@@ -921,9 +955,19 @@ void masm::Context::make_node_analysis()
         case JS:
         case JGE:
         case JSE:
-        case CALL:
-        case LOOP:
         case SETE:
+        case LOOP:
+        {
+            auto _n = (NodeName *)n.node.get();
+            std::string name = _n->name;
+            if (labels.find(name) == labels.end())
+            {
+                fu_err(*n._file.get(), n.line, "This label to branch into doesn't exist: " + name);
+                die(1);
+            }
+            break;
+        }
+        case CALL:
         {
             auto _n = (NodeCall *)n.node.get();
             std::string name = std::get<std::string>(_n->_oper);

@@ -129,6 +129,12 @@ std::optional<std::string> masm::Expr::evaluate()
             auto res = table->_var_list.find(t.val);
             if (!(res == table->_var_list.end()))
             {
+                if (_addr)
+                {
+                    operads.push((double)((*data_addr)[t.val]));
+                    _addr = false;
+                    break;
+                }
                 auto v = table->variables[res->second];
                 switch (v.type)
                 {
@@ -152,10 +158,7 @@ std::optional<std::string> masm::Expr::evaluate()
                     table->variables[res->second].value = _r.value();
                     table->variables[res->second].is_expr = false;
                 }
-                if (_addr)
-                    operads.push((double)((*data_addr)[t.val]));
-                else
-                    operads.push(std::stod(v.value));
+                operads.push(std::stod(v.value));
             }
             else
             {
@@ -184,7 +187,6 @@ std::optional<std::string> masm::Expr::evaluate()
                 }
                 operads.push(std::stod(res1->second.value));
             }
-            _addr = false;
             break;
         }
         case TokenType::OPER_NOT:
@@ -242,12 +244,14 @@ std::optional<std::string> masm::Expr::evaluate()
         if (!perform())
             return {};
     }
-    if (!operads.empty() || _addr)
+    if ((operads.size() != 1) || _addr)
     {
         note("Invalid expression.");
         return {};
     }
-    return std::make_optional<std::string>(std::to_string(operads.top()));
+    res = std::to_string(operads.top());
+    operads.pop();
+    return std::make_optional<std::string>(res);
 }
 
 bool masm::Expr::perform()

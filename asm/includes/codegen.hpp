@@ -78,8 +78,6 @@ namespace masm
         void handle_mov_reg_reg(NodeMov *n, msize_t op);
         void handle_mov_reg_var(NodeMov *n);
 
-        void handle_movsx_reg_var(NodeMov *n, NodeKind k);
-
         void handle_jmp(msize_t op, NodeName *n);
 
         void handle_push_pop_reg(msize_t op, NodePushPop *n);

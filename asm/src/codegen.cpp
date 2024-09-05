@@ -937,7 +937,7 @@ void masm::CodeGen::handle_mov_reg_var(NodeMov *n)
             _s.first = table->_const_list[_s.first].value;
             _s.second = table->_const_list[_s.first].type;
             n->second_oper = _s;
-            handle_mov_reg_imm(false, n);
+            handle_mov_reg_imm(true, n);
             return;
         }
     }

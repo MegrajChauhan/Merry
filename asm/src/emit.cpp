@@ -74,9 +74,9 @@ void masm::Emit::add_header()
         f << b.b[i];
     }
     b.val = gen_ST ? ST->size() : 0;
-    for (auto v : b.b)
+    for (int i = 7; i >= 0; i--)
     {
-        f << v;
+        f << b.b[i];
     }
 }
 

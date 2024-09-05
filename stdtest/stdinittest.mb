@@ -1,5 +1,5 @@
-code ../stdtest/stdinittest.masm
-data ../stdtest/stdinittest.mdat
+code stdtest/stdinittest.masm
+data stdtest/stdinittest.mdat
 
 depends stdinit.mb
 

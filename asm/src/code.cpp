@@ -1173,6 +1173,7 @@ bool masm::Code::handle_single_regr(NodeKind k)
     Node node;
     node.node = std::make_unique<NodeSingleRegr>();
     auto n = (NodeSingleRegr *)node.node.get();
+    node.kind = k;
     auto res = _l.next_token();
     if (!res.has_value())
     {

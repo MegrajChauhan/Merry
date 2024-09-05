@@ -43,6 +43,7 @@ namespace masm
         std::string eepe = "1";
         std::unordered_map<std::string, std::string> teepe;
         std::vector<std::string> entries;
+        std::unordered_map<std::string, size_t> data_addr;
 
         CodeGen gen;
 
@@ -51,8 +52,7 @@ namespace masm
 
     public:
         Expr evaluator; // This is okay
-        std::unordered_map<std::string, size_t> data_addr; // this too
-        
+
         Context() = default;
 
         std::unordered_map<std::string, size_t> *get_lbl_addr();
@@ -103,7 +103,7 @@ namespace masm
         std::string *eepe;
         std::unordered_map<std::string, std::string> *teepe;
         std::vector<std::string> *entries;
-
+        std::unordered_map<std::string, size_t> *data_addr;
         std::vector<bool> _end_queue;
         bool skip = false;
 
@@ -112,10 +112,10 @@ namespace masm
         ChildContext(std::string *ee) : eepe(ee) {}
         void init_context(std::string path) override;
 
-        void setup_structure(std::unordered_map<std::string, size_t> *la, std::unordered_map<std::string, std::string> *tep, SymbolTable *t, std::unordered_map<std::string, bool> *fl, std::vector<std::string> *_fl, std::vector<Node> *n, std::unordered_map<std::string, Procedure> *pl, std::unordered_map<std::string, size_t> *ll, std::vector<std::string> *e);
+        void setup_structure(std::unordered_map<std::string, size_t> *da, std::unordered_map<std::string, size_t> *la, std::unordered_map<std::string, std::string> *tep, SymbolTable *t, std::unordered_map<std::string, bool> *fl, std::vector<std::string> *_fl, std::vector<Node> *n, std::unordered_map<std::string, Procedure> *pl, std::unordered_map<std::string, size_t> *ll, std::vector<std::string> *e);
 
         void start() override;
-        
+
         void read_file(std::string file) override;
 
         bool setup_for_new_file(std::string npath) override;
