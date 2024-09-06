@@ -895,7 +895,6 @@ void masm::Context::make_node_analysis()
         case XOR_VAR:
         case LSHIFT_VAR:
         case RSHIFT_VAR:
-        case CMP_VAR:
         {
             auto _n = (NodeArithmetic *)n.node.get();
             std::string var_name = std::get<std::string>(_n->second_oper);
@@ -910,13 +909,64 @@ void masm::Context::make_node_analysis()
             _n->second_oper = r->second.value;
             break;
         }
+        case CMP_VAR:
+        {
+            auto _n = (NodeArithmetic *)n.node.get();
+            std::string var_name = std::get<std::string>(_n->second_oper);
+            auto r = table._var_list.find(var_name);
+            if (r == table._var_list.end())
+            {
+                if (table._const_list.find(var_name) == table._const_list.end())
+                {
+                    fu_err(*n._file.get(), n.line, "The variable '" + var_name + "' doesn't exist.");
+                    die(1);
+                }
+                else
+                {
+                    n.kind = (NodeKind)(n.kind - 2);
+                    _n->second_oper = table._const_list.find(var_name)->second.value;
+                }
+            }
+            break;
+        }
         case MOV_VAR:
+        case SVA_VAR:
+        case SVC_VAR:
+        case MOVL_VAR:
+        {
+            auto _n = (NodeMov *)n.node.get();
+            auto var_name = std::get<std::pair<std::string, DataType>>(_n->second_oper);
+            auto r = table._const_list.find(var_name.first);
+            if (r == table._const_list.end())
+            {
+                if (n.kind == MOV_VAR || n.kind == MOVL_VAR)
+                {
+                    if ((labels.find(var_name.first) != labels.end()))
+                        break;
+                }
+                auto _r = table._var_list.find(var_name.first);
+                if (_r == table._var_list.end())
+                {
+                    fu_err(*n._file.get(), n.line, "The variable '" + var_name.first + "' doesn't exist.");
+                    die(1);
+                }
+                break;
+            }
+            if (n.kind == MOV_VAR || n.kind == MOVL_VAR)
+            {
+                n.kind = MOVL_IMM;
+                _n->second_oper = std::make_pair(r->second.value, BYTE);
+            }
+            else
+            {
+                n.kind = (NodeKind)(n.kind - 2);
+                _n->second_oper = std::make_pair(r->second.value, BYTE);
+            }
+            break;
+        }
         case MOVSXB_VAR:
         case MOVSXW_VAR:
         case MOVSXD_VAR:
-        case MOVL_VAR:
-        case SVA_VAR:
-        case SVC_VAR:
         {
             auto _n = (NodeMov *)n.node.get();
             auto var_name = std::get<std::pair<std::string, DataType>>(_n->second_oper);

@@ -134,6 +134,10 @@ namespace masm
         {"stdinit.mdat", "lib/init/stdinit.mdat"},
         {"stdutils.masm", "lib/utils/stdutils.masm"},
         {"stddefs.mdat", "lib/utils/stddefs.mdat"},
+        {"stdintr.mdat", "lib/utils/stdintr.mdat"},
+        {"stdmem.mb", "lib/mem/stdmem.mb"},
+        {"stdmem.masm", "lib/mem/stdmem.masm"},
+        {"stdmem.mdat", "lib/mem/stdmem.mdat"},
 #endif
     };
 };

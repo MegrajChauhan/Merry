@@ -1,0 +1,12 @@
+proc Main
+
+Main
+    call __builtin_std_init
+    mov Mc, 20                  ;; Try it 20 times
+__
+    mov Ma, 16                  ;; Try allocating 16 bytes
+    call __builtin_std_alloc
+    loop __
+    in Ma
+    mov Ma, 0
+    halt

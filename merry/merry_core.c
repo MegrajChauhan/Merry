@@ -593,6 +593,8 @@ _THRET_T_ merry_runCore(mptr_t core)
             // the byte to output is stored in a register that is encoded into the last 4 bits of the instruction
             putchar((int)c->registers[*current & 15]);
             break;
+        case OP_SIN_REG:
+            *current |= (c->registers[*current & 15] & 0xFFFFFFFFFFFF);
         case OP_SIN:
             // the address to store in is encoded into the instruction
             // the number of bytes to input is in the Mc register
@@ -617,6 +619,8 @@ _THRET_T_ merry_runCore(mptr_t core)
                 free(temp);
             }
             break;
+        case OP_SOUT_REG:
+            *current |= (c->registers[*current & 15] & 0xFFFFFFFFFFFF);
         case OP_SOUT:
             // the address to store in is encoded into the instruction
             // the number of bytes to output is in the Mc register

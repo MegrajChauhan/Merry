@@ -329,6 +329,9 @@ enum
   OP_POP_MEMW,
   OP_POP_MEMD,
   OP_POP_MEMQ,
+
+  OP_SIN_REG,
+  OP_SOUT_REG,
 };
 
 /*

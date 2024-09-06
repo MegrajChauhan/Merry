@@ -1157,13 +1157,22 @@ bool masm::Code::handle_sio(NodeKind k)
         return false;
     }
     t = res.value();
-    if (t.type != IDENTIFIER)
+    switch (t.type)
     {
+    case IDENTIFIER:
+        node.kind = (k);
+        n->name = t.val;
+        break;
+    default:
+        if (t.type >= KEY_Ma && t.type <= KEY_Mm5)
+        {
+            node.kind = (NodeKind)(k+1);
+            n->reg = regr_map[t.type];
+            break;
+        }
         err(fname, regr_line, regr_col, regr_col + 1, _parsing, syntaxerr, ERR_STR, "Expected an identifier after the SIO instruction.", _l.get_from_line(regr_line));
         return false;
     }
-    node.kind = (k);
-    n->name = t.val;
     nodes->push_back(std::move(node));
     return true;
 }

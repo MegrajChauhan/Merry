@@ -32,6 +32,7 @@ namespace masm
 
     struct NodeSIO : public NodeName
     {
+        Register reg;
     };
 
     struct NodeArithmetic : public Base

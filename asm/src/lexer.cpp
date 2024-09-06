@@ -408,7 +408,7 @@ std::string masm::Lexer::read_hex(bool neg)
         h += _curr;
         consume();
     }
-    long long tmp = std::stoll(h, NULL, 16);
+    long long tmp = (long long)std::stoull(h, NULL, 16);
     h = std::to_string(tmp);
     return h;
 }
@@ -427,7 +427,7 @@ std::string masm::Lexer::read_oct(bool neg)
         h += _curr;
         consume();
     }
-    long long tmp = std::stoll(h, NULL, 8);
+    long long tmp = (long long)std::stoull(h, NULL, 8);
     h = std::to_string(tmp);
     return h;
 }
@@ -446,7 +446,7 @@ std::string masm::Lexer::read_bin(bool neg)
         h += _curr;
         consume();
     }
-    long long tmp = std::stoll(h, NULL, 2);
+    long long tmp = (long long)std::stoull(h, NULL, 2);
     h = std::to_string(tmp);
     return h;
 }

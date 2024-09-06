@@ -1,6 +1,7 @@
-code stdtest/stdinittest.masm
-data stdtest/stdinittest.mdat
+code stdtest/stdalloctest.masm
+;; data stdtest/stdinittest.mdat
 
 depends stdinit.mb
+depends stdmem.mb
 
 entry Main

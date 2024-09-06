@@ -55,7 +55,7 @@ void masm::CodeGen::handle_arithmetic_reg_var(NodeArithmetic *a, msize_t op)
     }
     size_t var_addr = (*data_addr)[std::get<std::string>(a->second_oper)];
     auto var_dets = table->variables[table->_var_list.find(var)->second];
-    b.bytes.b8 = a->reg;
+    b.bytes.b2 = a->reg;
     switch (var_dets.type)
     {
     case BYTE:
@@ -477,11 +477,27 @@ bool masm::CodeGen::generate()
             code.push_back(b);
             break;
         }
+        case SIN_REGR:
+        {
+            GenBinary b;
+            b.bytes.b1 = OP_SIN_REG;
+            b.bytes.b8 = ((NodeSIO*)node.node.get())->reg;
+            code.push_back(b);
+            break;
+        }
         case SOUT:
         {
             GenBinary b;
             b.bytes.b1 = OP_SOUT;
             b.full |= ((*data_addr)[((NodeSIO *)node.node.get())->name] & 0xFFFFFFFFFFFF);
+            code.push_back(b);
+            break;
+        }
+        case SOUT_REGR:
+        {
+            GenBinary b;
+            b.bytes.b1 = OP_SOUT_REG;
+            b.bytes.b8 = ((NodeSIO*)node.node.get())->reg;
             code.push_back(b);
             break;
         }

@@ -109,6 +109,8 @@ namespace masm
         void handle_sva_svc_var(NodeSTACK *n, msize_t op);
 
         void handle_float_var(NodeArithmetic *n, msize_t op);
+
+        void handle_cmp_var(NodeArithmetic *n);
     };
 };
 
