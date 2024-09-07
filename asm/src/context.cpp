@@ -776,6 +776,11 @@ void masm::Context::make_node_analysis()
                     fu_err(*n._file.get(), n.line, "The variable '" + var_name + "' doesn't exist.");
                     die(1);
                 }
+                else
+                {
+                    n.kind = (NodeKind)(n.kind - 2);
+                    _n->second_oper = table._const_list.find(var_name)->second.value;
+                }
             }
             break;
         }
@@ -883,6 +888,29 @@ void masm::Context::make_node_analysis()
             }
             n.kind = (NodeKind)(n.kind - 3);
             _n->val = v.value();
+            break;
+        }
+        case PUSH_VAR:
+        case POP_VAR:
+        {
+            auto _n = (NodePushPop *)n.node.get();
+            auto var_name = std::get<std::string>(_n->val);
+            if (table._var_list.find(var_name) == table._var_list.end())
+            {
+                if (n.kind == PUSH_VAR)
+                {
+                    if (table._const_list.find(var_name) != table._const_list.end())
+                    {
+                        n.kind = PUSH_IMM;
+                        _n->val = table._const_list.find(var_name)->second.value;
+                        break;
+                    }
+                }
+                if ((n.kind == PUSH_VAR) && (labels.find(var_name) != labels.end()))
+                    break;
+                fu_err(*n._file.get(), n.line, "The variable '" + var_name + "' doesn't exist.");
+                die(1);
+            }
             break;
         }
         case IADD_VAR:

@@ -481,7 +481,7 @@ bool masm::CodeGen::generate()
         {
             GenBinary b;
             b.bytes.b1 = OP_SIN_REG;
-            b.bytes.b8 = ((NodeSIO*)node.node.get())->reg;
+            b.bytes.b8 = ((NodeSIO *)node.node.get())->reg;
             code.push_back(b);
             break;
         }
@@ -497,7 +497,7 @@ bool masm::CodeGen::generate()
         {
             GenBinary b;
             b.bytes.b1 = OP_SOUT_REG;
-            b.bytes.b8 = ((NodeSIO*)node.node.get())->reg;
+            b.bytes.b8 = ((NodeSIO *)node.node.get())->reg;
             code.push_back(b);
             break;
         }
@@ -909,6 +909,8 @@ void masm::CodeGen::handle_mov_reg_imm(bool l, NodeMov *n)
         code.push_back(b);
         b.full = 0;
     }
+    else
+        b.bytes.b2 = n->reg;
     auto second = std::get<std::pair<std::string, DataType>>(n->second_oper);
     switch (second.second)
     {

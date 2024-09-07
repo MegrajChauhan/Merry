@@ -36,8 +36,8 @@ MerryCore *merry_core_init(MerryMemory *inst_mem, MerryDMemory *data_mem, msize_
     if (new_core->stack_mem == RET_NULL)
         goto failure;
 #ifdef _USE_LINUX_
-    madvise(new_core->stack_mem, _MERRY_MEMORY_ADDRESSES_PER_PAGE_, MADV_RANDOM);
-    madvise(new_core->stack_mem, _MERRY_MEMORY_ADDRESSES_PER_PAGE_, MADV_WILLNEED);
+    madvise(new_core->stack_mem, _MERRY_STACKMEM_BYTE_LEN_, MADV_RANDOM);
+    madvise(new_core->stack_mem, _MERRY_STACKMEM_BYTE_LEN_, MADV_WILLNEED);
 #endif
     new_core->stop_running = mfalse; // this is set to false because as soon as the core is instructed to start/continue execution, it shouldn't stop and start immediately
     new_core->ras = merry_init_stack(_MERRY_RAS_LEN_, mtrue, _MERRY_RAS_LIMIT_, _MERRY_RAS_GROW_PER_RESIZE_);
@@ -82,13 +82,13 @@ void merry_core_destroy(MerryCore *core, mbool_t _cond)
 _MERRY_INTERNAL_ mqword_t merry_core_get_immediate(MerryCore *core)
 {
     mqword_t res = 0;
-    core->pc++;
     if (merry_manager_mem_read_inst(core->inst_mem, core->pc, &res) == RET_FAILURE)
     {
         // we failed
         core->stop_running = mtrue;
         merry_requestHdlr_panic(core->inst_mem->error, core->core_id);
     }
+    core->pc++;
     return res;
 }
 
@@ -354,6 +354,8 @@ _THRET_T_ merry_runCore(mptr_t core)
             _cmp_inst_(reg, imm, &c->flag);
             if (reg > imm)
                 c->greater = 1;
+            else
+                c->greater = 0;
             break;
         case OP_CMP_IMM_MEMB:
             merry_execute_cmp_mem(c, merry_dmemory_read_byte);
@@ -1217,6 +1219,8 @@ _lexec_(cmp_mem, mem_read func)
     _cmp_inst_(reg, temp, &core->flag);
     if (reg > temp)
         core->greater = 1;
+    else
+        core->greater = 0;
 }
 
 _exec_(iadd_imm)
@@ -1478,6 +1482,7 @@ _exec_(ret)
     }
     core->bp = core->stack_mem[core->bp]; // restore the BP
                                           // it is the program's job to restore SP to its desired position
+    core->sp--;
 }
 
 _exec_(sva)
@@ -1617,7 +1622,7 @@ _exec_(popa)
         core->stop_running = mtrue;
         return;
     }
-    for (msize_t i = 15; i != 0; i--)
+    for (int i = 15; i > 0; i--)
     {
         // now move one by one
         core->registers[i] = core->stack_mem[core->sp];

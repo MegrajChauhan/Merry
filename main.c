@@ -50,8 +50,10 @@ int merry_main();
 
 int main(int argc, char **argv)
 {
-    merry_setup_host(argc, argv);
-    if (merry_main_parse_options(argc, argv) == RET_FAILURE)
+    int a = 3;
+    char *c[] = {"gdh", "-f", "memtest.mbin"};
+    merry_setup_host(a, c);
+    if (merry_main_parse_options(a, c) == RET_FAILURE)
         merry_cleanup_and_exit(1);
     if (_is_child == mtrue)
         merry_cleanup_and_exit(childmain());

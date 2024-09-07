@@ -29,12 +29,12 @@
 #include <merry_config.h>
 
 // boolean types
-#define mtrue 0
-#define mfalse 1
+#define mtrue 1
+#define mfalse 0
 
 // for function returns
-#define RET_SUCCESS mtrue
-#define RET_FAILURE mfalse
+#define RET_SUCCESS 0
+#define RET_FAILURE 1
 #define RET_AMBIGIOUS 2    // extra return to be used for any third sort of return
 #define RET_NULL (void *)0 // used by functions
 

@@ -65,9 +65,9 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _
     /// NOTE: Don't mind the nested if-conditions if you will.
     if (os.reader->de_flag == mtrue)
         merry_os_start_dbg(_wait_for_conn, _MERRY_DEFAULT_LISTEN_PORT_, _MERRY_DEFAULT_SEND_PORT_);
-    os.cores[0]->registers[Mm1] = count;        // Mm1 will have the number of options
-    os.cores[0]->registers[Md] = _t + 1;        // Md will have the address to the first byte
-    os.cores[0]->registers[Mm5] = len + _t + 1; // Mm5 contains the address of the first byte that is free and can be manipulated by the program
+    os.cores[0]->registers[Mm1] = count;    // Mm1 will have the number of options
+    os.cores[0]->registers[Md] = _t;        // Md will have the address to the first byte
+    os.cores[0]->registers[Mm5] = len + _t; // Mm5 contains the address of the first byte that is free and can be manipulated by the program
     os.cores[0]->registers[Mm4] = _MERRY_HOST_ID_ARCH_;
     os.cores[0]->registers[Mm3] = _MERRY_HOST_ID_OS_;
     os.cores[0]->registers[Mm2] = os.data_mem->number_of_pages; // Number of pages that the program can manipulate

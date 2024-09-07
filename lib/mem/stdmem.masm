@@ -7,6 +7,210 @@ proc __builtin_std_free
 ;; This is a quick error logging procedure with nothing fancy
 proc __builtin_std_mem_log_err
 
+;; Utility procedures
+proc __builtin_std_mem_append_to_free        ;; used by __builtin_std_free
+proc __builtin_std_mem_append_to_allocated   ;; used by __builtin_std_alloc
+proc __builtin_std_mem_remove_from_free      ;; used by __builtin_std_alloc
+proc __builtin_std_mem_remove_from_allocated ;; used by __builtin_std_free
+
+proc __builtin_std_mem_populate_free_head       ;; used to fill the free head
+proc __builtin_std_mem_populate_allocated_head  ;; used to fill allocated head
+
+;; ARGS: Ma = address to make the head
+;; RETURNS: Nothing
+__builtin_std_mem_populate_free_head
+    
+    ;; call to this procedure means that the free head is empty
+    ;; and so is the tail
+    ;; PREV and NXT must be NULL
+    storeq Ma, _Mstd_free_mem_head
+    storeq Ma, _Mstd_free_mem_tail
+
+    ret
+
+;; ARGS: Ma = address to make the head
+;; RETURNS: Nothing
+__builtin_std_mem_populate_allocated_head
+    
+    ;; call to this procedure means that the allocated head is empty
+    ;; and so is the tail
+    ;; PREV and NXT must be NULL
+    storeq Ma, _Mstd_allocated_mem_head
+    storeq Ma, _Mstd_allocated_mem_tail
+
+    ret
+
+;; ARGS: Ma = address for the block
+;; RETURNS: Nothing
+__builtin_std_mem_append_to_free
+
+    ;; The block that was provided must have NULL for NXT and PREV
+    call __builtin_quick_save
+    
+    loadq M1, _Mstd_free_mem_head
+    loadq M2, _Mstd_free_mem_tail
+
+    cmp M1, _MSTD_NULL_
+    je _std_mem_append_to_free_populate_head
+
+    ;; The job requires just the tail
+    push M2
+    sub M2, _MSTD_MEM_METADATA_NXT_
+    storeq Ma, M2
+    pop M2
+
+    sub Ma, _MSTD_MEM_METADATA_PREV_
+    storeq M2, Ma
+
+    jmp _std_mem_append_to_free_done 
+
+ _std_mem_append_to_free_populate_head
+    call __builtin_std_mem_populate_free_head
+
+ _std_mem_append_to_free_done
+    call __builtin_quick_restore
+    ret
+
+;; ARGS: Ma = address for the block
+;; RETURNS: Nothing
+__builtin_std_mem_append_to_allocated
+
+    ;; The block that was provided must have NULL for NXT and PREV
+    call __builtin_quick_save
+    
+    loadq M1, _Mstd_allocated_mem_head
+    loadq M2, _Mstd_allocated_mem_tail
+
+    cmp M1, _MSTD_NULL_
+    je _std_mem_append_to_allocated_populate_head
+
+    ;; The job requires just the tail
+    push M2
+    sub M2, _MSTD_MEM_METADATA_NXT_
+    storeq Ma, M2
+    pop M2
+
+    sub Ma, _MSTD_MEM_METADATA_PREV_
+    storeq M2, Ma
+
+    jmp _std_mem_append_to_free_done 
+
+ _std_mem_append_to_allocated_populate_head
+    call __builtin_std_mem_populate_allocated_head
+
+ _std_mem_append_to_allocated_done
+    call __builtin_quick_restore
+    ret
+
+;; ARGS: Ma = address for the block to remove
+;; RETURNS: Nothing
+__builtin_std_mem_remove_from_free
+    call __builtin_quick_save
+
+    ;; Updates the Free List and makes NXT and PREV NULL
+    movl Mb, Ma             ;; temporary storage
+    
+    movl Mm1, _MSTD_NULL_
+
+    sub Mb, _MSTD_MEM_METADATA_PREV_
+    loadq M1, Mb
+    storeq Mm1, Mb
+    sub Mb, _MSTD_MEM_METADATA_PREV_
+    loadq M2, Mb
+    storeq Mm1, Mb
+
+    ;; M1 and M2 now contain the neighbors of the block 
+    
+    ;; make some internal value changes
+    cmp Ma, _Mstd_free_mem_head
+    je _std_mem_remove_from_free_is_head
+
+    cmp Ma, _Mstd_free_mem_tail
+    je _std_mem_remove_from_free_is_tail
+
+    jmp _std_mem_remove_from_free_continue 
+
+ _std_mem_remove_from_free_is_head
+    storeq M2, _Mstd_free_mem_head     ;; update the head
+
+ _std_mem_remove_from_free_is_tail
+    storeq M1, _Mstd_free_mem_tail     ;; update the tail
+    
+ _std_mem_remove_from_free_continue
+    cmp M1, _MSTD_NULL_
+    je _std_mem_remove_from_free_continue1
+
+    push M1
+    sub M1, _MSTD_MEM_METADATA_NXT_
+    storeq M2, M1
+    pop M1
+
+ _std_mem_remove_from_free_continue1
+    cmp M2, _MSTD_NULL_
+    je _std_mem_remove_from_free_done
+
+    sub M2, _MSTD_MEM_METADATA_PREV_
+    storeq M1, M2
+
+ _std_mem_remove_from_free_done
+    call __builtin_quick_restore
+    ret
+
+;; ARGS: Ma = address for the block to remove
+;; RETURNS: Nothing
+__builtin_std_mem_remove_from_allocated
+    call __builtin_quick_save
+
+    ;; Updates the Allocated List and makes NXT and PREV NULL
+    movl Mb, Ma             ;; temporary storage
+    
+    movl Mm1, _MSTD_NULL_
+
+    sub Mb, _MSTD_MEM_METADATA_PREV_
+    loadq M1, Mb
+    storeq Mm1, Mb
+    sub Mb, _MSTD_MEM_METADATA_PREV_
+    loadq M2, Mb
+    storeq Mm1, Mb
+
+    ;; M1 and M2 now contain the neighbors of the block 
+    
+    ;; make some internal value changes
+    cmp Ma, _Mstd_allocated_mem_head
+    je _std_mem_remove_from_allocated_is_head
+
+    cmp Ma, _Mstd_allocated_mem_tail
+    je _std_mem_remove_from_allocated_is_tail
+
+    jmp _std_mem_remove_from_allocated_continue 
+
+ _std_mem_remove_from_allocated_is_head
+    storeq M2, _Mstd_allocated_mem_head     ;; update the head
+
+ _std_mem_remove_from_allocated_is_tail
+    storeq M1, _Mstd_free_mem_tail     ;; update the tail
+    
+ _std_mem_remove_from_allocated_continue
+    cmp M1, _MSTD_NULL_
+    je _std_mem_remove_from_allocated_continue1
+
+    push M1
+    sub M1, _MSTD_MEM_METADATA_NXT_
+    storeq M2, M1
+    pop M1
+
+ _std_mem_remove_from_allocated_continue1
+    cmp M2, _MSTD_NULL_
+    je _std_mem_remove_from_allocated_done
+
+    sub M2, _MSTD_MEM_METADATA_PREV_
+    storeq M1, M2
+
+ _std_mem_remove_from_allocated_done
+    call __builtin_quick_restore
+    ret
+
+
 ;; Initialize memory system.
 ;; ARGS: None, RETURN: Nothing
 __builtin_std_mem_init
@@ -18,323 +222,22 @@ __builtin_std_mem_init
     storeq Ma, _Mstd_allocable_mem_end
 
     ;; Set initial pointers to NULL
-    mov Ma, _MSTD_NULL_
+    movl Ma, _MSTD_NULL_
     storeq Ma, _Mstd_allocated_mem_head
     storeq Ma, _Mstd_allocated_mem_tail
     storeq Ma, _Mstd_free_mem_head
     storeq Ma, _Mstd_free_mem_tail
 
     ;; Initialize allocated memory count
-    mov Ma, 0
+    movl Ma, 0
     storeq Ma, _Mstd_allocated_mem
 
     ;; Calculate total memory size
     loadq Ma, _Mstd_num_of_pages
     mul Ma, _MSTD_MEM_PAGE_LEN
     sub Ma, _Mstd_allocable_mem_start
-    sub Ma, 1                               ;; Because addresses start from 0
     storeq Ma, _Mstd_allocable_mem_len      ;; Store available memory size
 
-    call __builtin_quick_restore
-    ret
-
-;; Check for a suitable free block.
-;; ARGS: None, RETURN: M1 contains the pointer to the block or NULL
-__builtin_std_mem_check_free_blocks
-    loadq M1, _Mstd_free_mem_head
-    cmp M1, _MSTD_NULL_
-    je _std_mem_check_done
-    
-    ;; Iterate through free blocks
-_std_mem_check_loop
-    movl M2, M1
-    sub M2, _MSTD_MEM_METADATA_BLOCK_LEN
-    loadq Mm1, M2                           ;; Load block's length
-    cmp Mm1, Ma                             ;; Compare requested size with free block size
-    je _std_mem_check_done                  ;; Block found
-    
-    ;; Move to the next block
-    sub M1, _MSTD_MEM_METADATA_NXT_
-    loadq M1, M1
-    cmp M1, _MSTD_NULL_
-    je _std_mem_check_done
-    jmp _std_mem_check_loop                 ;; Repeat until the end of the list
-
-_std_mem_check_done
-    ret
-
-;; Allocate memory(Thread-safe: No).
-;; ARGS: Ma = requested size (in bytes)
-;; RETURN: Ma = pointer to allocated memory
-__builtin_std_alloc
-    call __builtin_quick_save
-    
-    ;; Align requested size to memory alignment
-    call __builtin_align_value
- 
-    ;; Protection check: If size is 0, return NULL
-    cmp Ma, 0
-    push _MSTD_NULL_
-    pop _Mstd_mem_intermediate
-    je _std_mem_alloc_done
-
-    ;; Check for free blocks
-    call __builtin_std_mem_check_free_blocks
-    cmp M1, _MSTD_NULL_
-    storeq M1, _Mstd_mem_intermediate
-    jne _std_mem_alloc_done
-
-    ;; No free block found, check if we have enough allocable memory
-    push Ma
-    add Ma, _MSTD_MEM_METADATA_BLOCK_LEN
-
-_std_mem_alloc_check_loop
-    cmp Ma, _Mstd_allocable_mem_len
-    jse _std_mem_enough_mem
-
-    ;; Request more memory from VM if needed
-    push Ma
-    call __builtin_std_mem_request_more_mem
-    cmp Ma, 0
-    pop Ma
-    je _std_mem_alloc_check_loop            ;; Retry if successful
-
-    ;; Not enough memory, return NULL
-    ;; and memory request failed
-    jmp _std_mem_alloc_done                 ;; _Mstd_mem_intermediate is already NULL
-
-_std_mem_enough_mem
-    ;; We have enough memory, update memory management data
-    loadq M1, _Mstd_allocable_mem_end
-    loadq M2, _Mstd_allocable_mem_start
-    movl M3, Ma                             ;; Ma right now contains the total allocation size
-    mov M4, _MSTD_NULL_
-    sva M5, 1                               ;; M5 = requested size
-    loadq Mm1, _Mstd_allocable_mem_len
-    loadq Mm3, _Mstd_allocated_mem
-    
-    ;; Save previous end for later use
-    mov Ma, M1
-
-    ;; Update memory pointers and allocate space
-    add M1, M3
-    storeq M1, _Mstd_allocable_mem_end
-
-    sub Mm1, M3                             ;; Update available memory
-    storeq Mm1, _Mstd_allocable_mem_len
-
-    add Mm3, M3                             ;; Update allocated memory size
-    storeq Mm3, _Mstd_allocated_mem
-    
-    ;; Store allocated address and prepare metadata
-    push Ma
-    add Ma, _MSTD_MEM_METADATA_BLOCK_LEN    ;; Address to return
-    push Ma
-    pop _Mstd_mem_intermediate              ;; Store for return
-    push Ma
-
-    ;; Set metadata (next block, previous block and size)
-    loadq Mm4, _Mstd_allocated_mem_tail
-    sub Ma, _MSTD_MEM_METADATA_PREV_
-    storeq Mm4, Ma                          ;; Previous block is the tail
-    sub Ma, _MSTD_MEM_METADATA_PREV_
-    storeq M4, Ma                           ;; Next block is NULL
-    sub Ma, _MSTD_MEM_METADATA_PREV_
-    storeq M5, Ma                           ;; Store block size
-    
-    ;; Update head and tail of allocated memory list
-    movl Mb, _Mstd_allocated_mem_head
-    movl Mc, _Mstd_allocated_mem_tail
-
-    cmp Mb, _MSTD_NULL_
-    je _std_mem_alloc_head_start
-
-    ;; Set the new tail
-    sub Mc, _MSTD_MEM_METADATA_NXT_
-    pop Ma
-    storeq Ma, Mc
-
-    sub Mc, _MSTD_MEM_METADATA_NXT_
-    movl Mf, _MSTD_MEM_MAGIC_NUM_
-    storeq Mf, Mc                           ;; Store the magic number
-    
-    jmp _std_mem_alloc_done
-
-_std_mem_alloc_head_start
-    sva Ma, 1 ;; Set the head if empty
-    storeq Ma, _Mstd_allocated_mem_head
-    cmp Mc, _MSTD_NULL_
-    je _std_mem_alloc_tail_start
-    pop Ma                                  ;; POP the saved old end
-    jmp _std_mem_alloc_done
-
-_std_mem_alloc_tail_start
-    storeq Ma, _Mstd_allocated_mem_tail
-    pop Ma                                  ;; The old saved end
-    jmp _std_mem_alloc_done
-
-_std_mem_alloc_free_block
-    push M1
-    sub M1, _MSTD_MEM_METADATA_NXT_
-    mov Me, M1                        ;; Contains the previous block
-    sub M1, _MSTD_MEM_METADATA_NXT_
-    mov Mf, M1                        ;; Contains the next block
-    pop M1
-
-    push Me
-    sub Me, _MSTD_MEM_METADATA_NXT_
-    storeq Mf, Me
-    pop Me
-
-    cmp Mf, _MSTD_NULL_
-    je _std_mem_alloc_continue
-    
-    push Mf
-    sub Mf, _MSTD_MEM_METADATA_PREV_
-    storeq Me, Mf
-    pop Mf
-
-_std_mem_alloc_continue
-    loadq Mm1, _Mstd_allocated_mem_tail
-    push Mm1
-    sub Mm1, _MSTD_MEM_METADATA_NXT_
-    storeq M1, Mm1                          ;; Update tail pointer
-    pop Mm1
-    push M1
-    sub M1, _MSTD_MEM_METADATA_PREV_
-    storeq Mm1, M1
-    sub M1, _MSTD_MEM_METADATA_PREV_
-    movl Ma, _MSTD_NULL_
-    storeq Ma, M1                           ;; Mark new tail
-    pop _Mstd_mem_intermediate              ;; Everything is ready
-
-_std_mem_alloc_done
-    pop Ma                                  ;; To balance the First PUSH
-    call __builtin_quick_restore
-    loadq Ma, _Mstd_mem_intermediate
-    ret
-
-;; Request more memory from VM.
-;; ARGS: None
-;; RETURN: Ma = 0 for success, 1 for failure, Mb = starting address of new memory
-__builtin_std_mem_request_more_mem
-    intr _M_MEM_ ;; Interrupt to request more memory
-    mov Mc, Ma
-    mul Mc, _MSTD_MEM_PAGE_LEN
-    add Mc, _Mstd_allocable_mem_len
-    storeq Mc, _Mstd_allocable_mem_len
-    ret
-
-;; ARGS: Ma = Pointer returned by __builtin_std_alloc
-;; RETURN: Nothing
-__builtin_std_free
-    call __builtin_quick_save
-
-    ;; We do not change _Mstd_allocated_mem because it represents how much memory has been
-    ;; affected by the allocator and hence an allocated block, even after freeing, is still
-    ;; under the effect of the allocator. In a sense, _Mstd_allocated_mem represents the
-    ;; memory footprint of the program
-
-    loadq M1, _Mstd_allocated_mem_head
-    loadq M2, _Mstd_allocated_mem_tail
-    loadq M3, _Mstd_free_mem_head
-
-    ;; Firstly, isolate the block from the allocated blocks
-    cmp Ma, _MSTD_NULL_            ;; check if the pointer is valid or not
-    je _std_mem_free_err           ;; Free without previous allocations? 
-
-    ;; Magic number check
-    push Ma
-    sub Ma, _MSTD_MEM_METADATA_MAGIC_NUM_
-    loadq Ma, Ma
-    cmp Ma, _MSTD_MEM_MAGIC_NUM_
-    jne _std_mem_free_err
-    pop Ma
-
-    push Ma                        ;; Save the pointer
-
-    sub Ma, _MSTD_MEM_METADATA_PREV_
-    loadq Mm1, Ma                  
-    sub Ma, _MSTD_MEM_METADATA_PREV_
-    loadq Mm2, Ma
-
-    pop Ma
-
-    ;; We now have the neighbors
-    push Mm2
-    push Mm1
-
-    sub Mm1, _MSTD_MEM_METADATA_NXT_
-    loadq Mm2, Mm1
-    pop Mm1
-
-    cmp Mm2, _MSTD_NULL_                ;; check if this block was the tail 
-    je _std_mem_free_continue
-
-    sub Mm2, _MSTD_MEM_METADATA_PREV_
-    loadq Mm1, Mm2 
-
-_std_mem_free_continue
-    pop Mm2
-
-    ;; Now we need to play with the block being freed
-    cmp M3, _MSTD_NULL_
-    jne _std_mem_free_append
-
-_std_mem_populate_free_head
-    ;; No free blocks here so populate it firstly
-    storeq Ma, _Mstd_free_mem_head
-    push Ma
-    sub Ma, _MSTD_MEM_METADATA_NXT_
-    mov Me, Ma                        ;; Contains the previous block
-    sub Ma, _MSTD_MEM_METADATA_NXT_
-    mov Mf, Ma                        ;; Contains the next block
-    pop Ma
-
-    push Me
-    sub Me, _MSTD_MEM_METADATA_NXT_
-    storeq Mf, Me
-    pop Me
-
-    cmp Mf, _MSTD_NULL_
-    je _std_mem_free_continue2
-    
-    push Mf
-    sub Mf, _MSTD_MEM_METADATA_PREV_
-    storeq Me, Mf
-    pop Mf
-
-_std_mem_free_continue2
-    push Ma
-    mov Mb, _MSTD_NULL_
-    sub Ma, _MSTD_MEM_METADATA_PREV_
-    storeq Mb, Ma                        ;; This is the head so nxt and prev are NULL as we are populating the head
-    sub Ma, _MSTD_MEM_METADATA_PREV_
-    storeq Mb, Ma                        
-    pop Ma
-    jmp _std_mem_free_done               ;; done freeing
-
-_std_mem_free_append
-    ;; Change the tail now
-    loadq M1, _Mstd_free_mem_tail
-    storeq Ma, _Mstd_free_mem_tail
-    push M1
-    sub M1, _MSTD_MEM_METADATA_NXT_
-    storeq Ma, M1
-    pop M1
-    sub Ma, _MSTD_MEM_METADATA_PREV_
-    storeq M1, Ma
-    sub Ma, _MSTD_MEM_METADATA_PREV_
-    mov M1, _MSTD_NULL_
-    storeq M1, Ma
-    jmp _std_mem_free_done
-
-_std_mem_free_err
-    mov Ma, [PTR _MSTD_INVALID_FREE]
-    mov Mb, 13                          ;; Length of the message
-    call __builtin_std_mem_log_err      ;; No return
-
-_std_mem_free_done
     call __builtin_quick_restore
     ret
 
@@ -342,7 +245,11 @@ _std_mem_free_done
 __builtin_std_mem_log_err
     mov Mc, Mb
     sout Ma
+    mov Ma, 10
+    cout Ma
     mov Ma, 1             ;; Unsuccessful return
     intr _M_EXIT_         ;; The entire VM stops(unless child processes are running)
 
-_Mstd_allocable_mem_len
+;; ARGS: Nothing
+;; RETURNS: 0 for success and 1 for failure
+__builtin_std_mem_request_more_mem
