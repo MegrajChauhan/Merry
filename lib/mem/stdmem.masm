@@ -4,6 +4,8 @@ proc __builtin_std_mem_check_free_blocks
 proc __builtin_std_mem_request_more_mem
 proc __builtin_std_free
 
+proc __builtin_std_create_new_block
+
 ;; This is a quick error logging procedure with nothing fancy
 proc __builtin_std_mem_log_err
 
@@ -15,6 +17,35 @@ proc __builtin_std_mem_remove_from_allocated ;; used by __builtin_std_free
 
 proc __builtin_std_mem_populate_free_head       ;; used to fill the free head
 proc __builtin_std_mem_populate_allocated_head  ;; used to fill allocated head
+
+proc __builtin_std_mem_is_init ;; has the allocator been initialized?
+proc __builtin_std_mem_has_enough_mem
+
+;; ARGS: None
+;; RETURNS: Ma = 1 for TRUE else 0
+__builtin_std_mem_is_init
+   movl Ma, 0
+   cmp Ma, _Mstd_num_of_pages
+   je _std_mem_is_init_done
+
+   movl Ma, 1
+
+ _std_mem_is_init_done
+   ret
+
+;; ARGS: Ma = Size
+;; RETURNS: Ma = 1 for TRUE else 0
+__builtin_std_mem_has_enough_mem
+
+   mov Mb, Ma
+   movl Ma, 1
+   cmp Ma, _Mstd_allocable_mem_len
+   jse _std_mem_has_enough_mem_done
+
+   movl Ma, 0
+
+ _std_mem_has_enough_mem_done
+   ret
 
 ;; ARGS: Ma = address to make the head
 ;; RETURNS: Nothing
@@ -210,7 +241,6 @@ __builtin_std_mem_remove_from_allocated
     call __builtin_quick_restore
     ret
 
-
 ;; Initialize memory system.
 ;; ARGS: None, RETURN: Nothing
 __builtin_std_mem_init
@@ -251,5 +281,140 @@ __builtin_std_mem_log_err
     intr _M_EXIT_         ;; The entire VM stops(unless child processes are running)
 
 ;; ARGS: Nothing
-;; RETURNS: 0 for success and 1 for failure
+;; RETURNS: 1 for success and 0 for failure
 __builtin_std_mem_request_more_mem
+   call __builtin_quick_save
+   push 0
+   pop _Mstd_mem_intermediate
+   intr _M_MEM_                          ;; ask for more memory
+   cmp Ma, 1
+   je _std_mem_request_more_mem_done
+
+   inc Ma
+   mul Ma, _MSTD_MEM_PAGE_LEN
+
+   loadq M1, _Mstd_allocable_mem_end
+   loadq M2, _Mstd_allocable_mem_len
+   loadq M3, _Mstd_num_of_pages
+
+   inc M3
+   storeq M3, _Mstd_num_of_pages
+   add M2, Ma
+   storeq M2, _Mstd_allocable_mem_len
+   add M1, Ma
+   storeq M1, _Mstd_allocable_mem_end
+   
+   push 1
+   pop _Mstd_mem_intermediate
+
+ _std_mem_request_more_mem_done
+   call __builtin_quick_restore
+   loadq Ma, _Mstd_mem_intermediate
+   ret
+
+;; ARGS: Ma = Size of block to check
+;; RETURNS: Ma = NULL for no match else a valid address
+__builtin_std_mem_check_free_blocks
+
+   call __builtin_quick_save
+
+   push _MSTD_NULL_
+   pop _Mstd_mem_intermediate
+   
+   loadq M1, _Mstd_free_mem_head
+
+   cmp M1, _MSTD_NULL_
+   je _std_mem_check_free_blocks_done
+   
+   loadq M2, _Mstd_free_mem_tail
+ _std_mem_check_free_blocks_loop
+   push M1
+   sub M1, _MSTD_MEM_METADATA_BLOCK_LEN
+   loadq Mm1, M1
+   cmp Mm1, Ma
+   jge _std_mem_check_free_blocks_found
+
+   pop M1
+   sub M1, _MSTD_MEM_METADATA_NXT_
+   loadq Mm1, M1
+   cmp Mm1, _MSTD_NULL_
+   je _std_mem_check_free_blocks_done ;; NULL- found None
+
+   jmp _std_mem_check_free_blocks_loop ;; REDO- again and again until the end
+
+ _std_mem_check_free_blocks_found
+   pop _Mstd_mem_intermediate
+
+ _std_mem_check_free_blocks_done
+   call __builtin_quick_restore
+   loadq Ma, _Mstd_mem_intermediate
+   ret
+
+;; ARGS: Ma = Size of block to create
+;; RETURNS: Ma = newly allocated block or NULL
+__builtin_std_create_new_block
+   call __builtin_quick_save
+   
+   push _MSTD_NULL_
+   pop _Mstd_mem_intermediate
+
+   mov Mm5, Ma
+
+   ;; check if we have enough memory first
+   call __builtin_std_mem_has_enough_mem
+   cmp Ma, 0
+   jne _std_create_new_block_allocate
+
+   call __builtin_std_mem_request_more_mem
+   cmp Ma, 0
+   je _std_create_new_block_done            ;; we failed
+
+ _std_create_new_block_allocate
+   
+   loadq M1, _Mstd_allocable_mem_end
+   push M1
+   movl Mm1, _MSTD_MEM_METADATA_LEN_
+   add Mm1, Mm5
+   add M1, Mm1
+   storeq M1, _Mstd_allocable_mem_end ;; update internals
+
+   loadq M1, _Mstd_allocable_mem_len
+   sub M1, Mm1
+   storeq M1, _Mstd_allocable_mem_len
+   loadq M1, _Mstd_allocated_mem
+   add M1, Mm1
+   storeq M1, _Mstd_allocated_mem
+
+   pop M1
+   add M1, _MSTD_MEM_METADATA_LEN_ ;; M1 now has the address we have to return
+   push M1
+   pop _Mstd_mem_intermediate
+
+   movl Mf, _MSTD_NULL_
+   sub M1, _MSTD_MEM_METADATA_PREV_
+   storeq Mf, M1
+   sub M1, _MSTD_MEM_METADATA_PREV_
+   storeq Mf, M1
+   sub M1, _MSTD_MEM_METADATA_PREV_
+   storeq Mm5, M1
+
+   sub M1, _MSTD_MEM_METADATA_PREV_
+   movl Mf, _MSTD_MEM_MAGIC_NUM_
+   storeq Mf, M1
+
+ _std_create_new_block_done
+   call __builtin_quick_restore
+   loadq Ma, _Mstd_mem_intermediate
+   ret
+
+;; ARGS: Ma = Size of block to allocate
+;; RETURNS: Ma = NULL for failure else a valid pointer
+__builtin_std_alloc
+   call __builtin_quick_save
+   
+
+
+ __builtin_std_alloc_done
+   call __builtin_quick_restore
+   loadq Ma, _Mstd_mem_intermediate
+   ret
