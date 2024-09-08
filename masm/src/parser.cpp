@@ -144,45 +144,44 @@ void masm::Parser::parse()
         case INST_SYSCALL:
             handle_one(SYSCALL);
             break;
-
         case INST_ADD:
-            if (!handle_arithmetic_unsigned(ADD_IMM))
+            if (!handle_arithmetic(ADD_IMM))
                 exit(1);
             break;
         case INST_SUB:
-            if (!handle_arithmetic_unsigned(SUB_IMM))
+            if (!handle_arithmetic(SUB_IMM))
                 exit(1);
             break;
         case INST_MUL:
-            if (!handle_arithmetic_unsigned(MUL_IMM))
+            if (!handle_arithmetic(MUL_IMM))
                 exit(1);
             break;
         case INST_DIV:
-            if (!handle_arithmetic_unsigned(DIV_IMM))
+            if (!handle_arithmetic(DIV_IMM))
                 exit(1);
             break;
         case INST_MOD:
-            if (!handle_arithmetic_unsigned(MOD_IMM))
+            if (!handle_arithmetic(MOD_IMM))
                 exit(1);
             break;
         case INST_IADD:
-            if (!handle_arithmetic_signed(IADD_IMM))
+            if (!handle_arithmetic(IADD_IMM))
                 exit(1);
             break;
         case INST_ISUB:
-            if (!handle_arithmetic_signed(ISUB_IMM))
+            if (!handle_arithmetic(ISUB_IMM))
                 exit(1);
             break;
         case INST_IMUL:
-            if (!handle_arithmetic_signed(IMUL_IMM))
+            if (!handle_arithmetic(IMUL_IMM))
                 exit(1);
             break;
         case INST_IDIV:
-            if (!handle_arithmetic_signed(IDIV_IMM))
+            if (!handle_arithmetic(IDIV_IMM))
                 exit(1);
             break;
         case INST_IMOD:
-            if (!handle_arithmetic_signed(IMOD_IMM))
+            if (!handle_arithmetic(IMOD_IMM))
                 exit(1);
             break;
         case INST_ADDF:
@@ -805,9 +804,13 @@ void masm::Parser::handle_one(NodeKind k)
 }
 
 /**
- *  REG REG 
+ *  REG REG
+ *  REG IMM
+ *  REG VARIABLE
+ *  REG CONSTANT
+ *  REG EXPR
  */
-bool masm::Parser::handle_arithmetic_unsigned(NodeKind k)
+bool masm::Parser::handle_arithmetic(NodeKind k)
 {
     Token t;
     Node node;
@@ -824,13 +827,13 @@ bool masm::Parser::handle_arithmetic_unsigned(NodeKind k)
     t = res.value();
     if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
     {
-        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register here after the arithmetic instruction.", l.get_from_line(t.line));
+        log(fname, "Expected a register here after the arithmetic instruction.", l.get_line_st(), l.get_col_st());
         return false;
     }
     res = l.next_token();
     if (!res.has_value())
     {
-        err(fname, l.get_line(), l.get_col(), 0, _parsing, syntaxerr, ERR_STR, "Expected a register, variable or immediate here after the first operand.", l.get_from_line(l.get_line()));
+        log(fname, "Expected a register, variable or immediate here after the first operand.", l.get_line_st(), l.get_col_st());
         return false;
     }
     a->reg = regr_map.find(t.type)->second;
@@ -863,10 +866,247 @@ bool masm::Parser::handle_arithmetic_unsigned(NodeKind k)
             a->second_oper = regr_map.find(t.type)->second;
             break;
         }
-        err(fname, t.line, t.col, t.col + 1, _parsing, syntaxerr, ERR_STR, "Expected a register, variable or immediate here after the first operand.", l.get_from_line(t.line));
+        log(fname, "Expected a register, variable or immediate here after the first operand.", l.get_line_st(), l.get_col_st());
         return false;
     }
     }
-    nodes->push_back(std::move(node));
+    nodes.push_back(std::move(node));
     return true;
 }
+
+/**
+ * REG REG
+ */
+bool masm::Parser::handle_arithmetic_float(NodeKind k)
+{
+    Token t;
+    Node node;
+    node.line = l.get_line();
+    node._file = file;
+    node.node = std::make_unique<NodeArithmetic>();
+    NodeArithmetic *a = (NodeArithmetic *)node.node.get();
+    auto res = l.next_token();
+    node.kind = (k);
+    if (!res.has_value())
+    {
+        log(fname, "Expected a register here after the floating-point arithmetic instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    t = res.value();
+    if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        log(fname, "Expected a register here after the floating-point arithmetic instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a register or a variable here after the first operand.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    a->reg = regr_map.find(t.type)->second;
+    t = res.value();
+    if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
+        a->second_oper = regr_map.find(t.type)->second;
+    else if (t.type == IDENTIFIER)
+    {
+        a->second_oper = t.val;
+        node.kind = (NodeKind)(k + 8);
+    }
+    else
+    {
+        log(fname, "Expected a register or a variable here after the first operand.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    nodes.push_back(std::move(node));
+    return true;
+}
+
+/**
+ * REG REG
+ * REG IMM
+ * REG VAR
+ * REG EXPR
+ * REG CONST
+ * REG LABEL
+ */
+bool masm::Parser::handle_mov(NodeKind k)
+{
+    Token t;
+    Node node;
+    node.line = l.get_line();
+    node._file = file;
+    node.node = std::make_unique<NodeMov>();
+    NodeMov *a = (NodeMov *)node.node.get();
+    auto res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a register here after the mov instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    t = res.value();
+    if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        log(fname, "Expected a register here after the mov instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a register, variable or immediate here after the first operand.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    a->reg = regr_map.find(t.type)->second;
+    t = res.value();
+    switch (t.type)
+    {
+    case IDENTIFIER:
+    {
+        node.kind = (NodeKind)(k + 2);
+        a->second_oper = t.val;
+        break;
+    }
+    case NUM_INT:
+    {
+        node.kind = k;
+        a->second_oper = t.val;
+        break;
+    }
+    case EXPR:
+    {
+        node.kind = (NodeKind)(k + 3);
+        a->second_oper = t.expr;
+        break;
+    }
+    case NUM_FLOAT:
+    {
+        node.kind = k;
+        a->second_oper = t.val;
+        a->is_float = true;
+        break;
+    }
+    default:
+    {
+        if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
+        {
+            node.kind = (NodeKind)(k + 1);
+            a->second_oper = regr_map.find(t.type)->second;
+            break;
+        }
+        log(fname, "Expected a register, variable or immediate here after the first operand.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    }
+    nodes.push_back(std::move(node));
+    return true;
+}
+
+/**
+ * REG REG
+ */
+bool masm::Parser::handle_movX(NodeKind k)
+{
+    Token t;
+    Node node;
+    node.kind = k;
+    node.node = std::make_unique<NodeMov>();
+    // we don't really need info for this node and so we ignore the columns and such metadata
+    NodeMov *a = (NodeMov *)node.node.get();
+    auto res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a register here after the mov instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    t = res.value();
+    if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        log(fname, "Expected a register here after the mov instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    // now for the second register operand
+    res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a register here after the first register operand.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    a->reg = regr_map.find(t.type)->second;
+    t = res.value();
+    if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        node.kind = (NodeKind)(k);
+        a->second_oper = regr_map.find(t.type)->second;
+    }
+    else
+    {
+        log(fname, "Expected a register here after the first register operand.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    nodes.push_back(std::move(node));
+    return true; // that's it!
+}
+
+/**
+ * LABELS ONLY
+ */
+bool masm::Parser::handle_jmp(NodeKind k)
+{
+    Token t;
+    Node node;
+    node.line = l.get_line();
+    node._file = file;
+    node.kind = k;
+    node.node = std::make_unique<NodeName>();
+    NodeName *n = (NodeName *)node.node.get();
+    auto res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a label here after the branch instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    t = res.value();
+    if (t.type != IDENTIFIER)
+    {
+        log(fname, "Expected a label here after the branch instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    n->oper = t.val;
+    nodes.push_back(std::move(node));
+    return true;
+}
+
+/**
+ * LABELS
+ * REGR
+ */
+bool masm::Parser::handle_call()
+{
+    Token t;
+    Node node;
+    node.line = l.get_line();
+    node._file = file;
+    node.node = std::make_unique<NodeName>();
+    NodeName *n = (NodeName *)node.node.get();
+    auto res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a label here or a register after the branch instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    t = res.value();
+    if (t.type != IDENTIFIER && !(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        log(fname, "Expected a label here or a register after the branch instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    node.kind = (t.type == IDENTIFIER) ? CALL : CALL_REG;
+    if (t.type == IDENTIFIER)
+        n->oper = t.val;
+    else
+        n->oper = regr_map[(t.type)];
+    nodes.push_back(std::move(node));
+    return true;
+}
+
+// log(fname, "Expected a register here after the arithmetic instruction.", l.get_line_st(), l.get_col_st());

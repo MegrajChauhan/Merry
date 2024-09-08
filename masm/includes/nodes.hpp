@@ -35,6 +35,7 @@ namespace masm
     {
         Register reg;
         std::variant<Register, std::string, std::vector<Token>> second_oper;
+        bool is_float = false; // just for the mov instruction
     };
 
     struct NodeStack : public Base

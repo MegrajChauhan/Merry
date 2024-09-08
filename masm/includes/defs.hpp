@@ -24,6 +24,7 @@ namespace masm
         LABEL,
         NOP,
         HLT,
+        
         ADD_IMM,
         ADD_REG,
         ADD_MEM,

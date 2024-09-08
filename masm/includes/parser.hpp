@@ -47,11 +47,9 @@ namespace masm
 
         void handle_one(NodeKind k);
 
-        bool handle_arithmetic_unsigned(NodeKind k);
+        bool handle_arithmetic(NodeKind k);
 
         bool handle_mov(NodeKind k);
-
-        bool handle_arithmetic_signed(NodeKind k);
 
         bool handle_arithmetic_float(NodeKind k);
 
