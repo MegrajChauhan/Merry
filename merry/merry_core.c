@@ -570,6 +570,8 @@ _THRET_T_ merry_runCore(mptr_t core)
             if (merry_requestHdlr_push_request(*current & 0xFFFF, c->core_id, c->cond) == RET_FAILURE)
                 c->stop_running = mtrue;
             break;
+        case OP_CMPXCHG_REGR:
+            *current |= (c->registers[*current & 15] & 0xFFFFFFFFFFFF);
         case OP_CMPXCHG:
             // this operation must be atomic
             // but it cannot be guranteed in a VM

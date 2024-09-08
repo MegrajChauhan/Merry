@@ -389,9 +389,19 @@ size_t masm::Lexer::get_col()
     return col;
 }
 
+size_t masm::Lexer::get_col_st()
+{
+    return c;
+}
+
 size_t masm::Lexer::get_line()
 {
     return line;
+}
+
+size_t masm::Lexer::get_line_st()
+{
+    return l;
 }
 
 std::string masm::Lexer::get_from_line(size_t l, size_t e)

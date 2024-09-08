@@ -263,7 +263,11 @@ namespace masm
 
         size_t get_line();
 
+        size_t get_line_st();
+
         size_t get_col();
+
+        size_t get_col_st();
 
         std::string get_from_line(size_t l, size_t e = 0);
 

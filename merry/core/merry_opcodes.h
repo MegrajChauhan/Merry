@@ -332,6 +332,8 @@ enum
 
   OP_SIN_REG,
   OP_SOUT_REG,
+
+  OP_CMPXCHG_REGR,
 };
 
 /*
