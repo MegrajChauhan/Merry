@@ -1457,7 +1457,7 @@ _exec_(call)
     // the parameters can then be accessed using the sva instruction
 
     /// NOTE: It is to be made sure that the parameters and values of other procedures should not be meddled with
-    if (_is_stack_full_(core) || !_check_stack_lim_(core, 4))
+    if (_is_stack_full_(core) || !_check_stack_lim_(core, 5))
     {
         // the stack is full and we cannot perform this call
         // the stack must at least have 5 addresses free to be able to perform a call

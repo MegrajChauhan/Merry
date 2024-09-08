@@ -28,7 +28,7 @@ void masm::CodeGen::handle_arithmetic_reg_imm(msize_t op, NodeArithmetic *a, siz
     b.bytes.b1 = op; // the opcode
     // 0xFFFFFFFF
     b.bytes.b2 = a->reg;
-    b.full |= std::stoull(std::get<std::string>(a->second_oper)) & _a;
+    b.full |= (std::stoull(std::get<std::string>(a->second_oper)) & _a);
     code.push_back(b);
 }
 

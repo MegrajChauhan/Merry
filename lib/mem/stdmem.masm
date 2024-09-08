@@ -18,7 +18,7 @@ proc __builtin_std_mem_remove_from_allocated ;; used by __builtin_std_free
 proc __builtin_std_mem_populate_free_head       ;; used to fill the free head
 proc __builtin_std_mem_populate_allocated_head  ;; used to fill allocated head
 
-proc __builtin_std_mem_is_init ;; has the allocator been initialized?
+proc __builtin_std_mem_is_init         ;; has the allocator been initialized?
 proc __builtin_std_mem_has_enough_mem
 
 ;; ARGS: None
@@ -36,10 +36,9 @@ __builtin_std_mem_is_init
 ;; ARGS: Ma = Size
 ;; RETURNS: Ma = 1 for TRUE else 0
 __builtin_std_mem_has_enough_mem
-
    mov Mb, Ma
    movl Ma, 1
-   cmp Ma, _Mstd_allocable_mem_len
+   cmp Mb, _Mstd_allocable_mem_len
    jse _std_mem_has_enough_mem_done
 
    movl Ma, 0
@@ -370,7 +369,7 @@ __builtin_std_create_new_block
    je _std_create_new_block_done            ;; we failed
 
  _std_create_new_block_allocate
-   
+ 
    loadq M1, _Mstd_allocable_mem_end
    push M1
    movl Mm1, _MSTD_MEM_METADATA_LEN_
@@ -405,6 +404,7 @@ __builtin_std_create_new_block
  _std_create_new_block_done
    call __builtin_quick_restore
    loadq Ma, _Mstd_mem_intermediate
+   
    ret
 
 ;; ARGS: Ma = Size of block to allocate
@@ -412,9 +412,76 @@ __builtin_std_create_new_block
 __builtin_std_alloc
    call __builtin_quick_save
    
+   push _MSTD_NULL_
+   pop _Mstd_mem_intermediate
 
+   ;; Align the size first
+   call __builtin_align_value
 
- __builtin_std_alloc_done
+   cmp Ma, 0
+   je _std_alloc_done
+
+   ;; Check if the allocator has been initialized
+   movl Mf, Ma
+   call __builtin_std_mem_is_init
+   cmp Ma, 0
+   je _std_alloc_done            ;; Allocator not initialized
+   
+   movl Ma, Mf
+   ;; Check if we have a free block that matches the requested size
+   movl Mb, Ma
+   call __builtin_std_mem_check_free_blocks
+   cmp Ma, _MSTD_NULL_
+   jne _std_alloc_found_free_block
+
+   ;; No free block found, create a new block
+   movl Ma, Mb
+   call __builtin_std_create_new_block
+   cmp Ma, _MSTD_NULL_
+   je _std_alloc_done            ;; Failed to create new block
+   jmp _std_alloc_add_to_allocated_list
+
+ _std_alloc_found_free_block
+   ;; Remove the free block from the free list
+   call __builtin_std_mem_remove_from_free
+
+ _std_alloc_add_to_allocated_list
+   ;; Add the allocated block to the allocated list
+   call __builtin_std_mem_append_to_allocated
+
+ _std_alloc_done
    call __builtin_quick_restore
    loadq Ma, _Mstd_mem_intermediate
    ret
+   
+;; ARGS: Ma = Address of the block to remove
+;; RETURNS: Nothing but will throw an error and exit for invalid pointer
+__builtin_std_free
+    call __builtin_quick_save
+
+    ;; Check if the allocator has been initialized
+    call __builtin_std_mem_is_init
+
+    cmp Ma, 0
+    je _std_free_error            ;; Allocator not initialized
+
+    ;; Check if the block is valid
+    sub Ma, _MSTD_MEM_METADATA_MAGIC_NUM_
+    loadq M1, Ma
+    cmp M1, _MSTD_MEM_MAGIC_NUM_
+    jne _std_free_error            ;; Invalid block
+
+    ;; Remove the block from the allocated list
+    call __builtin_std_mem_remove_from_allocated
+
+    ;; Add the block to the free list
+    call __builtin_std_mem_append_to_free
+    call __builtin_quick_restore
+    ret
+
+ _std_free_error
+    mov Ma, [PTR _MSTD_INVALID_FREE]
+    movl Mc, 13
+    call __builtin_std_mem_log_err
+
+

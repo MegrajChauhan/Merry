@@ -12,7 +12,7 @@ MerryStack *merry_init_stack(msize_t len, mbool_t dynamic, msize_t upper_lim, ms
         return RET_NULL;
     }
     st->size = len;
-    st->sp = 0;
+    st->sp = (mqword_t)(-1);
     st->dynamic = dynamic;
     st->add_per_resize = per_resize;
     st->upper_lim = (upper_lim == 0) ? 1000 : upper_lim; // upper limit == 0 means no limit but since we want it to be limited, 1000 is the limit
@@ -51,8 +51,8 @@ mret_t merry_stack_push(MerryStack *st, mqword_t _to_push)
             return RET_FAILURE;
     }
     // we have the stack and it should be resized if it was empty
-    st->array[st->sp] = _to_push;
     st->sp++;
+    st->array[st->sp] = _to_push;
     return RET_SUCCESS;
 }
 
@@ -60,8 +60,8 @@ _MERRY_ALWAYS_INLINE_ inline mret_t merry_stack_pop(MerryStack *st, mqptr_t stor
 {
     if (stack_empty(st))
         return RET_FAILURE; // the stack is empty
-    st->sp--;
     *store_in = st->array[st->sp];
+    st->sp--;
     return RET_SUCCESS;
 }
 

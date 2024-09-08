@@ -22,6 +22,7 @@ __
     movl Mc, 20
 __:
     pop Ma
+    call __builtin_std_free
     uoutq Ma
     cout M1
     out Mc

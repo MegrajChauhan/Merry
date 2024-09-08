@@ -44,8 +44,8 @@ namespace masm
                 {"*", OPER_MUL},
                 {"-", OPER_MINUS},
                 {"+", OPER_PLUS},
-                {"data", MB_DATA},
-                {"code", MB_CODE},
+                // {"data", MB_DATA},
+                // {"code", MB_CODE},
                 {"db", KEY_DB},
                 {"dw", KEY_DW},
                 {"dd", KEY_DD},
@@ -204,7 +204,7 @@ namespace masm
     {
         std::string val;
         TokenType type;
-        size_t line, col;
+        size_t line, col, le;
         std::vector<Token> expr;
     };
 
@@ -233,7 +233,8 @@ namespace masm
     {
         std::shared_ptr<std::string> fileconts;
         std::shared_ptr<std::string> filepath;
-        size_t line = 0, col = 0, offset = 0;
+        size_t line = 1, col = 0, offset = 0;
+        size_t l, c;
         std::string::iterator curr, end;
         bool ignore_dots = false;
 
@@ -264,7 +265,7 @@ namespace masm
 
         size_t get_col();
 
-        std::string get_from_line(size_t l);
+        std::string get_from_line(size_t l, size_t e = 0);
 
         std::optional<masm::Token> gather_quote_string();
 
