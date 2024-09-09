@@ -8,6 +8,7 @@
 #include <fstream>
 #include "symtable.hpp"
 #include "nodes.hpp"
+#include "expr.hpp"
 
 namespace masm
 {
@@ -15,18 +16,21 @@ namespace masm
     static std::string eepe = "1";
     static std::unordered_map<std::string, std::string> teepe;
     static std::vector<std::string> entries;
+    static std::unordered_map<std::string, bool> proc_list;
+    static std::unordered_set<std::string> lbl_list;
+    static SymbolTable symtable;
+    static Expr evaluator;
 
     class Parser
     {
         Lexer l;
         std::string fname, fconts;
-        SymbolTable symtable;
-        std::unordered_map<std::string, bool> proc_list;
-        std::unordered_set<std::string> lbl_list;
         std::vector<Node> nodes;
         bool read_again = true;
         Token old_tok;
         std::shared_ptr<std::string> file;
+        std::vector<bool> _end_queue;
+        bool skip = false;
 
     public:
         Parser() = default;
@@ -34,6 +38,9 @@ namespace masm
         void setup_parser(std::string filename);
 
         void parse();
+
+        // called after parsing is completely done
+        void parser_confirm_info();
 
         bool handle_defines(DataType t, bool _const = false);
 
@@ -84,6 +91,21 @@ namespace masm
 
         bool handle_intr();
 
+        void handle_defined();
+
+        void handle_ndefined();
+
+        void handle_depends();
+
+        void handle_entry();
+
+        void handle_eepe();
+
+        void handle_teepe();
+
+        void confirm_entries();
+
+        void analyse_proc();
     };
 };
 

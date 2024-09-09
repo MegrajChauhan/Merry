@@ -205,6 +205,7 @@ namespace masm
         ASTOREQ_VAR,
 
         CMPXCHG,
+        CMPXCHG_REGR,
 
         OUTR,
         UOUTR,

@@ -53,6 +53,31 @@ void masm::Parser::parse()
             exit(1);
         }
         Token t = tok.value();
+        if (skip)
+        {
+            switch (t.type)
+            {
+            case KEY_DEFINED:
+                handle_defined();
+                break;
+            case KEY_NDEFINED:
+                handle_ndefined();
+                break;
+            case KEY_END:
+            {
+                if (_end_queue.empty())
+                {
+                    note("It may seem that a stary END keyword was found.");
+                    exit(1);
+                }
+                _end_queue.pop_back();
+                if (_end_queue.empty())
+                    skip = false;
+                break;
+            }
+            }
+            continue;
+        }
         switch (t.type)
         {
         case KEY_DB:
@@ -383,7 +408,7 @@ void masm::Parser::parse()
                 exit(1);
             break;
         case INST_CMP:
-            if (!handle_cmp())
+            if (!handle_mov(CMP_IMM))
                 exit(1);
             break;
         case INST_LEA:
@@ -564,7 +589,42 @@ void masm::Parser::parse()
             if (!handle_intr())
                 exit(1);
             break;
+        case KEY_DEPENDS:
+            handle_depends();
+            break;
+        case KEY_DEFINED:
+            handle_defined();
+            break;
+        case KEY_NDEFINED:
+            handle_ndefined();
+            break;
+        case KEY_ENTRY:
+            handle_entry();
+            break;
+        case KEY_EEPE:
+            handle_eepe();
+            break;
+        case KEY_TEEPE:
+            handle_teepe();
+            break;
+        case KEY_END:
+        {
+            if (_end_queue.empty())
+            {
+                note("It may seem that a stary END keyword was found.");
+                exit(1);
+            }
+            _end_queue.pop_back();
+            if (_end_queue.empty())
+                skip = false;
+            break;
         }
+        }
+    }
+    if (!_end_queue.empty())
+    {
+        note("It may seem that one END keyword is missing.");
+        exit(1);
     }
 }
 
@@ -941,13 +1001,13 @@ bool masm::Parser::handle_mov(NodeKind k)
     auto res = l.next_token();
     if (!res.has_value())
     {
-        log(fname, "Expected a register here after the mov instruction.", l.get_line_st(), l.get_col_st());
+        log(fname, "Expected a register here after opcode.", l.get_line_st(), l.get_col_st());
         return false;
     }
     t = res.value();
     if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
     {
-        log(fname, "Expected a register here after the mov instruction.", l.get_line_st(), l.get_col_st());
+        log(fname, "Expected a register here after the opcode.", l.get_line_st(), l.get_col_st());
         return false;
     }
     res = l.next_token();
@@ -1109,4 +1169,759 @@ bool masm::Parser::handle_call()
     return true;
 }
 
-// log(fname, "Expected a register here after the arithmetic instruction.", l.get_line_st(), l.get_col_st());
+/**
+ * REG IMM
+ * REG CONST
+ * REG EXPR
+ * REG VAR
+ * REG REG
+ */
+bool masm::Parser::handle_sva_svc(NodeKind k)
+{
+    Token t;
+    Node node;
+    node.line = l.get_line();
+    node._file = file;
+    node.node = std::make_unique<NodeStack>();
+    NodeStack *a = (NodeStack *)node.node.get();
+    auto res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a register here after the stack instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    t = res.value();
+    if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        log(fname, "Expected a register here after the stack instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a register, variable or immediate here after the first operand.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    a->reg = regr_map.find(t.type)->second;
+    t = res.value();
+    switch (t.type)
+    {
+    case IDENTIFIER:
+    {
+        node.kind = (NodeKind)(k + 2);
+        a->second_oper = t.val;
+        break;
+    }
+    case EXPR:
+    {
+        node.kind = (NodeKind)(k + 3);
+        a->second_oper = t.expr;
+        break;
+    }
+    case NUM_INT:
+    {
+        node.kind = k;
+        a->second_oper = t.val;
+        break;
+    }
+    default:
+    {
+        if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
+        {
+            node.kind = (NodeKind)(k + 1);
+            a->second_oper = regr_map.find(t.type)->second;
+            break;
+        }
+        log(fname, "Expected a register, variable or immediate here after the first operand.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    }
+    nodes.push_back(std::move(node));
+    return true;
+}
+
+/**
+ * IMM
+ * VARS
+ * CONST
+ * REGR
+ * EXPR
+ * LABELS
+ */
+bool masm::Parser::handle_push_pop(NodeKind k)
+{
+    Token t;
+    Node node;
+    node.line = l.get_line();
+    node._file = file;
+    node.node = std::make_unique<NodeStack>();
+    auto n = (NodeStack *)node.node.get();
+    auto res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a label, or a register, or an identifier or an immediate after the STACK instruction", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    t = res.value();
+    switch (t.type)
+    {
+    case IDENTIFIER:
+    {
+        node.kind = (NodeKind)(k + 2);
+        n->second_oper = t.val;
+        break;
+    }
+    case EXPR:
+    {
+        if (k == POP_IMM)
+        {
+            log(fname, "POP instruction doesn't accept expressions.", l.get_line_st(), l.get_col_st());
+            return false;
+        }
+        node.kind = (NodeKind)(k + 3);
+        n->second_oper = t.expr;
+        break;
+    }
+    case NUM_FLOAT:
+    case NUM_INT:
+    {
+        if (k == POP_IMM)
+        {
+            log(fname, "POP instruction doesn't accept immediates.", l.get_line_st(), l.get_col_st());
+            return false;
+        }
+        node.kind = (k);
+        n->second_oper = t.val;
+        break;
+    }
+    default:
+        if (t.type >= KEY_Ma && t.type <= KEY_Mm5)
+        {
+            node.kind = (NodeKind)(k + 1);
+            n->second_oper = regr_map[t.type];
+            break;
+        }
+        log(fname, "Expected a label, identifier,or an immediate here that after the STACK instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    nodes.push_back(std::move(node));
+    return true;
+}
+
+bool masm::Parser::handle_single_regr(NodeKind k)
+{
+    Token t;
+    Node node;
+    node.node = std::make_unique<NodeName>();
+    auto n = (NodeName *)node.node.get();
+    node.kind = k;
+    auto res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a register here as the operand.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    t = res.value();
+    if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        log(fname, "Expected a register here as the operand.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    n->oper = regr_map[t.type];
+    nodes.push_back(std::move(node));
+    return true;
+}
+
+/**
+ * REG REG
+ * REG IMM
+ * REG CONST
+ * REG EXPR
+ */
+bool masm::Parser::handle_logical_inst(NodeKind k, bool limit)
+{
+    Token t;
+    Node node;
+    node.line = l.get_line();
+    node._file = file;
+    node.node = std::make_unique<NodeLogical>();
+    auto n = (NodeLogical *)node.node.get();
+    auto res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a register or an immediate after the LOGICAL instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    t = res.value();
+    n->reg = regr_map[t.type];
+    res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected an immediate or another register after the LOGICAL instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    t = res.value();
+    switch (t.type)
+    {
+    case EXPR:
+    {
+        node.kind = (NodeKind)(k + 3);
+        n->second_oper = t.expr;
+        break;
+    }
+    case IDENTIFIER:
+    {
+        node.kind = (NodeKind)(k + 2);
+        n->second_oper = t.val;
+        break;
+    }
+    case NUM_INT:
+    {
+        node.kind = (k);
+        n->second_oper = t.val;
+        break;
+    }
+    default:
+        if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
+        {
+            if (limit)
+            {
+                log(fname, "This logical instruction doesn't accept registers as second.", l.get_line_st(), l.get_col_st());
+                return false;
+            }
+            node.kind = (NodeKind)(k + 1);
+            n->second_oper = regr_map[t.type];
+            break;
+        }
+        log(fname, "Expected an immediate or a register here that after the LOGICAL instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    nodes.push_back(std::move(node));
+    return true;
+}
+
+bool masm::Parser::handle_lea()
+{
+    Token t;
+    Register r[4];
+    std::optional<Token> res;
+    for (size_t i = 0; i < 4; i++)
+    {
+        res = l.next_token();
+        if (!res.has_value())
+        {
+            log(fname, "Expected a register here in the LEA instruction.", l.get_line_st(), l.get_col_st());
+            return false;
+        }
+        t = res.value();
+        if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+        {
+            log(fname, "Expected a register here in the LEA instruction.", l.get_line_st(), l.get_col_st());
+            return false;
+        }
+        r[i] = regr_map[t.type];
+    }
+    Node node;
+    node.kind = LEA;
+    node.node = std::make_unique<NodeLea>();
+    auto n = (NodeLea *)node.node.get();
+    n->dest = r[0];
+    n->base = r[1];
+    n->ind = r[2];
+    n->scale = r[3];
+    nodes.push_back(std::move(node));
+    return true;
+}
+
+bool masm::Parser::handle_load_store(NodeKind k, bool atm)
+{
+    Token t;
+    Node node;
+    node.line = l.get_line();
+    node._file = file;
+    node.node = std::make_unique<NodeLoadStore>();
+    auto n = (NodeLoadStore *)node.node.get();
+    auto res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a register here in the MEM instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    t = res.value();
+    if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        log(fname, "Expected a register here in the MEM instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    n->reg = regr_map[t.type];
+    res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a register or variable here in the MEM instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    t = res.value();
+    switch (t.type)
+    {
+    case IDENTIFIER:
+    {
+        node.kind = atm ? k : (NodeKind)(k + 1);
+        n->second_oper = t.val;
+        break;
+    }
+    default:
+        if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+        {
+            log(fname, "Expected an identifier or a register here after the MEM instruction.", l.get_line_st(), l.get_col_st());
+            return false;
+        }
+        if (atm)
+        {
+            log(fname, "ATOMIC MEM instructions do not take registers as the second operand.", l.get_line_st(), l.get_col_st());
+            return false;
+        }
+        node.kind = k;
+        n->second_oper = regr_map[t.type];
+        break;
+    }
+    nodes.push_back(std::move(node));
+    return true;
+}
+
+bool masm::Parser::handle_atm()
+{
+    Token t;
+    auto res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected an instruction after the ATM keyword.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    t = res.value();
+    switch (t.type)
+    {
+    case INST_LOADB:
+        if (!handle_load_store(ALOADB_VAR, true))
+            return false;
+        break;
+    case INST_LOADW:
+        if (!handle_load_store(ALOADW_VAR, true))
+            return false;
+        break;
+    case INST_LOADD:
+        if (!handle_load_store(ALOADD_VAR, true))
+            return false;
+        break;
+    case INST_LOADQ:
+        if (!handle_load_store(ALOADQ_VAR, true))
+            return false;
+        break;
+    case INST_STOREB:
+        if (!handle_load_store(ASTOREB_VAR, true))
+            return false;
+        break;
+    case INST_STOREW:
+        if (!handle_load_store(ASTOREW_VAR, true))
+            return false;
+        break;
+    case INST_STORED:
+        if (!handle_load_store(ASTORED_VAR, true))
+            return false;
+        break;
+    case INST_STOREQ:
+        if (!handle_load_store(ASTOREQ_VAR, true))
+            return false;
+        break;
+    default:
+        log(fname, "Unknown atomic instruction. Only LOADS and STORES are atomic.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    return true;
+}
+
+bool masm::Parser::handle_cmpxchg()
+{
+    Token t;
+    Node node;
+    node.line = l.get_line();
+    node._file = file;
+    node.node = std::make_unique<NodeCmpxchg>();
+    auto n = (NodeCmpxchg *)node.node.get();
+    Register r[2];
+    std::optional<Token> res;
+    for (size_t i = 0; i < 2; i++)
+    {
+        res = l.next_token();
+        if (!res.has_value())
+        {
+            log(fname, "Expected a register here in the CMPXCHG instruction.", l.get_line_st(), l.get_col_st());
+            return false;
+        }
+        t = res.value();
+        if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+        {
+            log(fname, "Expected a register here in the CMPXCHG instruction.", l.get_line_st(), l.get_col_st());
+            return false;
+        }
+        r[i] = regr_map[t.type];
+    }
+    res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a register or a variable here in the CMPXCHG instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    t = res.value();
+    switch (t.type)
+    {
+    case IDENTIFIER:
+        node.kind = CMPXCHG;
+        n->var = t.val;
+        break;
+    default:
+        if (t.type >= KEY_Ma && t.type <= KEY_Mm5)
+        {
+            node.kind = CMPXCHG_REGR;
+            n->var = regr_map[t.type];
+            break;
+        }
+        log(fname, "Expected a register or a variable here in the CMPXCHG instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    n->reg1 = r[0];
+    n->reg2 = r[1];
+    nodes.push_back(std::move(node));
+    return true;
+}
+
+bool masm::Parser::handle_sio(NodeKind k)
+{
+    Token t;
+    Node node;
+    node.line = l.get_line();
+    node._file = file;
+    node.node = std::make_unique<NodeName>();
+    auto n = (NodeName *)node.node.get();
+    auto res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected an identifier after the SIO instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    t = res.value();
+    switch (t.type)
+    {
+    case IDENTIFIER:
+        node.kind = (k);
+        n->oper = t.val;
+        break;
+    default:
+        if (t.type >= KEY_Ma && t.type <= KEY_Mm5)
+        {
+            node.kind = (NodeKind)(k + 1);
+            n->oper = regr_map[t.type];
+            break;
+        }
+        log(fname, "Expected an identifier after the SIO instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    nodes.push_back(std::move(node));
+    return true;
+}
+
+bool masm::Parser::handle_excg(NodeKind k)
+{
+    Token t;
+    Node node;
+    node.kind = k;
+    node.node = std::make_unique<NodeExcg>();
+    NodeExcg *a = (NodeExcg *)node.node.get();
+    auto res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a register here after the EXCG instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    t = res.value();
+    if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        log(fname, "Expected a register here after the EXCG instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a register here after the first operand.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    a->r1 = regr_map.find(t.type)->second;
+    t = res.value();
+    if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
+    {
+        node.kind = (NodeKind)(k);
+        a->r2 = regr_map.find(t.type)->second;
+    }
+    else
+    {
+        log(fname, "Expected a register here after the first operand.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    nodes.push_back(std::move(node));
+    return true;
+}
+
+bool masm::Parser::handle_intr()
+{
+    Token t;
+    Node node;
+    node.line = l.get_line();
+    node._file = file;
+    node.node = std::make_unique<NodeIntr>();
+    auto n = (NodeIntr *)node.node.get();
+    auto res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a constant, or an immediate after the INTR instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    t = res.value();
+    switch (t.type)
+    {
+    case EXPR:
+    {
+        node.kind = INTR_EXPR;
+        n->val = t.expr;
+        break;
+    }
+    case IDENTIFIER:
+    {
+        node.kind = INTR_VAR;
+        n->val = t.val;
+        break;
+    }
+    case NUM_INT:
+    {
+        node.kind = (INTR);
+        n->val = t.val;
+        break;
+    }
+    default:
+        log(fname, "Expected a constant, or an immediate after the INTR instruction.", l.get_line_st(), l.get_col_st());
+        return false;
+    }
+    nodes.push_back(std::move(node));
+    return true;
+}
+
+void masm::Parser::handle_depends()
+{
+    std::string _file = l.get_a_group();
+    if (_file.empty() && l.eof())
+    {
+        log(fname, "Expected a BUILD file after 'depends' that needs to be read.", l.get_line_st(), l.get_col_st());
+        exit(1);
+    }
+    Parser child;
+    // if (_std_paths.find(_p) == _std_paths.end())
+    //     _p = std::filesystem::current_path() / _p;
+    // else
+    //     _p = _std_paths.find(_p)->second;
+    if (used_files.find(_file) != used_files.end())
+        return;
+    child.setup_parser(_file);
+    child.parse();
+}
+
+void masm::Parser::handle_defined()
+{
+    auto tok = l.next_token();
+    _end_queue.push_back(true);
+    if (skip)
+        return;
+    if (!tok.has_value())
+    {
+        note("Expected a constant or a variable after 'defined'.");
+        exit(1);
+    }
+    Token t = tok.value();
+    if (t.type != IDENTIFIER && t.type != EXPR)
+    {
+        note("Expected a constant, expression or a variable after 'defined'.");
+        exit(1);
+    }
+    if (t.type == EXPR)
+    {
+        evaluator.add_expr(t.expr);
+        auto _r = evaluator.evaluate();
+        // In the case of defined an ndefined, the expression must evaluate to either 1 or 0
+        // In defined, 1 would mean that the expression is evaluated but otherwise in the case of ndefined
+        if (!_r.has_value())
+        {
+            note("In file: " + fname);
+            exit(1);
+        }
+        if (std::stoull(_r.value()) == 1)
+            return;
+    }
+    else if (symtable.vars.find(t.val) == symtable.vars.end())
+    {
+        if (symtable._const_list.find(t.val) == symtable._const_list.end())
+        {
+            note("Expected a constant or a variable after 'defined' that exists.");
+            exit(1);
+        }
+        // a constant hence it is defined
+        return;
+    }
+    skip = true;
+}
+
+void masm::Parser::handle_ndefined()
+{
+    auto tok = l.next_token();
+    _end_queue.push_back(true);
+    if (skip)
+        return;
+    if (!tok.has_value())
+    {
+        note("Expected a constant or a variable after 'defined'.");
+        exit(1);
+    }
+    Token t = tok.value();
+    if (t.type != IDENTIFIER)
+    {
+        note("Expected a constant or a variable after 'defined'.");
+        exit(1);
+    }
+    if (t.type == EXPR)
+    {
+        evaluator.add_expr(t.expr);
+        auto _r = evaluator.evaluate();
+        if (!_r.has_value())
+        {
+            note("While evaluating expression here in file " + fname);
+            exit(1);
+        }
+        if (std::stoull(_r.value()) == 0)
+            return;
+    }
+    else if (!(symtable.vars.find(t.val) == symtable.vars.end()))
+    {
+        if (!(symtable._const_list.find(t.val) == symtable._const_list.end()))
+        {
+            // not defined so go on
+            return;
+        }
+    }
+    skip = true;
+}
+
+void masm::Parser::handle_entry()
+{
+    Token t;
+    auto res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a label or a procedure name after 'entry'.", l.get_line_st(), l.get_col_st());
+        exit(1);
+    }
+    t = res.value();
+    if (t.type != IDENTIFIER)
+    {
+        log(fname, "Expected a label or a procedure name after 'entry'.", l.get_line_st(), l.get_col_st());
+        exit(1);
+    }
+    entries.push_back(t.val);
+}
+
+void masm::Parser::handle_eepe()
+{
+    Token t;
+    auto res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected an integer value after 'eepe'.", l.get_line_st(), l.get_col_st());
+        exit(1);
+    }
+    t = res.value();
+    if (t.type != NUM_INT)
+    {
+        log(fname, "Expected an integer value after 'eepe'.", l.get_line_st(), l.get_col_st());
+        exit(1);
+    }
+    eepe = t.val;
+}
+
+void masm::Parser::handle_teepe()
+{
+    Token t;
+    auto res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a label after 'teepe'.", l.get_line_st(), l.get_col_st());
+        exit(1);
+    }
+    t = res.value();
+    if (t.type != IDENTIFIER)
+    {
+        log(fname, "Expected a label after 'teepe'.", l.get_line_st(), l.get_col_st());
+        exit(1);
+    }
+    std::string id = t.val;
+    res = l.next_token();
+    if (!res.has_value())
+    {
+        log(fname, "Expected a value after label after 'teepe'.", l.get_line_st(), l.get_col_st());
+        exit(1);
+    }
+    t = res.value();
+    if (t.type != NUM_INT)
+    {
+        log(fname, "Expected a value after label after 'teepe'.", l.get_line_st(), l.get_col_st());
+        exit(1);
+    }
+    teepe[id] = t.val;
+}
+
+void masm::Parser::confirm_entries()
+{
+    if (entries.empty())
+    {
+        note("No entries were provided. At least one entry must be provided.");
+        exit(1);
+    }
+    for (auto e : entries)
+    {
+        if (lbl_list.find(e) == lbl_list.end())
+        {
+            note("The entry '" + e + "' doesn't exist.");
+            exit(1);
+        }
+    }
+    for (auto te : teepe)
+    {
+        if (lbl_list.find(te.first) == lbl_list.end())
+        {
+            note("The entry '" + te.first + "' doesn't exist.");
+            exit(1);
+        }
+    }
+}
+
+void masm::Parser::analyse_proc()
+{
+        for (auto p : proc_list)
+    {
+        if (!p.second)
+        {
+            note("The procedure \"" + p.first + "\" was not defined.");
+            exit(1);
+        }
+    }
+}
+
+void masm::Parser::parser_confirm_info()
+{
+    analyse_proc();
+    confirm_entries();
+}

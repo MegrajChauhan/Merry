@@ -41,7 +41,7 @@ namespace masm
     struct NodeStack : public Base
     {
         Register reg;
-        std::variant<std::string, std::vector<Token>> second_oper;
+        std::variant<std::string, std::vector<Token>, Register> second_oper;
     };
 
     struct NodeLea : public Base
