@@ -1,5 +1,5 @@
-#ifndef _PARSER_
-#define _PARSER_
+#ifndef _WORKER_
+#define _WORKER_
 
 #include <vector>
 #include <string>
@@ -9,6 +9,7 @@
 #include "symtable.hpp"
 #include "nodes.hpp"
 #include "expr.hpp"
+#include "codegen.hpp"
 
 namespace masm
 {
@@ -18,8 +19,11 @@ namespace masm
     static std::vector<std::string> entries;
     static std::unordered_map<std::string, bool> proc_list;
     static std::unordered_set<std::string> lbl_list;
+    static std::unordered_map<std::string, size_t> data_addr;
+    static std::unordered_map<std::string, size_t> label_addr;
     static SymbolTable symtable;
     static Expr evaluator;
+    static std::vector<uint8_t> data, str;
 
     class Parser
     {
@@ -38,6 +42,8 @@ namespace masm
         void setup_parser(std::string filename);
 
         void parse();
+
+        void add_for_codegen(CodeGen *g);
 
         // called after parsing is completely done
         void parser_confirm_info();
@@ -106,6 +112,10 @@ namespace masm
         void confirm_entries();
 
         void analyse_proc();
+
+        void make_label_address();
+
+        void analyse_nodes();
     };
 };
 

@@ -105,7 +105,7 @@ void masm::Expr::add_addr(std::unordered_map<std::string, size_t> *addr)
     data_addr = addr;
 }
 
-std::optional<std::string> masm::Expr::evaluate()
+std::optional<std::string> masm::Expr::evaluate(bool _only_const)
 {
     std::string res;
     bool _addr = false;
@@ -126,16 +126,21 @@ std::optional<std::string> masm::Expr::evaluate()
         case TokenType::IDENTIFIER:
         {
             // get it's value
-            auto res = table->_var_list.find(t.val);
-            if (!(res == table->_var_list.end()))
+            auto res = table->vars.find(t.val);
+            if (!(res == table->vars.end()))
             {
+                if (_only_const)
+                {
+                    note("This expression cannot have anything other than constants.");
+                    return {};
+                }
                 if (_addr)
                 {
                     operads.push((double)((*data_addr)[t.val]));
                     _addr = false;
                     break;
                 }
-                auto v = table->variables[res->second];
+                auto v = res->second;
                 switch (v.type)
                 {
                 case DataType::RESB:
@@ -155,37 +160,37 @@ std::optional<std::string> masm::Expr::evaluate()
                     auto _r = e.evaluate();
                     if (!_r.has_value())
                         return {};
-                    table->variables[res->second].value = _r.value();
-                    table->variables[res->second].is_expr = false;
+                    res->second.value = _r.value();
+                    res->second.is_expr = false;
                 }
                 operads.push(std::stod(v.value));
             }
             else
             {
-                auto res1 = table->_const_list.find(t.val);
-                if (res1 == table->_const_list.end())
+                res = table->_const_list.find(t.val);
+                if (res == table->_const_list.end())
                 {
                     note("Expected a variable or a constant that exists.");
                     return {};
                 }
-                if (res1->second.type == EXPR)
+                if (res->second.type == EXPR)
                 {
                     Expr e;
                     e.add_addr(data_addr);
-                    e.add_expr(res1->second.expr);
+                    e.add_expr(res->second.expr);
                     e.add_table(table);
-                    auto _r = e.evaluate();
+                    auto _r = e.evaluate(_only_const);
                     if (!_r.has_value())
                         return {};
-                    table->_const_list[res1->second.name].value = _r.value();
-                    table->_const_list[res1->second.name].is_expr = false;
+                    table->_const_list[res->second.name].value = _r.value();
+                    table->_const_list[res->second.name].is_expr = false;
                 }
                 if (_addr)
                 {
                     note("You cannot have addresses to constants.");
                     return {};
                 }
-                operads.push(std::stod(res1->second.value));
+                operads.push(std::stod(res->second.value));
             }
             break;
         }

@@ -21,7 +21,7 @@ namespace masm
 
     struct NodeArithmetic : public Base
     {
-        bool is_signed; // Is signed arithmetic?
+        bool is_signed = false; // Is signed arithmetic?
         Register reg;
         std::variant<Register, std::string, std::vector<Token>> second_oper;
     };
@@ -41,7 +41,8 @@ namespace masm
     struct NodeStack : public Base
     {
         Register reg;
-        std::variant<std::string, std::vector<Token>, Register> second_oper;
+        std::variant<Register, std::string, std::vector<Token>> second_oper;
+        bool _is_lbl;
     };
 
     struct NodeLea : public Base

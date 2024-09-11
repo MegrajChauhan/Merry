@@ -1,4 +1,4 @@
-#include "parser.hpp"
+#include "worker.hpp"
 
 void masm::Parser::setup_parser(std::string filename)
 {
@@ -31,6 +31,8 @@ void masm::Parser::setup_parser(std::string filename)
     l.setup_lexer(std::make_shared<std::string>(fconts), std::make_shared<std::string>(fname));
     ins.close();
     file = std::make_shared<std::string>(fname);
+    evaluator.add_table(&symtable);
+    evaluator.add_addr(&data_addr);
 }
 
 void masm::Parser::parse()
@@ -930,6 +932,8 @@ bool masm::Parser::handle_arithmetic(NodeKind k)
         return false;
     }
     }
+    if (k >= IADD_IMM && k <= IMOD_EXPR)
+        a->is_signed = true;
     nodes.push_back(std::move(node));
     return true;
 }
@@ -1740,19 +1744,19 @@ void masm::Parser::handle_defined()
         return;
     if (!tok.has_value())
     {
-        note("Expected a constant or a variable after 'defined'.");
+        note("Expected a constant after 'defined'.");
         exit(1);
     }
     Token t = tok.value();
     if (t.type != IDENTIFIER && t.type != EXPR)
     {
-        note("Expected a constant, expression or a variable after 'defined'.");
+        note("Expected a constant or expression after 'defined'.");
         exit(1);
     }
     if (t.type == EXPR)
     {
         evaluator.add_expr(t.expr);
-        auto _r = evaluator.evaluate();
+        auto _r = evaluator.evaluate(true);
         // In the case of defined an ndefined, the expression must evaluate to either 1 or 0
         // In defined, 1 would mean that the expression is evaluated but otherwise in the case of ndefined
         if (!_r.has_value())
@@ -1763,11 +1767,11 @@ void masm::Parser::handle_defined()
         if (std::stoull(_r.value()) == 1)
             return;
     }
-    else if (symtable.vars.find(t.val) == symtable.vars.end())
+    else if (symtable._const_list.find(t.val) == symtable._const_list.end())
     {
         if (symtable._const_list.find(t.val) == symtable._const_list.end())
         {
-            note("Expected a constant or a variable after 'defined' that exists.");
+            note("Expected a constant after 'defined' that exists.");
             exit(1);
         }
         // a constant hence it is defined
@@ -1784,19 +1788,19 @@ void masm::Parser::handle_ndefined()
         return;
     if (!tok.has_value())
     {
-        note("Expected a constant or a variable after 'defined'.");
+        note("Expected a constant after 'defined'.");
         exit(1);
     }
     Token t = tok.value();
     if (t.type != IDENTIFIER)
     {
-        note("Expected a constant or a variable after 'defined'.");
+        note("Expected a constant after 'defined'.");
         exit(1);
     }
     if (t.type == EXPR)
     {
         evaluator.add_expr(t.expr);
-        auto _r = evaluator.evaluate();
+        auto _r = evaluator.evaluate(true);
         if (!_r.has_value())
         {
             note("While evaluating expression here in file " + fname);
@@ -1805,13 +1809,9 @@ void masm::Parser::handle_ndefined()
         if (std::stoull(_r.value()) == 0)
             return;
     }
-    else if (!(symtable.vars.find(t.val) == symtable.vars.end()))
+    else if (!(symtable._const_list.find(t.val) == symtable._const_list.end()))
     {
-        if (!(symtable._const_list.find(t.val) == symtable._const_list.end()))
-        {
-            // not defined so go on
-            return;
-        }
+        return;
     }
     skip = true;
 }
@@ -1910,7 +1910,7 @@ void masm::Parser::confirm_entries()
 
 void masm::Parser::analyse_proc()
 {
-        for (auto p : proc_list)
+    for (auto p : proc_list)
     {
         if (!p.second)
         {
@@ -1924,4 +1924,426 @@ void masm::Parser::parser_confirm_info()
 {
     analyse_proc();
     confirm_entries();
+    if (eepe == "0")
+        eepe = "1";
+    if (!evaluate_data(&symtable, &data_addr, &data, &str))
+        exit(1);
+    analyse_nodes();
+    make_label_address();
+}
+
+void masm::Parser::add_for_codegen(CodeGen *g)
+{
+    g->data_addr = &data_addr;
+    g->lbl_addr = &label_addr;
+    g->data = &data;
+    g->str = &str;
+}
+
+void masm::Parser::make_label_address()
+{
+    size_t i = 0;
+    for (auto &l : nodes)
+    {
+        switch (l.kind)
+        {
+        case LABEL:
+        {
+            NodeName *n = (NodeName *)l.node.get();
+            (label_addr)[std::get<std::string>(n->oper)] = i;
+            break;
+        }
+        default:
+            if (l.kind >= NOP)
+                i++;
+            switch (l.kind)
+            {
+            case MOVL_IMM:
+            case PUSH_IMM:
+            case POP_IMM: // again, but for the joke this time
+            case AND_IMM:
+            case OR_IMM:
+            case XOR_IMM:
+            case CMP_IMM:
+                i++;
+                break;
+            }
+        }
+    }
+}
+
+void masm::Parser::analyse_nodes()
+{
+    for (auto &n : nodes)
+    {
+        switch (n.kind)
+        {
+        case ADD_MEM:
+        case SUB_MEM:
+        case MUL_MEM:
+        case DIV_MEM:
+        case MOD_MEM:
+        case FADD_MEM:
+        case FSUB_MEM:
+        case FMUL_MEM:
+        case FDIV_MEM:
+        case LFADD_MEM:
+        case LFSUB_MEM:
+        case LFMUL_MEM:
+        case LFDIV_MEM:
+        {
+            auto _n = (NodeArithmetic *)n.node.get();
+            std::string var_name = std::get<std::string>(_n->second_oper);
+            if (symtable.vars.find(var_name) == symtable.vars.end())
+            {
+                // could be a constant
+                if (symtable._const_list.find(var_name) == symtable._const_list.end())
+                {
+                    note("The variable '" + var_name + "' doesn't exist.");
+                    exit(1);
+                }
+                else
+                {
+                    n.kind = (NodeKind)(n.kind - 2);
+                    _n->second_oper = symtable._const_list.find(var_name)->second.value;
+                }
+            }
+            break;
+        }
+        case LOADB_VAR:
+        case LOADW_VAR:
+        case LOADD_VAR:
+        case LOADQ_VAR:
+        case STOREB_VAR:
+        case STOREW_VAR:
+        case STORED_VAR:
+        case STOREQ_VAR:
+        case ALOADB_VAR:
+        case ALOADW_VAR:
+        case ALOADD_VAR:
+        case ALOADQ_VAR:
+        case ASTOREB_VAR:
+        case ASTOREW_VAR:
+        case ASTORED_VAR:
+        case ASTOREQ_VAR:
+        {
+            auto _n = (NodeLoadStore *)n.node.get();
+            std::string var_name = std::get<std::string>(_n->second_oper);
+            if (symtable.vars.find(var_name) == symtable.vars.end())
+            {
+                note("The variable '" + var_name + "' doesn't exist.");
+                exit(1);
+            }
+            break;
+        }
+        case ADD_EXPR:
+        case SUB_EXPR:
+        case MUL_EXPR:
+        case DIV_EXPR:
+        case MOD_EXPR:
+        case IADD_EXPR:
+        case ISUB_EXPR:
+        case IMUL_EXPR:
+        case IDIV_EXPR:
+        case IMOD_EXPR:
+        {
+            auto _n = (NodeArithmetic *)n.node.get();
+            auto expr = std::get<std::vector<Token>>(_n->second_oper);
+            evaluator.add_expr(expr);
+            auto v = evaluator.evaluate();
+            if (!v.has_value())
+            {
+                note("While evaluating the expression here.");
+                exit(1);
+            }
+            n.kind = (NodeKind)(n.kind - 3);
+            _n->second_oper = v.value();
+            break;
+        }
+        case AND_EXPR:
+        case OR_EXPR:
+        case XOR_EXPR:
+        case LSHIFT_EXPR:
+        case RSHIFT_EXPR:
+        case CMP_EXPR:
+        {
+            auto _n = (NodeLogical *)n.node.get();
+            auto expr = std::get<std::vector<Token>>(_n->second_oper);
+            evaluator.add_expr(expr);
+            auto v = evaluator.evaluate();
+            if (!v.has_value())
+            {
+                note("While evaluating the expression here.");
+                exit(1);
+            }
+            n.kind = (NodeKind)(n.kind - 3);
+            _n->second_oper = v.value();
+            _n->is_float = true;
+            break;
+        }
+        case MOV_EXPR:
+        case MOVL_EXPR:
+        {
+            auto _n = (NodeMov *)n.node.get();
+            auto expr = std::get<std::vector<Token>>(_n->second_oper);
+            evaluator.add_expr(expr);
+            auto v = evaluator.evaluate();
+            if (!v.has_value())
+            {
+                note("While evaluating the expression here.");
+                exit(1);
+            }
+            n.kind = MOVL_IMM;
+            _n->second_oper = v.value();
+            _n->is_float = true;
+            break;
+        }
+        case MOVSXB_EXPR:
+        case MOVSXW_EXPR:
+        case MOVSXD_EXPR:
+        case SVA_EXPR:
+        case SVC_EXPR:
+        {
+            auto _n = (NodeMov *)n.node.get();
+            auto expr = std::get<std::vector<Token>>(_n->second_oper);
+            evaluator.add_expr(expr);
+            auto v = evaluator.evaluate();
+            if (!v.has_value())
+            {
+                note("While evaluating the expression here.");
+                exit(1);
+            }
+            n.kind = (NodeKind)(n.kind - 3);
+            _n->second_oper = v.value();
+            break;
+        }
+        case PUSH_EXPR:
+        {
+            auto _n = (NodeStack *)n.node.get();
+            auto expr = std::get<std::vector<Token>>(_n->second_oper);
+            evaluator.add_expr(expr);
+            auto v = evaluator.evaluate();
+            if (!v.has_value())
+            {
+                note("While evaluating the expression here.");
+                exit(1);
+            }
+            n.kind = (NodeKind)(n.kind - 3);
+            _n->second_oper = v.value();
+            break;
+        }
+        case PUSH_VAR:
+        case POP_VAR:
+        {
+            auto _n = (NodeStack *)n.node.get();
+            auto var_name = std::get<std::string>(_n->second_oper);
+            if (symtable.vars.find(var_name) == symtable.vars.end())
+            {
+                if (n.kind == PUSH_VAR)
+                {
+                    if (symtable._const_list.find(var_name) != symtable._const_list.end())
+                    {
+                        n.kind = PUSH_IMM;
+                        _n->second_oper = symtable._const_list.find(var_name)->second.value;
+                        break;
+                    }
+                }
+                if ((n.kind == PUSH_VAR) && (label_addr.find(var_name) != label_addr.end()))
+                {
+                    n.kind = PUSH_IMM;    
+                    _n->_is_lbl = true;
+                    break;
+                }
+                note("The variable '" + var_name + "' doesn't exist.");
+                exit(1);
+            }
+            break;
+        }
+        case IADD_VAR:
+        case ISUB_VAR:
+        case IMUL_VAR:
+        case IDIV_VAR:
+        case IMOD_VAR:
+        {
+            auto _n = (NodeArithmetic *)n.node.get();
+            std::string var_name = std::get<std::string>(_n->second_oper);
+            auto r = symtable._const_list.find(var_name);
+            // must be a constant
+            if (r == symtable._const_list.end())
+            {
+                note("The constant '" + var_name + "' doesn't exist.");
+                exit(1);
+            }
+            n.kind = (NodeKind)(n.kind - 2);
+            _n->second_oper = r->second.value;
+            break;
+        }
+        case AND_VAR:
+        case OR_VAR:
+        case XOR_VAR:
+        case LSHIFT_VAR:
+        case RSHIFT_VAR:
+        {
+            auto _n = (NodeLogical *)n.node.get();
+            std::string var_name = std::get<std::string>(_n->second_oper);
+            auto r = symtable._const_list.find(var_name);
+            // must be a constant
+            if (r == symtable._const_list.end())
+            {
+                note("The constant '" + var_name + "' doesn't exist.");
+                exit(1);
+            }
+            n.kind = (NodeKind)(n.kind - 2);
+            _n->second_oper = r->second.value;
+            _n->is_float = r->second.type == FLOAT;
+            break;
+        }
+        case CMP_VAR:
+        {
+            auto _n = (NodeLogical *)n.node.get();
+            std::string var_name = std::get<std::string>(_n->second_oper);
+            auto r = symtable.vars.find(var_name);
+            if (r == symtable.vars.end())
+            {
+                if (symtable._const_list.find(var_name) == symtable._const_list.end())
+                {
+                    note("The variable '" + var_name + "' doesn't exist.");
+                    exit(1);
+                }
+                else
+                {
+                    n.kind = (NodeKind)(n.kind - 2);
+                    _n->second_oper = symtable._const_list.find(var_name)->second.value;
+                }
+            }
+            break;
+        }
+        case MOV_VAR:
+        case SVA_VAR:
+        case SVC_VAR:
+        case MOVL_VAR:
+        {
+            auto _n = (NodeMov *)n.node.get();
+            auto var_name = std::get<std::pair<std::string, DataType>>(_n->second_oper);
+            auto r = symtable._const_list.find(var_name.first);
+            if (r == symtable._const_list.end())
+            {
+                if (n.kind == MOV_VAR || n.kind == MOVL_VAR)
+                {
+                    if ((label_addr.find(var_name.first) != label_addr.end()))
+                        break;
+                }
+                auto _r = symtable.vars.find(var_name.first);
+                if (_r == symtable.vars.end())
+                {
+                    note("The variable '" + var_name.first + "' doesn't exist.");
+                    exit(1);
+                }
+                break;
+            }
+            if (n.kind == MOV_VAR || n.kind == MOVL_VAR)
+                n.kind = MOVL_IMM;
+            else
+                n.kind = (NodeKind)(n.kind - 2);
+            _n->second_oper = r->second.value;
+            break;
+        }
+        case MOVSXB_VAR:
+        case MOVSXW_VAR:
+        case MOVSXD_VAR:
+        {
+            auto _n = (NodeMov *)n.node.get();
+            auto var_name = std::get<std::pair<std::string, DataType>>(_n->second_oper);
+            auto r = symtable._const_list.find(var_name.first);
+            if (r == symtable._const_list.end())
+            {
+                note("The constant '" + var_name.first + "' doesn't exist.");
+                exit(1);
+            }
+            n.kind = (NodeKind)(n.kind - 2);
+            ;
+            _n->second_oper = r->second.value;
+            break;
+        }
+        case JMP:
+        case JNZ:
+        case JZ:
+        case JNE:
+        case JE:
+        case JNC:
+        case JC:
+        case JNO:
+        case JO:
+        case JNN:
+        case JN:
+        case JNG:
+        case JG:
+        case JNS:
+        case JS:
+        case JGE:
+        case JSE:
+        case SETE:
+        case LOOP:
+        case CALL:
+        {
+            auto _n = (NodeName *)n.node.get();
+            std::string name = std::get<std::string>(_n->oper);
+            if (label_addr.find(name) == label_addr.end())
+            {
+                note("This label to branch into doesn't exist: " + name);
+                exit(1);
+            }
+            break;
+        }
+        case CMPXCHG:
+        {
+            auto _n = (NodeCmpxchg *)n.node.get();
+            if (symtable.vars.find(std::get<std::string>(_n->var)) == symtable.vars.end())
+            {
+                note("This variable doesn't exist: " + std::get<std::string>(_n->var));
+                exit(1);
+            }
+            break;
+        }
+        case SIN:
+        case SOUT:
+        {
+            auto _n = (NodeIO *)n.node.get();
+            if (symtable.vars.find(std::get<std::string>(_n->oper)) == symtable.vars.end())
+            {
+                note("This variable doesn't exist: " + std::get<std::string>(_n->oper));
+                exit(1);
+            }
+            break;
+        }
+        case INTR_VAR:
+        {
+            auto _n = (NodeIntr *)n.node.get();
+            auto name = std::get<std::string>(_n->val);
+            if (symtable._const_list.find(name) == symtable._const_list.end())
+            {
+                note("This constant doesn't exist: " + name);
+                exit(1);
+            }
+            n.kind = INTR;
+            _n->val = symtable._const_list.find(name)->second.value;
+            break;
+        }
+        case INTR_EXPR:
+        {
+            auto _n = (NodeIntr *)n.node.get();
+            auto expr = std::get<std::vector<Token>>(_n->val);
+            evaluator.add_expr(expr);
+            auto v = evaluator.evaluate();
+            if (!v.has_value())
+            {
+                note("While evaluating the expression here.");
+                exit(1);
+            }
+            n.kind = INTR;
+            _n->val = v.value();
+            break;
+        }
+        }
+    }
 }

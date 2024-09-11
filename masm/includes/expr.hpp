@@ -24,7 +24,7 @@ namespace masm
 
         void add_addr(std::unordered_map<std::string, size_t> *addr);
 
-        std::optional<std::string> evaluate();
+        std::optional<std::string> evaluate(bool _only_const = false);
 
         bool perform();
     };
