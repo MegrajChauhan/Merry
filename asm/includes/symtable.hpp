@@ -24,8 +24,6 @@ namespace masm
     // changing this might be a good idea
     struct SymbolTable
     {
-        std::vector<Variable> variables;
-        std::unordered_map<std::string, size_t> _var_list;     // for quick checking
         std::unordered_map<std::string, Variable> vars;   // only variables
         std::unordered_map<std::string, Variable> _const_list; // only constants
     };

@@ -1624,7 +1624,7 @@ _exec_(popa)
         core->stop_running = mtrue;
         return;
     }
-    for (int i = 15; i > 0; i--)
+    for (int i = 15; i >= 0; i--)
     {
         // now move one by one
         core->registers[i] = core->stack_mem[core->sp];

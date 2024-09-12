@@ -40,7 +40,7 @@ struct MerryStack
   msize_t add_per_resize; // how many addresses to add per resize
 };
 
-#define stack_full(stack) (stack->sp != stack->size && stack->sp >= stack->size)
+#define stack_full(stack) (stack->sp == (stack->size - 1))
 #define stack_empty(stack) (stack->sp == (mqword_t)(-1))
 
 MerryStack *merry_init_stack(msize_t len, mbool_t dynamic, msize_t upper_lim, msize_t per_resize);

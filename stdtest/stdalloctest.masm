@@ -3,9 +3,10 @@ proc Main
 Main
     call __builtin_std_init
     call __builtin_std_mem_init
+    
     movl Mc, 20                  ;; Try it 20 times
-    mov Mf, 10
-    mov M1, 32
+    movl Mf, 10
+    movl M1, 32
 __
     mov Ma, 16                  ;; Try allocating 16 bytes
     out Mc

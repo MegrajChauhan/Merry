@@ -172,6 +172,7 @@ bool masm::evaluate_data(SymbolTable *table, std::unordered_map<std::string, siz
     }
     while ((str_data->size() % 8) != 0)
         str_data->push_back(0);
+    return true;
 }
 
 void masm::CodeGen::generate_singles(size_t opcode)
@@ -255,7 +256,7 @@ void masm::CodeGen::mov_imm(NodeMov *n, bool _is64)
         return;
     }
     GenBinary b;
-    b.bytes.b1 = (_is64) ? OP_MOVE_IMM : OP_MOVE_IMM_64;
+    b.bytes.b1 = (_is64) ? OP_MOVE_IMM_64 : OP_MOVE_IMM;
     std::string imm = std::get<std::string>(n->second_oper);
     size_t _imm = n->is_float ? (_is64 ? (size_t)std::stod(imm) : (size_t)std::stof(imm)) : std::stoull(imm);
     if (_is64)
@@ -287,21 +288,7 @@ void masm::CodeGen::mov_var(NodeMov *n)
     GenBinary b;
     auto _s = std::get<std::string>(n->second_oper);
     auto _res = table->vars.find(_s);
-    bool is_lbl = false;
-    if (_res == table->vars.end())
-    {
-        if (table->_const_list.find(_s) == table->_const_list.end())
-            is_lbl = true;
-        else
-        {
-            // is a constant
-            _s = table->_const_list[_s].value;
-            n->second_oper = _s;
-            n->is_float = table->_const_list[_s].type == FLOAT;
-            mov_imm(n, true);
-            return;
-        }
-    }
+    bool is_lbl = n->is_lbl;
     size_t addr = is_lbl ? (*lbl_addr)[_s] : data_addr->find(_s)->second;
     b.bytes.b2 = n->reg;
     b.full |= (addr & 0xFFFFFFFFFFFF);
@@ -564,6 +551,14 @@ void masm::CodeGen::excg(NodeExcg *n, size_t op)
     code.push_back(b);
 }
 
+void masm::CodeGen::single_regr(size_t op, Register reg)
+{
+    GenBinary b;
+    b.bytes.b1 = op;
+    b.bytes.b8 = reg;
+    code.push_back(b);
+}
+
 void masm::CodeGen::gen()
 {
     for (auto &node : *nodes)
@@ -584,6 +579,12 @@ void masm::CodeGen::gen()
             break;
         case ADD_MEM:
             arithmetic_inst_mem(GET(NodeArithmetic), OP_ADD_MEMB);
+            break;
+        case SUB_IMM:
+            arithmetic_inst_imm(GET(NodeArithmetic), OP_SUB_IMM);
+            break;
+        case SUB_REG:
+            arithmetic_inst_reg(GET(NodeArithmetic), OP_SUB_REG);
             break;
         case SUB_MEM:
             arithmetic_inst_mem(GET(NodeArithmetic), OP_SUB_MEMB);
@@ -915,10 +916,10 @@ void masm::CodeGen::gen()
             generate_singles(OP_UOUTR);
             break;
         case CIN:
-            generate_singles(OP_CIN);
+            single_regr(OP_CIN, std::get<Register>((GET(NodeName))->oper));
             break;
         case COUT:
-            generate_singles(OP_COUT);
+            single_regr(OP_COUT, std::get<Register>((GET(NodeName))->oper));
             break;
         case SIN:
         {
@@ -930,7 +931,7 @@ void masm::CodeGen::gen()
             break;
         }
         case SIN_REGR:
-            generate_singles(OP_SIN_REG);
+            single_regr(OP_SIN_REG, std::get<Register>((GET(NodeName))->oper));
             break;
         case SOUT:
         {
@@ -942,67 +943,67 @@ void masm::CodeGen::gen()
             break;
         }
         case SOUT_REGR:
-            generate_singles(OP_SOUT_REG);
+            single_regr(OP_SOUT_REG, std::get<Register>((GET(NodeName))->oper));
             break;
         case IN:
-            generate_singles(OP_IN);
+            single_regr(OP_IN, std::get<Register>((GET(NodeName))->oper));
             break;
         case INW:
-            generate_singles(OP_INW);
+            single_regr(OP_INW, std::get<Register>((GET(NodeName))->oper));
             break;
         case IND:
-            generate_singles(OP_IND);
+            single_regr(OP_IND, std::get<Register>((GET(NodeName))->oper));
             break;
         case INQ:
-            generate_singles(OP_INQ);
+            single_regr(OP_INQ, std::get<Register>((GET(NodeName))->oper));
             break;
         case UIN:
-            generate_singles(OP_UIN);
+            single_regr(OP_UIN, std::get<Register>((GET(NodeName))->oper));
             break;
         case UINW:
-            generate_singles(OP_UINW);
+            single_regr(OP_UINW, std::get<Register>((GET(NodeName))->oper));
             break;
         case UIND:
-            generate_singles(OP_UIND);
+            single_regr(OP_UIND, std::get<Register>((GET(NodeName))->oper));
             break;
         case UINQ:
-            generate_singles(OP_UINQ);
+            single_regr(OP_UINQ, std::get<Register>((GET(NodeName))->oper));
             break;
         case OUT:
-            generate_singles(OP_OUT);
+            single_regr(OP_OUT, std::get<Register>((GET(NodeName))->oper));
             break;
         case OUTW:
-            generate_singles(OP_OUTW);
+            single_regr(OP_OUTW, std::get<Register>((GET(NodeName))->oper));
             break;
         case OUTD:
-            generate_singles(OP_OUTD);
+            single_regr(OP_OUTD, std::get<Register>((GET(NodeName))->oper));
             break;
         case OUTQ:
-            generate_singles(OP_OUTQ);
+            single_regr(OP_OUTQ, std::get<Register>((GET(NodeName))->oper));
             break;
         case UOUT:
-            generate_singles(OP_UOUT);
+            single_regr(OP_UOUT, std::get<Register>((GET(NodeName))->oper));
             break;
         case UOUTW:
-            generate_singles(OP_UOUTW);
+            single_regr(OP_UOUTW, std::get<Register>((GET(NodeName))->oper));
             break;
         case UOUTD:
-            generate_singles(OP_UOUTD);
+            single_regr(OP_UOUTD, std::get<Register>((GET(NodeName))->oper));
             break;
         case UOUTQ:
-            generate_singles(OP_UOUTQ);
+            single_regr(OP_UOUTQ, std::get<Register>((GET(NodeName))->oper));
             break;
         case INF:
-            generate_singles(OP_INF32);
+            single_regr(OP_INF32, std::get<Register>((GET(NodeName))->oper));
             break;
         case INLF:
-            generate_singles(OP_INF);
+            single_regr(OP_INF, std::get<Register>((GET(NodeName))->oper));
             break;
         case OUTF:
-            generate_singles(OP_OUTF32);
+            single_regr(OP_OUTF32, std::get<Register>((GET(NodeName))->oper));
             break;
         case OUTLF:
-            generate_singles(OP_OUTF);
+            single_regr(OP_OUTF, std::get<Register>((GET(NodeName))->oper));
             break;
         case EXCGB:
             excg(GET(NodeExcg), OP_EXCG8);
@@ -1148,10 +1149,10 @@ void masm::CodeGen::gen_ST()
 
 void masm::CodeGen::setup_emit(Emit *emit)
 {
-   emit->code = &code;
-   emit->data = data;
-   emit->lbl_addr = lbl_addr;
-   emit->ST = &ST;
-   emit->str_data = str;
-   emit->symd = &symd;
-} 
+    emit->code = &code;
+    emit->data = data;
+    emit->lbl_addr = lbl_addr;
+    emit->ST = &ST;
+    emit->str_data = str;
+    emit->symd = &symd;
+}

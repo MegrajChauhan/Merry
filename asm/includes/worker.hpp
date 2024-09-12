@@ -24,12 +24,12 @@ namespace masm
     static SymbolTable symtable;
     static Expr evaluator;
     static std::vector<uint8_t> data, str;
+    static std::vector<Node> nodes;
 
     class Parser
     {
         Lexer l;
         std::string fname, fconts;
-        std::vector<Node> nodes;
         bool read_again = true;
         Token old_tok;
         std::shared_ptr<std::string> file;

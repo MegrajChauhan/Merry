@@ -153,7 +153,7 @@ void masm::Emit::add_SsT()
     }
     if (gen_ST)
     {
-        j = symd->size();
+        j = symd->size() * 16;
         for (int i = 7; i >= 0; i--)
         {
             uint8_t v = ((j >> (i * 8)) & 255);

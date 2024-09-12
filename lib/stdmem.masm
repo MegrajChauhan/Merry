@@ -212,20 +212,17 @@ __builtin_std_mem_remove_from_allocated
     
     ;; make some internal value changes
     cmp Ma, _Mstd_allocated_mem_head
-    je _std_mem_remove_from_allocated_is_head
+    jne _std_mem_remove_from_allocated_continue
 
-    cmp Ma, _Mstd_allocated_mem_tail
-    je _std_mem_remove_from_allocated_is_tail
-
-    jmp _std_mem_remove_from_allocated_continue 
-
- _std_mem_remove_from_allocated_is_head
     storeq M2, _Mstd_allocated_mem_head     ;; update the head
 
- _std_mem_remove_from_allocated_is_tail
+_std_mem_remove_from_allocated_continue
+    cmp Ma, _Mstd_allocated_mem_tail
+    jne _std_mem_remove_from_allocated_continue2
+
     storeq M1, _Mstd_free_mem_tail     ;; update the tail
     
- _std_mem_remove_from_allocated_continue
+ _std_mem_remove_from_allocated_continue2
     cmp M1, _MSTD_NULL_
     je _std_mem_remove_from_allocated_continue1
 
@@ -464,12 +461,14 @@ __builtin_std_alloc
 __builtin_std_free
     call __builtin_quick_save
 
+    movl Mf, Ma
+
     ;; Check if the allocator has been initialized
     call __builtin_std_mem_is_init
-
     cmp Ma, 0
     je _std_free_error            ;; Allocator not initialized
 
+    movl Ma, Mf
     ;; Check if the block is valid
     sub Ma, _MSTD_MEM_METADATA_MAGIC_NUM_
     loadq M1, Ma
@@ -477,6 +476,7 @@ __builtin_std_free
     jne _std_free_error            ;; Invalid block
 
     ;; Remove the block from the allocated list
+    mov Ma, Mf
     call __builtin_std_mem_remove_from_allocated
 
     ;; Add the block to the free list

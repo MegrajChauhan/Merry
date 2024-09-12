@@ -33,10 +33,13 @@ void masm::Parser::setup_parser(std::string filename)
     file = std::make_shared<std::string>(fname);
     evaluator.add_table(&symtable);
     evaluator.add_addr(&data_addr);
+    used_files.insert(filename);
 }
 
 void masm::Parser::parse()
 {
+    if (fconts.empty())
+        return;
     while (!l.eof())
     {
         std::optional<Token> tok;
@@ -131,6 +134,7 @@ void masm::Parser::parse()
                 exit(1);
             break;
         case IDENTIFIER:
+            old_tok = t;
             if (!handle_names(false))
                 exit(1);
             break;
@@ -780,7 +784,7 @@ bool masm::Parser::handle_strings()
 
 bool masm::Parser::handle_names(bool _proc)
 {
-    Token t;
+    Token t = old_tok;
     if (_proc)
     {
         auto r = l.next_token();
@@ -799,17 +803,18 @@ bool masm::Parser::handle_names(bool _proc)
     // check if the label already exists
     auto in_pl = proc_list.find(t.val);
     auto in_label = lbl_list.find(t.val);
-    bool pl = in_pl == proc_list.end();
-    bool lbl = in_label == lbl_list.end();
+    bool pl = (in_pl != proc_list.end());
+    bool lbl = (in_label != lbl_list.end());
     if (_proc)
     {
-        if (!pl)
+        // should be a procedure
+        if (pl) // if in proc list
         {
             // redeclaration
             log(fname, "Redeclaration of proc \"" + t.val + "\".", l.get_line_st(), l.get_col_st());
             return false;
         }
-        if (!lbl)
+        if (lbl)
         {
             // The label was defined before the procedure was declared
             log(fname, "Declaration of proc \"" + t.val + "\" after the definition of its label.", l.get_line_st(), l.get_col_st());
@@ -817,11 +822,11 @@ bool masm::Parser::handle_names(bool _proc)
         }
     }
     else
-    {
-        if (!pl)
+    {           // should not be a procedure
+        if (pl) // if in proc list
         {
-            // definition
-            if (!lbl)
+            // could be a definition
+            if (lbl) // already defined
             {
                 // redefinition
                 log(fname, "Redefinition of procedure label \"" + t.val + "\".", l.get_line_st(), l.get_col_st());
@@ -829,8 +834,9 @@ bool masm::Parser::handle_names(bool _proc)
             }
         }
         else
-        {
-            if (!lbl)
+        { // not in proc list
+            // could be a label declaration
+            if (lbl) // already defined
             {
                 // redefinition
                 log(fname, "Redefinition of procedure label \"" + t.val + "\".", l.get_line_st(), l.get_col_st());
@@ -850,7 +856,7 @@ bool masm::Parser::handle_names(bool _proc)
     else
     {
         lbl_list.insert(t.val);
-        if (!pl)
+        if (pl)
             proc_list[t.val] = true;
     }
     return true;
@@ -898,7 +904,7 @@ bool masm::Parser::handle_arithmetic(NodeKind k)
         log(fname, "Expected a register, variable or immediate here after the first operand.", l.get_line_st(), l.get_col_st());
         return false;
     }
-    a->reg = regr_map.find(t.type)->second;
+    a->reg = regr_map[t.type];
     t = res.value();
     switch (t.type)
     {
@@ -962,16 +968,16 @@ bool masm::Parser::handle_arithmetic_float(NodeKind k)
         log(fname, "Expected a register here after the floating-point arithmetic instruction.", l.get_line_st(), l.get_col_st());
         return false;
     }
+    a->reg = regr_map[t.type];
     res = l.next_token();
     if (!res.has_value())
     {
-        log(fname, "Expected a register or a variable here after the first operand.", l.get_line_st(), l.get_col_st());
+        log(fname, "Expected a register or a constant here after the first operand.", l.get_line_st(), l.get_col_st());
         return false;
     }
-    a->reg = regr_map.find(t.type)->second;
     t = res.value();
     if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
-        a->second_oper = regr_map.find(t.type)->second;
+        a->second_oper = regr_map[t.type];
     else if (t.type == IDENTIFIER)
     {
         a->second_oper = t.val;
@@ -979,7 +985,7 @@ bool masm::Parser::handle_arithmetic_float(NodeKind k)
     }
     else
     {
-        log(fname, "Expected a register or a variable here after the first operand.", l.get_line_st(), l.get_col_st());
+        log(fname, "Expected a register or a constant here after the first operand.", l.get_line_st(), l.get_col_st());
         return false;
     }
     nodes.push_back(std::move(node));
@@ -1020,7 +1026,7 @@ bool masm::Parser::handle_mov(NodeKind k)
         log(fname, "Expected a register, variable or immediate here after the first operand.", l.get_line_st(), l.get_col_st());
         return false;
     }
-    a->reg = regr_map.find(t.type)->second;
+    a->reg = regr_map[t.type];
     t = res.value();
     switch (t.type)
     {
@@ -1095,13 +1101,10 @@ bool masm::Parser::handle_movX(NodeKind k)
         log(fname, "Expected a register here after the first register operand.", l.get_line_st(), l.get_col_st());
         return false;
     }
-    a->reg = regr_map.find(t.type)->second;
+    a->reg = regr_map[t.type];
     t = res.value();
     if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
-    {
-        node.kind = (NodeKind)(k);
-        a->second_oper = regr_map.find(t.type)->second;
-    }
+        a->second_oper = regr_map[t.type];
     else
     {
         log(fname, "Expected a register here after the first register operand.", l.get_line_st(), l.get_col_st());
@@ -1206,7 +1209,7 @@ bool masm::Parser::handle_sva_svc(NodeKind k)
         log(fname, "Expected a register, variable or immediate here after the first operand.", l.get_line_st(), l.get_col_st());
         return false;
     }
-    a->reg = regr_map.find(t.type)->second;
+    a->reg = regr_map[t.type];
     t = res.value();
     switch (t.type)
     {
@@ -1658,13 +1661,10 @@ bool masm::Parser::handle_excg(NodeKind k)
         log(fname, "Expected a register here after the first operand.", l.get_line_st(), l.get_col_st());
         return false;
     }
-    a->r1 = regr_map.find(t.type)->second;
+    a->r1 = regr_map[t.type];
     t = res.value();
     if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
-    {
-        node.kind = (NodeKind)(k);
-        a->r2 = regr_map.find(t.type)->second;
-    }
+        a->r2 = regr_map[t.type];
     else
     {
         log(fname, "Expected a register here after the first operand.", l.get_line_st(), l.get_col_st());
@@ -1730,8 +1730,6 @@ void masm::Parser::handle_depends()
         _file = std::filesystem::current_path() / _file;
     else
         _file = _std_paths.find(_file)->second;
-    if (used_files.find(_file) != used_files.end())
-        return;
     child.setup_parser(_file);
     child.parse();
 }
@@ -1939,6 +1937,7 @@ void masm::Parser::add_for_codegen(CodeGen *g)
     g->data = &data;
     g->str = &str;
     g->nodes = &nodes;
+    g->table = &symtable;
 }
 
 void masm::Parser::add_for_emit(Emit *e)
@@ -2012,7 +2011,13 @@ void masm::Parser::analyse_nodes()
                 }
                 else
                 {
-                    n.kind = (NodeKind)(n.kind - 2);
+                    if (n.kind >= FADD_MEM && n.kind <= LFDIV_MEM)
+                    {
+                        note("FLOATING POINT Arithmetic instructions do not take constants as operands.");
+                        exit(1);
+                    }
+                    else
+                        n.kind = (NodeKind)(n.kind - 2);
                     _n->second_oper = symtable._const_list.find(var_name)->second.value;
                 }
             }
@@ -2109,10 +2114,24 @@ void masm::Parser::analyse_nodes()
         case MOVSXB_EXPR:
         case MOVSXW_EXPR:
         case MOVSXD_EXPR:
+        {
+            auto _n = (NodeMov *)n.node.get();
+            auto expr = std::get<std::vector<Token>>(_n->second_oper);
+            evaluator.add_expr(expr);
+            auto v = evaluator.evaluate();
+            if (!v.has_value())
+            {
+                note("While evaluating the expression here.");
+                exit(1);
+            }
+            n.kind = (NodeKind)(n.kind - 3);
+            _n->second_oper = v.value();
+            break;
+        }
         case SVA_EXPR:
         case SVC_EXPR:
         {
-            auto _n = (NodeMov *)n.node.get();
+            auto _n = (NodeStack *)n.node.get();
             auto expr = std::get<std::vector<Token>>(_n->second_oper);
             evaluator.add_expr(expr);
             auto v = evaluator.evaluate();
@@ -2227,8 +2246,6 @@ void masm::Parser::analyse_nodes()
             break;
         }
         case MOV_VAR:
-        case SVA_VAR:
-        case SVC_VAR:
         case MOVL_VAR:
         {
             auto _n = (NodeMov *)n.node.get();
@@ -2236,14 +2253,11 @@ void masm::Parser::analyse_nodes()
             auto r = symtable._const_list.find(var_name);
             if (r == symtable._const_list.end())
             {
-                if (n.kind == MOV_VAR || n.kind == MOVL_VAR)
+                if ((label_addr.find(var_name) != label_addr.end()))
                 {
-                    if ((label_addr.find(var_name) != label_addr.end()))
-                    {
-                        n.kind = MOVL_IMM;
-                        _n->is_lbl = true;
-                        break;
-                    }
+                    n.kind = MOVL_IMM;
+                    _n->is_lbl = true;
+                    break;
                 }
                 auto _r = symtable.vars.find(var_name);
                 if (_r == symtable.vars.end())
@@ -2251,13 +2265,33 @@ void masm::Parser::analyse_nodes()
                     note("The variable '" + var_name + "' doesn't exist.");
                     exit(1);
                 }
+                n.kind = MOV_VAR;
                 break;
             }
-            if (n.kind == MOV_VAR || n.kind == MOVL_VAR)
-                n.kind = MOVL_IMM;
-            else
-                n.kind = (NodeKind)(n.kind - 2);
+            n.kind = MOVL_IMM;
             _n->second_oper = r->second.value;
+            break;
+        }
+        case SVA_VAR:
+        case SVC_VAR:
+        {
+            auto _n = (NodeStack *)n.node.get();
+            auto var_name = std::get<std::string>(_n->second_oper);
+            auto r = symtable._const_list.find(var_name);
+            if (r == symtable._const_list.end())
+            {
+                auto _r = symtable.vars.find(var_name);
+                if (_r == symtable.vars.end())
+                {
+                    note("The variable '" + var_name + "' doesn't exist.");
+                    exit(1);
+                }
+            }
+            else
+            {
+                n.kind = (NodeKind)(n.kind - 2);
+                _n->second_oper = r->second.value;
+            }
             break;
         }
         case MOVSXB_VAR:
@@ -2273,7 +2307,6 @@ void masm::Parser::analyse_nodes()
                 exit(1);
             }
             n.kind = (NodeKind)(n.kind - 2);
-            ;
             _n->second_oper = r->second.value;
             break;
         }

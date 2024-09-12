@@ -76,6 +76,8 @@ namespace masm
         void excg(NodeExcg *n, size_t op);
 
         void generate_singles(size_t opcode);
+
+        void single_regr(size_t op, Register reg);
     };
 };
 

@@ -530,7 +530,7 @@ mret_t merry_reader_read_st(MerryReader *r)
     // Just read everything remaining into the memory
     // This section contains string that is indexed by the ST indexes everywhere.
     // Each string needs to be NULL terminated
-    r->st.st_data = (mbptr_t)malloc(sizeof(r->st.st_len));
+    r->st.st_data = (mbptr_t)malloc((r->st.st_len));
     if (r->st.st_data == NULL)
     {
         rlog("Internal Error: Unable to allocate memory for ST.\n", NULL);
