@@ -1,13 +1,20 @@
 #include "emit.hpp"
 
-void masm::Emit::emit(std::string output)
+void masm::Emit::emit(std::string output, std::string *epval, std::unordered_map<std::string, std::string> *tep, std::vector<std::string> *entry, std::vector<GenBinary> *_c, std::vector<mbyte_t> *_d, std::vector<mbyte_t> *_s, std::unordered_map<std::string, size_t> *lbaddr)
 {
     f.open(output, std::ios::out | std::ios::binary);
     if (!f.is_open())
     {
         note("Failed to open output file.");
-        exit(1);
+        die(1);
     }
+    eepe = epval;
+    teepe = tep;
+    entries = entry;
+    code = _c;
+    data = _d;
+    str_data = _s;
+    lbl_addr = lbaddr;
     analyze_eat();
     add_header();
     add_EAT();
@@ -32,7 +39,7 @@ void masm::Emit::set_for_debug(bool ed, bool gST, bool _cd, bool _cdf)
 
 void masm::Emit::add_header()
 {
-    uint8_t header[8] = {'M', 'I', 'N', 0, 0, 0};
+    mbyte_t header[8] = {'M', 'I', 'N', 0, 0, 0};
     header[6] = cdf ? 1 : 0;
     header[6] <<= 1;
     header[6] |= cd ? 1 : 0;
@@ -128,7 +135,7 @@ void masm::Emit::add_SsT()
     size_t j = data->size();
     for (int i = 7; i >= 0; i--)
     {
-        uint8_t v = ((j >> (i * 8)) & 255);
+        mbyte_t v = ((j >> (i * 8)) & 255);
         f << v;
     }
     b.val = 0;
@@ -141,7 +148,7 @@ void masm::Emit::add_SsT()
         j = str_data->size();
         for (int i = 7; i >= 0; i--)
         {
-            uint8_t v = ((j >> (i * 8)) & 255);
+            mbyte_t v = ((j >> (i * 8)) & 255);
             f << v;
         }
         b.val = 0;
@@ -156,7 +163,7 @@ void masm::Emit::add_SsT()
         j = symd->size();
         for (int i = 7; i >= 0; i--)
         {
-            uint8_t v = ((j >> (i * 8)) & 255);
+            mbyte_t v = ((j >> (i * 8)) & 255);
             f << v;
         }
         b.b[0] = 2;
@@ -174,6 +181,12 @@ void masm::Emit::add_sections()
             f << _v;
         }
     }
+}
+
+void masm::Emit::init_for_debug(std::vector<mbyte_t> *st, std::unordered_map<size_t, size_t> *_symd)
+{
+    ST = st;
+    symd = _symd;
 }
 
 void masm::Emit::add_ST()

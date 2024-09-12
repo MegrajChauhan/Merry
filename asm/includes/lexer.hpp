@@ -44,8 +44,6 @@ namespace masm
                 {"*", OPER_MUL},
                 {"-", OPER_MINUS},
                 {"+", OPER_PLUS},
-                // {"data", MB_DATA},
-                // {"code", MB_CODE},
                 {"db", KEY_DB},
                 {"dw", KEY_DW},
                 {"dd", KEY_DD},

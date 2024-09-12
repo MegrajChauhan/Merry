@@ -2,11 +2,12 @@
   An issue: Due to the way the assembler works, right now, it assumes every host
   to be little endian and I am too lazy to fix that(Imagine going to dozens of files and thousands of lines to find some missing lines, augh!!!)
 */
-#include "context.hpp"
+#include "worker.hpp"
+#include "codegen.hpp"
 #include "emit.hpp"
 
 // The format for the VERSION is v<Major>.<Minor>.<Patch>-<State>.<update_count>
-#define VERSION "Masm- v0.0.17-test.10"
+#define VERSION "Masm- v0.0.30-test.11"
 
 static std::string version_message = "Masm: An Assembler for the Merry Virtual Machine.\n"
                                      "Latest version: ";
@@ -30,7 +31,7 @@ private:
 
 int main(int argc, char **argv)
 {
-    masm::Context _c;
+    masm::Parser p;
     masm::Emit _e;
     // int a = 2;
     // char *v[] = {"dfds", "stdtest/stdinittest.mb"};
@@ -60,17 +61,20 @@ int main(int argc, char **argv)
     cdf = _asm.get_option("child_debug_wait").first;
     output_filename = _asm.get_option("output");
     input_filename = _asm.get_option("input");
-    _c.init_context(input_filename.second);
-    _c.start();
+    p.setup_parser(input_filename.second);
+    p.parse();
     std::string _output_fname = output_filename.first ? output_filename.second : "a.mbin";
     if (!_output_fname.ends_with(".mbin"))
         _output_fname += ".mbin";
-    masm::CodeGen *g = _c.get_codegen();
+    masm::CodeGen c;
+    p.add_for_codegen(&c);
+    c.gen();
     if (dst && ed)
-        g->generate_ST();
+        c.gen_ST();
+    p.add_for_emit(&_e);
+    c.setup_emit(&_e);
     _e.set_for_debug(ed, dst && ed, cd, cdf);
-    _e.init_for_debug(g->get_ST(), g->get_symd());
-    _e.emit(_output_fname, _c.get_eepe(), _c.get_teepe(), _c.get_entries(), g->get_code(), g->get_data(), g->get_str_data(), _c.get_lbl_addr());
+    _e.emit(_output_fname);
     return 0;
 }
 

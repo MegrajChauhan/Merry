@@ -1,5 +1,0 @@
-code stdthreads.masm
-code stdlock.masm
-code stdcondvar.masm
-code stdutils.masm
-data stdintr.mdat

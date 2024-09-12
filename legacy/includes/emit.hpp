@@ -5,8 +5,7 @@
 #include <vector>
 #include <filesystem>
 #include <fstream>
-#include "error.hpp"
-#include "merry_config.h"
+#include "context.hpp"
 
 /**
  * GIANT NOTE:
@@ -35,29 +34,18 @@ namespace masm
     // no matter the native endinness, make sure it is big-endianness
     union ByteSwap
     {
-        uint8_t b[8]; // access in opposite manner
+        mbyte_t b[8]; // access in opposite manner
         size_t val;
     };
 
-    struct GenBinary
-    {
-        union
-        {
-            struct
-            {
-#if _MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_
-                uint8_t b8, b7, b6, b5, b4, b3, b2, b1;
-#else
-                uint8_t b1, b2, b3, b5, b6, b4, b7, b8;
-#endif
-            } bytes;
-            unsigned long long full = 0;
-        };
-    };
-
-
     class Emit
     {
+        std::string *eepe;
+        std::unordered_map<std::string, std::string> *teepe;
+        std::vector<std::string> *entries;
+        std::vector<GenBinary> *code;
+        std::vector<mbyte_t> *data;
+        std::vector<mbyte_t> *str_data;
         std::fstream f;
 
         size_t ISS = 0;   // Instruction Section Size
@@ -67,26 +55,23 @@ namespace masm
 
         std::vector<size_t> EAT_cont;
         std::vector<std::pair<size_t, size_t>> SsT_cont; // will need in the future
-        std::vector<std::vector<uint8_t> *> sections;
+        std::vector<std::vector<mbyte_t> *> sections;
+
+        std::unordered_map<std::string, size_t> *lbl_addr;
+
+        std::vector<mbyte_t> *ST;
+        std::unordered_map<size_t, size_t> *symd;
 
         bool enable_dbg = false, gen_ST = false, cd = false, cdf = false;
 
     public:
-        std::vector<uint8_t> *ST;
-        std::unordered_map<size_t, size_t> *symd;
-        std::unordered_map<std::string, size_t> *lbl_addr;
-        std::string *eepe;
-        std::unordered_map<std::string, std::string> *teepe;
-        std::vector<std::string> *entries;
-        std::vector<GenBinary> *code;
-        std::vector<uint8_t> *data;
-        std::vector<uint8_t> *str_data;
-
         Emit() = default;
+
+        void init_for_debug(std::vector<mbyte_t> *st, std::unordered_map<size_t, size_t> *_symd);
 
         void set_for_debug(bool ed, bool gST, bool _cd, bool _cdf);
 
-        void emit(std::string output);
+        void emit(std::string output, std::string *epval, std::unordered_map<std::string, std::string> *tep, std::vector<std::string> *entry, std::vector<GenBinary> *_c, std::vector<mbyte_t> *_d, std::vector<mbyte_t> *_s, std::unordered_map<std::string, size_t> *lbaddr);
 
         void add_header();
 

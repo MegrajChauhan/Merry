@@ -34,3 +34,15 @@ __builtin_std_get_cmd_options
     call __builtin_quick_restore
     ret
 
+;; Firstly, the initialization data
+;; The data
+
+rb _Mstd_option_count 1 ;; Reserve 1 byte to store the number of options
+rb _Mstd_host_arch_id 1 ;; The VM provides these IDs
+rb _Mstd_host_os_id 1   ;; This is also provided by the VM
+rb _Mstd_num_of_pages 1 ;; The number of pages that the program can currently use
+
+rb _Mstd_reserve 4 ;; reserve for future use
+
+rq _Mstd_option_start_addr 1   ;; So that we can access the options
+rq _Mstd_free_mem_start_addr 1 ;; For memory allocation purposes

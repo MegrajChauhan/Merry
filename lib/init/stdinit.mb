@@ -1,6 +1,0 @@
-data stdinit.mdat
-data stddefs.mdat
-code stdutils.masm
-code stdinit.masm
-
-;; The simplest that you can get with this

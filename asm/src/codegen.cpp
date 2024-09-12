@@ -1,936 +1,197 @@
 #include "codegen.hpp"
 
-void masm::CodeGen::setup_codegen(SymbolTable *_t, std::vector<Node> *_n, std::unordered_map<std::string, size_t> *lb, std::unordered_map<std::string, size_t> *data_addr)
+bool masm::evaluate_consts(SymbolTable *table, Expr *e)
 {
-    nodes = _n;
-    table = _t;
-    label_addr = lb;
-    this->data_addr = data_addr;
-    e.add_addr(data_addr);
-    e.add_table(_t);
-}
-
-/**
- * A very tough choice:
- * Either I add the logic for every instruction in the same function or I make separate functions that will do the same for a group of similar instruction.
- * The problems: The first approach will offend pro C++ devs or any programmer in general(Even I would be pissed looking at a function that is over a 1000 lines long)
- * There will be an insane amount of redundant code but on the +ve side, things will be very easy and simple.
- * The second approach really has just one problem, it is complicated to implement the specific functions for each group.
- * I have to make the grouping even simpler i.e one group may have just one or two things in common at most which leaves us with at most 2 instructions per group.
- * That isn't a good enough reason to go through writing complex function logic.
- * Thus there will be a hybrid approach. The groups that will help reduce the function size will have a separate function and no otherwise.
- * Even with that, the function should get well over 600 lines of code.
- */
-
-void masm::CodeGen::handle_arithmetic_reg_imm(msize_t op, NodeArithmetic *a, size_t _a)
-{
-    GenBinary b;
-    b.bytes.b1 = op; // the opcode
-    // 0xFFFFFFFF
-    b.bytes.b2 = a->reg;
-    b.full |= (std::stoull(std::get<std::string>(a->second_oper)) & _a);
-    code.push_back(b);
-}
-
-void masm::CodeGen::handle_arithmetic_reg_reg(msize_t op, NodeArithmetic *a)
-{
-    GenBinary b;
-    b.bytes.b1 = op;
-    b.bytes.b8 = a->reg;
-    b.bytes.b8 <<= 4;
-    b.bytes.b8 |= std::get<Register>(a->second_oper);
-    code.push_back(b);
-}
-
-void masm::CodeGen::handle_arithmetic_reg_var(NodeArithmetic *a, msize_t op)
-{
-    GenBinary b;
-    std::string var = std::get<std::string>(a->second_oper);
-    if (data_addr->find(var) == data_addr->end())
+    for (auto c : table->_const_list)
     {
-        // must be a constant
-        a->second_oper = table->_const_list[var].value;
-        handle_arithmetic_reg_imm(op, a);
-        return;
-    }
-    size_t var_addr = (*data_addr)[std::get<std::string>(a->second_oper)];
-    auto var_dets = table->variables[table->_var_list.find(var)->second];
-    b.bytes.b2 = a->reg;
-    switch (var_dets.type)
-    {
-    case BYTE:
-        b.bytes.b1 = op;
-        break;
-    case WORD:
-        b.bytes.b1 = (op + 1);
-        break;
-    case DWORD:
-    case FLOAT:
-        b.bytes.b1 = (op + 2);
-        break;
-    case QWORD:
-    case LFLOAT:
-        b.bytes.b1 = (op + 3);
-        break;
-    }
-    b.full |= (var_addr & 0xFFFFFFFFFFFF);
-    code.push_back(b);
-}
-
-bool masm::CodeGen::generate()
-{
-    for (auto &node : *nodes)
-    {
-        switch (node.kind)
+        Variable var = c.second;
+        if (var.is_expr)
         {
-        case NOP:
-            handle_one(OP_NOP);
-            break;
-        case HLT:
-            handle_one(OP_HALT);
-            break;
-        case ADD_IMM:
-            handle_arithmetic_reg_imm(OP_ADD_IMM, (NodeArithmetic *)node.node.get());
-            break;
-        case ADD_REG:
-            handle_arithmetic_reg_reg(OP_ADD_REG, (NodeArithmetic *)node.node.get());
-            break;
-        case ADD_MEM:
-            handle_arithmetic_reg_var((NodeArithmetic *)node.node.get(), OP_ADD_MEMB);
-            break;
-        case SUB_IMM:
-            handle_arithmetic_reg_imm(OP_SUB_IMM, (NodeArithmetic *)node.node.get());
-            break;
-        case SUB_REG:
-            handle_arithmetic_reg_reg(OP_SUB_REG, (NodeArithmetic *)node.node.get());
-            break;
-        case SUB_MEM:
-            handle_arithmetic_reg_var((NodeArithmetic *)node.node.get(), OP_SUB_MEMB);
-            break;
-        case MUL_IMM:
-            handle_arithmetic_reg_imm(OP_MUL_IMM, (NodeArithmetic *)node.node.get());
-            break;
-        case MUL_REG:
-            handle_arithmetic_reg_reg(OP_MUL_REG, (NodeArithmetic *)node.node.get());
-            break;
-        case MUL_MEM:
-            handle_arithmetic_reg_var((NodeArithmetic *)node.node.get(), OP_MUL_MEMB);
-            break;
-        case DIV_IMM:
-            handle_arithmetic_reg_imm(OP_DIV_IMM, (NodeArithmetic *)node.node.get());
-            break;
-        case DIV_REG:
-            handle_arithmetic_reg_reg(OP_DIV_REG, (NodeArithmetic *)node.node.get());
-            break;
-        case DIV_MEM:
-            handle_arithmetic_reg_var((NodeArithmetic *)node.node.get(), OP_DIV_MEMB);
-            break;
-        case MOD_IMM:
-            handle_arithmetic_reg_imm(OP_MOD_IMM, (NodeArithmetic *)node.node.get());
-            break;
-        case MOD_REG:
-            handle_arithmetic_reg_reg(OP_MOD_REG, (NodeArithmetic *)node.node.get());
-            break;
-        case MOD_MEM:
-            handle_arithmetic_reg_var((NodeArithmetic *)node.node.get(), OP_MOD_MEMB);
-            break;
-        case IADD_IMM:
-            handle_arithmetic_reg_imm(OP_IADD_IMM, (NodeArithmetic *)node.node.get(), 0xFFFFFFFF);
-            break;
-        case IADD_REG:
-            handle_arithmetic_reg_reg(OP_IADD_REG, (NodeArithmetic *)node.node.get());
-            break;
-        case ISUB_IMM:
-            handle_arithmetic_reg_imm(OP_ISUB_IMM, (NodeArithmetic *)node.node.get(), 0xFFFFFFFF);
-            break;
-        case ISUB_REG:
-            handle_arithmetic_reg_reg(OP_ISUB_REG, (NodeArithmetic *)node.node.get());
-            break;
-        case IMUL_IMM:
-            handle_arithmetic_reg_imm(OP_IMUL_IMM, (NodeArithmetic *)node.node.get(), 0xFFFFFFFF);
-            break;
-        case IMUL_REG:
-            handle_arithmetic_reg_reg(OP_IMUL_REG, (NodeArithmetic *)node.node.get());
-            break;
-        case IDIV_IMM:
-            handle_arithmetic_reg_imm(OP_IDIV_IMM, (NodeArithmetic *)node.node.get(), 0xFFFFFFFF);
-            break;
-        case IDIV_REG:
-            handle_arithmetic_reg_reg(OP_IDIV_REG, (NodeArithmetic *)node.node.get());
-            break;
-        case IMOD_IMM:
-            handle_arithmetic_reg_imm(OP_IMOD_IMM, (NodeArithmetic *)node.node.get(), 0xFFFFFFFF);
-            break;
-        case IMOD_REG:
-            handle_arithmetic_reg_reg(OP_IMOD_REG, (NodeArithmetic *)node.node.get());
-            break;
-        case FADD:
-            handle_arithmetic_reg_reg(OP_FADD32, (NodeArithmetic *)node.node.get());
-            break;
-        case FSUB:
-            handle_arithmetic_reg_reg(OP_FSUB32, (NodeArithmetic *)node.node.get());
-            break;
-        case FMUL:
-            handle_arithmetic_reg_reg(OP_FMUL32, (NodeArithmetic *)node.node.get());
-            break;
-        case FDIV:
-            handle_arithmetic_reg_reg(OP_FDIV32, (NodeArithmetic *)node.node.get());
-            break;
-        case LFADD:
-            handle_arithmetic_reg_reg(OP_FADD, (NodeArithmetic *)node.node.get());
-            break;
-        case LFSUB:
-            handle_arithmetic_reg_reg(OP_FSUB, (NodeArithmetic *)node.node.get());
-            break;
-        case LFMUL:
-            handle_arithmetic_reg_reg(OP_FMUL, (NodeArithmetic *)node.node.get());
-            break;
-        case LFDIV:
-            handle_arithmetic_reg_reg(OP_FDIV, (NodeArithmetic *)node.node.get());
-            break;
-        case FADD_MEM:
-            handle_float_var((NodeArithmetic *)node.node.get(), OP_FADD32_MEM);
-            break;
-        case FSUB_MEM:
-            handle_float_var((NodeArithmetic *)node.node.get(), OP_FSUB32_MEM);
-            break;
-        case FMUL_MEM:
-            handle_float_var((NodeArithmetic *)node.node.get(), OP_FMUL32_MEM);
-            break;
-        case FDIV_MEM:
-            handle_float_var((NodeArithmetic *)node.node.get(), OP_FDIV32_MEM);
-            break;
-        case LFADD_MEM:
-            handle_float_var((NodeArithmetic *)node.node.get(), OP_FADD_MEM);
-            break;
-        case LFSUB_MEM:
-            handle_float_var((NodeArithmetic *)node.node.get(), OP_FSUB_MEM);
-            break;
-        case LFMUL_MEM:
-            handle_float_var((NodeArithmetic *)node.node.get(), OP_FMUL_MEM);
-            break;
-        case LFDIV_MEM:
-            handle_float_var((NodeArithmetic *)node.node.get(), OP_FDIV_MEM);
-            break;
-        case MOV_IMM:
-            handle_mov_reg_imm(false, (NodeMov *)node.node.get());
-            break;
-        case MOV_REG:
-        case MOVL_REG:
-            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVE_REG);
-            break;
-        case MOV_VAR:
-        case MOVL_VAR:
-            handle_mov_reg_var((NodeMov *)node.node.get());
-            break;
-        case MOVL_IMM:
-            handle_mov_reg_imm(true, (NodeMov *)node.node.get());
-            break;
-        case MOVB:
-            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVE_REG8);
-            break;
-        case MOVW:
-            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVE_REG16);
-            break;
-        case MOVD:
-            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVE_REG32);
-            break;
-        case MOVSXB_IMM:
-            handle_movsx((NodeMov *)node.node.get(), OP_MOVESX_IMM8);
-            break;
-        case MOVSXB_REG:
-            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVESX_REG8);
-            break;
-        case MOVSXB_VAR:
-            handle_movsx_var((NodeMov *)node.node.get(), OP_MOVESX_REG8);
-            break;
-        case MOVSXW_IMM:
-            handle_movsx((NodeMov *)node.node.get(), OP_MOVESX_IMM16);
-            break;
-        case MOVSXW_REG:
-            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVESX_REG16);
-            break;
-        case MOVSXW_VAR:
-            handle_movsx_var((NodeMov *)node.node.get(), OP_MOVESX_REG16);
-            break;
-        case MOVSXD_IMM:
-            handle_movsx((NodeMov *)node.node.get(), OP_MOVESX_IMM32);
-            break;
-        case MOVSXD_REG:
-            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOVESX_REG32);
-            break;
-        case MOVSXD_VAR:
-            handle_movsx_var((NodeMov *)node.node.get(), OP_MOVESX_REG32);
-            break;
-        case JMP:
-            handle_jmp(OP_JMP_ADDR, (NodeName *)node.node.get());
-            break;
-        case CALL:
-        {
-            NodeCall *_c = (NodeCall *)node.node.get();
-            GenBinary b;
-            b.bytes.b1 = OP_CALL;
-            b.full |= ((*label_addr)[std::get<std::string>(_c->_oper)] & 0xFFFFFFFFFFFF);
-            code.push_back(b);
-            break;
-        }
-        case CALL_REG:
-        {
-            NodeCall *_c = (NodeCall *)node.node.get();
-            GenBinary b;
-            b.bytes.b1 = OP_CALL_REG;
-            b.full |= (std::get<Register>(_c->_oper));
-            code.push_back(b);
-            break;
-        }
-        case RET:
-            handle_one(OP_RET);
-            break;
-        case SVA_IMM:
-            handle_mov_reg_imm(false, (NodeSTACK *)node.node.get());
-            code[code.size() - 1].bytes.b1 = OP_SVA;
-            break;
-        case SVA_REG:
-            handle_mov_reg_reg((NodeSTACK *)node.node.get(), OP_SVA_REG);
-            break;
-        case SVA_VAR:
-            handle_sva_svc_var((NodeSTACK *)node.node.get(), OP_SVA_MEM);
-            break;
-        case SVC_IMM:
-            handle_mov_reg_imm(false, (NodeSTACK *)node.node.get());
-            code[code.size() - 1].bytes.b1 = OP_SVC;
-            break;
-        case SVC_REG:
-            handle_mov_reg_reg((NodeSTACK *)node.node.get(), OP_SVC_REG);
-            break;
-        case SVC_VAR:
-            handle_sva_svc_var((NodeSTACK *)node.node.get(), OP_SVC_MEM);
-            break;
-        case PUSHA:
-            handle_one(OP_PUSHA);
-            break;
-        case POPA:
-            handle_one(OP_POPA);
-            break;
-        case PUSH_IMM:
-        case POP_IMM: // just to keep the joke alive and stop compiler warnings obviously
-            handle_push_imm((NodePushPop *)node.node.get());
-            break;
-        case PUSH_REG:
-            handle_push_pop_reg(OP_PUSH_REG, (NodePushPop *)node.node.get());
-            break;
-        case PUSH_VAR:
-            handle_push_pop_var(OP_PUSH_MEMB, (NodePushPop *)node.node.get());
-            break;
-        case POP_REG:
-            handle_push_pop_reg(OP_POP, (NodePushPop *)node.node.get());
-            break;
-        case POP_VAR:
-            handle_push_pop_var(OP_POP_MEMB, (NodePushPop *)node.node.get());
-            break;
-        case NOT:
-            handle_single_regr(OP_NOT, (NodeSingleRegr *)node.node.get());
-            break;
-        case INC:
-            handle_single_regr(OP_INC, (NodeSingleRegr *)node.node.get());
-            break;
-        case DEC:
-            handle_single_regr(OP_DEC, (NodeSingleRegr *)node.node.get());
-            break;
-        case AND_IMM:
-            handle_logical_reg_imm(OP_AND_IMM, (NodeLogical *)node.node.get());
-            break;
-        case AND_REG:
-            handle_logical_reg_reg(OP_AND_REG, (NodeLogical *)node.node.get());
-            break;
-        case OR_IMM:
-            handle_logical_reg_imm(OP_OR_IMM, (NodeLogical *)node.node.get());
-            break;
-        case OR_REG:
-            handle_logical_reg_reg(OP_OR_REG, (NodeLogical *)node.node.get());
-            break;
-        case XOR_IMM:
-            handle_logical_reg_imm(OP_XOR_IMM, (NodeLogical *)node.node.get());
-            break;
-        case XOR_REG:
-            handle_logical_reg_reg(OP_XOR_REG, (NodeLogical *)node.node.get());
-            break;
-        case LSHIFT:
-            handle_logical_reg_imm(OP_LSHIFT, (NodeLogical *)node.node.get());
-            break;
-        case RSHIFT:
-            handle_logical_reg_imm(OP_RSHIFT, (NodeLogical *)node.node.get());
-            break;
-        case CMP_IMM:
-            handle_logical_reg_imm(OP_CMP_IMM, (NodeLogical *)node.node.get());
-            break;
-        case CMP_REG:
-            handle_logical_reg_reg(OP_CMP_REG, (NodeLogical *)node.node.get());
-            break;
-        case CMP_VAR:
-            handle_arithmetic_reg_var((NodeLogical *)node.node.get(), OP_CMP_IMM_MEMB);
-            break;
-        case LEA:
-            handle_lea((NodeLea *)node.node.get());
-            break;
-        case LOADB_REG:
-            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_LOADB_REG);
-            break;
-        case LOADB_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_LOADB);
-            break;
-        case ALOADB_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_LOADB);
-            break;
-        case LOADW_REG:
-            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_LOADW_REG);
-            break;
-        case LOADW_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_LOADW);
-            break;
-        case ALOADW_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_LOADW);
-            break;
-        case LOADD_REG:
-            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_LOADD_REG);
-            break;
-        case LOADD_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_LOADD);
-            break;
-        case ALOADD_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_LOADD);
-            break;
-        case LOADQ_REG:
-            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_LOAD_REG);
-            break;
-        case LOADQ_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_LOAD);
-            break;
-        case ALOADQ_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_LOAD);
-            break;
-        case STOREB_REG:
-            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_STOREB_REG);
-            break;
-        case STOREB_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_STOREB);
-            break;
-        case ASTOREB_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_STOREB);
-            break;
-        case STOREW_REG:
-            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_STOREW_REG);
-            break;
-        case STOREW_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_STOREW);
-            break;
-        case ASTOREW_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_STOREW);
-            break;
-        case STORED_REG:
-            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_STORED_REG);
-            break;
-        case STORED_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_STORED);
-            break;
-        case ASTORED_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_STORED);
-            break;
-        case STOREQ_REG:
-            handle_load_store_reg_reg((NodeLoadStore *)node.node.get(), OP_STORE_REG);
-            break;
-        case STOREQ_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_STORE);
-            break;
-        case ASTOREQ_VAR:
-            handle_load_store_reg_var((NodeLoadStore *)node.node.get(), OP_ATOMIC_STORE);
-            break;
-        case CMPXCHG:
-        {
-            NodeCmpxchg *x = (NodeCmpxchg *)node.node.get();
-            GenBinary b;
-            b.bytes.b1 = OP_CMPXCHG;
-            b.bytes.b2 = x->reg1;
-            b.bytes.b2 <<= 4;
-            b.bytes.b2 |= x->reg2;
-            b.full |= (*data_addr)[x->var] & 0xFFFFFFFFFFFF;
-            code.push_back(b);
-            break;
-        }
-        case OUTR:
-            handle_one(OP_OUTR);
-            break;
-        case UOUTR:
-            handle_one(OP_UOUTR);
-            break;
-        case CIN:
-            handle_single_regr(OP_CIN, (NodeSingleRegr *)node.node.get());
-            break;
-        case COUT:
-            handle_single_regr(OP_COUT, (NodeSingleRegr *)node.node.get());
-            break;
-        case SIN:
-        {
-            GenBinary b;
-            b.bytes.b1 = OP_SIN;
-            b.full |= ((*data_addr)[((NodeSIO *)node.node.get())->name] & 0xFFFFFFFFFFFF);
-            code.push_back(b);
-            break;
-        }
-        case SIN_REGR:
-        {
-            GenBinary b;
-            b.bytes.b1 = OP_SIN_REG;
-            b.bytes.b8 = ((NodeSIO *)node.node.get())->reg;
-            code.push_back(b);
-            break;
-        }
-        case SOUT:
-        {
-            GenBinary b;
-            b.bytes.b1 = OP_SOUT;
-            b.full |= ((*data_addr)[((NodeSIO *)node.node.get())->name] & 0xFFFFFFFFFFFF);
-            code.push_back(b);
-            break;
-        }
-        case SOUT_REGR:
-        {
-            GenBinary b;
-            b.bytes.b1 = OP_SOUT_REG;
-            b.bytes.b8 = ((NodeSIO *)node.node.get())->reg;
-            code.push_back(b);
-            break;
-        }
-        case IN:
-            handle_single_regr(OP_IN, (NodeSingleRegr *)node.node.get());
-            break;
-        case INW:
-            handle_single_regr(OP_INW, (NodeSingleRegr *)node.node.get());
-            break;
-        case IND:
-            handle_single_regr(OP_IND, (NodeSingleRegr *)node.node.get());
-            break;
-        case INQ:
-            handle_single_regr(OP_INQ, (NodeSingleRegr *)node.node.get());
-            break;
-        case UIN:
-            handle_single_regr(OP_UINW, (NodeSingleRegr *)node.node.get());
-            break;
-        case UINW:
-            handle_single_regr(OP_UIN, (NodeSingleRegr *)node.node.get());
-            break;
-        case UIND:
-            handle_single_regr(OP_UIND, (NodeSingleRegr *)node.node.get());
-            break;
-        case UINQ:
-            handle_single_regr(OP_UINQ, (NodeSingleRegr *)node.node.get());
-            break;
-        case OUT:
-            handle_single_regr(OP_OUT, (NodeSingleRegr *)node.node.get());
-            break;
-        case OUTW:
-            handle_single_regr(OP_OUTW, (NodeSingleRegr *)node.node.get());
-            break;
-        case OUTD:
-            handle_single_regr(OP_OUTD, (NodeSingleRegr *)node.node.get());
-            break;
-        case OUTQ:
-            handle_single_regr(OP_OUTQ, (NodeSingleRegr *)node.node.get());
-            break;
-        case UOUT:
-            handle_single_regr(OP_UOUT, (NodeSingleRegr *)node.node.get());
-            break;
-        case UOUTW:
-            handle_single_regr(OP_UOUTW, (NodeSingleRegr *)node.node.get());
-            break;
-        case UOUTD:
-            handle_single_regr(OP_UOUTD, (NodeSingleRegr *)node.node.get());
-            break;
-        case UOUTQ:
-            handle_single_regr(OP_UOUTQ, (NodeSingleRegr *)node.node.get());
-            break;
-        case INF:
-            handle_single_regr(OP_INF32, (NodeSingleRegr *)node.node.get());
-            break;
-        case INLF:
-            handle_single_regr(OP_INF, (NodeSingleRegr *)node.node.get());
-            break;
-        case OUTF:
-            handle_single_regr(OP_OUTF32, (NodeSingleRegr *)node.node.get());
-            break;
-        case OUTLF:
-            handle_single_regr(OP_OUTF, (NodeSingleRegr *)node.node.get());
-            break;
-        case EXCGB:
-            handle_excg((NodeExcg *)node.node.get(), OP_EXCG8);
-            break;
-        case EXCGW:
-            handle_excg((NodeExcg *)node.node.get(), OP_EXCG16);
-            break;
-        case EXCGD:
-            handle_excg((NodeExcg *)node.node.get(), OP_EXCG32);
-            break;
-        case EXCGQ:
-            handle_excg((NodeExcg *)node.node.get(), OP_EXCG);
-            break;
-        case MOVEB:
-            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOV8);
-            break;
-        case MOVEW:
-            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOV16);
-            break;
-        case MOVED:
-            handle_mov_reg_reg((NodeMov *)node.node.get(), OP_MOV32);
-            break;
-        case CFLAGS:
-            handle_one(OP_CFLAGS);
-            break;
-        case NRESET:
-            handle_one(OP_RESET);
-            break;
-        case CLZ:
-            handle_one(OP_CLZ);
-            break;
-        case CLN:
-            handle_one(OP_CLN);
-            break;
-        case CLC:
-            handle_one(OP_CLC);
-            break;
-        case CLO:
-            handle_one(OP_CLO);
-            break;
-        case JNZ:
-            handle_jmp(OP_JNZ, (NodeName *)node.node.get());
-            break;
-        case JZ:
-            handle_jmp(OP_JZ, (NodeName *)node.node.get());
-            break;
-        case JNE:
-            handle_jmp(OP_JNE, (NodeName *)node.node.get());
-            break;
-        case JE:
-            handle_jmp(OP_JE, (NodeName *)node.node.get());
-            break;
-        case JNC:
-            handle_jmp(OP_JNC, (NodeName *)node.node.get());
-            break;
-        case JC:
-            handle_jmp(OP_JC, (NodeName *)node.node.get());
-            break;
-        case JNO:
-            handle_jmp(OP_JNO, (NodeName *)node.node.get());
-            break;
-        case JO:
-            handle_jmp(OP_JO, (NodeName *)node.node.get());
-            break;
-        case JNN:
-            handle_jmp(OP_JNN, (NodeName *)node.node.get());
-            break;
-        case JN:
-            handle_jmp(OP_JN, (NodeName *)node.node.get());
-            break;
-        case JNG:
-            handle_jmp(OP_JNG, (NodeName *)node.node.get());
-            break;
-        case JG:
-            handle_jmp(OP_JG, (NodeName *)node.node.get());
-            break;
-        case JNS:
-            handle_jmp(OP_JNS, (NodeName *)node.node.get());
-            break;
-        case JS:
-            handle_jmp(OP_JS, (NodeName *)node.node.get());
-            break;
-        case JSE:
-            handle_jmp(OP_JSE, (NodeName *)node.node.get());
-            break;
-        case JGE:
-            handle_jmp(OP_JE, (NodeName *)node.node.get());
-            break;
-        case LOOP:
-            handle_jmp(OP_LOOP, (NodeName *)node.node.get());
-            break;
-        case INTR:
-        {
-            GenBinary b;
-            auto n = (NodeIntr *)node.node.get();
-            b.bytes.b1 = OP_INTR;
-            b.full |= (std::stoull(std::get<std::string>(n->val))) & 0xFFFF;
-            code.push_back(b);
-            break;
-        }
-        case SETE:
-            handle_jmp(OP_SET_EXCP, (NodeName *)node.node.get());
-            break;
-        case CALLE:
-            handle_one(OP_CALL_EXCP);
-            break;
-        case SYSCALL:
-            handle_one(OP_SYSCALL);
-            break;
+            e->add_expr(var.expr);
+            if (!e->evaluate(true))
+            {
+                note("While evaluating the constant " + var.name);
+                return false;
+            }
         }
     }
-    // for (auto b : code)
-    // {
-    //     printf("%lX\n", b.full);
-    // }
-    // printf("\n");
-    // for (auto b : data)
-    // {
-    //     std::cout << ((int)b) << "\n";
-    // }
-    // for (auto b : str_data)
-    // {
-    //     std::cout << ((int)b) << "\n";
-    // }
-    // printf("\n");
-    // for (auto l : *label_addr)
-    // {
-    //     printf("%s: %lX\n", l.first.c_str(), l.second);
-    // }
-    // printf("\n");
-    // for (auto l : data_addr)
-    // {
-    //     printf("%s: %lX\n", l.first.c_str(), l.second);
-    // }
     return true;
 }
 
-void masm::CodeGen::handle_float_var(NodeArithmetic *n, msize_t op)
-{
-    GenBinary b;
-    b.bytes.b1 = op;
-    b.bytes.b2 = n->reg;
-    b.full |= ((*data_addr)[std::get<std::string>(n->second_oper)]) & 0xFFFFFFFFFFFF;
-    code.push_back(b);
-}
-
-void masm::CodeGen::handle_movsx(NodeMov *n, msize_t op)
-{
-    NodeArithmetic a;
-    a.reg = n->reg;
-    a.second_oper = std::get<std::pair<std::string, DataType>>(n->second_oper).first;
-    handle_arithmetic_reg_imm(op, &a);
-}
-
-void masm::CodeGen::handle_movsx_var(NodeMov *n, msize_t op)
-{
-    handle_mov_reg_var(n);
-    GenBinary b;
-    b.bytes.b1 = op;
-    b.bytes.b8 = n->reg;
-    b.bytes.b8 <<= 4;
-    b.bytes.b8 |= n->reg;
-    code.push_back(b);
-}
-
-void masm::CodeGen::handle_sva_svc_var(NodeSTACK *n, msize_t op)
-{
-    GenBinary b;
-    b.bytes.b1 = op;
-    b.bytes.b2 = n->reg;
-    auto v = std::get<std::pair<std::string, DataType>>(n->second_oper);
-    if (table->_var_list.find(v.first) == table->_var_list.end())
-    {
-        v.first = table->_const_list[v.first].value;
-        v.second = table->_const_list[v.first].type;
-        handle_mov_reg_imm(false, n);
-        code[code.size() - 1].bytes.b1 = op - 145;
-        return;
-    }
-    b.full |= (*data_addr)[std::get<std::pair<std::string, DataType>>(n->second_oper).first];
-    code.push_back(b);
-}
-
-void masm::CodeGen::handle_one(msize_t op)
-{
-    GenBinary b;
-    b.bytes.b1 = op;
-    code.push_back(b);
-}
-
-void masm::CodeGen::generate_data()
+bool masm::evaluate_data(SymbolTable *table, std::unordered_map<std::string, size_t> *daddr, std::vector<uint8_t> *data, std::vector<uint8_t> *str_data)
 {
     size_t start = 0;
-    for (auto var : table->variables)
+    Expr e;
+    e.add_addr(daddr);
+    e.add_table(table);
+    if (!evaluate_consts(table, &e))
+        return false;
+    for (auto var : table->vars)
     {
-        if (var.is_expr)
+        Variable v = var.second;
+        if (v.is_expr)
         {
-            e.add_expr(var.expr);
+            e.add_expr(v.expr);
             auto res = e.evaluate();
             if (!res.has_value())
             {
-                note(std::string("While evaluating expression here in line ") + std::string(std::to_string(var.line)));
-                die(1);
+                note("While evaluating the variable " + v.name);
+                return false;
             }
-            var.value = res.value();
+            v.value = res.value();
         }
-        switch (var.type)
+        switch (v.type)
         {
         case BYTE:
         {
-            (*data_addr)[var.name] = start;
-            data.push_back(std::stoull(var.value) & 0xFF);
+            (*daddr)[v.name] = start;
+            data->push_back(std::stoull(v.value) & 0xFF);
             start++;
             break;
         }
         case WORD:
         {
-            (*data_addr)[var.name] = start;
-            mword_t v = std::stoull(var.value);
-            data.push_back(v & 0xFF);
-            data.push_back((v >> 8) & 0xFF);
+            (*daddr)[v.name] = start;
+            uint16_t val = std::stoull(v.value);
+            data->push_back(val & 0xFF);
+            data->push_back((val >> 8) & 0xFF);
             start += 2;
             break;
         }
         case DWORD:
         {
-            (*data_addr)[var.name] = start;
-            mdword_t v = std::stoull(var.value);
-            data.push_back(v & 0xFF);
-            data.push_back((v >> 8) & 0xFF);
-            data.push_back((v >> 16) & 0xFF);
-            data.push_back((v >> 24) & 0xFF);
+            (*daddr)[v.name] = start;
+            uint32_t val = std::stoull(v.value);
+            data->push_back(val & 0xFF);
+            data->push_back((val >> 8) & 0xFF);
+            data->push_back((val >> 16) & 0xFF);
+            data->push_back((val >> 24) & 0xFF);
             start += 4;
             break;
         }
         case QWORD:
         {
-            (*data_addr)[var.name] = start;
-            mqword_t v = std::stoull(var.value);
-            data.push_back(v & 0xFF);
-            data.push_back((v >> 8) & 0xFF);
-            data.push_back((v >> 16) & 0xFF);
-            data.push_back((v >> 24) & 0xFF);
-            data.push_back((v >> 32) & 0xFF);
-            data.push_back((v >> 40) & 0xFF);
-            data.push_back((v >> 48) & 0xFF);
-            data.push_back((v >> 56) & 0xFF);
+            (*daddr)[v.name] = start;
+            uint64_t val = std::stoull(v.value);
+            data->push_back(val & 0xFF);
+            data->push_back((val >> 8) & 0xFF);
+            data->push_back((val >> 16) & 0xFF);
+            data->push_back((val >> 24) & 0xFF);
+            data->push_back((val >> 32) & 0xFF);
+            data->push_back((val >> 40) & 0xFF);
+            data->push_back((val >> 48) & 0xFF);
+            data->push_back((val >> 56) & 0xFF);
             start += 8;
             break;
         }
         case FLOAT:
         {
-            (*data_addr)[var.name] = start;
-            mdword_t v = (mdword_t)(std::stof(var.value));
-            data.push_back(v & 0xFF);
-            data.push_back((v >> 8) & 0xFF);
-            data.push_back((v >> 16) & 0xFF);
-            data.push_back((v >> 24) & 0xFF);
+            (*daddr)[v.name] = start;
+            uint32_t val = (uint32_t)(std::stof(v.value));
+            data->push_back(val & 0xFF);
+            data->push_back((val >> 8) & 0xFF);
+            data->push_back((val >> 16) & 0xFF);
+            data->push_back((val >> 24) & 0xFF);
             start += 4;
             break;
         }
         case LFLOAT:
         {
-            (*data_addr)[var.name] = start;
-            mqword_t v = (mqword_t)(std::stod(var.value));
-            data.push_back(v & 0xFF);
-            data.push_back((v >> 8) & 0xFF);
-            data.push_back((v >> 16) & 0xFF);
-            data.push_back((v >> 24) & 0xFF);
-            data.push_back((v >> 32) & 0xFF);
-            data.push_back((v >> 40) & 0xFF);
-            data.push_back((v >> 48) & 0xFF);
-            data.push_back((v >> 56) & 0xFF);
+            (*daddr)[v.name] = start;
+            uint64_t val = (uint64_t)(std::stod(v.value));
+            data->push_back(val & 0xFF);
+            data->push_back((val >> 8) & 0xFF);
+            data->push_back((val >> 16) & 0xFF);
+            data->push_back((val >> 24) & 0xFF);
+            data->push_back((val >> 32) & 0xFF);
+            data->push_back((val >> 40) & 0xFF);
+            data->push_back((val >> 48) & 0xFF);
+            data->push_back((val >> 56) & 0xFF);
             start += 8;
             break;
         }
         case RESB:
         {
-            (*data_addr)[var.name] = start;
-            size_t len = std::stoull(var.value);
+            (*daddr)[v.name] = start;
+            size_t len = std::stoull(v.value);
             for (size_t i = 0; i < len; i++)
-                data.push_back(0);
+                data->push_back(0);
             start += len;
             break;
         }
         case RESW:
         {
-            (*data_addr)[var.name] = start;
-            size_t len = std::stoull(var.value) * 2;
+            (*daddr)[v.name] = start;
+            size_t len = std::stoull(v.value) * 2;
             for (size_t i = 0; i < len; i++)
-                data.push_back(0);
+                data->push_back(0);
             start += len;
             break;
         }
         case RESD:
         {
-            (*data_addr)[var.name] = start;
-            size_t len = std::stoull(var.value) * 4;
+            (*daddr)[v.name] = start;
+            size_t len = std::stoull(v.value) * 4;
             for (size_t i = 0; i < len; i++)
-                data.push_back(0);
+                data->push_back(0);
             start += len;
             break;
         }
         case RESQ:
         {
-            (*data_addr)[var.name] = start;
-            size_t len = std::stoull(var.value) * 8;
+            (*daddr)[v.name] = start;
+            size_t len = std::stoull(v.value) * 8;
             for (size_t i = 0; i < len; i++)
-                data.push_back(0);
+                data->push_back(0);
             start += len;
             break;
         }
         }
     }
-    while ((data.size() % 8) != 0)
+    while ((data->size() % 8) != 0)
     {
-        data.push_back(0);
+        data->push_back(0);
         start++;
     }
-    for (auto var : table->variables)
+    for (auto v : table->vars)
     {
+        auto var = v.second;
         switch (var.type)
         {
         case STRING:
         {
-            (*data_addr)[var.name] = start;
+            (*daddr)[var.name] = start;
             for (auto _c : var.value)
             {
-                str_data.push_back(_c);
+                str_data->push_back(_c);
             }
             start += var.value.length();
             break;
         }
         }
     }
-    while ((str_data.size() % 8) != 0)
-        str_data.push_back(0);
+    while ((str_data->size() % 8) != 0)
+        str_data->push_back(0);
 }
 
-void masm::CodeGen::handle_mov_reg_imm(bool l, NodeMov *n)
+void masm::CodeGen::generate_singles(size_t opcode)
 {
     GenBinary b;
-    b.bytes.b1 = (l) ? OP_MOVE_IMM_64 : OP_MOVE_IMM;
-    if (l)
-    {
-        b.bytes.b8 = n->reg;
-        code.push_back(b);
-        b.full = 0;
-    }
-    else
-        b.bytes.b2 = n->reg;
-    auto second = std::get<std::pair<std::string, DataType>>(n->second_oper);
-    switch (second.second)
-    {
-    case BYTE:
-    {
-        b.full |= std::stoull(second.first) & (l ? 0xFFFFFFFFFFFFFFFF : 0xFFFFFFFF);
-        break;
-    }
-    case FLOAT:
-    {
-        b.full |= ((mdword_t)std::stof(second.first)) & (l ? 0xFFFFFFFFFFFFFFFF : 0xFFFFFFFF);
-        break;
-    }
-    }
+    b.bytes.b1 = opcode;
     code.push_back(b);
 }
 
-void masm::CodeGen::handle_mov_reg_reg(NodeMov *n, msize_t op)
+void masm::CodeGen::arithmetic_inst_imm(NodeArithmetic *n, size_t op)
 {
-    // written with idea of potential expansion for other instructions as well.
+    GenBinary b;
+    b.bytes.b1 = op;
+    b.bytes.b2 = n->reg;
+    b.full |= (std::stoull(std::get<std::string>(n->second_oper)) & (n->is_signed ? 0xFFFFFFFF : 0xFFFFFFFFFFFF));
+    code.push_back(b);
+}
+
+void masm::CodeGen::arithmetic_inst_reg(NodeArithmetic *n, size_t op)
+{
     GenBinary b;
     b.bytes.b1 = op;
     b.bytes.b8 = n->reg;
@@ -939,32 +200,114 @@ void masm::CodeGen::handle_mov_reg_reg(NodeMov *n, msize_t op)
     code.push_back(b);
 }
 
-void masm::CodeGen::handle_mov_reg_var(NodeMov *n)
+void masm::CodeGen::arithmetic_inst_mem(NodeArithmetic *n, size_t op)
+{
+    // This function will only be called for unsigned ones
+    GenBinary b;
+    b.bytes.b2 = n->reg;
+    std::string v_name = std::get<std::string>(n->second_oper);
+    auto res = table->vars.find(v_name);
+    Variable v = res->second;
+    switch (v.type)
+    {
+    case BYTE:
+    case STRING:
+    case RESB:
+        b.bytes.b1 = op;
+        break;
+    case WORD:
+    case RESW:
+        b.bytes.b1 = op + 1;
+        break;
+    case DWORD:
+    case FLOAT:
+    case RESD:
+        b.bytes.b1 = op + 2;
+        break;
+    case QWORD:
+    case LFLOAT:
+    case RESQ:
+        b.bytes.b1 = op + 3;
+        break;
+    }
+    size_t addr = (*data_addr)[v_name];
+    b.full |= (addr & 0xFFFFFFFFFFFF);
+    code.push_back(b);
+}
+
+void masm::CodeGen::float_mem(NodeArithmetic *n, size_t op)
 {
     GenBinary b;
-    auto _s = std::get<std::pair<std::string, DataType>>(n->second_oper);
-    auto _res = table->_var_list.find(_s.first);
-    bool is_lbl = false;
-    if (_res == table->_var_list.end())
+    b.bytes.b2 = n->reg;
+    std::string v_name = std::get<std::string>(n->second_oper);
+    auto res = table->vars.find(v_name);
+    size_t addr = (*data_addr)[v_name];
+    b.bytes.b1 = op;
+    b.full |= (addr & 0xFFFFFFFFFFFF);
+    code.push_back(b);
+}
+
+void masm::CodeGen::mov_imm(NodeMov *n, bool _is64)
+{
+    if (n->is_lbl)
     {
-        if (table->_const_list.find(_s.first) == table->_const_list.end())
+        mov_var(n);
+        return;
+    }
+    GenBinary b;
+    b.bytes.b1 = (_is64) ? OP_MOVE_IMM : OP_MOVE_IMM_64;
+    std::string imm = std::get<std::string>(n->second_oper);
+    size_t _imm = n->is_float ? (_is64 ? (size_t)std::stod(imm) : (size_t)std::stof(imm)) : std::stoull(imm);
+    if (_is64)
+    {
+        b.bytes.b8 = n->reg;
+        code.push_back(b);
+        b.full = _imm;
+    }
+    else
+    {
+        b.bytes.b2 = n->reg;
+        b.full |= (_imm & 0xFFFFFFFFFFFF);
+    }
+    code.push_back(b);
+}
+
+void masm::CodeGen::mov_reg(NodeMov *n, size_t op)
+{
+    GenBinary b;
+    b.bytes.b1 = op;
+    b.bytes.b8 = n->reg;
+    b.bytes.b8 <<= 4;
+    b.bytes.b8 |= std::get<Register>(n->second_oper);
+    code.push_back(b);
+}
+
+void masm::CodeGen::mov_var(NodeMov *n)
+{
+    GenBinary b;
+    auto _s = std::get<std::string>(n->second_oper);
+    auto _res = table->vars.find(_s);
+    bool is_lbl = false;
+    if (_res == table->vars.end())
+    {
+        if (table->_const_list.find(_s) == table->_const_list.end())
             is_lbl = true;
         else
         {
             // is a constant
-            _s.first = table->_const_list[_s.first].value;
-            _s.second = table->_const_list[_s.first].type;
+            _s = table->_const_list[_s].value;
             n->second_oper = _s;
-            handle_mov_reg_imm(true, n);
+            n->is_float = table->_const_list[_s].type == FLOAT;
+            mov_imm(n, true);
             return;
         }
     }
-    size_t addr = is_lbl ? (*label_addr)[_s.first] : data_addr->find(_s.first)->second;
+    size_t addr = is_lbl ? (*lbl_addr)[_s] : data_addr->find(_s)->second;
     b.bytes.b2 = n->reg;
-    b.full |= addr;
+    b.full |= (addr & 0xFFFFFFFFFFFF);
     if (!is_lbl)
     {
-        Variable dets = table->variables[table->_var_list[_s.first]];
+        Variable dets = _res->second;
         switch (dets.type)
         {
         case BYTE:
@@ -989,136 +332,147 @@ void masm::CodeGen::handle_mov_reg_var(NodeMov *n)
         }
     }
     else
-        b.bytes.b1 = OP_MOVE_IMM;
-    code.push_back(b);
-}
-
-void masm::CodeGen::handle_jmp(msize_t op, NodeName *n)
-{
-    GenBinary b;
-    b.bytes.b1 = op;
-    b.full |= ((*label_addr)[n->name] & 0xFFFFFFFFFFFF);
-    code.push_back(b);
-}
-
-void masm::CodeGen::give_address_to_labels()
-{
-    size_t i = 0;
-    for (auto &l : *nodes)
     {
-        switch (l.kind)
-        {
-        case LABEL:
-        {
-            NodeName *n = (NodeName *)l.node.get();
-            (*label_addr)[n->name] = i;
-            break;
-        }
-        default:
-            if (l.kind >= NOP)
-                i++;
-            switch (l.kind)
-            {
-            case MOVL_IMM:
-            case PUSH_IMM:
-            case POP_IMM: // again, but for the joke this time
-            case AND_IMM:
-            case OR_IMM:
-            case XOR_IMM:
-            case CMP_IMM:
-                i++;
-                break;
-            }
-        }
-    }
-}
-
-void masm::CodeGen::handle_push_pop_reg(msize_t op, NodePushPop *n)
-{
-    GenBinary b;
-    b.bytes.b1 = op;
-    b.bytes.b8 = std::get<Register>(n->val);
-    code.push_back(b);
-}
-
-void masm::CodeGen::handle_push_imm(NodePushPop *n)
-{
-    GenBinary b;
-    b.bytes.b1 = OP_PUSH_IMM;
-    code.push_back(b);
-    b.full = std::stoull(std::get<std::string>(n->val));
-    code.push_back(b);
-}
-
-void masm::CodeGen::handle_push_pop_var(msize_t op, NodePushPop *n)
-{
-    GenBinary b;
-    std::string name = std::get<std::string>(n->val);
-    size_t addr = 0;
-    if ((data_addr->find(name) == data_addr->end()))
-    {
-        // It must be a label
-        addr = (*label_addr)[name];
-        b.bytes.b1 = OP_PUSH_IMM;
+        b.full = 0;
+        b.bytes.b1 = OP_MOVE_IMM_64;
+        b.bytes.b8 = n->reg;
         code.push_back(b);
-        b.full = addr;
+        b.full = (addr & 0xFFFFFFFFFFFF);
+    }
+    code.push_back(b);
+}
+
+void masm::CodeGen::movsx_imm(NodeMov *n, size_t op)
+{
+    GenBinary b;
+    b.bytes.b1 = op;
+    std::string imm = std::get<std::string>(n->second_oper);
+    size_t _imm = std::stoull(imm);
+    b.bytes.b2 = n->reg;
+    b.full |= (_imm & (op == OP_MOVESX_IMM8 ? 0xFF : (op == OP_MOVESX_IMM16 ? 0xFFFF : 0xFFFFFFFF)));
+    code.push_back(b);
+}
+
+void masm::CodeGen::branch(NodeName *n, size_t op)
+{
+    GenBinary b;
+    b.bytes.b1 = op;
+    if (op == OP_CALL_REG)
+    {
+        b.bytes.b8 = std::get<Register>(n->oper);
     }
     else
     {
-        addr = (*data_addr)[name];
-        auto dets = table->variables[table->_var_list[name]];
-        switch (dets.type)
+        size_t addr = (*lbl_addr)[std::get<std::string>(n->oper)];
+        b.full |= (addr & 0xFFFFFFFFFFFF);
+    }
+    code.push_back(b);
+}
+
+void masm::CodeGen::sva_svc(NodeStack *n, size_t op)
+{
+    GenBinary b;
+    b.bytes.b1 = op;
+    b.bytes.b2 = n->reg;
+    switch (op)
+    {
+    case OP_SVA:
+    case OP_SVC:
+        b.full |= (std::stoull(std::get<std::string>(n->second_oper)) & 0xFFFF);
+        break;
+    case OP_SVA_REG:
+    case OP_SVC_REG:
+        b.bytes.b8 = std::get<Register>(n->second_oper);
+        break;
+    case OP_SVA_MEM:
+    case OP_SVC_MEM:
+        b.full |= ((*data_addr)[std::get<std::string>(n->second_oper)] & 0xFFFFFFFFFFFF);
+        break;
+    }
+    code.push_back(b);
+}
+
+void masm::CodeGen::stack(NodeStack *n, size_t op)
+{
+    GenBinary b;
+    b.bytes.b1 = op;
+    switch (op)
+    {
+    case OP_PUSH_IMM:
+        code.push_back(b);
+        if (n->_is_lbl)
+            b.full = (*lbl_addr)[std::get<std::string>(n->second_oper)];
+        else
+            b.full = std::stoull(std::get<std::string>(n->second_oper));
+        break;
+    case OP_PUSH_REG:
+    case OP_POP:
+        b.bytes.b8 = std::get<Register>(n->second_oper);
+        break;
+    default:
+        std::string name = std::get<std::string>(n->second_oper);
+        auto res = data_addr->find(name);
+        size_t addr = 0;
+        if (res == data_addr->end())
+            addr = (*lbl_addr)[name];
+        else
         {
-        case BYTE:
-        case STRING:
-        case RESB:
-            b.bytes.b1 = op;
-            break;
-        case WORD:
-        case RESW:
-            b.bytes.b1 = op + 1;
-            break;
-        case DWORD:
-        case RESD:
-            b.bytes.b1 = op + 2;
-            break;
-        case QWORD:
-        case RESQ:
-            b.bytes.b1 = op + 3;
-            break;
+            addr = res->second;
+            switch (table->vars.find(name)->second.type)
+            {
+            case BYTE:
+            case STRING:
+            case RESB:
+                b.bytes.b1 = op;
+                break;
+            case WORD:
+            case RESW:
+                b.bytes.b1 = op + 1;
+                break;
+            case DWORD:
+            case RESD:
+            case FLOAT:
+                b.bytes.b1 = op + 2;
+                break;
+            case QWORD:
+            case RESQ:
+            case LFLOAT:
+                b.bytes.b1 = op + 3;
+                break;
+            }
         }
         b.full |= (addr & 0xFFFFFFFFFFFF);
     }
     code.push_back(b);
 }
 
-void masm::CodeGen::handle_single_regr(msize_t op, NodeSingleRegr *n)
+void masm::CodeGen::logical_singles(NodeName *n, size_t op)
 {
     GenBinary b;
     b.bytes.b1 = op;
-    b.bytes.b8 = n->reg;
+    b.bytes.b8 = std::get<Register>(n->oper);
     code.push_back(b);
 }
 
-void masm::CodeGen::handle_logical_reg_imm(msize_t op, NodeLogical *n)
+void masm::CodeGen::logical_inst_imm(NodeLogical *n, size_t op)
 {
     GenBinary b;
     b.bytes.b1 = op;
     if (op == OP_LSHIFT || op == OP_RSHIFT)
     {
-        b.bytes.b8 |= std::stoull(std::get<std::string>(n->second_oper)) & 0x40;
         b.bytes.b7 = n->reg;
+        b.full |= ((std::stoull(std::get<std::string>(n->second_oper))) & 0x40);
     }
     else
     {
         b.bytes.b8 = n->reg;
         code.push_back(b);
-        b.full = std::stoull(std::get<std::string>(n->second_oper));
+        b.full = (n->is_float) ? (size_t)(std::stod(std::get<std::string>(n->second_oper))) : (std::stoull(std::get<std::string>(n->second_oper)));
     }
     code.push_back(b);
 }
 
-void masm::CodeGen::handle_logical_reg_reg(msize_t op, NodeLogical *n)
+void masm::CodeGen::logical_inst_reg(NodeLogical *n, size_t op)
 {
     GenBinary b;
     b.bytes.b1 = op;
@@ -1128,7 +482,40 @@ void masm::CodeGen::handle_logical_reg_reg(msize_t op, NodeLogical *n)
     code.push_back(b);
 }
 
-void masm::CodeGen::handle_lea(NodeLea *n)
+void masm::CodeGen::cmp_var(NodeLogical *n)
+{
+    GenBinary b;
+    std::string name = std::get<std::string>(n->second_oper);
+    auto res = data_addr->find(name);
+    size_t addr = res->second;
+    b.full |= (addr & 0xFFFFFFFFFFFF);
+    b.bytes.b2 = n->reg;
+    switch (table->vars.find(name)->second.type)
+    {
+    case BYTE:
+    case RESB:
+    case STRING:
+        b.bytes.b1 = OP_CMP_IMM_MEMB;
+        break;
+    case WORD:
+    case RESW:
+        b.bytes.b1 = OP_CMP_IMM_MEMW;
+        break;
+    case DWORD:
+    case FLOAT:
+    case RESD:
+        b.bytes.b1 = OP_CMP_IMM_MEMD;
+        break;
+    case QWORD:
+    case LFLOAT:
+    case RESQ:
+        b.bytes.b1 = OP_CMP_IMM_MEMQ;
+        break;
+    }
+    code.push_back(b);
+}
+
+void masm::CodeGen::lea(NodeLea *n)
 {
     GenBinary b;
     b.bytes.b1 = OP_LEA;
@@ -1139,39 +526,35 @@ void masm::CodeGen::handle_lea(NodeLea *n)
     code.push_back(b);
 }
 
-void masm::CodeGen::handle_load_store_reg_var(NodeLoadStore *n, msize_t op)
+void masm::CodeGen::load_store_var(NodeLoadStore *n, size_t op)
 {
     GenBinary b;
-    Variable var = table->variables[table->_var_list[std::get<std::string>(n->second_oper)]];
-    size_t addr = (*data_addr)[std::get<std::string>(n->second_oper)];
+    auto _s = std::get<std::string>(n->second_oper);
+    size_t addr = data_addr->find(_s)->second;
     b.bytes.b1 = op;
     b.bytes.b2 = n->reg;
     b.full |= (addr & 0xFFFFFFFFFFFF);
     code.push_back(b);
 }
 
-void masm::CodeGen::handle_load_store_reg_reg(NodeLoadStore *n, msize_t op)
+void masm::CodeGen::cmpxchg(NodeCmpxchg *n, bool _reg)
 {
     GenBinary b;
-    b.bytes.b1 = op;
-    b.bytes.b8 = n->reg;
-    b.bytes.b8 <<= 4;
-    b.bytes.b8 |= std::get<Register>(n->second_oper);
-    code.push_back(b);
-}
-
-void masm::CodeGen::handle_cmpxchg(NodeCmpxchg *n)
-{
-    GenBinary b;
-    b.bytes.b1 = OP_CMPXCHG;
+    b.bytes.b1 = _reg ? OP_CMPXCHG_REGR : OP_CMPXCHG;
     b.bytes.b2 = n->reg1;
     b.bytes.b2 <<= 4;
     b.bytes.b2 |= n->reg2;
-    b.full |= (std::stoull(n->var) & 0xFFFFFFFFFFFF);
+    if (_reg)
+        b.bytes.b8 = std::get<Register>(n->var);
+    else
+    {
+        size_t addr = (*data_addr)[std::get<std::string>(n->var)];
+        b.full |= (addr & 0xFFFFFFFFFFFF);
+    }
     code.push_back(b);
 }
 
-void masm::CodeGen::handle_excg(NodeExcg *n, msize_t op)
+void masm::CodeGen::excg(NodeExcg *n, size_t op)
 {
     GenBinary b;
     b.bytes.b1 = op;
@@ -1181,13 +564,563 @@ void masm::CodeGen::handle_excg(NodeExcg *n, msize_t op)
     code.push_back(b);
 }
 
-void masm::CodeGen::generate_ST()
+void masm::CodeGen::gen()
 {
-    // The first thing is the labels
-    size_t i = 0;
-    for (auto l : *label_addr)
+    for (auto &node : *nodes)
     {
-        symd[(*label_addr)[l.first]] = i;
+        switch (node.kind)
+        {
+        case NOP:
+            generate_singles(OP_NOP);
+            break;
+        case HLT:
+            generate_singles(OP_HALT);
+            break;
+        case ADD_IMM:
+            arithmetic_inst_imm(GET(NodeArithmetic), OP_ADD_IMM);
+            break;
+        case ADD_REG:
+            arithmetic_inst_reg(GET(NodeArithmetic), OP_ADD_REG);
+            break;
+        case ADD_MEM:
+            arithmetic_inst_mem(GET(NodeArithmetic), OP_ADD_MEMB);
+            break;
+        case SUB_MEM:
+            arithmetic_inst_mem(GET(NodeArithmetic), OP_SUB_MEMB);
+            break;
+        case MUL_IMM:
+            arithmetic_inst_imm(GET(NodeArithmetic), OP_MUL_IMM);
+            break;
+        case MUL_REG:
+            arithmetic_inst_reg(GET(NodeArithmetic), OP_MUL_REG);
+            break;
+        case MUL_MEM:
+            arithmetic_inst_mem(GET(NodeArithmetic), OP_MUL_MEMB);
+            break;
+        case DIV_IMM:
+            arithmetic_inst_imm(GET(NodeArithmetic), OP_DIV_IMM);
+            break;
+        case DIV_REG:
+            arithmetic_inst_reg(GET(NodeArithmetic), OP_DIV_REG);
+            break;
+        case DIV_MEM:
+            arithmetic_inst_mem(GET(NodeArithmetic), OP_DIV_MEMB);
+            break;
+        case MOD_IMM:
+            arithmetic_inst_imm(GET(NodeArithmetic), OP_MOD_IMM);
+            break;
+        case MOD_REG:
+            arithmetic_inst_reg(GET(NodeArithmetic), OP_MOD_REG);
+            break;
+        case MOD_MEM:
+            arithmetic_inst_mem(GET(NodeArithmetic), OP_MOD_MEMB);
+            break;
+        case IADD_IMM:
+            arithmetic_inst_imm(GET(NodeArithmetic), OP_IADD_IMM);
+            break;
+        case IADD_REG:
+            arithmetic_inst_reg(GET(NodeArithmetic), OP_IADD_REG);
+            break;
+        case ISUB_IMM:
+            arithmetic_inst_imm(GET(NodeArithmetic), OP_ISUB_IMM);
+            break;
+        case ISUB_REG:
+            arithmetic_inst_reg(GET(NodeArithmetic), OP_ISUB_REG);
+            break;
+        case IMUL_IMM:
+            arithmetic_inst_imm(GET(NodeArithmetic), OP_IMUL_IMM);
+            break;
+        case IMUL_REG:
+            arithmetic_inst_reg(GET(NodeArithmetic), OP_IMUL_REG);
+            break;
+        case IDIV_IMM:
+            arithmetic_inst_imm(GET(NodeArithmetic), OP_IDIV_IMM);
+            break;
+        case IDIV_REG:
+            arithmetic_inst_reg(GET(NodeArithmetic), OP_IDIV_REG);
+            break;
+        case IMOD_IMM:
+            arithmetic_inst_imm(GET(NodeArithmetic), OP_IMOD_IMM);
+            break;
+        case IMOD_REG:
+            arithmetic_inst_reg(GET(NodeArithmetic), OP_IMOD_REG);
+            break;
+        case FADD:
+            arithmetic_inst_reg(GET(NodeArithmetic), OP_FADD32);
+            break;
+        case FSUB:
+            arithmetic_inst_reg(GET(NodeArithmetic), OP_FSUB32);
+            break;
+        case FMUL:
+            arithmetic_inst_reg(GET(NodeArithmetic), OP_FMUL32);
+            break;
+        case FDIV:
+            arithmetic_inst_reg(GET(NodeArithmetic), OP_FDIV32);
+            break;
+        case LFADD:
+            arithmetic_inst_reg(GET(NodeArithmetic), OP_FADD);
+            break;
+        case LFSUB:
+            arithmetic_inst_reg(GET(NodeArithmetic), OP_FSUB);
+            break;
+        case LFMUL:
+            arithmetic_inst_reg(GET(NodeArithmetic), OP_FMUL);
+            break;
+        case LFDIV:
+            arithmetic_inst_reg(GET(NodeArithmetic), OP_FDIV);
+            break;
+        case FADD_MEM:
+            float_mem(GET(NodeArithmetic), OP_FADD32_MEM);
+            break;
+        case FSUB_MEM:
+            float_mem(GET(NodeArithmetic), OP_FSUB32_MEM);
+            break;
+        case FMUL_MEM:
+            float_mem(GET(NodeArithmetic), OP_FMUL32_MEM);
+            break;
+        case FDIV_MEM:
+            float_mem(GET(NodeArithmetic), OP_FDIV32_MEM);
+            break;
+        case LFADD_MEM:
+            float_mem(GET(NodeArithmetic), OP_FADD_MEM);
+            break;
+        case LFSUB_MEM:
+            float_mem(GET(NodeArithmetic), OP_FSUB_MEM);
+            break;
+        case LFMUL_MEM:
+            float_mem(GET(NodeArithmetic), OP_FMUL_MEM);
+            break;
+        case LFDIV_MEM:
+            float_mem(GET(NodeArithmetic), OP_FDIV_MEM);
+            break;
+        case MOV_IMM:
+            mov_imm(GET(NodeMov), false);
+            break;
+        case MOV_REG:
+        case MOVL_REG:
+            mov_reg(GET(NodeMov), OP_MOVE_REG);
+            break;
+        case MOV_VAR:
+        case MOVL_VAR:
+            mov_var(GET(NodeMov));
+            break;
+        case MOVL_IMM:
+            mov_imm(GET(NodeMov), true);
+            break;
+        case MOVB:
+            mov_reg(GET(NodeMov), OP_MOVE_REG8);
+            break;
+        case MOVW:
+            mov_reg(GET(NodeMov), OP_MOVE_REG16);
+            break;
+        case MOVD:
+            mov_reg(GET(NodeMov), OP_MOVE_REG32);
+            break;
+        case MOVSXB_IMM:
+            movsx_imm(GET(NodeMov), OP_MOVESX_IMM8);
+            break;
+        case MOVSXB_REG:
+            mov_reg(GET(NodeMov), OP_MOVESX_REG8);
+            break;
+        case MOVSXW_IMM:
+            movsx_imm(GET(NodeMov), OP_MOVESX_IMM16);
+            break;
+        case MOVSXW_REG:
+            mov_reg(GET(NodeMov), OP_MOVESX_REG16);
+            break;
+        case MOVSXD_IMM:
+            movsx_imm(GET(NodeMov), OP_MOVESX_IMM32);
+            break;
+        case MOVSXD_REG:
+            mov_reg(GET(NodeMov), OP_MOVESX_REG32);
+            break;
+        case JMP:
+            branch(GET(NodeName), OP_JMP_ADDR);
+            break;
+        case CALL:
+            branch(GET(NodeName), OP_CALL);
+            break;
+        case CALL_REG:
+            branch(GET(NodeName), OP_CALL_REG);
+            break;
+        case RET:
+            generate_singles(OP_RET);
+            break;
+        case SVA_IMM:
+            sva_svc(GET(NodeStack), OP_SVA);
+            break;
+        case SVA_REG:
+            sva_svc(GET(NodeStack), OP_SVA_REG);
+            break;
+        case SVA_VAR:
+            sva_svc(GET(NodeStack), OP_SVA_MEM);
+            break;
+        case SVC_IMM:
+            sva_svc(GET(NodeStack), OP_SVC);
+            break;
+        case SVC_REG:
+            sva_svc(GET(NodeStack), OP_SVC_REG);
+            break;
+        case SVC_VAR:
+            sva_svc(GET(NodeStack), OP_SVC_MEM);
+            break;
+        case PUSHA:
+            generate_singles(OP_PUSHA);
+            break;
+        case POPA:
+            generate_singles(OP_POPA);
+            break;
+        case PUSH_IMM:
+            stack(GET(NodeStack), OP_PUSH_IMM);
+            break;
+        case PUSH_REG:
+            stack(GET(NodeStack), OP_PUSH_REG);
+            break;
+        case PUSH_VAR:
+            stack(GET(NodeStack), OP_PUSH_MEMB);
+            break;
+        case POP_REG:
+            stack(GET(NodeStack), OP_POP);
+            break;
+        case POP_VAR:
+            stack(GET(NodeStack), OP_POP_MEMB);
+            break;
+        case NOT:
+            logical_singles(GET(NodeName), OP_NOT);
+            break;
+        case INC:
+            logical_singles(GET(NodeName), OP_INC);
+            break;
+        case DEC:
+            logical_singles(GET(NodeName), OP_DEC);
+            break;
+        case AND_IMM:
+            logical_inst_imm(GET(NodeLogical), OP_AND_IMM);
+            break;
+        case AND_REG:
+            logical_inst_reg(GET(NodeLogical), OP_AND_REG);
+            break;
+        case OR_IMM:
+            logical_inst_imm(GET(NodeLogical), OP_OR_IMM);
+            break;
+        case OR_REG:
+            logical_inst_reg(GET(NodeLogical), OP_OR_REG);
+            break;
+        case XOR_IMM:
+            logical_inst_imm(GET(NodeLogical), OP_XOR_IMM);
+            break;
+        case XOR_REG:
+            logical_inst_reg(GET(NodeLogical), OP_XOR_REG);
+            break;
+        case LSHIFT:
+            logical_inst_imm(GET(NodeLogical), OP_LSHIFT);
+            break;
+        case RSHIFT:
+            logical_inst_imm(GET(NodeLogical), OP_RSHIFT);
+            break;
+        case CMP_IMM:
+            logical_inst_imm(GET(NodeLogical), OP_CMP_IMM);
+            break;
+        case CMP_REG:
+            logical_inst_reg(GET(NodeLogical), OP_CMP_REG);
+            break;
+        case CMP_VAR:
+            cmp_var(GET(NodeLogical));
+            break;
+        case LEA:
+            lea(GET(NodeLea));
+            break;
+        case LOADB_REG:
+            mov_reg(GET(NodeLoadStore), OP_LOADB_REG);
+            break;
+        case LOADW_REG:
+            mov_reg(GET(NodeLoadStore), OP_LOADW_REG);
+            break;
+        case LOADD_REG:
+            mov_reg(GET(NodeLoadStore), OP_LOADD_REG);
+            break;
+        case LOADQ_REG:
+            mov_reg(GET(NodeLoadStore), OP_LOAD_REG);
+            break;
+        case LOADB_VAR:
+            load_store_var(GET(NodeLoadStore), OP_LOADB);
+            break;
+        case LOADW_VAR:
+            load_store_var(GET(NodeLoadStore), OP_LOADW);
+            break;
+        case LOADD_VAR:
+            load_store_var(GET(NodeLoadStore), OP_LOADD);
+            break;
+        case LOADQ_VAR:
+            load_store_var(GET(NodeLoadStore), OP_LOAD);
+            break;
+        case ALOADB_VAR:
+            load_store_var(GET(NodeLoadStore), OP_ATOMIC_LOADB);
+            break;
+        case ALOADW_VAR:
+            load_store_var(GET(NodeLoadStore), OP_ATOMIC_LOADW);
+            break;
+        case ALOADD_VAR:
+            load_store_var(GET(NodeLoadStore), OP_ATOMIC_LOADD);
+            break;
+        case ALOADQ_VAR:
+            load_store_var(GET(NodeLoadStore), OP_ATOMIC_LOAD);
+            break;
+        case STOREB_REG:
+            mov_reg(GET(NodeLoadStore), OP_STOREB_REG);
+            break;
+        case STOREW_REG:
+            mov_reg(GET(NodeLoadStore), OP_STOREW_REG);
+            break;
+        case STORED_REG:
+            mov_reg(GET(NodeLoadStore), OP_STORED_REG);
+            break;
+        case STOREQ_REG:
+            mov_reg(GET(NodeLoadStore), OP_STORE_REG);
+            break;
+        case STOREB_VAR:
+            load_store_var(GET(NodeLoadStore), OP_STOREB);
+            break;
+        case STOREW_VAR:
+            load_store_var(GET(NodeLoadStore), OP_STOREW);
+            break;
+        case STORED_VAR:
+            load_store_var(GET(NodeLoadStore), OP_STORED);
+            break;
+        case STOREQ_VAR:
+            load_store_var(GET(NodeLoadStore), OP_STORE);
+            break;
+        case ASTOREB_VAR:
+            load_store_var(GET(NodeLoadStore), OP_ATOMIC_STOREB);
+            break;
+        case ASTOREW_VAR:
+            load_store_var(GET(NodeLoadStore), OP_ATOMIC_STOREW);
+            break;
+        case ASTORED_VAR:
+            load_store_var(GET(NodeLoadStore), OP_ATOMIC_STORED);
+            break;
+        case ASTOREQ_VAR:
+            load_store_var(GET(NodeLoadStore), OP_ATOMIC_STORE);
+            break;
+        case CMPXCHG:
+            cmpxchg(GET(NodeCmpxchg), false);
+            break;
+        case CMPXCHG_REGR:
+            cmpxchg(GET(NodeCmpxchg), true);
+            break;
+        case OUTR:
+            generate_singles(OP_OUTR);
+            break;
+        case UOUTR:
+            generate_singles(OP_UOUTR);
+            break;
+        case CIN:
+            generate_singles(OP_CIN);
+            break;
+        case COUT:
+            generate_singles(OP_COUT);
+            break;
+        case SIN:
+        {
+            GenBinary b;
+            b.bytes.b1 = OP_SIN;
+            size_t addr = (*data_addr)[std::get<std::string>((GET(NodeIO))->oper)];
+            b.full |= (addr & 0xFFFFFFFFFFFF);
+            code.push_back(b);
+            break;
+        }
+        case SIN_REGR:
+            generate_singles(OP_SIN_REG);
+            break;
+        case SOUT:
+        {
+            GenBinary b;
+            b.bytes.b1 = OP_SOUT;
+            size_t addr = (*data_addr)[std::get<std::string>((GET(NodeIO))->oper)];
+            b.full |= (addr & 0xFFFFFFFFFFFF);
+            code.push_back(b);
+            break;
+        }
+        case SOUT_REGR:
+            generate_singles(OP_SOUT_REG);
+            break;
+        case IN:
+            generate_singles(OP_IN);
+            break;
+        case INW:
+            generate_singles(OP_INW);
+            break;
+        case IND:
+            generate_singles(OP_IND);
+            break;
+        case INQ:
+            generate_singles(OP_INQ);
+            break;
+        case UIN:
+            generate_singles(OP_UIN);
+            break;
+        case UINW:
+            generate_singles(OP_UINW);
+            break;
+        case UIND:
+            generate_singles(OP_UIND);
+            break;
+        case UINQ:
+            generate_singles(OP_UINQ);
+            break;
+        case OUT:
+            generate_singles(OP_OUT);
+            break;
+        case OUTW:
+            generate_singles(OP_OUTW);
+            break;
+        case OUTD:
+            generate_singles(OP_OUTD);
+            break;
+        case OUTQ:
+            generate_singles(OP_OUTQ);
+            break;
+        case UOUT:
+            generate_singles(OP_UOUT);
+            break;
+        case UOUTW:
+            generate_singles(OP_UOUTW);
+            break;
+        case UOUTD:
+            generate_singles(OP_UOUTD);
+            break;
+        case UOUTQ:
+            generate_singles(OP_UOUTQ);
+            break;
+        case INF:
+            generate_singles(OP_INF32);
+            break;
+        case INLF:
+            generate_singles(OP_INF);
+            break;
+        case OUTF:
+            generate_singles(OP_OUTF32);
+            break;
+        case OUTLF:
+            generate_singles(OP_OUTF);
+            break;
+        case EXCGB:
+            excg(GET(NodeExcg), OP_EXCG8);
+            break;
+        case EXCGW:
+            excg(GET(NodeExcg), OP_EXCG16);
+            break;
+        case EXCGD:
+            excg(GET(NodeExcg), OP_EXCG32);
+            break;
+        case EXCGQ:
+            excg(GET(NodeExcg), OP_EXCG);
+            break;
+        case MOVEB:
+            mov_reg(GET(NodeMov), OP_MOV8);
+            break;
+        case MOVEW:
+            mov_reg(GET(NodeMov), OP_MOV16);
+            break;
+        case MOVED:
+            mov_reg(GET(NodeMov), OP_MOV32);
+            break;
+        case CFLAGS:
+            generate_singles(OP_CFLAGS);
+            break;
+        case NRESET:
+            generate_singles(OP_RESET);
+            break;
+        case CLZ:
+            generate_singles(OP_CLZ);
+            break;
+        case CLN:
+            generate_singles(OP_CLN);
+            break;
+        case CLC:
+            generate_singles(OP_CLC);
+            break;
+        case CLO:
+            generate_singles(OP_CLO);
+            break;
+        case JNZ:
+            branch(GET(NodeName), OP_JNZ);
+            break;
+        case JZ:
+            branch(GET(NodeName), OP_JZ);
+            break;
+        case JNE:
+            branch(GET(NodeName), OP_JNE);
+            break;
+        case JE:
+            branch(GET(NodeName), OP_JE);
+            break;
+        case JNC:
+            branch(GET(NodeName), OP_JNC);
+            break;
+        case JC:
+            branch(GET(NodeName), OP_JC);
+            break;
+        case JNO:
+            branch(GET(NodeName), OP_JNO);
+            break;
+        case JO:
+            branch(GET(NodeName), OP_JO);
+            break;
+        case JNN:
+            branch(GET(NodeName), OP_JNN);
+            break;
+        case JN:
+            branch(GET(NodeName), OP_JN);
+            break;
+        case JNG:
+            branch(GET(NodeName), OP_JNG);
+            break;
+        case JG:
+            branch(GET(NodeName), OP_JG);
+            break;
+        case JNS:
+            branch(GET(NodeName), OP_JNS);
+            break;
+        case JS:
+            branch(GET(NodeName), OP_JS);
+            break;
+        case JGE:
+            branch(GET(NodeName), OP_JGE);
+            break;
+        case JSE:
+            branch(GET(NodeName), OP_JSE);
+            break;
+        case LOOP:
+            branch(GET(NodeName), OP_LOOP);
+            break;
+        case INTR:
+        {
+            GenBinary b;
+            b.bytes.b1 = OP_INTR;
+            b.full |= std::stoull(std::get<std::string>((GET(NodeIntr))->val));
+            code.push_back(b);
+            break;
+        }
+        case SETE:
+            branch(GET(NodeName), OP_SET_EXCP);
+            break;
+        case CALLE:
+            generate_singles(OP_CALL_EXCP);
+            break;
+        case SYSCALL:
+            generate_singles(OP_SYSCALL);
+            break;
+        }
+    }
+}
+
+void masm::CodeGen::gen_ST()
+{
+    size_t i = 0;
+    for (auto l : *lbl_addr)
+    {
+        symd[l.second] = i;
         for (char _c : l.first)
         {
             ST.push_back(_c);
@@ -1198,7 +1131,7 @@ void masm::CodeGen::generate_ST()
     }
     for (auto l : *data_addr)
     {
-        symd[(*data_addr)[l.first]] = i;
+        symd[l.second] = i;
         for (char _c : l.first)
         {
             ST.push_back(_c);
@@ -1207,29 +1140,18 @@ void masm::CodeGen::generate_ST()
         ST.push_back(0);
         i++;
     }
+    while ((ST.size() % 8) != 0)
+    {
+        ST.push_back(0);
+    }
 }
 
-std::vector<masm::GenBinary> *masm::CodeGen::get_code()
+void masm::CodeGen::setup_emit(Emit *emit)
 {
-    return &code;
-}
-
-std::vector<mbyte_t> *masm::CodeGen::get_data()
-{
-    return &data;
-}
-
-std::vector<mbyte_t> *masm::CodeGen::get_str_data()
-{
-    return &str_data;
-}
-
-std::unordered_map<size_t, size_t> *masm::CodeGen::get_symd()
-{
-    return &symd;
-}
-
-std::vector<mbyte_t> *masm::CodeGen::get_ST()
-{
-    return &ST;
-}
+   emit->code = &code;
+   emit->data = data;
+   emit->lbl_addr = lbl_addr;
+   emit->ST = &ST;
+   emit->str_data = str;
+   emit->symd = &symd;
+} 

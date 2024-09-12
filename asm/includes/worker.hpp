@@ -45,6 +45,8 @@ namespace masm
 
         void add_for_codegen(CodeGen *g);
 
+        void add_for_emit(Emit *e);
+
         // called after parsing is completely done
         void parser_confirm_info();
 
@@ -81,8 +83,6 @@ namespace masm
 
         bool handle_logical_inst(NodeKind k, bool limit);
 
-        bool handle_cmp();
-
         bool handle_lea();
 
         bool handle_load_store(NodeKind k, bool atm = false);
@@ -116,6 +116,16 @@ namespace masm
         void make_label_address();
 
         void analyse_nodes();
+    };
+
+    static std::unordered_map<std::string, std::string> _std_paths = {
+#ifdef _USE_LINUX_
+        {"stdinit.masm", "lib/stdinit.masm"},
+        {"stdutils.masm", "lib/stdutils.masm"},
+        {"stddefs.masm", "lib/stddefs.masm"},
+        {"stdintr.masm", "lib/stdintr.masm"},
+        {"stdmem.masm", "lib/stdmem.masm"},
+#endif
     };
 };
 

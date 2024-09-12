@@ -1,7 +1,0 @@
-proc __builtin_std_create_new_thread
-
-;; ARGS: Ma = ADDRESS to the label that needs to be run
-;; RETURNS Ma = 1 for Failure else 0
-__builtin_std_create_new_thread
-    intr _M_NEW_CORE_ ;; The VM will put the return value automatically
-    ret

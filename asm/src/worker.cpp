@@ -1726,10 +1726,10 @@ void masm::Parser::handle_depends()
         exit(1);
     }
     Parser child;
-    // if (_std_paths.find(_p) == _std_paths.end())
-    //     _p = std::filesystem::current_path() / _p;
-    // else
-    //     _p = _std_paths.find(_p)->second;
+    if (_std_paths.find(_file) == _std_paths.end())
+        _file = std::filesystem::current_path() / _file;
+    else
+        _file = _std_paths.find(_file)->second;
     if (used_files.find(_file) != used_files.end())
         return;
     child.setup_parser(_file);
@@ -1938,6 +1938,14 @@ void masm::Parser::add_for_codegen(CodeGen *g)
     g->lbl_addr = &label_addr;
     g->data = &data;
     g->str = &str;
+    g->nodes = &nodes;
+}
+
+void masm::Parser::add_for_emit(Emit *e)
+{
+    e->eepe = &eepe;
+    e->entries = &entries;
+    e->teepe = &teepe;
 }
 
 void masm::Parser::make_label_address()
@@ -2148,9 +2156,9 @@ void masm::Parser::analyse_nodes()
                         break;
                     }
                 }
-                if ((n.kind == PUSH_VAR) && (label_addr.find(var_name) != label_addr.end()))
+                if ((n.kind == PUSH_VAR) && (lbl_list.find(var_name) != lbl_list.end()))
                 {
-                    n.kind = PUSH_IMM;    
+                    n.kind = PUSH_IMM;
                     _n->_is_lbl = true;
                     break;
                 }
@@ -2224,19 +2232,23 @@ void masm::Parser::analyse_nodes()
         case MOVL_VAR:
         {
             auto _n = (NodeMov *)n.node.get();
-            auto var_name = std::get<std::pair<std::string, DataType>>(_n->second_oper);
-            auto r = symtable._const_list.find(var_name.first);
+            auto var_name = std::get<std::string>(_n->second_oper);
+            auto r = symtable._const_list.find(var_name);
             if (r == symtable._const_list.end())
             {
                 if (n.kind == MOV_VAR || n.kind == MOVL_VAR)
                 {
-                    if ((label_addr.find(var_name.first) != label_addr.end()))
+                    if ((label_addr.find(var_name) != label_addr.end()))
+                    {
+                        n.kind = MOVL_IMM;
+                        _n->is_lbl = true;
                         break;
+                    }
                 }
-                auto _r = symtable.vars.find(var_name.first);
+                auto _r = symtable.vars.find(var_name);
                 if (_r == symtable.vars.end())
                 {
-                    note("The variable '" + var_name.first + "' doesn't exist.");
+                    note("The variable '" + var_name + "' doesn't exist.");
                     exit(1);
                 }
                 break;
@@ -2253,11 +2265,11 @@ void masm::Parser::analyse_nodes()
         case MOVSXD_VAR:
         {
             auto _n = (NodeMov *)n.node.get();
-            auto var_name = std::get<std::pair<std::string, DataType>>(_n->second_oper);
-            auto r = symtable._const_list.find(var_name.first);
+            auto var_name = std::get<std::string>(_n->second_oper);
+            auto r = symtable._const_list.find(var_name);
             if (r == symtable._const_list.end())
             {
-                note("The constant '" + var_name.first + "' doesn't exist.");
+                note("The constant '" + var_name + "' doesn't exist.");
                 exit(1);
             }
             n.kind = (NodeKind)(n.kind - 2);
@@ -2288,7 +2300,7 @@ void masm::Parser::analyse_nodes()
         {
             auto _n = (NodeName *)n.node.get();
             std::string name = std::get<std::string>(_n->oper);
-            if (label_addr.find(name) == label_addr.end())
+            if (lbl_list.find(name) == lbl_list.end())
             {
                 note("This label to branch into doesn't exist: " + name);
                 exit(1);

@@ -305,8 +305,6 @@ namespace masm
     enum TokenType
     {
         MB_C, // pseudotoken
-        MB_DATA,
-        MB_CODE,
         IDENTIFIER,
         NUM_INT,
         NUM_FLOAT,

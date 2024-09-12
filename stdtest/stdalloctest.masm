@@ -32,3 +32,8 @@ __:
 
     mov Ma, 0
     halt
+
+depends stdinit.masm
+depends stdmem.masm
+
+entry Main

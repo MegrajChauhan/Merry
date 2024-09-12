@@ -1,5 +1,0 @@
-data stdmem.mdat
-data stdintr.mdat
-data stddefs.mdat
-code stdutils.masm
-code stdmem.masm

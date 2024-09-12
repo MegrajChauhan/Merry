@@ -36,6 +36,7 @@ namespace masm
         Register reg;
         std::variant<Register, std::string, std::vector<Token>> second_oper;
         bool is_float = false; // just for the mov instruction
+        bool is_lbl = false;
     };
 
     struct NodeStack : public Base
@@ -52,7 +53,7 @@ namespace masm
 
     struct NodeIntr : public Base
     {
-        std::variant<std::vector<Token>, Register, std::string> val;
+        std::variant<std::vector<Token>, std::string> val;
     };
 
     struct NodeCmpxchg : public Base
