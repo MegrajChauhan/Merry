@@ -542,16 +542,19 @@ __builtin_std_memset
    push Mc
    mov Mf, 0
  _std_memset_innerloop
-   
-defined _M_AMD_
+   mov Mc, Mb
+ defined _M_AMD_
    ;; For Little endian machines
    ;; Put in little endian format as well
    mov Mm1, Md
    mov Mm2, Mf
    mul Mm2, 8
-   lshift Mm1, Mm2
-end
-
+   rshift Mm1, Mm2
+   and Mm1, 0xFF
+ end
+   storeb Mm1, Ma
+   inc Ma
+   inc Mf
    loop _std_memset_innerloop
    pop Mc
    loop _std_memset_loop

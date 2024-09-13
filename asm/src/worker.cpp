@@ -1391,11 +1391,6 @@ bool masm::Parser::handle_logical_inst(NodeKind k, bool limit)
     default:
         if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
         {
-            if (limit)
-            {
-                log(fname, "This logical instruction doesn't accept registers as second.", l.get_line_st(), l.get_col_st());
-                return false;
-            }
             node.kind = (NodeKind)(k + 1);
             n->second_oper = regr_map[t.type];
             break;

@@ -816,8 +816,14 @@ void masm::CodeGen::gen()
         case LSHIFT:
             logical_inst_imm(GET(NodeLogical), OP_LSHIFT);
             break;
+        case LSHIFT_REG:
+            logical_inst_reg(GET(NodeLogical), OP_LSHIFT_REGR);
+            break;
         case RSHIFT:
             logical_inst_imm(GET(NodeLogical), OP_RSHIFT);
+            break;
+        case RSHIFT_REG:
+            logical_inst_reg(GET(NodeLogical), OP_RSHIFT_REGR);
             break;
         case CMP_IMM:
             logical_inst_imm(GET(NodeLogical), OP_CMP_IMM);

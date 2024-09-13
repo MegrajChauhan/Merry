@@ -157,11 +157,11 @@ namespace masm
         XOR_VAR,
         XOR_EXPR,
         LSHIFT,
-        LSHIFT_X, // pseudo node type
+        LSHIFT_REG, // pseudo node type
         LSHIFT_VAR,
         LSHIFT_EXPR,
         RSHIFT,
-        RSHIFT_X, // pseudo node type
+        RSHIFT_REG, // pseudo node type
         RSHIFT_VAR,
         RSHIFT_EXPR,
 

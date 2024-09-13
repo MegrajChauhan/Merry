@@ -344,9 +344,17 @@ _THRET_T_ merry_runCore(mptr_t core)
             curr = *current;
             c->registers[(curr >> 8) & 15] <<= curr & 0x40;
             break;
+        case OP_LSHIFT_REGR:
+            curr = *current;
+            c->registers[(curr >> 4) & 15] <<= c->registers[curr & 15] & 0x40;
+            break;
         case OP_RSHIFT:
             curr = *current;
             c->registers[(curr >> 8) & 15] >>= curr & 0x40;
+            break;
+        case OP_RSHIFT_REGR:
+            curr = *current;
+            c->registers[(curr >> 4) & 15] >>= c->registers[curr & 15] & 0x40;
             break;
         case OP_CMP_IMM:
             register mqword_t reg = c->registers[*current & 15];
