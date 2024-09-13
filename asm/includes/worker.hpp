@@ -122,9 +122,10 @@ namespace masm
 #ifdef _USE_LINUX_
         {"stdinit.masm", "lib/stdinit.masm"},
         {"stdutils.masm", "lib/stdutils.masm"},
-        {"stddefs.masm", "lib/stddefs.masm"},
-        {"stdintr.masm", "lib/stdintr.masm"},
         {"stdmem.masm", "lib/stdmem.masm"},
+        {"_builtinalloc_.masm", "lib/internal/mem/_builtinalloc_.masm"},
+        {"_builtininit_.masm", "lib/internal/init/_builtininit_.masm"},
+        {"_builtinsyscall_.masm", "lib/internal/arch/linux/_builtininit_.masm"},
 #endif
     };
 };

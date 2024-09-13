@@ -9,6 +9,9 @@ proc __builtin_std_mem_check_free_blocks
 proc __builtin_std_mem_request_more_mem
 proc __builtin_std_free
 proc __builtin_std_realloc
+proc __builtin_std_memcpy
+proc __builtin_std_memmove
+proc __builtin_std_memset
 
 proc __builtin_std_create_new_block
 
@@ -16,15 +19,15 @@ proc __builtin_std_create_new_block
 proc __builtin_std_mem_log_err
 
 ;; Utility procedures
-proc __builtin_std_mem_append_to_free        ;; used by __builtin_std_free
+proc __builtin_std_mem_append_to_free      ;; used by __builtin_std_free
 proc __builtin_std_mem_append_to_allocated   ;; used by __builtin_std_alloc
-proc __builtin_std_mem_remove_from_free      ;; used by __builtin_std_alloc
+proc __builtin_std_mem_remove_from_free     ;; used by __builtin_std_alloc
 proc __builtin_std_mem_remove_from_allocated ;; used by __builtin_std_free
 
-proc __builtin_std_mem_populate_free_head       ;; used to fill the free head
+proc __builtin_std_mem_populate_free_head      ;; used to fill the free head
 proc __builtin_std_mem_populate_allocated_head  ;; used to fill allocated head
 
-proc __builtin_std_mem_is_init         ;; has the allocator been initialized?
+proc __builtin_std_mem_is_init       ;; has the allocator been initialized?
 proc __builtin_std_mem_has_enough_mem
 
 ;; ARGS: None
@@ -55,249 +58,249 @@ __builtin_std_mem_has_enough_mem
 ;; ARGS: Ma = address to make the head
 ;; RETURNS: Nothing
 __builtin_std_mem_populate_free_head
-    
-    ;; call to this procedure means that the free head is empty
-    ;; and so is the tail
-    ;; NXT must be NULL
-    storeq Ma, _Mstd_free_mem_head
-    movl Mb, Ma
-
-    sub Ma, _MSTD_MEM_METADATA_NXT_
-    storeq Mb, Ma
-    sub Ma, _MSTD_MEM_METADATA_NXT_
-    storeq Mb, Ma
    
-    ret
+   ;; call to this procedure means that the free head is empty
+   ;; and so is the tail
+   ;; NXT must be NULL
+   storeq Ma, _Mstd_free_mem_head
+   movl Mb, Ma
+
+   sub Ma, _MSTD_MEM_METADATA_NXT_
+   storeq Mb, Ma
+   sub Ma, _MSTD_MEM_METADATA_NXT_
+   storeq Mb, Ma
+   
+   ret
 
 ;; ARGS: Ma = address to make the head
 ;; RETURNS: Nothing
 __builtin_std_mem_populate_allocated_head
-    
-    ;; call to this procedure means that the allocated head is empty
-    ;; and so is the tail
-    ;; PREV and NXT must be NULL
-    storeq Ma, _Mstd_allocated_mem_head
-    movl Mb, Ma
-
-    sub Ma, _MSTD_MEM_METADATA_NXT_
-    storeq Mb, Ma
-    sub Ma, _MSTD_MEM_METADATA_NXT_
-    storeq Mb, Ma
    
-    ret
+   ;; call to this procedure means that the allocated head is empty
+   ;; and so is the tail
+   ;; PREV and NXT must be NULL
+   storeq Ma, _Mstd_allocated_mem_head
+   movl Mb, Ma
+
+   sub Ma, _MSTD_MEM_METADATA_NXT_
+   storeq Mb, Ma
+   sub Ma, _MSTD_MEM_METADATA_NXT_
+   storeq Mb, Ma
+   
+   ret
 
 ;; ARGS: Ma = address for the block
 ;; RETURNS: Nothing
 __builtin_std_mem_append_to_free
 
-    ;; The block that was provided must have NULL for NXT and PREV
-    call __builtin_quick_save
-    
-    loadq M1, _Mstd_free_mem_head
+   ;; The block that was provided must have NULL for NXT and PREV
+   call __builtin_quick_save
+   
+   loadq M1, _Mstd_free_mem_head
 
-    cmp M1, _MSTD_NULL_
-    je _std_mem_append_to_free_populate_head
+   cmp M1, _MSTD_NULL_
+   je _std_mem_append_to_free_populate_head
 
-    push M1
-    sub M1, _MSTD_MEM_METADATA_PREV_
-    loadq M2, M1
-    pop M1
+   push M1
+   sub M1, _MSTD_MEM_METADATA_PREV_
+   loadq M2, M1
+   pop M1
 
-    push M2
-    sub M2, _MSTD_MEM_METADATA_NXT_
-    storeq Ma, M2
-    pop M2
+   push M2
+   sub M2, _MSTD_MEM_METADATA_NXT_
+   storeq Ma, M2
+   pop M2
 
-    push Ma
-    sub Ma, _MSTD_MEM_METADATA_NXT_
-    storeq M1, Ma
-    sub Ma, _MSTD_MEM_METADATA_NXT_
-    storeq M2, Ma
-    pop Ma
+   push Ma
+   sub Ma, _MSTD_MEM_METADATA_NXT_
+   storeq M1, Ma
+   sub Ma, _MSTD_MEM_METADATA_NXT_
+   storeq M2, Ma
+   pop Ma
 
-    sub M1, _MSTD_MEM_METADATA_PREV_
-    storeq Ma, M1
+   sub M1, _MSTD_MEM_METADATA_PREV_
+   storeq Ma, M1
 
-    jmp _std_mem_append_to_free_done 
+   jmp _std_mem_append_to_free_done 
 
  _std_mem_append_to_free_populate_head
-    call __builtin_std_mem_populate_free_head
+   call __builtin_std_mem_populate_free_head
 
  _std_mem_append_to_free_done
-    call __builtin_quick_restore
-    ret
+   call __builtin_quick_restore
+   ret
 
 ;; ARGS: Ma = address for the block
 ;; RETURNS: Nothing
 __builtin_std_mem_append_to_allocated
 
-    ;; The block that was provided must have NULL for NXT and PREV
-    call __builtin_quick_save
-    
-    loadq M1, _Mstd_allocated_mem_head
-    
-    cmp M1, _MSTD_NULL_
-    je _std_mem_append_to_allocated_populate_head
+   ;; The block that was provided must have NULL for NXT and PREV
+   call __builtin_quick_save
+   
+   loadq M1, _Mstd_allocated_mem_head
+   
+   cmp M1, _MSTD_NULL_
+   je _std_mem_append_to_allocated_populate_head
 
-    push M1
-    sub M1, _MSTD_MEM_METADATA_PREV_
-    loadq M2, M1
-    pop M1
+   push M1
+   sub M1, _MSTD_MEM_METADATA_PREV_
+   loadq M2, M1
+   pop M1
 
-    push M2
-    sub M2, _MSTD_MEM_METADATA_NXT_
-    storeq Ma, M2
-    pop M2
+   push M2
+   sub M2, _MSTD_MEM_METADATA_NXT_
+   storeq Ma, M2
+   pop M2
 
-    push Ma
-    sub Ma, _MSTD_MEM_METADATA_NXT_
-    storeq M1, Ma
-    sub Ma, _MSTD_MEM_METADATA_NXT_
-    storeq M2, Ma
-    pop Ma
+   push Ma
+   sub Ma, _MSTD_MEM_METADATA_NXT_
+   storeq M1, Ma
+   sub Ma, _MSTD_MEM_METADATA_NXT_
+   storeq M2, Ma
+   pop Ma
 
-    sub M1, _MSTD_MEM_METADATA_PREV_
-    storeq Ma, M1
+   sub M1, _MSTD_MEM_METADATA_PREV_
+   storeq Ma, M1
 
-    jmp _std_mem_append_to_free_done 
+   jmp _std_mem_append_to_free_done 
 
  _std_mem_append_to_allocated_populate_head
-    call __builtin_std_mem_populate_allocated_head
+   call __builtin_std_mem_populate_allocated_head
 
  _std_mem_append_to_allocated_done
-    call __builtin_quick_restore
-    ret
+   call __builtin_quick_restore
+   ret
 
 ;; ARGS: Ma = address for the block to remove
 ;; RETURNS: Nothing
 __builtin_std_mem_remove_from_free
-    call __builtin_quick_save
+   call __builtin_quick_save
 
-    ;; Updates the Free List and makes NXT and PREV NULL
-    movl Mb, Ma             ;; temporary storage
-    
-    movl Mm1, _MSTD_NULL_
-    
-    sub Mb, _MSTD_MEM_METADATA_NXT_
-    loadq M1, Mb
-    storeq Mm1, Mb
-    sub Mb, _MSTD_MEM_METADATA_NXT_
-    loadq M2, Mb
-    storeq Mm1, Mb
+   ;; Updates the Free List and makes NXT and PREV NULL
+   movl Mb, Ma          ;; temporary storage
+   
+   movl Mm1, _MSTD_NULL_
+   
+   sub Mb, _MSTD_MEM_METADATA_NXT_
+   loadq M1, Mb
+   storeq Mm1, Mb
+   sub Mb, _MSTD_MEM_METADATA_NXT_
+   loadq M2, Mb
+   storeq Mm1, Mb
 
-    ;; M1 = NEXT block and M2 = PREVIOUS block
+   ;; M1 = NEXT block and M2 = PREVIOUS block
 
-    ;; If Ma is the head block and also if that is the only block
-    ;; This condition is fulfilled only if Ma is the head 
-    cmp M1, M2
-    je _std_mem_remove_from_free_is_only_head
+   ;; If Ma is the head block and also if that is the only block
+   ;; This condition is fulfilled only if Ma is the head 
+   cmp M1, M2
+   je _std_mem_remove_from_free_is_only_head
 
-    jmp _std_mem_remove_from_free_continue 
+   jmp _std_mem_remove_from_free_continue 
 
  _std_mem_remove_from_free_is_only_head
-    push _MSTD_NULL_
-    pop _Mstd_free_mem_head
+   push _MSTD_NULL_
+   pop _Mstd_free_mem_head
 
-    jmp _std_mem_remove_from_free_done
-    
+   jmp _std_mem_remove_from_free_done
+   
  _std_mem_remove_from_free_continue
 
-    ;; The block is not the head or we have more blocks
-    push M1
-    sub M1, _MSTD_MEM_METADATA_PREV_
-    storeq M2, M1
-    pop M1
+   ;; The block is not the head or we have more blocks
+   push M1
+   sub M1, _MSTD_MEM_METADATA_PREV_
+   storeq M2, M1
+   pop M1
 
-    sub M2, _MSTD_MEM_METADATA_NXT_
-    storeq M1, M2
+   sub M2, _MSTD_MEM_METADATA_NXT_
+   storeq M1, M2
    
  _std_mem_remove_from_free_done
-    call __builtin_quick_restore
-    ret
+   call __builtin_quick_restore
+   ret
 
 ;; ARGS: Ma = address for the block to remove
 ;; RETURNS: Nothing
 __builtin_std_mem_remove_from_allocated
-    call __builtin_quick_save
+   call __builtin_quick_save
 
-    ;; Updates the Allocated List and makes NXT and PREV NULL
-    movl Mb, Ma             ;; temporary storage
-    
-    movl Mm1, _MSTD_NULL_
-    storeq M1, Mm1
-    sub Mb, _MSTD_MEM_METADATA_NXT_
-    loadq M1, Mb
-    storeq Mm1, Mb
-    sub Mb, _MSTD_MEM_METADATA_NXT_
-    loadq M2, Mb
-    storeq Mm1, Mb
+   ;; Updates the Allocated List and makes NXT and PREV NULL
+   movl Mb, Ma          ;; temporary storage
+   
+   movl Mm1, _MSTD_NULL_
+   storeq M1, Mm1
+   sub Mb, _MSTD_MEM_METADATA_NXT_
+   loadq M1, Mb
+   storeq Mm1, Mb
+   sub Mb, _MSTD_MEM_METADATA_NXT_
+   loadq M2, Mb
+   storeq Mm1, Mb
 
-    ;; M1 = NEXT block and M2 = PREVIOUS block
+   ;; M1 = NEXT block and M2 = PREVIOUS block
 
-    ;; If Ma is the head block and also if that is the only block
-    ;; This condition is fulfilled only if Ma is the head 
-    cmp M1, M2
-    je _std_mem_remove_from_allocated_is_only_head
+   ;; If Ma is the head block and also if that is the only block
+   ;; This condition is fulfilled only if Ma is the head 
+   cmp M1, M2
+   je _std_mem_remove_from_allocated_is_only_head
 
-    jmp _std_mem_remove_from_allocated_continue 
+   jmp _std_mem_remove_from_allocated_continue 
 
  _std_mem_remove_from_allocated_is_only_head
-    push _MSTD_NULL_
-    pop _Mstd_allocated_mem_head
+   push _MSTD_NULL_
+   pop _Mstd_allocated_mem_head
 
-    jmp _std_mem_remove_from_allocated_done
-    
+   jmp _std_mem_remove_from_allocated_done
+   
  _std_mem_remove_from_allocated_continue
 
-    ;; The block is not the head or we have more blocks
-    push M1
-    sub M1, _MSTD_MEM_METADATA_PREV_
-    storeq M2, M1
-    pop M1
+   ;; The block is not the head or we have more blocks
+   push M1
+   sub M1, _MSTD_MEM_METADATA_PREV_
+   storeq M2, M1
+   pop M1
 
-    sub M2, _MSTD_MEM_METADATA_NXT_
-    storeq M1, M2
+   sub M2, _MSTD_MEM_METADATA_NXT_
+   storeq M1, M2
    
  _std_mem_remove_from_allocated_done
-    call __builtin_quick_restore
-    ret
+   call __builtin_quick_restore
+   ret
 
 ;; Initialize memory system.
 ;; ARGS: None, RETURN: Nothing
 __builtin_std_mem_init
-    call __builtin_quick_save
-    
-    ;; Initialize internal memory management values
-    loadq Ma, _Mstd_free_mem_start_addr
-    storeq Ma, _Mstd_allocable_mem_start
-    storeq Ma, _Mstd_allocable_mem_end
+   call __builtin_quick_save
+   
+   ;; Initialize internal memory management values
+   loadq Ma, _Mstd_free_mem_start_addr
+   storeq Ma, _Mstd_allocable_mem_start
+   storeq Ma, _Mstd_allocable_mem_end
 
-    ;; Set initial pointers to NULL
-    movl Ma, _MSTD_NULL_
-    storeq Ma, _Mstd_allocated_mem_head
-    storeq Ma, _Mstd_free_mem_head
+   ;; Set initial pointers to NULL
+   movl Ma, _MSTD_NULL_
+   storeq Ma, _Mstd_allocated_mem_head
+   storeq Ma, _Mstd_free_mem_head
 
-    ;; Initialize allocated memory count
-    movl Ma, 0
-    storeq Ma, _Mstd_allocated_mem
+   ;; Initialize allocated memory count
+   movl Ma, 0
+   storeq Ma, _Mstd_allocated_mem
 
-    ;; Calculate total memory size
-    loadq Ma, _Mstd_num_of_pages
-    mul Ma, _MSTD_MEM_PAGE_LEN
-    sub Ma, _Mstd_allocable_mem_start
-    storeq Ma, _Mstd_allocable_mem_len      ;; Store available memory size
+   ;; Calculate total memory size
+   loadq Ma, _Mstd_num_of_pages
+   mul Ma, _MSTD_MEM_PAGE_LEN
+   sub Ma, _Mstd_allocable_mem_start
+   storeq Ma, _Mstd_allocable_mem_len     ;; Store available memory size
 
-    call __builtin_quick_restore
-    ret
+   call __builtin_quick_restore
+   ret
 
 ;; ARGS: Ma = PTR to message, Mb= length of msg
 __builtin_std_mem_log_err
-    mov Mc, Mb
-    sout Ma
-    mov Ma, 10
-    cout Ma
-    mov Ma, 1             ;; Unsuccessful return
-    intr _M_EXIT_         ;; The entire VM stops(unless child processes are running)
+   mov Mc, Mb
+   sout Ma
+   mov Ma, 10
+   cout Ma
+   mov Ma, 1          ;; Unsuccessful return
+   intr _M_EXIT_       ;; The entire VM stops(unless child processes are running)
 
 ;; ARGS: Nothing
 ;; RETURNS: 1 for success and 0 for failure
@@ -305,7 +308,7 @@ __builtin_std_mem_request_more_mem
    call __builtin_quick_save
    push 0
    pop _Mstd_mem_intermediate
-   intr _M_MEM_                          ;; ask for more memory
+   intr _M_MEM_                    ;; ask for more memory
    cmp Ma, 1
    je _std_mem_request_more_mem_done
 
@@ -386,7 +389,7 @@ __builtin_std_create_new_block
 
    call __builtin_std_mem_request_more_mem
    cmp Ma, 0
-   je _std_create_new_block_done            ;; we failed
+   je _std_create_new_block_done         ;; we failed
 
  _std_create_new_block_allocate
  
@@ -445,7 +448,7 @@ __builtin_std_alloc
    movl Mf, Ma
    call __builtin_std_mem_is_init
    cmp Ma, 0
-   je _std_alloc_done            ;; Allocator not initialized
+   je _std_alloc_done         ;; Allocator not initialized
    
    movl Ma, Mf
    ;; Check if we have a free block that matches the requested size
@@ -458,7 +461,7 @@ __builtin_std_alloc
    movl Ma, Mb
    call __builtin_std_create_new_block
    cmp Ma, _MSTD_NULL_
-   je _std_alloc_done            ;; Failed to create new block
+   je _std_alloc_done         ;; Failed to create new block
    jmp _std_alloc_add_to_allocated_list
 
  _std_alloc_found_free_block
@@ -477,35 +480,86 @@ __builtin_std_alloc
 ;; ARGS: Ma = Address of the block to remove
 ;; RETURNS: Nothing but will throw an error and exit for invalid pointer
 __builtin_std_free
-    call __builtin_quick_save
+   call __builtin_quick_save
 
-    movl Mf, Ma
+   movl Mf, Ma
 
-    ;; Check if the allocator has been initialized
-    call __builtin_std_mem_is_init
-    cmp Ma, 0
-    je _std_free_error            ;; Allocator not initialized
+   ;; Check if the allocator has been initialized
+   call __builtin_std_mem_is_init
+   cmp Ma, 0
+   je _std_free_error         ;; Allocator not initialized
 
-    movl Ma, Mf
-    ;; Check if the block is valid
-    sub Ma, _MSTD_MEM_METADATA_MAGIC_NUM_
-    loadq M1, Ma
-    cmp M1, _MSTD_MEM_MAGIC_NUM_
-    jne _std_free_error            ;; Invalid block
+   movl Ma, Mf
+   ;; Check if the block is valid
+   sub Ma, _MSTD_MEM_METADATA_MAGIC_NUM_
+   loadq M1, Ma
+   cmp M1, _MSTD_MEM_MAGIC_NUM_
+   jne _std_free_error         ;; Invalid block
 
-    ;; Remove the block from the allocated list
-    mov Ma, Mf
-    call __builtin_std_mem_remove_from_allocated
+   ;; Remove the block from the allocated list
+   mov Ma, Mf
+   call __builtin_std_mem_remove_from_allocated
 
-    ;; Add the block to the free list
-    call __builtin_std_mem_append_to_free
-    call __builtin_quick_restore
-    ret
+   ;; Add the block to the free list
+   call __builtin_std_mem_append_to_free
+   call __builtin_quick_restore
+   ret
 
  _std_free_error
-    mov Ma, [PTR _MSTD_INVALID_FREE]
-    movl Mc, 13
-    call __builtin_std_mem_log_err
+   mov Ma, [PTR _MSTD_INVALID_FREE]
+   movl Mc, 13
+   call __builtin_std_mem_log_err
+
+
+;; ARGS: Ma = Address to the memory, Mb = Size of each member, Mc = Number of members, Md = The value to set
+;; RETURNS: Address on success else NULL
+;; NOTE: Mb can only be as large as 8 and cannot be 0
+__builtin_std_memset
+   call __builtin_quick_save
+   
+   push _MSTD_NULL_
+   pop _Mstd_mem_intermediate
+
+   cmp Ma, _MSTD_NULL_
+   je _std_memset_done
+
+   cmp Mb, 0
+   je _std_memset_done
+
+   cmp Mb, 9
+   jge _std_memset_done
+
+   cmp Mc, 0
+   push Ma
+   pop _Mstd_mem_intermediate
+
+   je _std_memset_done
+   movl Mf, Md
+
+   ;; Mc already has the number of members set 
+
+ _std_memset_loop
+   push Mc
+   mov Mf, 0
+ _std_memset_innerloop
+   
+defined _M_AMD_
+   ;; For Little endian machines
+   ;; Put in little endian format as well
+   mov Mm1, Md
+   mov Mm2, Mf
+   mul Mm2, 8
+   lshift Mm1, Mm2
+end
+
+   loop _std_memset_innerloop
+   pop Mc
+   loop _std_memset_loop
+
+ _std_memset_done
+   call __builtin_quick_restore
+   loadq Ma, _Mstd_mem_intermediate
+   ret
 
 ;; The Data
 rq _Mstd_allocable_mem_len 1   ;; The memory that we can allocate with
@@ -535,3 +589,7 @@ dc _MSTD_MEM_PAGE_LEN 0x100000 ;; The length of one page
 
 ds _MSTD_INVALID_FREE "Invalid free".0 ;; This is the only error message we have
 
+;; We cannot merge two blocks together to get a bigger block because in the doubly linked list,
+;; we cannot be sure that any two blocks are right next to one another in memory. 
+;; It will not be smart to attempt to check for any two blocks and hence we will avoid that
+;; entirely.
