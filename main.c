@@ -201,13 +201,13 @@ mret_t merry_main_parse_options(int argc, char **argv)
     if (cmd_opts->_help == mtrue)
     {
         merry_print_help();
-        goto _success;
+        merry_cleanup_and_exit(0);
     }
     // if version is to be printed, do the same as help
     if (cmd_opts->_version == mtrue)
     {
-        fprintf(stdout, "Merry Virtual Machine: A 64-bit virtual machine\nLatest version-%lu %lu\n", _MERRY_VERSION_, _MERRY_VERSION_STATE_);
-        goto _success;
+        fprintf(stdout, "Merry Virtual Machine: A 64-bit virtual machine\nLatest version-%lu %s\n", _MERRY_VERSION_, _MERRY_VERSION_STATE_);
+        merry_cleanup_and_exit(0);
     }
     // see if input file was provided or not
     if (cmd_opts->_inp_file == NULL)

@@ -136,7 +136,6 @@ MerryCLP *merry_parse_options(int argc, char **argv)
         if (clp->_options_ == NULL)
         {
             rlog("Failed to fully parse the options.\n", NULL);
-            merry_destroy_parser(clp);
             return RET_NULL;
         }
         msize_t j = 0;

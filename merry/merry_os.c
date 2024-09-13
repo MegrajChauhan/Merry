@@ -569,7 +569,7 @@ _os_exec_(newprocess)
         msize_t argc;
         mstr_t *argv;
         merry_get_cmd_options(&argc, &argv);
-        execl(/*Do something about this*/ "mvm", *argv);
+        execv(/*Do something about this*/ "mvm", argv);
         os->cores[request->id]->registers[Ma] = 1; // we failed
     }
 #elif _USE_WIN_
