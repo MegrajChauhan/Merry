@@ -125,17 +125,20 @@ _THRET_T_ merry_start_listening(mptr_t _list)
     if (bind(dbg->_fd, (struct sockaddr *)&dbg->_addr, sizeof(dbg->_addr)) < 0)
     {
         perror("DEBUGGER CONNECT");
+        merry_os_notice(3);
         return NULL;
     }
     if (listen(dbg->_fd, 5) < 0)
     {
         perror("DEBUUGER LISTEN");
+        merry_os_notice(3);
         return NULL;
     }
     socklen_t addrlen = sizeof(dbg->_addr);
     if ((dbg->_listen_fd = accept(dbg->_fd, (struct sockaddr *)&dbg->_addr, &addrlen)) < 0)
     {
         perror("DEBUGGER ACCEPT");
+        merry_os_notice(3);
         return NULL;
     }
 #elif defined(_USE_LINUX_)
@@ -143,16 +146,19 @@ _THRET_T_ merry_start_listening(mptr_t _list)
     if (bind(dbg->_fd, (struct sockaddr *)&dbg->_addr, addrlen) == SOCKET_ERROR)
     {
         printf("DEBUGGER CONNECT failed with error: %d\n", WSAGetLastError());
+        merry_os_notice(3);
         return NULL;
     }
     if (listen(dbg->_fd, 5) == SOCKET_ERROR)
     {
         printf("DEBUGGER LISTEN failed with error: %d\n", WSAGetLastError());
+        merry_os_notice(3);
         return NULL;
     }
     if ((dbg->_listen_fd = accept(dbg->_fd, (struct sockaddr *)&dbg->_addr, &addrlen)) == INVALID_SOCKET)
     {
         printf("DEBUGGER ACCEPT failed with error: %d\n", WSAGetLastError());
+        merry_os_notice(3);
         return NULL;
     }
 #endif
@@ -238,15 +244,31 @@ _THRET_T_ merry_start_sending(mptr_t _send)
 {
     MerrySender *dbg = (MerrySender *)_send;
 #ifdef _USE_LINUX_
-    while (connect(dbg->_send_fd, (struct sockaddr *)&dbg->_addr, sizeof(dbg->_addr)) < 0)
+    for (msize_t i = 0; i <= 1000; i++)
     {
-        usleep(50);
+        if (i == 999)
+        {
+            merry_os_notice(2);
+            return NULL;
+        }
+        if (connect(dbg->_send_fd, (struct sockaddr *)&dbg->_addr, sizeof(dbg->_addr)) < 0)
+            usleep(10);
+        else
+            break;
     }
-    // we keep trying until we connect
+    // we keep trying until we connect but only for 10000 times
 #elif defined(_USE_WIN_)
-    while (connect(dbg->_send_fd, (struct sockaddr *)&dbg->_addr, sizeof(dbg->_addr)) == SOCKET_ERROR)
+    for (msize_t i = 0; i <= 1000; i++)
     {
-        Sleep(1); // sleep for 1 millisecond but keep trying
+        if (i == 999)
+        {
+            merry_os_notice(2);
+            return NULL;
+        }
+        if (connect(dbg->_send_fd, (struct sockaddr *)&dbg->_addr, sizeof(dbg->_addr)) == SOCKET_ERROR)
+            Sleep(1); // sleep for 1 millisecond but keep trying
+        else
+            break;
     }
 #endif
     if (dbg->notify_os == mtrue)

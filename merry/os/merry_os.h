@@ -122,7 +122,7 @@ void merry_os_destroy();
 void merry_os_new_proc_cleanup();
 
 // print the suitable error message and exit the VM
-void merry_os_handle_error(merrot_t error);
+void merry_os_handle_error(merrot_t error, msize_t id);
 
 void merry_os_handle_internal_module_error(merrot_t error_num);
 

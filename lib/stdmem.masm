@@ -57,10 +57,15 @@ __builtin_std_mem_populate_free_head
     
     ;; call to this procedure means that the free head is empty
     ;; and so is the tail
-    ;; PREV and NXT must be NULL
+    ;; NXT must be NULL
     storeq Ma, _Mstd_free_mem_head
-    storeq Ma, _Mstd_free_mem_tail
+    movl Mb, Ma
 
+    sub Ma, _MSTD_MEM_METADATA_NXT_
+    storeq Mb, Ma
+    sub Ma, _MSTD_MEM_METADATA_NXT_
+    storeq Mb, Ma
+   
     ret
 
 ;; ARGS: Ma = address to make the head
@@ -71,8 +76,13 @@ __builtin_std_mem_populate_allocated_head
     ;; and so is the tail
     ;; PREV and NXT must be NULL
     storeq Ma, _Mstd_allocated_mem_head
-    storeq Ma, _Mstd_allocated_mem_tail
+    movl Mb, Ma
 
+    sub Ma, _MSTD_MEM_METADATA_NXT_
+    storeq Mb, Ma
+    sub Ma, _MSTD_MEM_METADATA_NXT_
+    storeq Mb, Ma
+   
     ret
 
 ;; ARGS: Ma = address for the block
@@ -83,19 +93,29 @@ __builtin_std_mem_append_to_free
     call __builtin_quick_save
     
     loadq M1, _Mstd_free_mem_head
-    loadq M2, _Mstd_free_mem_tail
 
     cmp M1, _MSTD_NULL_
     je _std_mem_append_to_free_populate_head
 
-    ;; The job requires just the tail
+    push M1
+    sub M1, _MSTD_MEM_METADATA_PREV_
+    loadq M2, M1
+    pop M1
+
     push M2
     sub M2, _MSTD_MEM_METADATA_NXT_
     storeq Ma, M2
     pop M2
 
-    sub Ma, _MSTD_MEM_METADATA_PREV_
+    push Ma
+    sub Ma, _MSTD_MEM_METADATA_NXT_
+    storeq M1, Ma
+    sub Ma, _MSTD_MEM_METADATA_NXT_
     storeq M2, Ma
+    pop Ma
+
+    sub M1, _MSTD_MEM_METADATA_PREV_
+    storeq Ma, M1
 
     jmp _std_mem_append_to_free_done 
 
@@ -114,19 +134,29 @@ __builtin_std_mem_append_to_allocated
     call __builtin_quick_save
     
     loadq M1, _Mstd_allocated_mem_head
-    loadq M2, _Mstd_allocated_mem_tail
-
+    
     cmp M1, _MSTD_NULL_
     je _std_mem_append_to_allocated_populate_head
 
-    ;; The job requires just the tail
+    push M1
+    sub M1, _MSTD_MEM_METADATA_PREV_
+    loadq M2, M1
+    pop M1
+
     push M2
     sub M2, _MSTD_MEM_METADATA_NXT_
     storeq Ma, M2
     pop M2
 
-    sub Ma, _MSTD_MEM_METADATA_PREV_
+    push Ma
+    sub Ma, _MSTD_MEM_METADATA_NXT_
+    storeq M1, Ma
+    sub Ma, _MSTD_MEM_METADATA_NXT_
     storeq M2, Ma
+    pop Ma
+
+    sub M1, _MSTD_MEM_METADATA_PREV_
+    storeq Ma, M1
 
     jmp _std_mem_append_to_free_done 
 
@@ -146,47 +176,40 @@ __builtin_std_mem_remove_from_free
     movl Mb, Ma             ;; temporary storage
     
     movl Mm1, _MSTD_NULL_
-
-    sub Mb, _MSTD_MEM_METADATA_PREV_
+    
+    sub Mb, _MSTD_MEM_METADATA_NXT_
     loadq M1, Mb
     storeq Mm1, Mb
-    sub Mb, _MSTD_MEM_METADATA_PREV_
+    sub Mb, _MSTD_MEM_METADATA_NXT_
     loadq M2, Mb
     storeq Mm1, Mb
 
-    ;; M1 and M2 now contain the neighbors of the block 
-    
-    ;; make some internal value changes
-    cmp Ma, _Mstd_free_mem_head
-    je _std_mem_remove_from_free_is_head
+    ;; M1 = NEXT block and M2 = PREVIOUS block
 
-    cmp Ma, _Mstd_free_mem_tail
-    je _std_mem_remove_from_free_is_tail
+    ;; If Ma is the head block and also if that is the only block
+    ;; This condition is fulfilled only if Ma is the head 
+    cmp M1, M2
+    je _std_mem_remove_from_free_is_only_head
 
     jmp _std_mem_remove_from_free_continue 
 
- _std_mem_remove_from_free_is_head
-    storeq M2, _Mstd_free_mem_head     ;; update the head
+ _std_mem_remove_from_free_is_only_head
+    push _MSTD_NULL_
+    pop _Mstd_free_mem_head
 
- _std_mem_remove_from_free_is_tail
-    storeq M1, _Mstd_free_mem_tail     ;; update the tail
+    jmp _std_mem_remove_from_free_done
     
  _std_mem_remove_from_free_continue
-    cmp M1, _MSTD_NULL_
-    je _std_mem_remove_from_free_continue1
 
+    ;; The block is not the head or we have more blocks
     push M1
-    sub M1, _MSTD_MEM_METADATA_NXT_
+    sub M1, _MSTD_MEM_METADATA_PREV_
     storeq M2, M1
     pop M1
 
- _std_mem_remove_from_free_continue1
-    cmp M2, _MSTD_NULL_
-    je _std_mem_remove_from_free_done
-
-    sub M2, _MSTD_MEM_METADATA_PREV_
+    sub M2, _MSTD_MEM_METADATA_NXT_
     storeq M1, M2
-
+   
  _std_mem_remove_from_free_done
     call __builtin_quick_restore
     ret
@@ -200,44 +223,40 @@ __builtin_std_mem_remove_from_allocated
     movl Mb, Ma             ;; temporary storage
     
     movl Mm1, _MSTD_NULL_
-
-    sub Mb, _MSTD_MEM_METADATA_PREV_
+    storeq M1, Mm1
+    sub Mb, _MSTD_MEM_METADATA_NXT_
     loadq M1, Mb
     storeq Mm1, Mb
-    sub Mb, _MSTD_MEM_METADATA_PREV_
+    sub Mb, _MSTD_MEM_METADATA_NXT_
     loadq M2, Mb
     storeq Mm1, Mb
 
-    ;; M1 and M2 now contain the neighbors of the block 
+    ;; M1 = NEXT block and M2 = PREVIOUS block
+
+    ;; If Ma is the head block and also if that is the only block
+    ;; This condition is fulfilled only if Ma is the head 
+    cmp M1, M2
+    je _std_mem_remove_from_allocated_is_only_head
+
+    jmp _std_mem_remove_from_allocated_continue 
+
+ _std_mem_remove_from_allocated_is_only_head
+    push _MSTD_NULL_
+    pop _Mstd_allocated_mem_head
+
+    jmp _std_mem_remove_from_allocated_done
     
-    ;; make some internal value changes
-    cmp Ma, _Mstd_allocated_mem_head
-    jne _std_mem_remove_from_allocated_continue
+ _std_mem_remove_from_allocated_continue
 
-    storeq M2, _Mstd_allocated_mem_head     ;; update the head
-
-_std_mem_remove_from_allocated_continue
-    cmp Ma, _Mstd_allocated_mem_tail
-    jne _std_mem_remove_from_allocated_continue2
-
-    storeq M1, _Mstd_free_mem_tail     ;; update the tail
-    
- _std_mem_remove_from_allocated_continue2
-    cmp M1, _MSTD_NULL_
-    je _std_mem_remove_from_allocated_continue1
-
+    ;; The block is not the head or we have more blocks
     push M1
-    sub M1, _MSTD_MEM_METADATA_NXT_
+    sub M1, _MSTD_MEM_METADATA_PREV_
     storeq M2, M1
     pop M1
 
- _std_mem_remove_from_allocated_continue1
-    cmp M2, _MSTD_NULL_
-    je _std_mem_remove_from_allocated_done
-
-    sub M2, _MSTD_MEM_METADATA_PREV_
+    sub M2, _MSTD_MEM_METADATA_NXT_
     storeq M1, M2
-
+   
  _std_mem_remove_from_allocated_done
     call __builtin_quick_restore
     ret
@@ -255,9 +274,7 @@ __builtin_std_mem_init
     ;; Set initial pointers to NULL
     movl Ma, _MSTD_NULL_
     storeq Ma, _Mstd_allocated_mem_head
-    storeq Ma, _Mstd_allocated_mem_tail
     storeq Ma, _Mstd_free_mem_head
-    storeq Ma, _Mstd_free_mem_tail
 
     ;; Initialize allocated memory count
     movl Ma, 0
@@ -327,7 +344,7 @@ __builtin_std_mem_check_free_blocks
    cmp M1, _MSTD_NULL_
    je _std_mem_check_free_blocks_done
    
-   loadq M2, _Mstd_free_mem_tail
+   mov M2, M1
  _std_mem_check_free_blocks_loop
    push M1
    sub M1, _MSTD_MEM_METADATA_BLOCK_LEN
@@ -392,14 +409,14 @@ __builtin_std_create_new_block
    pop _Mstd_mem_intermediate
 
    movl Mf, _MSTD_NULL_
-   sub M1, _MSTD_MEM_METADATA_PREV_
+   sub M1, _MSTD_MEM_METADATA_NXT_
    storeq Mf, M1
-   sub M1, _MSTD_MEM_METADATA_PREV_
+   sub M1, _MSTD_MEM_METADATA_NXT_
    storeq Mf, M1
-   sub M1, _MSTD_MEM_METADATA_PREV_
+   sub M1, _MSTD_MEM_METADATA_NXT_
    storeq Mm5, M1
 
-   sub M1, _MSTD_MEM_METADATA_PREV_
+   sub M1, _MSTD_MEM_METADATA_NXT_
    movl Mf, _MSTD_MEM_MAGIC_NUM_
    storeq Mf, M1
 
@@ -489,7 +506,6 @@ __builtin_std_free
     movl Mc, 13
     call __builtin_std_mem_log_err
 
-
 ;; The Data
 rq _Mstd_allocable_mem_len 1   ;; The memory that we can allocate with
 rq _Mstd_allocated_mem 1       ;; The memory that we have already allocated  
@@ -497,25 +513,22 @@ rq _Mstd_allocated_mem 1       ;; The memory that we have already allocated
 rq _Mstd_allocable_mem_start 1 ;; The start of the free memory
 rq _Mstd_allocable_mem_end 1   ;; The end of the total occupied memory(Doesn't indicate the end of free memory)
 rq _Mstd_allocated_mem_head 1  ;; Pointer to the first allocated byte
-rq _Mstd_allocated_mem_tail 1  ;; Pointer to the last allocated block
 rq _Mstd_free_mem_head 1       ;; Pointer to the free head
-rq _Mstd_free_mem_tail 1       ;; Pointer to the free tail
 
 rq _Mstd_mem_intermediate 1    ;; This is something that shouldn't be used by other procedures
 
 ;; Each allocated block is gonna have the following metadata 
 ;; QWORD magic_num  ;; An identifying value
 ;; QWORD _block_len ;; The number of allocated bytes
-;; QWORD* nxt      ;; Pointer to the next block
-;; QWORD* prev      ;; Pointer to the previous block
+;; QWORD* nxt       ;; Pointer to the next block
 
 dc _MSTD_MEM_MAGIC_NUM_ 0xAABBCCDDEEFF9977
 
 dc _MSTD_MEM_METADATA_LEN_ 32
 dc _MSTD_MEM_METADATA_MAGIC_NUM_ 32
 dc _MSTD_MEM_METADATA_BLOCK_LEN 24
-dc _MSTD_MEM_METADATA_NXT_ 16
-dc _MSTD_MEM_METADATA_PREV_ 8
+dc _MSTD_MEM_METADATA_PREV_ 16
+dc _MSTD_MEM_METADATA_NXT_ 8
 
 dc _MSTD_MEM_PAGE_LEN 0x100000 ;; The length of one page
 

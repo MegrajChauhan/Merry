@@ -62,9 +62,11 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _
         goto failure;
     os.listener_running = mfalse;
     os.sender_running = mfalse;
+    os.listener_stopped = mtrue;
+    os.sender_stopped = mtrue;
     /// NOTE: Don't mind the nested if-conditions if you will.
-    // if (os.reader->de_flag == mtrue)
-    //     merry_os_start_dbg(_wait_for_conn, _MERRY_DEFAULT_LISTEN_PORT_, _MERRY_DEFAULT_SEND_PORT_);
+    if (os.reader->de_flag == mtrue)
+        merry_os_start_dbg(_wait_for_conn, _MERRY_DEFAULT_LISTEN_PORT_, _MERRY_DEFAULT_SEND_PORT_);
     os.cores[0]->registers[Mm1] = count;    // Mm1 will have the number of options
     os.cores[0]->registers[Md] = _t;        // Md will have the address to the first byte
     os.cores[0]->registers[Mm5] = len + _t; // Mm5 contains the address of the first byte that is free and can be manipulated by the program
@@ -355,7 +357,7 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
             else if (_MERRY_REQUEST_PROGRAM_ERROR_(current_req.request_number))
             {
                 os.err_core_id = current_req.id;
-                merry_os_handle_error(current_req.request_number); // this will handle all errors
+                merry_os_handle_error(current_req.request_number, current_req.id); // this will handle all errors
                 merry_os_prepare_for_exit();
                 break;
             }
@@ -411,9 +413,10 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
     }
     if (os.ret == _MERRY_EXIT_SUCCESS_)
         merry_os_prepare_for_exit();
-    while (os.listener_stopped != mtrue || os.sender_stopped != mtrue)
-    {
-    }
+    // we won't wait at all now
+    // while (os.listener_stopped != mtrue || os.sender_stopped != mtrue)
+    // {
+    // }
     // dump data if necessary
     if (os.ret == _MERRY_EXIT_FAILURE_ && os.dump_on_error == mtrue)
     {
@@ -429,7 +432,7 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
 #endif
 }
 
-void merry_os_handle_error(merrot_t error)
+void merry_os_handle_error(merrot_t error, msize_t id)
 {
     // this sets the return value for us
     os.ret = _MERRY_EXIT_FAILURE_;
@@ -465,6 +468,11 @@ void merry_os_handle_error(merrot_t error)
         merry_general_error("Internal Machine Error", "This isn't your fault most probably, try running the program again.");
         break;
     default:
+        if (os.cores[id]->excp_set == mtrue)
+        {
+            os.cores[id]->pc = os.cores[id]->exception_address;
+            return;
+        }
         merry_error("Unknown error code: '%llu' is not a valid error code", error);
         break;
     }
