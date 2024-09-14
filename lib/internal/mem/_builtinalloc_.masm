@@ -10,8 +10,9 @@ proc __builtin_std_mem_request_more_mem
 proc __builtin_std_free
 proc __builtin_std_realloc
 proc __builtin_std_memcpy
-proc __builtin_std_memmove
+;; proc __builtin_std_memmove
 proc __builtin_std_memset
+proc __builtin_std_salloc    ;; Set alloc
 
 proc __builtin_std_create_new_block
 
@@ -512,7 +513,7 @@ __builtin_std_free
 
 
 ;; ARGS: Ma = Address to the memory, Mb = Size of each member, Mc = Number of members, Md = The value to set
-;; RETURNS: Address on success else NULL
+;; RETURNS: Ma = Address on success else NULL
 ;; NOTE: Mb can only be as large as 8 and cannot be 0
 __builtin_std_memset
    call __builtin_quick_save
@@ -563,7 +564,105 @@ __builtin_std_memset
    call __builtin_quick_restore
    loadq Ma, _Mstd_mem_intermediate
    ret
+  
+;; ARGS: Ma = Source address, Mb = Destination address, Mc = Number of bytes
+;; RETURN: Ma = Mb for Success else NULL
+__builtin_std_memcpy
+  call __builtin_quick_save
 
+  push _MSTD_NULL_
+  pop _Mstd_mem_intermediate
+
+  cmp Ma, _MSTD_NULL_
+  je _std_memcpy_done
+
+  cmp Mb, _MSTD_NULL_
+  je _std_memcpy_done
+
+  cmp Mc, 0
+  push Mb
+  pop _Mstd_mem_intermediate
+  je _std_memcpy_done
+
+ _std_memcpy_loop
+  loadb M1, Ma
+  storeb M1, Mb
+  inc Ma
+  inc Mb
+  loop _std_memcpy_loop
+
+ _std_memcpy_done
+  call __builtin_quick_restore
+  loadq Ma, _Mstd_mem_intermediate
+  ret
+
+;; ARGS: Ma = Old address, Mb = New size
+;; RETURN: Ma = A new pointer on success else NULL
+__builtin_std_realloc
+  call __builtin_quick_save
+
+  ;; We will first allocate new memory with the requested number of bytes and then
+  ;; We will memcpy the old data into the new one and free the old one.
+  push _MSTD_NULL_
+  pop _Mstd_mem_intermediate
+
+  cmp Mb, 0
+  je _std_realloc_continue
+
+  mov Mm1, Ma
+  mov Ma, Mb
+  call __builtin_std_alloc
+
+  cmp Ma, _MSTD_NULL_
+  je _std_realloc_done     ;; we failed
+  mov Mb, Ma ;; The new block
+  mov Ma, Mm1  ;; The old block
+  mov Mm2, Mm1 ;; The old block
+  sub Mm1, _MSTD_MEM_METADATA_BLOCK_LEN ;; get the old block's length
+  loadq Mc, Mm1
+  call __builtin_std_memcpy
+  cmp Ma, _MSTD_NULL_
+  push Ma
+  pop _Mstd_mem_intermediate
+  je _std_realloc_done
+
+ _std_realloc_continue
+  mov Ma, Mm2
+  call __builtin_std_free
+
+ _std_realloc_done
+  call __builtin_quick_restore
+  loadq Ma, _Mstd_mem_intermediate
+  ret
+;; ARGS: Ma = Size of members, Mb = Number of members
+;; RETURN: Ma = A newly allocated block else NULL for error
+;; NOTE: salloc is the same as 'calloc' from C stdlib. All the bytes are initialized to 0
+__builtin_std_salloc
+  call __builtin_quick_save
+
+  push _MSTD_NULL_
+  pop _Mstd_mem_intermediate
+
+  mul Ma, Mb
+  jo _std_salloc_done
+
+  mov Mm1, Ma
+  call __builtin_std_alloc
+  cmp Ma, _MSTD_NULL_
+  je _std_salloc_done
+
+  mov Mb, 1
+  mov Mc, Mm1
+  xor Md, Md
+  call __builtin_std_memset
+
+  push Ma
+  pop _Mstd_mem_intermediate
+
+ _std_salloc_done
+  call __builtin_quick_restore
+  loadq Ma, _Mstd_mem_intermediate
+  ret
 ;; The Data
 rq _Mstd_allocable_mem_len 1   ;; The memory that we can allocate with
 rq _Mstd_allocated_mem 1       ;; The memory that we have already allocated  

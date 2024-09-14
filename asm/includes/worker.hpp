@@ -123,9 +123,13 @@ namespace masm
         {"stdinit.masm", "lib/stdinit.masm"},
         {"stdutils.masm", "lib/stdutils.masm"},
         {"stdmem.masm", "lib/stdmem.masm"},
+        {"stddefs.masm", "lib/stddefs.masm"},
         {"_builtinalloc_.masm", "lib/internal/mem/_builtinalloc_.masm"},
         {"_builtininit_.masm", "lib/internal/init/_builtininit_.masm"},
         {"_builtinsyscall_.masm", "lib/internal/arch/linux/_builtininit_.masm"},
+        {"_builtindefs_.masm", "lib/internal/utils/_builtindefs_.masm"},
+        {"_builtinintr_.masm", "lib/internal/utils/_builtinintr_.masm"},
+        {"_builtinutils_.masm", "lib/internal/utils/_builtinutils_.masm"},
 #endif
     };
 };
