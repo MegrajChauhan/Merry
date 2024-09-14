@@ -76,7 +76,7 @@ std::mem::memcpy
     call __builtin_std_memcpy
     ret
 
-; ARGS: Ma = Size of members, Mb = Number of members
+;; ARGS: Ma = Size of members, Mb = Number of members
 ;; RETURN: Ma = A newly allocated block else NULL for error
 ;; NOTE: salloc is the same as 'calloc' from C stdlib. All the bytes are initialized to 0
 ;; Thread-safe
