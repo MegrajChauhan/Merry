@@ -2,6 +2,7 @@ depends _builtininit_.asm
 depends _builtinintr_.asm
 depends _builtinutils_.asm
 depends _builtindefs_.asm
+depends _builtinmlocks_.asm
 
 proc __builtin_std_mem_init
 proc __builtin_std_alloc
@@ -280,6 +281,8 @@ __builtin_std_mem_init
    movl Ma, _MSTD_NULL_
    storeq Ma, _Mstd_allocated_mem_head
    storeq Ma, _Mstd_free_mem_head
+   xor Ma, Ma
+   storeb Ma, _Mstd_mem_lock
 
    ;; Initialize allocated memory count
    movl Ma, 0
@@ -436,6 +439,9 @@ __builtin_std_create_new_block
 __builtin_std_alloc
    call __builtin_quick_save
    
+   mov Ma, [PTR _Mstd_mem_lock]
+   call __builtin_std_raw_acquire
+
    push _MSTD_NULL_
    pop _Mstd_mem_intermediate
 
@@ -474,6 +480,8 @@ __builtin_std_alloc
    call __builtin_std_mem_append_to_allocated
 
  _std_alloc_done
+   mov Ma, [PTR _Mstd_mem_lock]
+   call __builtin_std_raw_release
    call __builtin_quick_restore
    loadq Ma, _Mstd_mem_intermediate
    ret
@@ -482,6 +490,9 @@ __builtin_std_alloc
 ;; RETURNS: Nothing but will throw an error and exit for invalid pointer
 __builtin_std_free
    call __builtin_quick_save
+
+   mov Ma, [PTR _Mstd_mem_lock]
+   call __builtin_std_raw_acquire
 
    movl Mf, Ma
 
@@ -503,6 +514,8 @@ __builtin_std_free
 
    ;; Add the block to the free list
    call __builtin_std_mem_append_to_free
+   mov Ma, [PTR _Mstd_mem_lock]
+   call __builtin_std_raw_release
    call __builtin_quick_restore
    ret
 
@@ -721,6 +734,9 @@ rq _Mstd_allocated_mem_head 1  ;; Pointer to the first allocated byte
 rq _Mstd_free_mem_head 1       ;; Pointer to the free head
 
 rq _Mstd_mem_intermediate 1    ;; This is something that shouldn't be used by other procedures
+
+rb _Mstd_mem_lock 1            ;; make the allocator thread-safe
+rb _Mstd_mem_reserve 7         ;; stdlib will try to be as aligned as possible
 
 ;; Each allocated block is gonna have the following metadata 
 ;; QWORD magic_num  ;; An identifying value

@@ -224,7 +224,7 @@ _just_a_label
   atm storew Ma, a
   atm storeb Ma, a
   
-  ;; if *Ma == *Mb then *Ma = a else *Mb = *Ma
+  ;; if *a == Ma then *a = Mb else Ma = *a
   cmpxchg Ma, Mb, a ;; obviously the variable should preferably be byte sized
   
   outr  ;; print the content of all registers as signed int

@@ -18,12 +18,14 @@ std::mem::init_allocator
 
 ;; ARGS: Ma = Size of block to allocate
 ;; RETURNS: Ma = NULL for failure else a valid pointer
+;; Thread-safe
 std::mem::alloc
     call __builtin_std_alloc
     ret
 
 ;; ARGS: Ma = Address of the block to remove
 ;; RETURNS: Nothing but will throw an error and exit for invalid pointer
+;; Thread-safe
 std::mem::free
     call __builtin_std_free
     ret
@@ -56,6 +58,7 @@ std::mem::os_alloc
 ;; ARGS: Ma = Old address, Mb = New size
 ;; RETURN: Ma = A new pointer on success else NULL
 ;; NOTE: Mb = 0 means the same as calling free
+;; Thread-safe
 std::mem::realloc
     call __builtin_std_realloc
     ret
@@ -76,6 +79,7 @@ std::mem::memcpy
 ; ARGS: Ma = Size of members, Mb = Number of members
 ;; RETURN: Ma = A newly allocated block else NULL for error
 ;; NOTE: salloc is the same as 'calloc' from C stdlib. All the bytes are initialized to 0
+;; Thread-safe
 std::mem::salloc
     call __builtin_std_salloc
     ret
