@@ -1,7 +1,7 @@
-depends _builtininit_.masm
-depends _builtinintr_.masm
-depends _builtinutils_.masm
-depends _builtindefs_.masm
+depends _builtininit_.asm
+depends _builtinintr_.asm
+depends _builtinutils_.asm
+depends _builtindefs_.asm
 
 proc __builtin_std_mem_init
 proc __builtin_std_alloc
@@ -10,7 +10,7 @@ proc __builtin_std_mem_request_more_mem
 proc __builtin_std_free
 proc __builtin_std_realloc
 proc __builtin_std_memcpy
-;; proc __builtin_std_memmove
+proc __builtin_std_memscpy   ;; Memory safe copy
 proc __builtin_std_memset
 proc __builtin_std_salloc    ;; Set alloc
 
@@ -663,6 +663,54 @@ __builtin_std_salloc
   call __builtin_quick_restore
   loadq Ma, _Mstd_mem_intermediate
   ret
+;; ARGS: Ma = Source address, Mb = Destination address, Mc = Number of bytes
+;; RETURN: Ma = Mb else NULL for error
+;; NOTE: memscpy is the same as 'memmove' from C-stdlib
+__builtin_std_memscpy
+  call __builtin_quick_save
+
+  push _MSTD_NULL_
+  pop _Mstd_mem_intermediate
+
+  cmp Ma, _MSTD_NULL_
+  je _std_memscpy_done
+   
+  cmp Mb, _MSTD_NULL_
+  je _std_memscpy_done
+
+  push Mb
+  pop _Mstd_mem_intermediate
+
+  cmp Mc, 0
+  je _std_memscpy_done
+
+  cmp Ma, Mb
+  jge _std_memscpy_dest_first
+
+  ;; The destination comes later than the Source
+  ;; we just copy from the last byte
+
+  add Ma, Mc
+  add Mb, Mc
+
+ _std_memscpy_loop
+  loadb M1, Ma
+  storeb M1, Mb
+  dec Ma
+  dec Mb
+  loop _std_memscpy_loop
+  
+  jmp _std_memscpy_done
+
+ _std_memscpy_dest_first
+  ;; in case the destination address is first, we will just copy normally
+  call __builtin_std_memcpy
+
+ _std_memscpy_done
+  call __builtin_quick_restore
+  loadq Ma, _Mstd_mem_intermediate
+  ret
+
 ;; The Data
 rq _Mstd_allocable_mem_len 1   ;; The memory that we can allocate with
 rq _Mstd_allocated_mem 1       ;; The memory that we have already allocated  

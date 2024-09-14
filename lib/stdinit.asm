@@ -1,4 +1,4 @@
-depends _builtininit_.masm
+depends _builtininit_.asm
 
 proc std::init
 proc std::cmd_options

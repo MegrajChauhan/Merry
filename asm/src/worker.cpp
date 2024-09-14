@@ -6,11 +6,6 @@ void masm::Parser::setup_parser(std::string filename)
     filename = std::filesystem::current_path() / filename;
     if (used_files.find(filename) != used_files.end())
         return;
-    if (!filename.ends_with(".masm"))
-    {
-        note("The given input file is not a valid input file.");
-        exit(1);
-    }
     if (!std::filesystem::exists(filename))
     {
         note("The given input file " + filename + " doesn't exist.");

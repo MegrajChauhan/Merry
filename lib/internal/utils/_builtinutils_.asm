@@ -28,4 +28,4 @@ __builtin_align_value
 __builtin_exit
     intr _M_EXIT_
 
-depends _builtinintr_.masm
+depends _builtinintr_.asm

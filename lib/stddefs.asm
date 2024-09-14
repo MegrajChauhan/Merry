@@ -1,4 +1,4 @@
-depends _builtindefs_.masm
+depends _builtindefs_.asm
 
 defined _M_LINUX_
 ;; constants related to linux

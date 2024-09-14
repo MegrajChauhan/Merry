@@ -1,4 +1,4 @@
-depends _builtinalloc_.masm
+depends _builtinalloc_.asm
 
 proc std::mem::init_allocator
 proc std::mem::alloc
@@ -10,6 +10,7 @@ proc std::mem::realloc
 proc std::mem::memset
 proc std::mem::memcpy
 proc std::mem::salloc
+proc std::mem::memscpy
 
 std::mem::init_allocator
     call __builtin_std_mem_init
@@ -77,4 +78,11 @@ std::mem::memcpy
 ;; NOTE: salloc is the same as 'calloc' from C stdlib. All the bytes are initialized to 0
 std::mem::salloc
     call __builtin_std_salloc
+    ret
+
+;; ARGS: Ma = Source address, Mb = Destination address, Mc = Number of bytes
+;; RETURN: Ma = Mb else NULL for error
+;; NOTE: memscpy is the same as 'memmove' from C-stdlib
+std::mem::memscpy
+    call __builtin_std_memscpy
     ret

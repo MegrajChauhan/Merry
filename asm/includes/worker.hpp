@@ -120,16 +120,16 @@ namespace masm
 
     static std::unordered_map<std::string, std::string> _std_paths = {
 #ifdef _USE_LINUX_
-        {"stdinit.masm", "lib/stdinit.masm"},
-        {"stdutils.masm", "lib/stdutils.masm"},
-        {"stdmem.masm", "lib/stdmem.masm"},
-        {"stddefs.masm", "lib/stddefs.masm"},
-        {"_builtinalloc_.masm", "lib/internal/mem/_builtinalloc_.masm"},
-        {"_builtininit_.masm", "lib/internal/init/_builtininit_.masm"},
-        {"_builtinsyscall_.masm", "lib/internal/arch/linux/_builtininit_.masm"},
-        {"_builtindefs_.masm", "lib/internal/utils/_builtindefs_.masm"},
-        {"_builtinintr_.masm", "lib/internal/utils/_builtinintr_.masm"},
-        {"_builtinutils_.masm", "lib/internal/utils/_builtinutils_.masm"},
+        {"stdinit.asm", "lib/stdinit.asm"},
+        {"stdutils.asm", "lib/stdutils.asm"},
+        {"stdmem.asm", "lib/stdmem.asm"},
+        {"stddefs.asm", "lib/stddefs.asm"},
+        {"_builtinalloc_.asm", "lib/internal/mem/_builtinalloc_.asm"},
+        {"_builtininit_.asm", "lib/internal/init/_builtininit_.asm"},
+        {"_builtinsyscall_.asm", "lib/internal/arch/linux/_builtininit_.asm"},
+        {"_builtindefs_.asm", "lib/internal/utils/_builtindefs_.asm"},
+        {"_builtinintr_.asm", "lib/internal/utils/_builtinintr_.asm"},
+        {"_builtinutils_.asm", "lib/internal/utils/_builtinutils_.asm"},
 #endif
     };
 };

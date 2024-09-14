@@ -1,4 +1,4 @@
-depends _builtinutils_.masm
+depends _builtinutils_.asm
 
 proc std::util::exit
 
