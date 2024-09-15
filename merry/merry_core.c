@@ -97,6 +97,8 @@ _THRET_T_ merry_runCore(mptr_t core)
     MerryCore *c = (MerryCore *)core;
     register mqptr_t current = &c->current_inst;
     register mqword_t curr = 0;
+    F32 f32;
+    F64 f64;
     while (mtrue)
     {
         // this will be false most of the times so makes sense
@@ -719,16 +721,20 @@ _THRET_T_ merry_runCore(mptr_t core)
             fprintf(stdout, "%llu", c->registers[*current & 15]);
             break;
         case OP_INF:
-            fscanf(stdin, "%lf", &c->registers[*current & 15]);
+            fscanf(stdin, "%lf", &f64._double);
+            c->registers[*current & 15] = f64._integer;
             break;
         case OP_OUTF:
-            fprintf(stdout, "%lf", c->registers[*current & 15]);
+            f64._integer = c->registers[*current & 15];
+            fprintf(stdout, "%lf", f64._double);
             break;
         case OP_INF32:
-            fscanf(stdin, "%f", &c->registers[*current & 15]);
+            fscanf(stdin, "%f", &f32._float);
+            c->registers[*current & 15] = f32._integer;
             break;
         case OP_OUTF32:
-            fprintf(stdout, "%f", c->registers[*current & 15]);
+            f32._integer = c->registers[*current & 15];
+            fprintf(stdout, "%f", f32._float);
             break;
         case OP_OUTR:
             for (msize_t i = 0; i < REGR_COUNT; i++)

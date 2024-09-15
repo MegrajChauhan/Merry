@@ -2255,6 +2255,7 @@ void masm::Parser::analyse_nodes()
             }
             n.kind = MOVL_IMM;
             _n->second_oper = r->second.value;
+            _n->is_float = r->second.type == FLOAT;
             break;
         }
         case SVA_VAR:

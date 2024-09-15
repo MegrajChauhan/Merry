@@ -41,6 +41,8 @@
 
 typedef struct MerryCore MerryCore;
 typedef struct MerryFlagRegister MerryFlagRegister;
+typedef union F32 F32;
+typedef union F64 F64;
 
 #define flags_res(x, size) unsigned long x : size
 
@@ -50,8 +52,20 @@ typedef struct MerryFlagRegister MerryFlagRegister;
 #define _stack_has_atleast_(core, atleast) (core->sp >= (atleast - 1))
 
 #define _MERRY_RAS_LEN_ 80             // 80 function calls should be enough
-#define _MERRY_RAS_LIMIT_ 160           // 160 function calls at max
+#define _MERRY_RAS_LIMIT_ 160          // 160 function calls at max
 #define _MERRY_RAS_GROW_PER_RESIZE_ 20 // 20 new possible function calls per resize
+
+union F32
+{
+    mdword_t _integer;
+    float _float;
+};
+
+union F64
+{
+    mqword_t _integer;
+    double _double;
+};
 
 struct MerryFlagRegister
 {

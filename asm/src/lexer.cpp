@@ -308,7 +308,7 @@ std::optional<masm::Token> masm::Lexer::group_num()
         consume();
     }
     char _c = peek();
-    if (std::isdigit(_curr) && _curr == '0' && (_c == 'x' || _c == 'b' || _c == 'o'))
+    if (_curr == '0' && (_c == 'x' || _c == 'b' || _c == 'o'))
     {
         // These are not normal numbers
         // We will do something that shouldn't be done in real assemblers intended for commercial purposes

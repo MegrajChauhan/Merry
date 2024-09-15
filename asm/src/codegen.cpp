@@ -13,6 +13,7 @@ bool masm::evaluate_consts(SymbolTable *table, Expr *e)
                 note("While evaluating the constant " + var.name);
                 return false;
             }
+            c.second.type = FLOAT;
         }
     }
     return true;
@@ -258,7 +259,22 @@ void masm::CodeGen::mov_imm(NodeMov *n, bool _is64)
     GenBinary b;
     b.bytes.b1 = (_is64) ? OP_MOVE_IMM_64 : OP_MOVE_IMM;
     std::string imm = std::get<std::string>(n->second_oper);
-    size_t _imm = n->is_float ? (_is64 ? (size_t)std::stod(imm) : (size_t)std::stof(imm)) : std::stoull(imm);
+    size_t _imm = 0;
+    if (n->is_float)
+    {
+        if (_is64)
+        {
+            F64 f;
+            f._double = std::stod(imm);
+            _imm = f._integer;
+        }else{
+            F32 f;
+            f._float = std::stof(imm);
+            _imm = f._integer;
+        }
+    }else{
+        _imm = std::stoull(imm);
+    }
     if (_is64)
     {
         b.bytes.b8 = n->reg;
