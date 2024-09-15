@@ -78,6 +78,8 @@ namespace masm
         void generate_singles(size_t opcode);
 
         void single_regr(size_t op, Register reg);
+
+        void atomic_reg(NodeLoadStore *n, size_t op);
     };
 };
 

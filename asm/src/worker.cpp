@@ -1462,7 +1462,7 @@ bool masm::Parser::handle_load_store(NodeKind k, bool atm)
     {
     case IDENTIFIER:
     {
-        node.kind = atm ? k : (NodeKind)(k + 1);
+        node.kind = (NodeKind)(k + 1);
         n->second_oper = t.val;
         break;
     }
@@ -1470,11 +1470,6 @@ bool masm::Parser::handle_load_store(NodeKind k, bool atm)
         if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
         {
             log(fname, "Expected an identifier or a register here after the MEM instruction.", l.get_line_st(), l.get_col_st());
-            return false;
-        }
-        if (atm)
-        {
-            log(fname, "ATOMIC MEM instructions do not take registers as the second operand.", l.get_line_st(), l.get_col_st());
             return false;
         }
         node.kind = k;
@@ -1498,35 +1493,35 @@ bool masm::Parser::handle_atm()
     switch (t.type)
     {
     case INST_LOADB:
-        if (!handle_load_store(ALOADB_VAR, true))
+        if (!handle_load_store(ALOADB_REG, true))
             return false;
         break;
     case INST_LOADW:
-        if (!handle_load_store(ALOADW_VAR, true))
+        if (!handle_load_store(ALOADW_REG, true))
             return false;
         break;
     case INST_LOADD:
-        if (!handle_load_store(ALOADD_VAR, true))
+        if (!handle_load_store(ALOADD_REG, true))
             return false;
         break;
     case INST_LOADQ:
-        if (!handle_load_store(ALOADQ_VAR, true))
+        if (!handle_load_store(ALOADQ_REG, true))
             return false;
         break;
     case INST_STOREB:
-        if (!handle_load_store(ASTOREB_VAR, true))
+        if (!handle_load_store(ASTOREB_REG, true))
             return false;
         break;
     case INST_STOREW:
-        if (!handle_load_store(ASTOREW_VAR, true))
+        if (!handle_load_store(ASTOREW_REG, true))
             return false;
         break;
     case INST_STORED:
-        if (!handle_load_store(ASTORED_VAR, true))
+        if (!handle_load_store(ASTORED_REG, true))
             return false;
         break;
     case INST_STOREQ:
-        if (!handle_load_store(ASTOREQ_VAR, true))
+        if (!handle_load_store(ASTOREQ_REG, true))
             return false;
         break;
     default:

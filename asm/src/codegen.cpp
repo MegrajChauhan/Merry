@@ -559,6 +559,15 @@ void masm::CodeGen::single_regr(size_t op, Register reg)
     code.push_back(b);
 }
 
+void masm::CodeGen::atomic_reg(NodeLoadStore *n, size_t op)
+{
+    GenBinary b;
+    b.bytes.b1 = op;
+    b.bytes.b2 = n->reg;
+    b.bytes.b8 = std::get<Register>(n->second_oper);
+    code.push_back(b);
+}
+
 void masm::CodeGen::gen()
 {
     for (auto &node : *nodes)
@@ -908,6 +917,30 @@ void masm::CodeGen::gen()
             break;
         case ASTOREQ_VAR:
             load_store_var(GET(NodeLoadStore), OP_ATOMIC_STORE);
+            break;
+        case ALOADB_REG:
+            atomic_reg(GET(NodeLoadStore), OP_ATOMIC_LOADB_REG);
+            break;
+        case ALOADW_REG:
+            atomic_reg(GET(NodeLoadStore), OP_ATOMIC_LOADW_REG);
+            break;
+        case ALOADD_REG:
+            atomic_reg(GET(NodeLoadStore), OP_ATOMIC_LOADD_REG);
+            break;
+        case ALOADQ_REG:
+            atomic_reg(GET(NodeLoadStore), OP_ATOMIC_LOAD_REG);
+            break;
+        case ASTOREB_REG:
+            atomic_reg(GET(NodeLoadStore), OP_ATOMIC_STOREB_REG);
+            break;
+        case ASTOREW_REG:
+            atomic_reg(GET(NodeLoadStore), OP_ATOMIC_STOREW_REG);
+            break;
+        case ASTORED_REG:
+            atomic_reg(GET(NodeLoadStore), OP_ATOMIC_STORED_REG);
+            break;
+        case ASTOREQ_REG:
+            atomic_reg(GET(NodeLoadStore), OP_ATOMIC_STORE_REG);
             break;
         case CMPXCHG:
             cmpxchg(GET(NodeCmpxchg), false);

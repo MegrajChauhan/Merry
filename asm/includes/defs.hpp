@@ -174,34 +174,42 @@ namespace masm
 
         LOADB_REG,
         LOADB_VAR,
+        ALOADB_REG,
         ALOADB_VAR,
 
         LOADW_REG,
         LOADW_VAR,
+        ALOADW_REG,
         ALOADW_VAR,
 
         LOADD_REG,
         LOADD_VAR,
+        ALOADD_REG,
         ALOADD_VAR,
 
         LOADQ_REG,
         LOADQ_VAR,
+        ALOADQ_REG,
         ALOADQ_VAR,
 
         STOREB_REG,
         STOREB_VAR,
+        ASTOREB_REG,
         ASTOREB_VAR,
 
         STOREW_REG,
         STOREW_VAR,
+        ASTOREW_REG,
         ASTOREW_VAR,
 
         STORED_REG,
         STORED_VAR,
+        ASTORED_REG,
         ASTORED_VAR,
 
         STOREQ_REG,
         STOREQ_VAR,
+        ASTOREQ_REG,
         ASTOREQ_VAR,
 
         CMPXCHG,

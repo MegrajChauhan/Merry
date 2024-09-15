@@ -419,27 +419,43 @@ _THRET_T_ merry_runCore(mptr_t core)
         case OP_STORED:
             merry_execute_stored(c, *current & 0xFFFFFFFFFFFF);
             break;
+        case OP_ATOMIC_LOAD_REG:
+            *current |= (c->registers[*current & 15] & 0xFFFFFFFFFFFF);
         case OP_ATOMIC_LOAD:
             merry_execute_atm_load(c, *current & 0xFFFFFFFFFFFF);
             break;
+        case OP_ATOMIC_STORE_REG:
+            *current |= (c->registers[*current & 15] & 0xFFFFFFFFFFFF);
         case OP_ATOMIC_STORE:
             merry_execute_atm_store(c, *current & 0xFFFFFFFFFFFF);
             break;
+        case OP_ATOMIC_LOADB_REG:
+            *current |= (c->registers[*current & 15] & 0xFFFFFFFFFFFF);
         case OP_ATOMIC_LOADB:
             merry_execute_atm_loadb(c, *current & 0xFFFFFFFFFFFF);
             break;
+        case OP_ATOMIC_STOREB_REG:
+            *current |= (c->registers[*current & 15] & 0xFFFFFFFFFFFF);
         case OP_ATOMIC_STOREB:
             merry_execute_atm_storeb(c, *current & 0xFFFFFFFFFFFF);
             break;
+        case OP_ATOMIC_LOADW_REG:
+            *current |= (c->registers[*current & 15] & 0xFFFFFFFFFFFF);
         case OP_ATOMIC_LOADW:
             merry_execute_atm_loadw(c, *current & 0xFFFFFFFFFFFF);
             break;
+        case OP_ATOMIC_STOREW_REG:
+            *current |= (c->registers[*current & 15] & 0xFFFFFFFFFFFF);
         case OP_ATOMIC_STOREW:
             merry_execute_atm_storew(c, *current & 0xFFFFFFFFFFFF);
             break;
+        case OP_ATOMIC_LOADD_REG:
+            *current |= (c->registers[*current & 15] & 0xFFFFFFFFFFFF);
         case OP_ATOMIC_LOADD:
             merry_execute_atm_loadd(c, *current & 0xFFFFFFFFFFFF);
             break;
+        case OP_ATOMIC_STORED_REG:
+            *current |= (c->registers[*current & 15] & 0xFFFFFFFFFFFF);
         case OP_ATOMIC_STORED:
             merry_execute_atm_stored(c, *current & 0xFFFFFFFFFFFF);
             break;
@@ -586,14 +602,15 @@ _THRET_T_ merry_runCore(mptr_t core)
             // this instruction will take a 6-byte address and 2 registers
             // this works for 1 byte only
             {
-                mqptr_t _addr_ = merry_dmemory_get_qword_address(c->data_mem, *current & 0xFFFFFFFFFFFF);
+                mbptr_t _addr_ = merry_dmemory_get_byte_address(c->data_mem, *current & 0xFFFFFFFFFFFF);
+                mbyte_t val = (c->registers[(*current >> 52) & 15]) & 0xFF;
                 if (_addr_ == RET_NULL)
                 {
                     merry_requestHdlr_panic(c->data_mem->error, c->core_id);
                     c->stop_running = mtrue;
                     break;
                 }
-                atomic_compare_exchange_strong(_addr_, &c->registers[(*current >> 52) & 15], c->registers[(*current >> 48) & 15]);
+                atomic_compare_exchange_strong(_addr_, &val, c->registers[(*current >> 48) & 15] & 0xFF);
             }
             _update_flags_(&c->flag);
             break;

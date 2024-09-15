@@ -270,6 +270,15 @@ enum
   OP_ATOMIC_STOREW, // store 2 bytes atomically
   OP_ATOMIC_STORED, // store 4 bytes atomically
 
+  OP_ATOMIC_LOAD_REG,   // load 8 bytes atomically
+  OP_ATOMIC_LOADB_REG,  // load byte atomically
+  OP_ATOMIC_LOADW_REG,  // load 2 bytes atomically
+  OP_ATOMIC_LOADD_REG,  // load 4 bytes atomically
+  OP_ATOMIC_STORE_REG,  // store 8 bytes atomically
+  OP_ATOMIC_STOREB_REG, // store byte atomically
+  OP_ATOMIC_STOREW_REG, // store 2 bytes atomically
+  OP_ATOMIC_STORED_REG, // store 4 bytes atomically
+
   OP_ADD_MEMB,
   OP_ADD_MEMW,
   OP_ADD_MEMD,

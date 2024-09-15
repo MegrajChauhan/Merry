@@ -20,21 +20,21 @@ std::sync::mutex_init
 ;; ARGS: Ma = PTR to an initialized lock
 ;; RETURNS: Nothing
 ;; NOTE: Doesn't save states
-proc std::sync::mutex_lock
+std::sync::mutex_lock
     call __builtin_std_raw_acquire
     ret
 
 ;; ARGS: Ma = PTR to an initialized lock
 ;; RETURNS: Nothing
 ;; NOTE: Doesn't save states
-proc std::sync::mutex_unlock
+std::sync::mutex_unlock
     call __builtin_std_raw_release
     ret
 
 ;; ARGS: Ma = PTR to a variable of type WORD i.e 2 bytes long
 ;; RETURNS: Nothing but initializes a new condition variable 
 ;; NOTE: Doesn't save states
-proc std::sync::condition_init
+std::sync::condition_init
     xor Mb, Mb
     storew Mb, Ma
     ret
@@ -42,20 +42,20 @@ proc std::sync::condition_init
 ;; ARGS: Ma = PTR to an initialized condition variable, Mb = PTR to an initialized mutex lock
 ;; RETURNS: Nothing
 ;; NOTE: Doesn't save states
-proc std::sync::condition_wait
+std::sync::condition_wait
     call __builtin_std_raw_condition_variable_wait
     ret
 
 ;; ARGS: Ma = PTR to an initialized condition variable
 ;; RETURNS: Nothing
 ;; NOTE: Doesn't save states
-proc std::sync::condition_signal
+std::sync::condition_signal
     call __builtin_std_raw_condition_variable_signal
     ret
 
 ;; ARGS: Ma = PTR to an initialized condition variable
 ;; RETURNS: Nothing
 ;; NOTE: Doesn't save states
-proc std::sync::condition_broadcast
+std::sync::condition_broadcast
     call __builtin_std_raw_condition_variable_broadcast
     ret

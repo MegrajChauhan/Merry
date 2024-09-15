@@ -36,7 +36,7 @@ __builtin_std_raw_condition_variable_wait
     call __builtin_std_raw_acquire    ;; acquire the condition lock
 
     atm loadb M1, Mb                  ;; get the condition variable's state again
-    cmp M1. _MSTD_COND_VAR_NONE_
+    cmp M1, _MSTD_COND_VAR_NONE_
     
     je _std_raw_condition_variable_already_signaled ;; a bummer!
 
