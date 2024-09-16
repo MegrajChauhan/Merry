@@ -877,6 +877,38 @@ _THRET_T_ merry_runCore(mptr_t core)
         case OP_POP_MEMQ:
             merry_execute_pop_mem(c, &merry_dmemory_write_qword);
             break;
+        case OP_GET_ADDR_REG:
+            *current |= (c->registers[*current & 15] & 0xFFFFFFFFFFFF);
+        case OP_GET_ADDR:
+        {
+            // get the physical address of some byte(You cannot do anything with this other than for syscalls)
+            // The threat remains from passing it to dynamically loaded libraries though
+            register mptr_t addr = merry_dmemory_get_byte_address(c->data_mem, *current & 0xFFFFFFFFFFFF);
+            if (addr == NULL)
+            {
+                merry_requestHdlr_panic(c->data_mem->error, c->core_id);
+                c->stop_running = mtrue;
+                break;
+            }
+            c->registers[(*current >> 48) & 15] = (msize_t)addr; // storing the address
+            break;
+        }
+        case OP_FCMP32:
+        {
+            register F32 f1, f2;
+            f1._integer = c->registers[(*current >> 4) & 15];
+            f2._integer = c->registers[(*current) & 15];
+            merry_cmp_floats32(c, f1._float, f2._float);
+            break;
+        }
+        case OP_FCMP:
+        {
+            register F64 f1, f2;
+            f1._integer = c->registers[(*current >> 4) & 15];
+            f2._integer = c->registers[(*current) & 15];
+            merry_cmp_floats64(c, f1._double, f2._double);
+            break;
+        }
         }
     }
 #if defined(_MERRY_HOST_OS_LINUX_)

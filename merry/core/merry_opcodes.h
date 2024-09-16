@@ -346,6 +346,11 @@ enum
 
   OP_LSHIFT_REGR,
   OP_RSHIFT_REGR,
+
+  OP_GET_ADDR,
+  OP_GET_ADDR_REG,
+  OP_FCMP,
+  OP_FCMP32,
 };
 
 /*

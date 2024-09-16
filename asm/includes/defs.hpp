@@ -24,7 +24,7 @@ namespace masm
         LABEL,
         NOP,
         HLT,
-        
+
         ADD_IMM,
         ADD_REG,
         ADD_MEM,
@@ -287,7 +287,10 @@ namespace masm
         SETE,
         CALLE,
         SYSCALL,
-
+        GVA, // Get Virtual Address(The virtual address of a byte)
+        GVA_VAR,
+        CMPF,
+        CMPLF,
     };
 
     enum Register
@@ -394,6 +397,8 @@ namespace masm
         INST_LSHIFT,
         INST_RSHIFT,
         INST_CMP,
+        INST_CMPF,
+        INST_CMPLF,
         INST_LEA,
         INST_LOADB,
         INST_STOREB,
@@ -464,6 +469,7 @@ namespace masm
         INST_SETE,
         INST_SYSCALL,
         INST_CALLE,
+        INST_GVA,
         KEY_ATM,
         KEY_DEPENDS,
         KEY_DEFINED,

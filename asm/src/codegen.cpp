@@ -1167,6 +1167,18 @@ void masm::CodeGen::gen()
         case SYSCALL:
             generate_singles(OP_SYSCALL);
             break;
+        case CMPF:
+            mov_reg(GET(NodeMov), OP_FCMP32);
+            break;
+        case CMPLF:
+            mov_reg(GET(NodeMov), OP_FCMP);
+            break;
+        case GVA:
+            atomic_reg(GET(NodeLoadStore), OP_GET_ADDR_REG);
+            break;
+        case GVA_VAR:
+            load_store_var(GET(NodeLoadStore), OP_GET_ADDR);
+            break;
         }
     }
 }

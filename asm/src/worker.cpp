@@ -590,6 +590,18 @@ void masm::Parser::parse()
             if (!handle_intr())
                 exit(1);
             break;
+        case INST_CMPF:
+            if (!handle_movX(CMPF))
+                exit(1);
+            break;
+        case INST_CMPLF:
+            if (!handle_movX(CMPLF))
+                exit(1);
+            break;
+        case INST_GVA:
+            if (!handle_load_store(GVA))
+                exit(1);
+            break;
         case KEY_DEPENDS:
             handle_depends();
             break;
@@ -1080,13 +1092,13 @@ bool masm::Parser::handle_movX(NodeKind k)
     auto res = l.next_token();
     if (!res.has_value())
     {
-        log(fname, "Expected a register here after the mov instruction.", l.get_line_st(), l.get_col_st());
+        log(fname, "Expected a register here after the movement instruction.", l.get_line_st(), l.get_col_st());
         return false;
     }
     t = res.value();
     if (!(t.type >= KEY_Ma && t.type <= KEY_Mm5))
     {
-        log(fname, "Expected a register here after the mov instruction.", l.get_line_st(), l.get_col_st());
+        log(fname, "Expected a register here after the movement instruction.", l.get_line_st(), l.get_col_st());
         return false;
     }
     // now for the second register operand
@@ -2008,6 +2020,7 @@ void masm::Parser::analyse_nodes()
             }
             break;
         }
+        case GVA_VAR:
         case LOADB_VAR:
         case LOADW_VAR:
         case LOADD_VAR:
