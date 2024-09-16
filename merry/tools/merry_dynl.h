@@ -26,7 +26,11 @@
 
 #include <merry_types.h>
 #include <merry_utils.h>
+#ifdef _USE_LINUX_
 #include <dlfcn.h>
+#elif defined(_USE_WIN_)
+#include <windows.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 

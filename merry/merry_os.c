@@ -5,6 +5,8 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _
     // initialize the os
     os.listener_stopped = os.sender_stopped = mtrue;
     os._os_id = 0;
+    if (merry_loader_init(_MERRY_INITIAL_DYNLOAD_COUNT_) == mfalse)
+        return RET_FAILURE;
     os.reader = merry_init_reader(_inp_file);
     if (os.reader == RET_NULL)
         return RET_FAILURE;
@@ -91,6 +93,8 @@ mret_t merry_os_init_reader_provided(MerryReader *r, msize_t iport, msize_t opor
     // we need to put the options into the memory
     os._os_id = os._os_id + 1;
     os.reader = r;
+    if (merry_loader_init(_MERRY_INITIAL_DYNLOAD_COUNT_) == mfalse)
+        return RET_FAILURE;
     msize_t _t = os.reader->data_len;
     // initialize all the cores
     os.cores = (MerryCore **)malloc(sizeof(MerryCore *) * os.reader->eat.eat_entry_count);
@@ -197,6 +201,7 @@ void merry_os_destroy()
     merry_thread_destroy(os.listener_th);
     merry_thread_destroy(os.sender_th);
     merry_destroy_reader(os.reader);
+    merry_loader_close();
     merry_requestHdlr_destroy();
 }
 
@@ -401,6 +406,15 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
                         else
                             os.listener_running = mtrue;
                         break;
+                    case _REQ_LOAD_LIB:
+                        merry_os_execute_request_dynl(&os, &current_req);
+                        break;
+                    case _REQ_UNLOAD_LIB:
+                        merry_os_execute_request_dynul(&os, &current_req);
+                        break;
+                    case _REQ_GET_FUNC:
+                        merry_os_execute_request_dyncall(&os, &current_req);
+                        break;
                     default:
                         fprintf(stderr, "Error: Unknown request code: '%llu' is not a valid request code.\n", current_req.request_number);
                         break;
@@ -463,6 +477,12 @@ void merry_os_handle_error(merrot_t error, msize_t id)
         break;
     case MERRY_INVALID_VARIABLE_ACCESS:
         merry_general_error("Invalid BP offsetting", "The requested offset goes beyond the bounds of the stack");
+        break;
+    case MERRY_DYNL_FAILED:
+        merry_general_error("Dynamic Loading Failed", "The requested library couldn't be loaded");
+        break;
+    case MERRY_DYNCALL_FAILED:
+        merry_general_error("Dynamic Call Failed", "The dynamic function call failed; Maybe the name was incorrect?");
         break;
     case MERRY_INTERNAL_ERROR:
         merry_general_error("Internal Machine Error", "This isn't your fault most probably, try running the program again.");
@@ -640,6 +660,49 @@ _os_exec_(intr)
 _os_exec_(bp)
 {
     merry_os_notify_dbg(_HIT_BP_, request->id, 0);
+}
+
+_os_exec_(dynl)
+{
+    // the address to the name of the library must be in the Ma register
+    // if the name is not and it is invalidly placed, the host will throw a segfault
+    mbptr_t name = merry_dmemory_get_byte_address(os->data_mem, os->cores[request->id]->registers[Ma]);
+    if (name == RET_NULL)
+    {
+        merry_requestHdlr_panic(os->data_mem->error, request->id);
+        return RET_FAILURE;
+    }
+    if (merry_loader_loadLib(name, &os->cores[request->id]->registers[Mb]) == mfalse)
+    {
+        merry_requestHdlr_panic(MERRY_DYNL_FAILED, request->id);
+        return RET_FAILURE;
+    }
+    return RET_SUCCESS;
+}
+
+_MERRY_ALWAYS_INLINE_ _os_exec_(dynul)
+{
+    merry_loader_unloadLib(os->cores[request->id]->registers[Mb]);
+    return RET_SUCCESS;
+}
+
+_os_exec_(dyncall)
+{
+    dynfunc_t function;
+    mqptr_t param = merry_dmemory_get_qword_address(os->data_mem, os->cores[request->id]->registers[Mc]);
+    mbptr_t func_name = merry_dmemory_get_byte_address(os->data_mem, os->cores[request->id]->registers[Ma]);
+    if (param == NULL || func_name == NULL)
+    {
+        merry_requestHdlr_panic(MERRY_DYNCALL_FAILED, request->id);
+        return RET_FAILURE;
+    }
+    if ((function = merry_loader_getFuncSymbol(os->cores[request->id]->registers[Mb], func_name)) == RET_NULL)
+    {
+        merry_requestHdlr_panic(MERRY_DYNCALL_FAILED, request->id);
+        return RET_FAILURE;
+    }
+    os->cores[request->id]->registers[Ma] = function(param);
+    return RET_SUCCESS;
 }
 
 void merry_os_notify_dbg(mqword_t sig, mbyte_t arg, mbyte_t arg2)

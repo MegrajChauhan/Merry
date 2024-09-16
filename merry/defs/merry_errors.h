@@ -41,6 +41,8 @@ enum
     MERRY_CALL_DEPTH_REACHED,      // reached the limit of function calls
     MERRY_INVALID_RETURN,          // invalid return instruction
     MERRY_INVALID_VARIABLE_ACCESS, // accessing variable in the wrong way on the stack
+    MERRY_DYNL_FAILED,             // dynamic loading failed
+    MERRY_DYNCALL_FAILED,          // couldn't call any function
     MERRY_INTERNAL_ERROR,          // this error occured such that the requester is unable to deduce the cause
 };
 

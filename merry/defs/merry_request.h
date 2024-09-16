@@ -42,8 +42,8 @@ struct MerryOSRequest
 {
 
     msize_t request_number; // this is like the interrupt number
-    MerryCond *_wait_lock; // the requesting core's condition variable
-    msize_t id;            // the core's id
+    MerryCond *_wait_lock;  // the requesting core's condition variable
+    msize_t id;             // the core's id
 
     // for debuggers
     mbyte_t opcode;
@@ -65,6 +65,9 @@ enum
     _REQ_INTR,          // a request of the debuggers
     _REQ_BP,            // a request for the debugger
     _REQ_GDB_INIT,      // the debugger is initialized
+    _REQ_LOAD_LIB,      // load a new library
+    _REQ_UNLOAD_LIB,    // unload a new library
+    _REQ_GET_FUNC,      // get a function from a loaded library
 };
 
 #endif

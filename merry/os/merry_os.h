@@ -42,6 +42,7 @@
 #include <stdatomic.h>
 #include <stdlib.h>
 #include "merry_temp.h"
+#include "merry_dynl.h"
 
 typedef struct Merry Merry;
 
@@ -87,6 +88,7 @@ struct Merry
 
 #define _MERRY_EXIT_FAILURE_ 1
 #define _MERRY_EXIT_SUCCESS_ 0
+#define _MERRY_INITIAL_DYNLOAD_COUNT_ 10 // 10 libraries should be enough
 
 /*
  The Manager assigns core ids to every core it manages which then helps in identifying the cores.
@@ -152,9 +154,10 @@ _os_exec_(newprocess);
 _os_exec_(intr);
 _os_exec_(bp);
 
-// _os_exec_(dynl);
-// _os_exec_(dynul);
-// _os_exec_(dyncall);
+_os_exec_(dynl);
+_os_exec_(dynul);
+_os_exec_(dyncall);
+
 // _os_exec_(fopen);
 // _os_exec_(fclose);
 // _os_exec_(fread);
