@@ -24,6 +24,8 @@
 #ifndef _MERRY_ERRNO_
 #define _MERRY_ERRNO_
 
+/*This module isn't being used at all actually.*/
+
 #include <errno.h>
 #include <merry_types.h>
 #include <merry_utils.h>
@@ -64,16 +66,19 @@ Since each platform has different number of errno values, we have to be really c
 #define MERRY_ENOTEMPTY 29     // Directory not empty
 #define MERRY_EPERM 30         // Operation not permitted
 #define MERRY_ESHUTDOWN 31     // Cannot send after transport endpoint shutdown
+#define MERRY_NODBG 32         // Debugging was enabled for the child but the debugger wasn't connected at all
 
 // Our errno value
 _MERRY_INTERNAL_ msize_t merrno = (msize_t)-1;
 
-void merry_update_errno();
+void merry_update_errno(void);
 
 // This will reset errno
-msize_t merry_get_errno();
+msize_t merry_get_errno(void);
 
 // This will also reset errno
-void merry_interpret_errno();
+void merry_interpret_errno(void);
+
+void merry_set_errno(msize_t _err);
 
 #endif

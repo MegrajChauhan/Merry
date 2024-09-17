@@ -243,9 +243,15 @@ mret_t merry_os_boot_core(msize_t core_id, maddress_t start_addr)
     os.cores[core_id]->pc = start_addr; // point to the starting address of the core
     // now start the core thread
     if ((os.core_threads[core_id] = merry_thread_init()) == RET_NULL)
+    {
+        merry_update_errno();
         return RET_FAILURE;
+    }
     if (merry_create_detached_thread(os.core_threads[core_id], &merry_runCore, os.cores[core_id]) == RET_FAILURE)
+    {
+        merry_update_errno();
         return RET_FAILURE;
+    }
     os.active_core_count++;
     merry_os_notify_dbg(_NEW_CORE_, core_id, 0);
     return RET_SUCCESS;
@@ -259,14 +265,14 @@ mret_t merry_os_add_core()
     if (new_core == RET_NULL)
     {
         merry_mutex_unlock(os._lock);
-        return RET_FAILURE;
+        goto _err;
     }
     MerryThread *th = merry_thread_init();
     if (th == RET_NULL)
     {
         merry_core_destroy(new_core, mtrue);
         merry_mutex_unlock(os._lock);
-        return RET_FAILURE;
+        goto _err;
     }
     MerryThread **temp = (MerryThread **)malloc(sizeof(MerryThread *) * (os.core_count));
     if (temp == NULL)
@@ -274,7 +280,7 @@ mret_t merry_os_add_core()
         merry_core_destroy(new_core, mtrue);
         merry_thread_destroy(th);
         merry_mutex_unlock(os._lock);
-        return RET_FAILURE; // we failed
+        goto _err;
     }
     MerryCore **tempc = (MerryCore **)malloc(sizeof(MerryCore *) * (os.core_count));
     if (tempc == NULL)
@@ -284,7 +290,7 @@ mret_t merry_os_add_core()
         merry_thread_destroy(th);
         merry_mutex_unlock(os._lock);
         free(temp);
-        return RET_FAILURE;
+        goto _err;
     }
     // we have succeeded in add cores
     for (msize_t i = 0; i < os.core_count; i++)
@@ -302,6 +308,9 @@ mret_t merry_os_add_core()
     os.core_count++;
     merry_mutex_unlock(os._lock);
     return RET_SUCCESS;
+_err:
+    merry_update_errno();
+    return RET_FAILURE;
 }
 
 _MERRY_INTERNAL_ void merry_os_prepare_for_exit()
@@ -541,6 +550,7 @@ _os_exec_(new_core)
     {
         os->cores[request->id]->registers[Ma] = merry_os_boot_core(os->core_count - 1, os->cores[request->id]->registers[Ma]);
     }
+    os->cores[request->id]->registers[Mb] = merry_get_errno();
     return RET_SUCCESS; // for now
 }
 
@@ -552,6 +562,7 @@ _os_exec_(mem)
     if (merry_dmemory_add_new_page(os->data_mem) == RET_FAILURE)
     {
         os->cores[request->id]->registers[Ma] = 1;
+        os->cores[request->id]->registers[Mb] = merry_get_errno();
         return RET_FAILURE;
     }
     os->cores[request->id]->registers[Mb] = (os->data_mem->number_of_pages - 1) * _MERRY_MEMORY_ADDRESSES_PER_PAGE_ + 1;
@@ -573,14 +584,13 @@ _os_exec_(newprocess)
         return RET_FAILURE;
     }
     os->reader->eat.EAT[0] = os->cores[request->id]->pc; // we don't mind this to change here
-    fflush(stdout);
-    fflush(stderr);
 #ifdef _USE_LINUX_
     MerryProcess p;
     if (merry_create_process(&p) == mfalse)
     {
         merry_requestHdlr_release();
         os->cores[request->id]->registers[Ma] = 1;
+        os->cores[request->id]->registers[Mb] = merry_get_errno();
         return RET_FAILURE;
     }
     if (p.pid == 0)
@@ -598,6 +608,7 @@ _os_exec_(newprocess)
     {
         merry_requestHdlr_release();
         os->cores[request->id]->registers[Ma] = 1;
+        os->cores[request->id]->registers[Mb] = merry_get_errno();
         return RET_FAILURE;
     }
 #endif
@@ -735,6 +746,7 @@ void merry_os_get_io_port_direct(msize_t *ip, msize_t *op)
     if (os.listener_running != mtrue || os.sender_running != mtrue || os.reader->dfe_flag == mfalse)
     {
         *ip = *op = 0;
+        merry_set_errno(MERRY_NODBG);
         return;
     }
     mbyte_t _to_send[_MERRY_PER_EXCG_BUF_LEN_];

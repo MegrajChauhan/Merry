@@ -85,13 +85,13 @@ mret_t merry_dmemory_add_new_page(MerryDMemory *memory)
 {
     MerryDMemPage *new_pg = merry_mem_allocate_new_mempage();
     if (new_pg == RET_NULL)
-        return RET_FAILURE;
+        goto _err;
     MerryDMemPage **temp = memory->pages;
     if ((memory->pages = (MerryDMemPage **)realloc(memory->pages, sizeof(MerryDMemPage *) * (memory->number_of_pages + 1))) == NULL)
     {
         merry_mem_free_mempage(new_pg);
         memory->pages = temp; // restore on fail
-        return RET_FAILURE;
+        goto _err;
     }
 #ifdef _USE_LINUX_
     madvise(new_pg->address_space, _MERRY_MEMORY_ADDRESSES_PER_PAGE_, MADV_RANDOM);
@@ -100,6 +100,9 @@ mret_t merry_dmemory_add_new_page(MerryDMemory *memory)
     memory->pages[memory->number_of_pages] = new_pg;
     memory->number_of_pages++;
     return RET_SUCCESS;
+_err:
+   merry_update_errno();
+   return RET_FAILURE;
 }
 
 MerryDMemory *merry_dmemory_init_provided(mbptr_t *mapped_pages, msize_t num_of_pages)

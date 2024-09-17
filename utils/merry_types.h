@@ -74,4 +74,6 @@ typedef msize_t merrot_t;
 #define _THRET_T_ unsigned __stdcall
 #endif
 
+#include "merry_errno.h"
+
 #endif

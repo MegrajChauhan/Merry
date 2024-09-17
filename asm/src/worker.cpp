@@ -1762,17 +1762,15 @@ void masm::Parser::handle_defined()
         if (std::stoull(_r.value()) == 1)
             return;
     }
-    else if (symtable._const_list.find(t.val) == symtable._const_list.end())
+    else
     {
         if (symtable._const_list.find(t.val) == symtable._const_list.end())
         {
-            note("Expected a constant after 'defined' that exists.");
-            exit(1);
+            skip = true;
         }
         // a constant hence it is defined
         return;
     }
-    skip = true;
 }
 
 void masm::Parser::handle_ndefined()
@@ -1804,7 +1802,7 @@ void masm::Parser::handle_ndefined()
         if (std::stoull(_r.value()) == 0)
             return;
     }
-    else if (!(symtable._const_list.find(t.val) == symtable._const_list.end()))
+    else if ((symtable._const_list.find(t.val) == symtable._const_list.end()))
     {
         return;
     }

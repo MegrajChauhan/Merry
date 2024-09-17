@@ -1,6 +1,6 @@
 #include "merry_errno.h"
 
-msize_t merry_get_errno()
+_MERRY_ALWAYS_INLINE_ msize_t merry_get_errno()
 {
     msize_t ret = merrno;
     merrno = 0;
@@ -222,4 +222,9 @@ void merry_interpret_errno()
         break;
     }
     merrno = 0; // Reset merrno after logging the error
+}
+
+void merry_set_errno(msize_t _err)
+{
+    merrno = _err;
 }

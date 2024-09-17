@@ -34,6 +34,7 @@
 #include <merry_opcodes.h>
 #include <merry_stack.h>
 #include <merry_thread.h>
+#include "merry_errno.h"
 
 #if defined(_USE_LINUX_)
 #include <unistd.h>

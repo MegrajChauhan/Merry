@@ -92,6 +92,33 @@ _MERRY_INTERNAL_ mqword_t merry_core_get_immediate(MerryCore *core)
     return res;
 }
 
+
+_MERRY_INTERNAL_ void merry_cmp_floats64(MerryCore *core, double val1, double val2)
+{
+    if (val1 == val2)
+        core->flag.zero = 1; // equal
+    else
+        core->flag.zero = 0;
+    if (val1 > val2)
+        core->greater = 1;
+    else
+        core->greater = 0;
+    // only these two flags are affected
+}
+
+_MERRY_INTERNAL_ void merry_cmp_floats32(MerryCore *core, float val1, float val2)
+{
+    if (val1 == val2)
+        core->flag.zero = 1; // equal
+    else
+        core->flag.zero = 0;
+    if (val1 > val2)
+        core->greater = 1;
+    else
+        core->greater = 0;
+    // only these two flags are affected
+}
+
 _THRET_T_ merry_runCore(mptr_t core)
 {
     MerryCore *c = (MerryCore *)core;
@@ -916,32 +943,6 @@ _THRET_T_ merry_runCore(mptr_t core)
 #elif defined(_MERRY_HOST_OS_WINDOWS_)
     return c->registers[Ma];
 #endif
-}
-
-_MERRY_INTERNAL_ void merry_cmp_floats64(MerryCore *core, double val1, double val2)
-{
-    if (val1 == val2)
-        core->flag.zero = 1; // equal
-    else
-        core->flag.zero = 0;
-    if (val1 > val2)
-        core->greater = 1;
-    else
-        core->greater = 0;
-    // only these two flags are affected
-}
-
-_MERRY_INTERNAL_ void merry_cmp_floats32(MerryCore *core, float val1, float val2)
-{
-    if (val1 == val2)
-        core->flag.zero = 1; // equal
-    else
-        core->flag.zero = 0;
-    if (val1 > val2)
-        core->greater = 1;
-    else
-        core->greater = 0;
-    // only these two flags are affected
 }
 
 _MERRY_ALWAYS_INLINE_ inline _exec_(add_imm)
@@ -2031,9 +2032,24 @@ _exec_(syscall)
       The order of the arguments can be looked up in the ABI for the platform.
       Ma is the syscall number
     */
+   /**
+    * It has come to light that directly using syscall isn't the brightest of the
+    * options. Firstly, the program gets too much power. A program has the potential to
+    * overwrite the VM and take over the current VM process. The program can also create new 
+    * processes which would be a disaster. The second problem lies with the fact that
+    * we have to take care of many things during the actual syscall such that the arguments are
+    * passed correctly. The second problem is handleable in the library but the first problem isn't.
+    * It should be in the interest of people to not do things that would be bad to the program but
+    * some cannot be trusted but there is nothing we can do except for including checks for certain syscalls.
+    * The checks would be comprehensive and long causing the syscalls to take a long time to execute.
+    * Instead of that, for now atleast, the only thing that can be done is hope everyone doesn't try to exploit this.
+    */
 #ifdef _USE_LINUX_
     core->registers[Ma] = syscall(core->registers[Ma], core->registers[M1], core->registers[M2], core->registers[M3], core->registers[M4], core->registers[M5]);
+    merry_update_errno();
+    core->registers[Mb] = merry_get_errno();
 #endif
+    
 }
 
 _lexec_(push_mem, mem_read func)
