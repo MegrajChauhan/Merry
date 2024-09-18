@@ -39,10 +39,10 @@ __builtin_std_syscall_check_status
 defined _M_LINUX_
     cmp Ma, 0xFFFFFFFFFFFFFFFF
 end
-    je _std_syscall_check_status_get_errno
+    je _std_syscall_check_status_set_errno
     ret
 
- _std_syscall_check_status_get_errno
+ _std_syscall_check_status_set_errno
     mov Ma, Mb
     call __builtin_set_errno
     ret

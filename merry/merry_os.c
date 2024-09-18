@@ -686,8 +686,10 @@ _os_exec_(dynl)
     if (merry_loader_loadLib(name, &os->cores[request->id]->registers[Mb]) == mfalse)
     {
         merry_requestHdlr_panic(MERRY_DYNL_FAILED, request->id);
+        free(name);
         return RET_FAILURE;
     }
+    free(name);
     return RET_SUCCESS;
 }
 
@@ -705,14 +707,18 @@ _os_exec_(dyncall)
     if (param == NULL || func_name == NULL)
     {
         merry_requestHdlr_panic(MERRY_DYNCALL_FAILED, request->id);
+        if (!(func_name == NULL))
+            free(func_name);
         return RET_FAILURE;
     }
     if ((function = merry_loader_getFuncSymbol(os->cores[request->id]->registers[Mb], func_name)) == RET_NULL)
     {
         merry_requestHdlr_panic(MERRY_DYNCALL_FAILED, request->id);
+        free(func_name);
         return RET_FAILURE;
     }
     os->cores[request->id]->registers[Ma] = function(param);
+    free(func_name);
     return RET_SUCCESS;
 }
 

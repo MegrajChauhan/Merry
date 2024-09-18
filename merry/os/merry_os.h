@@ -43,6 +43,7 @@
 #include <stdlib.h>
 #include "merry_temp.h"
 #include "merry_dynl.h"
+#include "merry_ihdlr.h"
 
 typedef struct Merry Merry;
 
@@ -74,7 +75,8 @@ struct Merry
 
 #define _MERRY_REQUEST_QUEUE_LEN_ 20 // for now
 
-#define _MERRY_REQUEST_INTERNAL_ERROR_(request_id) (request_id >= 0 && request_id <= 50)
+#define _MERRY_REQUEST_INTERNAL_ERROR_(request_id) (request_id >= 0 && request_id <= 9)
+#define _MERRY_REQUEST_OTHER_(request_id) (request_id >= 10 && request_id <= 50)
 #define _MERRY_REQUEST_PROGRAM_ERROR_(request_id) (request_id >= 51 && request_id <= 150)
 #define _MERRY_REQUEST_VALID_(req_id) (req_id >= 151)
 
