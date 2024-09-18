@@ -136,8 +136,11 @@ std::optional<std::string> masm::Expr::evaluate(bool _only_const)
                 }
                 if (_addr)
                 {
-                    operads.push((double)((*data_addr)[t.val]));
+                    F64 f;
+                    f._integer = (*data_addr)[t.val];
+                    operads.push(f._double);
                     _addr = false;
+                    _was_addr = true;
                     break;
                 }
                 auto v = res->second;
@@ -254,7 +257,14 @@ std::optional<std::string> masm::Expr::evaluate(bool _only_const)
         note("Invalid expression.");
         return {};
     }
-    res = std::to_string(operads.top());
+    if (!_was_addr)
+        res = std::to_string(operads.top());
+    else
+    {
+        F64 f;
+        f._double = operads.top();
+        res = std::to_string(f._integer);
+    }
     operads.pop();
     return std::make_optional<std::string>(res);
 }
@@ -533,4 +543,10 @@ bool masm::Expr::perform()
     }
     opers.pop();
     return true;
+}
+
+bool masm::Expr::was_addr()
+{
+    _was_addr = !_was_addr;
+    return !_was_addr;
 }

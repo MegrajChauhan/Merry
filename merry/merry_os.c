@@ -677,7 +677,7 @@ _os_exec_(dynl)
 {
     // the address to the name of the library must be in the Ma register
     // if the name is not and it is invalidly placed, the host will throw a segfault
-    mbptr_t name = merry_dmemory_get_byte_address(os->data_mem, os->cores[request->id]->registers[Ma]);
+    mstr_t name = merry_dmemory_get_bytes_maybe_over_multiple_pages_upto(os->data_mem, os->cores[request->id]->registers[Ma], 0);
     if (name == RET_NULL)
     {
         merry_requestHdlr_panic(os->data_mem->error, request->id);
@@ -701,7 +701,7 @@ _os_exec_(dyncall)
 {
     dynfunc_t function;
     mqptr_t param = merry_dmemory_get_qword_address(os->data_mem, os->cores[request->id]->registers[Mc]);
-    mbptr_t func_name = merry_dmemory_get_byte_address(os->data_mem, os->cores[request->id]->registers[Ma]);
+    mbptr_t func_name = merry_dmemory_get_bytes_maybe_over_multiple_pages_upto(os->data_mem, os->cores[request->id]->registers[Ma], 0);
     if (param == NULL || func_name == NULL)
     {
         merry_requestHdlr_panic(MERRY_DYNCALL_FAILED, request->id);

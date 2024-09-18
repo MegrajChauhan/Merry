@@ -14,9 +14,9 @@ proc __builtin_std_syscall_check_status
 ;; NOTE: Doesn't save states
 __builtin_std_file_open
 defined _M_LINUX_
-    mov Md, Mc
-    mov Mc, Mb
-    gva Mb, Ma
+    mov M3, Mc
+    mov M2, Mb
+    gva M1, Ma
     movl Ma, _M_SYS_OPEN_
     syscall
 end

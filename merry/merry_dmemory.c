@@ -101,8 +101,8 @@ mret_t merry_dmemory_add_new_page(MerryDMemory *memory)
     memory->number_of_pages++;
     return RET_SUCCESS;
 _err:
-   merry_update_errno();
-   return RET_FAILURE;
+    merry_update_errno();
+    return RET_FAILURE;
 }
 
 MerryDMemory *merry_dmemory_init_provided(mbptr_t *mapped_pages, msize_t num_of_pages)
@@ -641,6 +641,41 @@ mstr_t merry_dmemory_get_bytes_maybe_over_multiple_pages(MerryDMemory *memory, m
         }
     }
     return array;
+}
+
+mstr_t merry_dmemory_get_bytes_maybe_over_multiple_pages_upto(MerryDMemory *memory, maddress_t address, char byte)
+{
+    register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
+    if (surelyF(addr.page >= memory->number_of_pages))
+    {
+        memory->error = MERRY_MEM_INVALID_ACCESS;
+        return RET_NULL;
+    }
+    register size_t len = 0;
+    register msize_t dist_from_end = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - addr.offset;
+    register mbool_t found = mfalse;
+    while (found == mfalse)
+    {
+        if (dist_from_end == 0)
+        {
+            if (surelyF((addr.page++) >= memory->number_of_pages))
+            {
+                memory->error = MERRY_MEM_INVALID_ACCESS;
+                return RET_NULL;
+            }
+            addr.offset = 0;
+            dist_from_end = _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+        }
+        if (memory->pages[addr.page]->address_space[addr.offset] == byte)
+        {
+            found = mtrue;
+            break;
+        }
+        len++;
+        dist_from_end--;
+        addr.offset++;
+    }
+    return merry_dmemory_get_bytes_maybe_over_multiple_pages(memory, address, len);
 }
 
 mret_t merry_dmemory_write_bytes_maybe_over_multiple_pages(MerryDMemory *memory, maddress_t address, msize_t length, mbptr_t array)

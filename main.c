@@ -50,8 +50,9 @@ int merry_main();
 
 int main(int argc, char **argv)
 {
-    // int a = 4;
-    // char *c[] = {"gdh", "-f", "memtest.mbin", "-df"};
+    
+    // int a = 3;
+    // char *c[] = {"gdh", "-f", "filetest.mbin"};
     merry_setup_host(argc, argv);
     if (merry_main_parse_options(argc, argv) == RET_FAILURE)
         merry_cleanup_and_exit(1);

@@ -110,6 +110,7 @@ mqptr_t merry_dmemory_get_qword_address_bounds(MerryDMemory *memory, maddress_t 
  The returned pointer will be freed immediately
 */
 mstr_t merry_dmemory_get_bytes_maybe_over_multiple_pages(MerryDMemory *memory, maddress_t address, msize_t length);
+mstr_t merry_dmemory_get_bytes_maybe_over_multiple_pages_upto(MerryDMemory *memory, maddress_t address, char byte);
 
 mret_t merry_dmemory_write_bytes_maybe_over_multiple_pages(MerryDMemory *memory, maddress_t address, msize_t length, mbptr_t array);
 

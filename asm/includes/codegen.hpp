@@ -19,18 +19,6 @@ namespace masm
 
     bool evaluate_consts(SymbolTable *table, Expr *e);
 
-    union F32
-    {
-        uint32_t _integer;
-        float _float;
-    };
-
-    union F64
-    {
-        uint64_t _integer;
-        double _double;
-    };
-
     class CodeGen
     {
         // We making this public to make things easier

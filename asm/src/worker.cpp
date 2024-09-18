@@ -2104,7 +2104,10 @@ void masm::Parser::analyse_nodes()
             }
             n.kind = MOVL_IMM;
             _n->second_oper = v.value();
-            _n->is_float = true;
+            if (!evaluator.was_addr())
+                _n->is_float = true;
+            else
+                _n->is_float = false;
             break;
         }
         case MOVSXB_EXPR:

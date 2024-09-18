@@ -910,7 +910,7 @@ _THRET_T_ merry_runCore(mptr_t core)
         {
             // get the physical address of some byte(You cannot do anything with this other than for syscalls)
             // The threat remains from passing it to dynamically loaded libraries though
-            register mptr_t addr = merry_dmemory_get_byte_address(c->data_mem, *current & 0xFFFFFFFFFFFF);
+            register mbptr_t addr = merry_dmemory_get_byte_address(c->data_mem, *current & 0xFFFFFFFFFFFF);
             if (addr == NULL)
             {
                 merry_requestHdlr_panic(c->data_mem->error, c->core_id);

@@ -7,6 +7,17 @@
 
 namespace masm
 {
+    union F32
+    {
+        uint32_t _integer;
+        float _float;
+    };
+
+    union F64
+    {
+        uint64_t _integer;
+        double _double;
+    };
     class Expr
     {
         SymbolTable *table;
@@ -14,6 +25,7 @@ namespace masm
         std::stack<double> operads;
         std::stack<TokenType> opers;
         std::unordered_map<std::string, size_t> *data_addr;
+        bool _was_addr = false;
 
     public:
         Expr() = default;
@@ -27,6 +39,8 @@ namespace masm
         std::optional<std::string> evaluate(bool _only_const = false);
 
         bool perform();
+
+        bool was_addr();
     };
 };
 
