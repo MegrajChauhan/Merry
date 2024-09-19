@@ -114,4 +114,9 @@ mstr_t merry_dmemory_get_bytes_maybe_over_multiple_pages_upto(MerryDMemory *memo
 
 mret_t merry_dmemory_write_bytes_maybe_over_multiple_pages(MerryDMemory *memory, maddress_t address, msize_t length, mbptr_t array);
 
+void merry_dmemory_read_from_next_page(MerryDMemory *mem, msize_t _nxt_pg, msize_t arr_len, msize_t arr_offset, mbptr_t arr);
+void merry_dmemory_write_to_next_page(MerryDMemory *mem, msize_t _nxt_pg, mqword_t _to_write, msize_t _from, msize_t _to);
+void merry_dmemory_read_from_next_page_atm(MerryDMemory *mem, msize_t _nxt_pg, msize_t arr_len, msize_t arr_offset, mbptr_t arr);
+void merry_dmemory_write_to_next_page_atm(MerryDMemory *mem, msize_t _nxt_pg, mqword_t _to_write, msize_t _from, msize_t _to);
+
 #endif

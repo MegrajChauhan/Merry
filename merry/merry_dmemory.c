@@ -158,6 +158,52 @@ void merry_dmemory_free(MerryDMemory *memory)
     free(memory);
 }
 
+void merry_dmemory_read_from_next_page(MerryDMemory *mem, msize_t _nxt_pg, msize_t arr_len, msize_t arr_offset, mbptr_t arr)
+{
+    for (msize_t i = arr_offset, j = 0; i < arr_len; i++, j++)
+    {
+        arr[i] = mem->pages[_nxt_pg]->address_space[0 + j];
+    }
+}
+
+void merry_dmemory_write_to_next_page(MerryDMemory *mem, msize_t _nxt_pg, mqword_t _to_write, msize_t _from, msize_t _to)
+{
+#if _MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_
+    for (msize_t i = _from, j = 0; i <= _to; i++, j++)
+    {
+        mem->pages[_nxt_pg]->address_space[0 + j] = (_to_write >> (i * 8)) & 255;
+    }
+#else
+    for (msize_t i = _to, j = 0; i >= _from; i--, j++)
+    {
+        mem->pages[_nxt_pg]->address_space[0 + j] = (_to_write >> (i * 8)) & 255;
+    }
+#endif
+}
+
+void merry_dmemory_read_from_next_page_atm(MerryDMemory *mem, msize_t _nxt_pg, msize_t arr_len, msize_t arr_offset, mbptr_t arr)
+{
+    for (msize_t i = arr_offset, j = 0; i < arr_len; i++, j++)
+    {
+        atomic_store(&arr[i], mem->pages[_nxt_pg]->address_space[0 + j]);
+    }
+}
+
+void merry_dmemory_write_to_next_page_atm(MerryDMemory *mem, msize_t _nxt_pg, mqword_t _to_write, msize_t _from, msize_t _to)
+{
+#if _MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_
+    for (msize_t i = _from, j = 0; i <= _to; i++, j++)
+    {
+        atomic_store(&mem->pages[_nxt_pg]->address_space[0 + j], (_to_write >> (i * 8)) & 255);
+    }
+#else
+    for (msize_t i = _from, j = 0; i >= _to; i--, j++)
+    {
+        atomic_store(&mem->pages[_nxt_pg]->address_space[0 + j], (_to_write >> (i * 8)) & 255);
+    }
+#endif
+}
+
 mret_t merry_dmemory_read_byte(MerryDMemory *memory, maddress_t address, mqptr_t _store_in)
 {
     // get the actual address and the page
@@ -229,13 +275,8 @@ mret_t merry_dmemory_read_word(MerryDMemory *memory, maddress_t address, mqptr_t
     switch (surelyF((addr.offset + 1) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
     {
     case mtrue:
-#if _MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_
         _ret[0] = memory->pages[addr.page]->address_space[addr.offset];
         _ret[1] = memory->pages[addr.page + 1]->address_space[0];
-#else
-        _ret[1] = memory->pages[addr.page]->address_space[addr.offset];
-        _ret[0] = memory->pages[addr.page + 1]->address_space[0];
-#endif
         *_store_in = (mqword_t)(*(mwptr_t)(_ret));
         break;
     default:
@@ -255,23 +296,11 @@ mret_t merry_dmemory_read_word_atm(MerryDMemory *memory, maddress_t address, mqp
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    // The byte that the address points to is the lower byte while the next byte is the
-    if (surelyF((addr.offset + 1) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
-    {
-        // this implies the request is for a page that doesn't exist
-        memory->error = MERRY_MEM_INVALID_ACCESS;
-        return RET_FAILURE;
-    }
     switch (surelyF((addr.offset + 1) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
     {
     case mtrue:
-#if _MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_
         _ret[0] = atomic_load(memory->pages[addr.page]->address_space + addr.offset);
         _ret[1] = atomic_load(memory->pages[addr.page + 1]->address_space);
-#else
-        _ret[1] = atomic_load(memory->pages[addr.page]->address_space + addr.offset);
-        _ret[0] = atomic_load(memory->pages[addr.page + 1]->address_space);
-#endif
         *_store_in = (mqword_t)(*(mwptr_t)(_ret));
         break;
     default:
@@ -300,10 +329,11 @@ mret_t merry_dmemory_write_word(MerryDMemory *memory, maddress_t address, mqword
     {
     case mtrue:
 #if _MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_
-        *(memory->pages[addr.page + 1]->address_space) = (_to_write) & 255;
-        *(memory->pages[addr.page]->address_space + addr.offset) = (_to_write >> 8) & 255;
+        *(memory->pages[addr.page]->address_space + addr.offset) = (_to_write) & 255;
+        *(memory->pages[addr.page + 1]->address_space) = (_to_write >> 8) & 255;
 #else
-
+        *(memory->pages[addr.page]->address_space + addr.offset) = (_to_write >> 8) & 255;
+        *(memory->pages[addr.page + 1]->address_space) = (_to_write) & 255;
 #endif
         break;
     default:
@@ -322,13 +352,20 @@ mret_t merry_dmemory_write_word_atm(MerryDMemory *memory, maddress_t address, mq
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    if (surelyF((addr.offset + 1) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
+    switch (surelyF((addr.offset + 1) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
     {
-        // this implies the request is for a page that doesn't exist
-        memory->error = MERRY_MEM_INVALID_ACCESS;
-        return RET_FAILURE;
+    case mtrue:
+#if _MERRY_ENDIANNESS_ == _MERRY_LITTLE_ENDIAN_
+        atomic_store((memory->pages[addr.page]->address_space + addr.offset), (_to_write) & 255);
+        atomic_store((memory->pages[addr.page + 1]->address_space), (_to_write >> 8) & 255);
+#else
+        atomic_store((memory->pages[addr.page]->address_space + addr.offset), (_to_write >> 8) & 255);
+        atomic_store((memory->pages[addr.page + 1]->address_space), (_to_write) & 255);
+#endif
+        break;
+    default:
+        atomic_store((mwptr_t)(memory->pages[addr.page]->address_space + addr.offset), _to_write & 0xFFFF);
     }
-    atomic_store((mwptr_t)(memory->pages[addr.page]->address_space + addr.offset), _to_write & 0xFFFF);
     return RET_SUCCESS;
 }
 
@@ -336,20 +373,24 @@ mret_t merry_dmemory_read_dword(MerryDMemory *memory, maddress_t address, mqptr_
 {
     // get the actual address and the page
     register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
+    register mbyte_t _ret[4];
+    register msize_t this_page = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - addr.offset;
     if (surelyF(addr.page >= memory->number_of_pages))
     {
         // this implies the request is for a page that doesn't exist
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    // The byte that the address points to is the lower byte while the next byte is the
-    if (surelyF((addr.offset + 3) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
+    switch (surelyF((addr.offset + 3) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
     {
-        // this implies the request is for a page that doesn't exist
-        memory->error = MERRY_MEM_INVALID_ACCESS;
-        return RET_FAILURE;
+    case mtrue:
+        merry_dmemory_read_from_next_page(memory, addr.page, this_page, 0, &_ret[0]);
+        merry_dmemory_read_from_next_page(memory, addr.page + 1, 4 - this_page, this_page, &_ret[this_page]);
+        *_store_in = (mqword_t)(*(mdptr_t)(_ret));
+        break;
+    default:
+        *_store_in = *((mdptr_t)(memory->pages[addr.page]->address_space + addr.offset));
     }
-    *_store_in = *((mdptr_t)(memory->pages[addr.page]->address_space + addr.offset));
     return RET_SUCCESS;
 }
 
@@ -357,20 +398,24 @@ mret_t merry_dmemory_read_dword_atm(MerryDMemory *memory, maddress_t address, mq
 {
     // get the actual address and the page
     register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
+    register mbyte_t _ret[4];
+    register msize_t this_page = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - addr.offset;
     if (surelyF(addr.page >= memory->number_of_pages))
     {
         // this implies the request is for a page that doesn't exist
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    // The byte that the address points to is the lower byte while the next byte is the
-    if (surelyF((addr.offset + 3) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
+    switch (surelyF((addr.offset + 3) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
     {
-        // this implies the request is for a page that doesn't exist
-        memory->error = MERRY_MEM_INVALID_ACCESS;
-        return RET_FAILURE;
+    case mtrue:
+        merry_dmemory_read_from_next_page_atm(memory, addr.page, this_page, 0, &_ret[0]);
+        merry_dmemory_read_from_next_page_atm(memory, addr.page + 1, 4 - this_page, this_page, &_ret[this_page]);
+        *_store_in = (mqword_t)(*(mwptr_t)(_ret));
+        break;
+    default:
+        *_store_in = (mqword_t)atomic_load(&memory->pages[addr.page]->address_space + addr.offset);
     }
-    *_store_in = (mqword_t)atomic_load(&memory->pages[addr.page]->address_space + addr.offset);
     return RET_SUCCESS;
 }
 
@@ -378,19 +423,22 @@ mret_t merry_dmemory_write_dword(MerryDMemory *memory, maddress_t address, mqwor
 {
     // pretty much the same as read
     register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
+    register msize_t this_page = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - addr.offset - 1;
     if (surelyF(addr.page >= memory->number_of_pages))
     {
         // this implies the request is for a page that doesn't exist
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    if (surelyF((addr.offset + 3) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
+    switch (surelyF((addr.offset + 3) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
     {
-        // this implies the request is for a page that doesn't exist
-        memory->error = MERRY_MEM_INVALID_ACCESS;
-        return RET_FAILURE;
+    case mtrue:
+        merry_dmemory_write_to_next_page(memory, addr.page, _to_write, 0, this_page);
+        merry_dmemory_write_to_next_page(memory, addr.page, _to_write, this_page + 1, 3);
+        break;
+    default:
+        *((mdptr_t)(memory->pages[addr.page]->address_space + addr.offset)) = _to_write & 0xFFFFFFFF;
     }
-    *((mdptr_t)(memory->pages[addr.page]->address_space + addr.offset)) = _to_write & 0xFFFFFFFF;
     return RET_SUCCESS;
 }
 
@@ -398,19 +446,22 @@ mret_t merry_dmemory_write_dword_atm(MerryDMemory *memory, maddress_t address, m
 {
     // pretty much the same as read
     register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
+    register msize_t this_page = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - addr.offset - 1;
     if (surelyF(addr.page >= memory->number_of_pages))
     {
         // this implies the request is for a page that doesn't exist
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    if (surelyF((addr.offset + 3) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
+    switch (surelyF((addr.offset + 3) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
     {
-        // this implies the request is for a page that doesn't exist
-        memory->error = MERRY_MEM_INVALID_ACCESS;
-        return RET_FAILURE;
+    case mtrue:
+        merry_dmemory_write_to_next_page_atm(memory, addr.page, _to_write, 0, this_page);
+        merry_dmemory_write_to_next_page_atm(memory, addr.page, _to_write, this_page + 1, 3);
+        break;
+    default:
+        atomic_store((mdptr_t)(memory->pages[addr.page]->address_space + addr.offset), _to_write & 0xFFFFFFFF);
     }
-    atomic_store((mdptr_t)(memory->pages[addr.page]->address_space + addr.offset), _to_write & 0xFFFFFFFF);
     return RET_SUCCESS;
 }
 
@@ -418,20 +469,24 @@ mret_t merry_dmemory_read_qword(MerryDMemory *memory, maddress_t address, mqptr_
 {
     // get the actual address and the page
     register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
+    register mbyte_t _ret[8];
+    register msize_t this_page = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - addr.offset;
     if (surelyF(addr.page >= memory->number_of_pages))
     {
         // this implies the request is for a page that doesn't exist
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    // The byte that the address points to is the lower byte while the next byte is the
-    if (surelyF((addr.offset + 7) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
+    switch (surelyF((addr.offset + 7) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
     {
-        // this implies the request is for a page that doesn't exist
-        memory->error = MERRY_MEM_INVALID_ACCESS;
-        return RET_FAILURE;
+    case mtrue:
+        merry_dmemory_read_from_next_page(memory, addr.page, this_page, 0, &_ret[0]);
+        merry_dmemory_read_from_next_page(memory, addr.page + 1, 8 - this_page, this_page, &_ret[this_page]);
+        *_store_in = (mqword_t)(*(mdptr_t)(_ret));
+        break;
+    default:
+        *_store_in = *((mdptr_t)(memory->pages[addr.page]->address_space + addr.offset));
     }
-    *_store_in = *((mqptr_t)(memory->pages[addr.page]->address_space + addr.offset));
     return RET_SUCCESS;
 }
 
@@ -439,20 +494,24 @@ mret_t merry_dmemory_read_qword_atm(MerryDMemory *memory, maddress_t address, mq
 {
     // get the actual address and the page
     register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
+    register mbyte_t _ret[8];
+    register msize_t this_page = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - addr.offset;
     if (surelyF(addr.page >= memory->number_of_pages))
     {
         // this implies the request is for a page that doesn't exist
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    // The byte that the address points to is the lower byte while the next byte is the
-    if (surelyF((addr.offset + 7) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
+    switch (surelyF((addr.offset + 1) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
     {
-        // this implies the request is for a page that doesn't exist
-        memory->error = MERRY_MEM_INVALID_ACCESS;
-        return RET_FAILURE;
+    case mtrue:
+        merry_dmemory_read_from_next_page_atm(memory, addr.page, this_page, 0, &_ret[0]);
+        merry_dmemory_read_from_next_page_atm(memory, addr.page + 1, 8 - this_page, this_page, &_ret[this_page]);
+        *_store_in = (mqword_t)(*(mwptr_t)(_ret));
+        break;
+    default:
+        *_store_in = atomic_load((mqptr_t)(memory->pages[addr.page]->address_space + addr.offset));
     }
-    *_store_in = atomic_load((mqptr_t)(memory->pages[addr.page]->address_space + addr.offset));
     return RET_SUCCESS;
 }
 
@@ -460,19 +519,22 @@ mret_t merry_dmemory_write_qword(MerryDMemory *memory, maddress_t address, mqwor
 {
     // pretty much the same as read
     register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
+    register msize_t this_page = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - addr.offset - 1;
     if (surelyF(addr.page >= memory->number_of_pages))
     {
         // this implies the request is for a page that doesn't exist
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    if (surelyF((addr.offset + 7) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
+    switch (surelyF((addr.offset + 7) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
     {
-        // this implies the request is for a page that doesn't exist
-        memory->error = MERRY_MEM_INVALID_ACCESS;
-        return RET_FAILURE;
+    case mtrue:
+        merry_dmemory_write_to_next_page(memory, addr.page, _to_write, 0, this_page);
+        merry_dmemory_write_to_next_page(memory, addr.page, _to_write, this_page + 1, 7);
+        break;
+    default:
+        *((mqptr_t)(memory->pages[addr.page]->address_space + addr.offset)) = _to_write;
     }
-    *((mqptr_t)(memory->pages[addr.page]->address_space + addr.offset)) = _to_write;
     return RET_SUCCESS;
 }
 
@@ -480,19 +542,22 @@ mret_t merry_dmemory_write_qword_atm(MerryDMemory *memory, maddress_t address, m
 {
     // pretty much the same as read
     register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
+    register msize_t this_page = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - addr.offset - 1;
     if (surelyF(addr.page >= memory->number_of_pages))
     {
         // this implies the request is for a page that doesn't exist
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    if (surelyF((addr.offset + 7) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
+    switch (surelyF((addr.offset + 7) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
     {
-        // this implies the request is for a page that doesn't exist
-        memory->error = MERRY_MEM_INVALID_ACCESS;
-        return RET_FAILURE;
+    case mtrue:
+        merry_dmemory_write_to_next_page_atm(memory, addr.page, _to_write, 0, this_page);
+        merry_dmemory_write_to_next_page_atm(memory, addr.page, _to_write, this_page + 1, 7);
+        break;
+    default:
+        atomic_store((mqptr_t)(memory->pages[addr.page]->address_space + addr.offset), _to_write);
     }
-    atomic_store((mqptr_t)(memory->pages[addr.page]->address_space + addr.offset), _to_write);
     return RET_SUCCESS;
 }
 
