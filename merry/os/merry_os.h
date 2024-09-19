@@ -43,6 +43,7 @@
 #include <stdlib.h>
 #include "merry_temp.h"
 #include "merry_dynl.h"
+#include "merry_traps.h"
 #include "merry_ihdlr.h"
 
 typedef struct Merry Merry;
@@ -127,6 +128,9 @@ void merry_os_new_proc_cleanup();
 
 // print the suitable error message and exit the VM
 void merry_os_handle_error(merrot_t error, msize_t id);
+
+// handle others
+void merry_os_handle_others(merrot_t _id, msize_t id);
 
 void merry_os_handle_internal_module_error(merrot_t error_num);
 

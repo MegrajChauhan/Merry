@@ -11,13 +11,14 @@ merry_ihdlr(termianation)
 // We do not do anything in this case
 // We may as well say that we 'ignore' this signal
 merry_ihdlr(interrupt)
-{}
+{
+}
 
 // A segmentation fault
 // either in imem or dmem
 merry_ihdlr(segv)
 {
-  
+   merry_requestHdlr_panic(MERRY_SEGV, 0);
 }
 
 /**
@@ -27,7 +28,7 @@ merry_ihdlr(segv)
  * In any OS, the syscall requires the passing of pointers to a C-style string.
  * To the program, the pointer may be completely valid and it should be but due to how
  * we have the memories implemented, it is compulsory for the entire string to be on the same page.
- * This applies to other data types too. This is a pain but it is one of the sacrifices made to 
+ * This applies to other data types too. This is a pain but it is one of the sacrifices made to
  * squeeze out speed for the VM. Every check done everytime a memory address is accessed is truly a pain.
  * The only solution to this is to let the programmer freely write the program without having to worry about it
  * and handle the alignment in the assembler. This is a viable option but it makes the binary bigger.

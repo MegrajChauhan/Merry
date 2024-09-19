@@ -82,7 +82,8 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _
     os.active_core_count = 0;
     os.err_core_id = 0;
     os.ret = _MERRY_EXIT_SUCCESS_;
-    return RET_SUCCESS; // we did everything correctly
+    merry_trap_install(); // for now, the failure of this doesn't matter
+    return RET_SUCCESS;   // we did everything correctly
 failure:
     merry_os_destroy();
     return RET_FAILURE;
@@ -361,7 +362,9 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
         else
         {
             // we have a request to fulfill
-            if (_MERRY_REQUEST_INTERNAL_ERROR_(current_req.request_number))
+            if (_MERRY_REQUEST_OTHER_(current_req.request_number))
+                merry_os_handle_others(current_req.request_number, 0);
+            else if (_MERRY_REQUEST_INTERNAL_ERROR_(current_req.request_number))
             {
                 os.err_core_id = current_req.id;
                 merry_os_handle_internal_module_error(current_req.request_number);
@@ -453,6 +456,22 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
 #elif defined(_MERRY_HOST_OS_WINDOWS_)
     return os.ret;
 #endif
+}
+
+void merry_os_handle_others(merrot_t _id, msize_t id)
+{
+    switch (_id)
+    {
+    case _SHOULD_EXIT:
+        os.stop = mtrue;
+        os.ret = _MERRY_EXIT_SUCCESS_;
+        break;
+    case MERRY_SEGV:
+        merry_mem_error("Segmentation Fault(Passed by the Host system)");
+        os.stop = mtrue;
+        os.ret = _MERRY_EXIT_FAILURE_;
+        break;
+    }
 }
 
 void merry_os_handle_error(merrot_t error, msize_t id)
