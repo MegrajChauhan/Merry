@@ -351,6 +351,8 @@ enum
   OP_GET_ADDR_REG,
   OP_FCMP,
   OP_FCMP32,
+
+  OP_JMP_REGR, // address in register
 };
 
 /*

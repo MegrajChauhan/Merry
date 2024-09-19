@@ -10,13 +10,13 @@ proc __builtin_std_syscall_check_status
 
 
 ;; ARGS: Ma = PTR to filename, Mb = Flags, Mc = Mode(for _M_CREATE_ or _M_TMPFILE_)
-;; RETURNS: Ma = File Descriptor sent by the OS
+;; RETURNS: Ma = File Descriptor sent by the OS else -1 
 ;; NOTE: Doesn't save states
 __builtin_std_file_open
 defined _M_LINUX_
     mov M3, Mc
     mov M2, Mb
-    gva M1, Ma
+    mov M1, Ma
     movl Ma, _M_SYS_OPEN_
     syscall
 end
@@ -43,8 +43,10 @@ end
     ret
 
  _std_syscall_check_status_set_errno
+    push Ma
     mov Ma, Mb
     call __builtin_set_errno
+    pop Ma
     ret
 
 ;; It will be good to note that file I/O is very complicated.

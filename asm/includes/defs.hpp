@@ -114,6 +114,7 @@ namespace masm
         MOVSXD_EXPR,
 
         JMP,
+        JMP_REG,
         CALL,
         CALL_REG,
         RET,

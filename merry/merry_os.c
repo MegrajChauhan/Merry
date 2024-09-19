@@ -427,6 +427,9 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
                     case _REQ_GET_FUNC:
                         merry_os_execute_request_dyncall(&os, &current_req);
                         break;
+                    case _REQ_SYSCALL:
+                        merry_os_execute_request_syscall(&os, &current_req);
+                        break;
                     default:
                         fprintf(stderr, "Error: Unknown request code: '%llu' is not a valid request code.\n", current_req.request_number);
                         break;
@@ -739,6 +742,11 @@ _os_exec_(dyncall)
     os->cores[request->id]->registers[Ma] = function(param);
     free(func_name);
     return RET_SUCCESS;
+}
+
+_os_exec_(syscall)
+{
+    merry_exec_syscall(os->cores[request->id]);
 }
 
 void merry_os_notify_dbg(mqword_t sig, mbyte_t arg, mbyte_t arg2)

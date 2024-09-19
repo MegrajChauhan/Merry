@@ -39,6 +39,8 @@ clean:
 __pretest:
 ifeq ($(OS),Windows_NT)
     DIRS += merry/abs/win
+	@echo Windows is not currently fully supported :(
+	@exit
 	INC_DIRS += ${addprefix -I, merry/abs/win}
 else
     UNAME_S := $(shell uname -s)

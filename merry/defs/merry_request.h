@@ -68,6 +68,7 @@ enum
     _REQ_LOAD_LIB,      // load a new library
     _REQ_UNLOAD_LIB,    // unload a new library
     _REQ_GET_FUNC,      // get a function from a loaded library
+    _REQ_SYSCALL,       // make a syscall
 };
 
 #endif

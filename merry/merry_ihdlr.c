@@ -1,7 +1,7 @@
 #include "merry_ihdlr.h"
 
 // handle the signal to terminate
-merry_ihdlr(termianation)
+merry_ihdlr(termination)
 {
    // The OS knows that this isn't from any process
    merry_requestHdlr_panic(_SHOULD_EXIT, 0);

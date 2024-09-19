@@ -1,6 +1,8 @@
 proc __builtin_get_errno
 proc __builtin_set_errno
 
+;; proc __builtin_interpret_errno
+
 ;; ARGS: Ma = errno value
 __builtin_set_errno
     storeb Ma, _Mstd_errno

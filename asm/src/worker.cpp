@@ -1142,6 +1142,16 @@ bool masm::Parser::handle_jmp(NodeKind k)
     t = res.value();
     if (t.type != IDENTIFIER)
     {
+        if (k != LOOP && k != SETE)
+        {
+            if (t.type >= KEY_Ma && t.type <= KEY_Mm5)
+            {
+                n->oper = regr_map[t.type];
+                node.kind = JMP_REG;
+                nodes.push_back(std::move(node));
+                return true;
+            }
+        }
         log(fname, "Expected a label here after the branch instruction.", l.get_line_st(), l.get_col_st());
         return false;
     }

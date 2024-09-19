@@ -7,7 +7,7 @@
 #include "emit.hpp"
 
 // The format for the VERSION is v<Major>.<Minor>.<Patch>-<State>.<update_count>
-#define VERSION "Masm- v0.1.2-test.14"
+#define VERSION "Masm- v0.1.4-test.18"
 
 static std::string version_message = "Masm: An Assembler for the Merry Virtual Machine.\n"
                                      "Latest version: ";

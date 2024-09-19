@@ -267,12 +267,16 @@ void masm::CodeGen::mov_imm(NodeMov *n, bool _is64)
             F64 f;
             f._double = std::stod(imm);
             _imm = f._integer;
-        }else{
+        }
+        else
+        {
             F32 f;
             f._float = std::stof(imm);
             _imm = f._integer;
         }
-    }else{
+    }
+    else
+    {
         _imm = std::stoull(imm);
     }
     if (_is64)
@@ -762,6 +766,9 @@ void masm::CodeGen::gen()
             break;
         case JMP:
             branch(GET(NodeName), OP_JMP_ADDR);
+            break;
+        case JMP_REG:
+            single_regr(OP_JMP_REGR, std::get<Register>((GET(NodeName))->oper));
             break;
         case CALL:
             branch(GET(NodeName), OP_CALL);

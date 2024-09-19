@@ -264,7 +264,7 @@ mret_t merry_dmemory_read_word(MerryDMemory *memory, maddress_t address, mqptr_t
 {
     // get the actual address and the page
     register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
-    register mbyte_t _ret[2];
+    mbyte_t _ret[2];
     if (surelyF(addr.page >= memory->number_of_pages))
     {
         // this implies the request is for a page that doesn't exist
@@ -289,7 +289,7 @@ mret_t merry_dmemory_read_word_atm(MerryDMemory *memory, maddress_t address, mqp
 {
     // get the actual address and the page
     register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
-    register mbyte_t _ret[2];
+    mbyte_t _ret[2];
     if (surelyF(addr.page >= memory->number_of_pages))
     {
         // this implies the request is for a page that doesn't exist
@@ -373,7 +373,7 @@ mret_t merry_dmemory_read_dword(MerryDMemory *memory, maddress_t address, mqptr_
 {
     // get the actual address and the page
     register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
-    register mbyte_t _ret[4];
+    mbyte_t _ret[4];
     register msize_t this_page = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - addr.offset;
     if (surelyF(addr.page >= memory->number_of_pages))
     {
@@ -398,7 +398,7 @@ mret_t merry_dmemory_read_dword_atm(MerryDMemory *memory, maddress_t address, mq
 {
     // get the actual address and the page
     register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
-    register mbyte_t _ret[4];
+    mbyte_t _ret[4];
     register msize_t this_page = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - addr.offset;
     if (surelyF(addr.page >= memory->number_of_pages))
     {
@@ -469,7 +469,7 @@ mret_t merry_dmemory_read_qword(MerryDMemory *memory, maddress_t address, mqptr_
 {
     // get the actual address and the page
     register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
-    register mbyte_t _ret[8];
+    mbyte_t _ret[8];
     register msize_t this_page = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - addr.offset;
     if (surelyF(addr.page >= memory->number_of_pages))
     {
@@ -494,7 +494,7 @@ mret_t merry_dmemory_read_qword_atm(MerryDMemory *memory, maddress_t address, mq
 {
     // get the actual address and the page
     register MerryDAddress addr = _MERRY_DMEMORY_DEDUCE_ADDRESS_(address);
-    register mbyte_t _ret[8];
+    mbyte_t _ret[8];
     register msize_t this_page = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - addr.offset;
     if (surelyF(addr.page >= memory->number_of_pages))
     {

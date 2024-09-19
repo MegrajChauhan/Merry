@@ -45,6 +45,7 @@
 #include "merry_dynl.h"
 #include "merry_traps.h"
 #include "merry_ihdlr.h"
+#include "merry_syscall_hdlr.h"
 
 typedef struct Merry Merry;
 
@@ -163,6 +164,8 @@ _os_exec_(bp);
 _os_exec_(dynl);
 _os_exec_(dynul);
 _os_exec_(dyncall);
+
+_os_exec_(syscall);
 
 // _os_exec_(fopen);
 // _os_exec_(fclose);

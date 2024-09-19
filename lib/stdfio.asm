@@ -4,7 +4,7 @@ proc std::fio::fopen
 proc std::fio::fclose
 
 ;; ARGS: Ma = PTR to filename, Mb = Flags, Mc = Mode(for _M_CREATE_ or _M_TMPFILE_)
-;; RETURNS: Ma = File Descriptor sent by the OS
+;; RETURNS: Ma = File Descriptor sent by the OS else -1
 ;; Note: Doesn't save states
 std::fio::fopen
     call __builtin_std_file_open
