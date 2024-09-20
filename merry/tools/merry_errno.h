@@ -68,6 +68,8 @@ Since each platform has different number of errno values, we have to be really c
 #define MERRY_ESHUTDOWN 31     // Cannot send after transport endpoint shutdown
 #define MERRY_NODBG 32         // Debugging was enabled for the child but the debugger wasn't connected at all
 #define MERRY_SYSCALLERR 33    // The syscall being handled by the OS didn't expect the provided argument
+#define MERRY_DYNERR 34        // The recent dynamic library related request failed
+#define MERRY_DYNCLOSED 35     // The handle has already been closed
 
 // Our errno value
 _MERRY_INTERNAL_ msize_t merrno = (msize_t)-1;

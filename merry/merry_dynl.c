@@ -133,3 +133,10 @@ dynfunc_t merry_loader_getFuncSymbol(msize_t handle, mstr_t sym_name)
 #endif
     return RET_NULL;
 }
+
+mbool_t merry_loader_is_still_valid(msize_t handle)
+{
+    if (handle >= loader.entry_count)
+        return mfalse;
+    return loader.entries[handle].handle_open;
+}

@@ -37,7 +37,7 @@
 typedef struct MerryDynEntry MerryDynEntry;
 typedef struct MerryDynLoader MerryDynLoader;
 
-_MERRY_DEFINE_FUNC_PTR_(mdword_t, dynfunc_t, mptr_t ptr);
+_MERRY_DEFINE_FUNC_PTR_(mqword_t, dynfunc_t, mptr_t ptr, msize_t len);
 
 struct MerryDynEntry
 {
@@ -66,5 +66,7 @@ void merry_loader_unloadLib(msize_t handle);
 // each function in the library must return unsigned int which will be the return value
 // the return value of the function is loaded into the Ma register
 dynfunc_t merry_loader_getFuncSymbol(msize_t handle, mstr_t sym_name);
+
+mbool_t merry_loader_is_still_valid(msize_t handle);
 
 #endif

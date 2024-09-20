@@ -430,6 +430,12 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
                     case _REQ_SYSCALL:
                         merry_os_execute_request_syscall(&os, &current_req);
                         break;
+                    case _REQ_GET_FUNC_ADDR:
+                        merry_os_execute_request_get_func_addr(&os, &current_req);
+                        break;
+                    case _REQ_CALL_LOADED_FUNC:
+                        merry_os_execute_request_call_loaded_func(&os, &current_req);
+                        break;
                     default:
                         fprintf(stderr, "Error: Unknown request code: '%llu' is not a valid request code.\n", current_req.request_number);
                         break;
@@ -699,54 +705,119 @@ _os_exec_(dynl)
 {
     // the address to the name of the library must be in the Ma register
     // if the name is not and it is invalidly placed, the host will throw a segfault
-    mstr_t name = merry_dmemory_get_bytes_maybe_over_multiple_pages_upto(os->data_mem, os->cores[request->id]->registers[Ma], 0);
+    register MerryCore *c = os->cores[request->id];
+    mstr_t name = merry_dmemory_get_bytes_maybe_over_multiple_pages_upto(os->data_mem, c->registers[Ma], 0);
     if (name == RET_NULL)
     {
         merry_requestHdlr_panic(os->data_mem->error, request->id);
         return RET_FAILURE;
     }
-    if (merry_loader_loadLib(name, &os->cores[request->id]->registers[Mb]) == mfalse)
+    if (merry_loader_loadLib(name, &c->registers[Mb]) == mfalse)
     {
-        merry_requestHdlr_panic(MERRY_DYNL_FAILED, request->id);
+        merry_set_errno(MERRY_DYNERR);
+        c->registers[Ma] = 1;
+        c->registers[Mb] = MERRY_DYNERR;
         free(name);
         return RET_FAILURE;
     }
+    c->registers[Ma] = 0;
     free(name);
     return RET_SUCCESS;
 }
 
 _MERRY_ALWAYS_INLINE_ _os_exec_(dynul)
 {
-    merry_loader_unloadLib(os->cores[request->id]->registers[Mb]);
+    merry_loader_unloadLib(os->cores[request->id]->registers[Ma]);
     return RET_SUCCESS;
 }
 
 _os_exec_(dyncall)
 {
     dynfunc_t function;
-    mqptr_t param = merry_dmemory_get_qword_address(os->data_mem, os->cores[request->id]->registers[Mc]);
-    mbptr_t func_name = merry_dmemory_get_bytes_maybe_over_multiple_pages_upto(os->data_mem, os->cores[request->id]->registers[Ma], 0);
+    register MerryCore *c = os->cores[request->id];
+    register msize_t len = c->registers[Md];
+    mbptr_t param = merry_dmemory_get_bytes_maybe_over_multiple_pages(os->data_mem, c->registers[Mc], len);
+    mbptr_t func_name = merry_dmemory_get_bytes_maybe_over_multiple_pages_upto(os->data_mem, c->registers[Ma], 0);
     if (param == NULL || func_name == NULL)
     {
-        merry_requestHdlr_panic(MERRY_DYNCALL_FAILED, request->id);
+        merry_set_errno(MERRY_DYNERR);
+        c->registers[Mb] = MERRY_DYNERR;
+        c->registers[Ma] = 1;
         if (!(func_name == NULL))
             free(func_name);
         return RET_FAILURE;
     }
     if ((function = merry_loader_getFuncSymbol(os->cores[request->id]->registers[Mb], func_name)) == RET_NULL)
     {
-        merry_requestHdlr_panic(MERRY_DYNCALL_FAILED, request->id);
+        merry_set_errno(MERRY_DYNERR);
+        c->registers[Mb] = MERRY_DYNERR;
+        c->registers[Ma] = 1;
         free(func_name);
+        free(param);
         return RET_FAILURE;
     }
-    os->cores[request->id]->registers[Ma] = function(param);
+    os->cores[request->id]->registers[Ma] = function(param, len);
     free(func_name);
+    free(param);
     return RET_SUCCESS;
 }
 
 _os_exec_(syscall)
 {
     merry_exec_syscall(os->cores[request->id]);
+}
+
+_os_exec_(get_func_addr)
+{
+    dynfunc_t function;
+    register MerryCore *c = os->cores[request->id];
+    mbptr_t func_name = merry_dmemory_get_bytes_maybe_over_multiple_pages_upto(os->data_mem, c->registers[Mb], 0);
+    if (func_name == NULL)
+    {
+        merry_set_errno(MERRY_DYNERR);
+        c->registers[Mb] = MERRY_DYNERR;
+        c->registers[Ma] = 1;
+        if (!(func_name == NULL))
+            free(func_name);
+        return RET_FAILURE;
+    }
+    if ((function = merry_loader_getFuncSymbol(os->cores[request->id]->registers[Ma], func_name)) == RET_NULL)
+    {
+        merry_set_errno(MERRY_DYNERR);
+        c->registers[Mb] = MERRY_DYNERR;
+        c->registers[Ma] = 1;
+        free(func_name);
+        return RET_FAILURE;
+    }
+    os->cores[request->id]->registers[Mb] = function;
+    c->registers[Ma] = 0;
+    free(func_name);
+    return RET_SUCCESS;
+}
+
+_os_exec_(call_loaded_func)
+{
+    register MerryCore *c = os->cores[request->id];
+    dynfunc_t function = (dynfunc_t)c->registers[Mb];
+    register msize_t len = c->registers[Md];
+    mbptr_t param = merry_dmemory_get_bytes_maybe_over_multiple_pages(os->data_mem, c->registers[Mc], len);
+    if (param == NULL)
+    {
+        merry_set_errno(MERRY_DYNERR);
+        c->registers[Mb] = MERRY_DYNERR;
+        c->registers[Ma] = 1;
+        return RET_FAILURE;
+    }
+    if (merry_loader_is_still_valid(c->registers[Ma]) == mfalse)
+    {
+        merry_set_errno(MERRY_DYNCLOSED);
+        c->registers[Mb] = MERRY_DYNCLOSED;
+        c->registers[Ma] = 1;
+        free(param);
+    }
+    os->cores[request->id]->registers[Ma] = function(param, len);
+    free(param);
+    return RET_SUCCESS;
 }
 
 void merry_os_notify_dbg(mqword_t sig, mbyte_t arg, mbyte_t arg2)

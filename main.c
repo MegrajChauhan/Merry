@@ -50,7 +50,6 @@ int merry_main();
 
 int main(int argc, char **argv)
 {
-    
     // int a = 3;
     // char *c[] = {"gdh", "-f", "filetest.mbin"};
     merry_setup_host(argc, argv);

@@ -166,6 +166,8 @@ _os_exec_(dynul);
 _os_exec_(dyncall);
 
 _os_exec_(syscall);
+_os_exec_(get_func_addr);
+_os_exec_(call_loaded_func);
 
 // _os_exec_(fopen);
 // _os_exec_(fclose);

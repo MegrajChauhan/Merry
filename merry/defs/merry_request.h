@@ -57,18 +57,20 @@ enum
     /*From 0 - 50 is for the error that the internal modules generate.*/
     /*51 - 150 for any program generated errors*/
     // any remaining for actual requests
-    _REQ_REQHALT = 151, /*Halt request: Halt the core that is making the request. Also check if any other cores are online, if not stop execution.*/
-    _REQ_EXIT,          /*The same as halt but instead it stops every core from running*/
-    _REQ_NEWCORE,       /*Create a new core for execution. This requires the requesting core's Ma register to contain the address from which the new core should execute from*/
-    _REQ_MEM,           // request for more memory
-    _REQ_NEWPROCESS,    // create a new process
-    _REQ_INTR,          // a request of the debuggers
-    _REQ_BP,            // a request for the debugger
-    _REQ_GDB_INIT,      // the debugger is initialized
-    _REQ_LOAD_LIB,      // load a new library
-    _REQ_UNLOAD_LIB,    // unload a new library
-    _REQ_GET_FUNC,      // get a function from a loaded library
-    _REQ_SYSCALL,       // make a syscall
+    _REQ_REQHALT = 151,    /*Halt request: Halt the core that is making the request. Also check if any other cores are online, if not stop execution.*/
+    _REQ_EXIT,             /*The same as halt but instead it stops every core from running*/
+    _REQ_NEWCORE,          /*Create a new core for execution. This requires the requesting core's Ma register to contain the address from which the new core should execute from*/
+    _REQ_MEM,              // request for more memory
+    _REQ_NEWPROCESS,       // create a new process
+    _REQ_INTR,             // a request of the debuggers
+    _REQ_BP,               // a request for the debugger
+    _REQ_GDB_INIT,         // the debugger is initialized
+    _REQ_LOAD_LIB,         // load a new library
+    _REQ_UNLOAD_LIB,       // unload a new library
+    _REQ_GET_FUNC,         // get a function from a loaded library
+    _REQ_SYSCALL,          // make a syscall
+    _REQ_GET_FUNC_ADDR,    // get a function's address from a loaded library
+    _REQ_CALL_LOADED_FUNC, // call a function that with the address that was received from _REQ_GET_FUNC_ADDR
 };
 
 #endif
