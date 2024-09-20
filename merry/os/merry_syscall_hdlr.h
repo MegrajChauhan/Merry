@@ -20,6 +20,8 @@
 #define merry_syscall(name) void merry_syscall_##name (MerryCore *c)
 
 merry_syscall(open);
+merry_syscall(read);
+merry_syscall(write);
 
 /**
  * Ma = syscall call number

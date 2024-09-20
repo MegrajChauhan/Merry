@@ -19,6 +19,41 @@ merry_syscall(open)
     free(_name);
 }
 
+merry_syscall(read)
+{
+    register msize_t len = c->registers[M3];
+    mbyte_t arr[len];
+#ifdef _USE_LINUX_
+    c->registers[Ma] = syscall(c->registers[Ma],c->registers[M1], arr, len);
+#endif
+    merry_update_errno();
+    c->registers[Mb] = merry_get_errno();
+    if (merry_dmemory_write_bytes_maybe_over_multiple_pages(c->data_mem, c->registers[M2], len, arr) == RET_FAILURE)
+    {
+        merry_set_errno(MERRY_SYSCALLERR);
+        c->registers[Mb] = MERRY_SYSCALLERR;
+        c->registers[Ma] = -1;
+    }
+}
+
+merry_syscall(write)
+{
+    register msize_t len = c->registers[M3];
+    mbptr_t arr = merry_dmemory_get_bytes_maybe_over_multiple_pages(c->data_mem, c->registers[M2], len);
+    if (arr == NULL)
+    {
+        // malloc might have failed but...
+        merry_set_errno(MERRY_SYSCALLERR);
+        c->registers[Mb] = MERRY_SYSCALLERR;
+        return;
+    }
+#ifdef _USE_LINUX_
+    c->registers[Ma] = syscall(c->registers[Ma], c->registers[M1], arr, len);
+#endif
+    merry_update_errno();
+    c->registers[Mb] = merry_get_errno();
+}
+
 void merry_exec_syscall(MerryCore *c)
 {
     switch (c->registers[Ma])
@@ -26,6 +61,12 @@ void merry_exec_syscall(MerryCore *c)
 #ifdef _USE_LINUX_
     case SYS_open:
         merry_syscall_open(c);
+        break;
+    case SYS_read:
+        merry_syscall_read(c);
+        break;
+    case SYS_write:
+        merry_syscall_write(c);
         break;
 #endif
     default:

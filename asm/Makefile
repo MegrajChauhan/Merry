@@ -2,11 +2,12 @@
 
 # Variable definitions
 CC = g++
-FLAGS = -Wall -Wextra -MMD -MP -O3 -std=c++20 -g
+FLAGS = -Wall -Wextra -MMD -MP -O3 -std=c++20
 DIRS = includes
 SRC_DIR = src/
 INC_DIRS = ${addprefix -I, ${DIRS}}
 INC_DIRS += -I../utils -I../merry/core
+FLAGS += ${flags}
 
 OUTPUT_DIR = ${dirs}
 OUTPUT_DEPS= ${dirs}

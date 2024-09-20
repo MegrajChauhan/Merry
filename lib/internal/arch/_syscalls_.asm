@@ -6,8 +6,9 @@ depends _builtinerrno_.asm
 
 proc __builtin_std_file_open
 proc __builtin_std_file_close
+proc __builtin_std_file_read
+proc __builtin_std_file_write
 proc __builtin_std_syscall_check_status
-
 
 ;; ARGS: Ma = PTR to filename, Mb = Flags, Mc = Mode(for _M_CREATE_ or _M_TMPFILE_)
 ;; RETURNS: Ma = File Descriptor sent by the OS else -1 
@@ -49,7 +50,38 @@ end
     pop Ma
     ret
 
+;; ARGS: Ma = FD, Mb = PTR to buffer, Mc = number of bytes to read
+;; RETURNS: Ma = Number of bytes, 0 ==EOF or -1 for error 
+__builtin_std_file_read
+    call __builtin_quick_save
+    mov M1, Ma
+    mov M2, Mb
+    mov M3, Mc
+    mov Ma, _M_SYS_READ_
+    syscall
+    call __builtin_std_syscall_check_status
+    call __builtin_quick_restore
+    ret
+
+;; ARGS: Ma = FD, Mb = PTR to buffer, Mc = number of bytes to write from buffer
+;; RETURNS: Ma = Number of bytes, 0 or -1 for error
+__builtin_std_file_write
+    call __builtin_quick_save
+    mov M1, Ma
+    mov M2, Mb
+    mov M3, Mc
+    mov Ma, _M_SYS_WRITE_
+    syscall
+    call __builtin_std_syscall_check_status
+    call __builtin_quick_restore
+    ret
+
 ;; It will be good to note that file I/O is very complicated.
 ;; Linux provides more than what this module provides.
 ;; The complexity of every procedure here would be immense if we were
 ;; to try to make it safe and encompass everything.
+
+;;-----------------------------------------------------------------------------------
+;; In Linux, everything is a file and hence mostly anything works with a file descriptor.
+;; That is not the case in other systems, for eg: Windows and hence only if both platforms support the use of file descriptors
+;; or values returned from the use of 'open' syscall, then and only then will we implement it.

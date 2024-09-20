@@ -4,6 +4,7 @@ FLAGS = -Wall -Wextra -MMD -MP -O3
 DIRS = merry/core merry/defs merry/dev merry/os merry/tools utils
 SRC_DIR = merry/abs/ merry/
 INC_DIRS = ${addprefix -I, ${DIRS}}
+FLAGS += ${flags}
 
 OUTPUT_DIR = ${dirs}
 OUTPUT_DEPS= ${dirs}
@@ -18,7 +19,7 @@ usage:
 	
 all: __pretest directories ${OUTPUT_FILES_NAME}
 	${CC} ${FLAGS} ${OUTPUT_FILES_NAME} main.c merry/arithmetic.S ${INC_DIRS} -o ${OUTPUT_DIR}mvm
-	make -C asm all dirs=../build/
+	make -C asm all dirs=../build/ flags=${flags}
 
 # The command for building the assembler is the simplest for now but hey! it works!
 
