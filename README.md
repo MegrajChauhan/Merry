@@ -144,7 +144,7 @@ Currently, the binaries cannot be installed into the system as the standard libr
     Assembling and running the above code will create a file named 'Test.txt' and write 'Hello World!' to it.
 
 # LICENSE
-This project is released under the [MIT License](https://www.github.com/MegrajChauhan/Merry/master/LICENSE).
+This project is released under the [MIT License](https://www.github.com/MegrajChauhan/Merry/blob/master/LICENSE).
 
 # Contributing
 Currently there are no guidelines however, you may:
