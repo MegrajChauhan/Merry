@@ -20,15 +20,47 @@
 ;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ;; SOFTWARE.
 
-;; Standard definitions
+;; This is all thread-safe
 
-dc _MSTD_NULL_ -1
+depends _builtindyn_.asm
 
-dc _MSTD_FAILURE_ -1
-dc _MSTD_SUCCESS_ 0
-;; Any other returns may signify something
+proc std::dyn::dyn_init
+proc std::dyn::load
+proc std::dyn::unload
+proc std::dyn::getsym
+proc std::dyn::callsym
+proc std::dyn::gcsym     ;; get and call symbol
 
-;; We have to modify this for every platform
-;; Platform-specific definitions
-dc _M_LINUX_ 1
-dc _M_AMD_ 1
+;; No args and returns
+std::dyn::dyn_init
+    call __builtin_std_dynl_init
+    ret
+
+;; ARGS: Ma = PTR to the library name
+;; RETURNS: Ma = descriptor else 1 for error 
+std::dyn::load
+    call __builtin_std_loadlib
+    ret
+
+;; ARGS: Ma = handle
+std::dyn::unload
+    call __builtin_std_unloadlib
+    ret
+
+;; ARGS: Ma = handle, Mb = PTR to symbol's name
+;; RETURNS: Mb = address else Ma = 1 for error
+std::dyn::getsym
+    call __builtin_std_symget
+    ret
+
+;; ARGS: Ma = handle, Mb = function address, Mc = parameter, Md = length
+;; RETURNS: Ma = function call result else 1 
+std::dyn::callsym
+    call __builtin_std_symcall
+    ret
+
+;; ARGS: Ma = handle, Mb = PTR to symbol name, Mc = parameter, Md = length
+;; RETURNS: Ma = function call result else 1 
+std::dyn::gcsym
+    call __builtin_std_symgc
+    ret

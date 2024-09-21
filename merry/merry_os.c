@@ -737,7 +737,7 @@ _os_exec_(dyncall)
     register MerryCore *c = os->cores[request->id];
     register msize_t len = c->registers[Md];
     mbptr_t param = merry_dmemory_get_bytes_maybe_over_multiple_pages(os->data_mem, c->registers[Mc], len);
-    mbptr_t func_name = merry_dmemory_get_bytes_maybe_over_multiple_pages_upto(os->data_mem, c->registers[Ma], 0);
+    mbptr_t func_name = merry_dmemory_get_bytes_maybe_over_multiple_pages_upto(os->data_mem, c->registers[Mb], 0);
     if (param == NULL || func_name == NULL)
     {
         merry_set_errno(MERRY_DYNERR);
@@ -747,7 +747,7 @@ _os_exec_(dyncall)
             free(func_name);
         return RET_FAILURE;
     }
-    if ((function = merry_loader_getFuncSymbol(os->cores[request->id]->registers[Mb], func_name)) == RET_NULL)
+    if ((function = merry_loader_getFuncSymbol(c->registers[Ma], func_name)) == RET_NULL)
     {
         merry_set_errno(MERRY_DYNERR);
         c->registers[Mb] = MERRY_DYNERR;
