@@ -20,10 +20,16 @@
 ;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ;; SOFTWARE.
 
-depends _syscalls_.asm
+depends _builtinmt_.asm
 
-proc __builtin_std_cgets ;; console get string(until a newline)
-proc __builtin_std_cgetc ;; console get character(just one character)
+proc std::mt::spawn
 
+;; ARG: Ma = Address to start executing from
+;; RETURNS: 1 for failure else 0
+std::mt::spawn
+    call __builtin_std_spawn_thread
+    ret
 
-dc _MSTDIN_ 0 ;; The stdin file stream
+;; What about passing arguments to the new thread?
+;; Well, every thread shares the same memory and hence the arguments may be 
+;; passed via the memory

@@ -55,3 +55,5 @@ dc _M_EPERM 30         ;; Operation not permitted
 dc _M_ESHUTDOWN 31     ;; Cannot send after transport endpoint shutdown
 dc _M_NODBG 32         ;; Debugging was enabled for the child but the debugger wasn't connected at all
 dc _M_SYSCALLERR 33    ;; The syscall being handled by the OS didn't expect the provided argument
+dc _M_DYNERR 34        ;; The recent dynamic library related request failed
+dc _M_DYNCLOSED 35     ;; The handle has already been closed

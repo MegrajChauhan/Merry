@@ -20,10 +20,24 @@
 ;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ;; SOFTWARE.
 
-depends _syscalls_.asm
+;; module for multi-threading
 
-proc __builtin_std_cgets ;; console get string(until a newline)
-proc __builtin_std_cgetc ;; console get character(just one character)
+depends _builtinutils_.asm
+depends _builtindefs_.asm
+depends _builtinintr_.asm
+depends _builtinerrno_.asm
 
+proc __builtin_std_spawn_thread
 
-dc _MSTDIN_ 0 ;; The stdin file stream
+;; ARG: Ma = Address to start executing from
+;; RETURNS: 1 for failure else 0
+__builtin_std_spawn_thread
+    intr _M_NEW_CORE_
+    cmp Ma, 1
+    jne _mp_spawn_ret
+    push Ma
+    call __builtin_set_errno
+    pop Ma
+ _mt_spawn_ret
+    ret
+

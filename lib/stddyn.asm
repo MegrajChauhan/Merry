@@ -21,6 +21,7 @@
 ;; SOFTWARE.
 
 ;; This is all thread-safe
+;; The libraries are platform-dependent and hence one must compile one library for multiple platforms in order to load them properly
 
 depends _builtindyn_.asm
 

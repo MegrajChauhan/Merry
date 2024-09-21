@@ -242,6 +242,7 @@ mret_t merry_os_boot_core(msize_t core_id, maddress_t start_addr)
 {
     // this function's job is to boot up the core_id core and prepare it for execution
     os.cores[core_id]->pc = start_addr; // point to the starting address of the core
+    os.cores[core_id]->entry_addr = start_addr;
     // now start the core thread
     if ((os.core_threads[core_id] = merry_thread_init()) == RET_NULL)
     {
@@ -611,7 +612,6 @@ _os_exec_(newprocess)
         merry_requestHdlr_release();
         return RET_FAILURE;
     }
-    os->reader->eat.EAT[0] = os->cores[request->id]->pc; // we don't mind this to change here
 #ifdef _USE_LINUX_
     MerryProcess p;
     if (merry_create_process(&p) == mfalse)
@@ -627,7 +627,7 @@ _os_exec_(newprocess)
         msize_t argc;
         mstr_t *argv;
         merry_get_cmd_options(&argc, &argv);
-        execv(/*Do something about this*/ "mvm", argv);
+        execv(/*Do something about this*/ "./build/mvm", argv);
         os->cores[request->id]->registers[Ma] = 1; // we failed
     }
 #elif _USE_WIN_
@@ -1051,7 +1051,7 @@ void merry_os_set_env(msize_t ip, msize_t op, msize_t id)
     setenv("_MERRY_IPORT_", tmp, 1);
     sprintf(tmp, "%d", op);
     setenv("_MERRY_OPORT_", tmp, 1);
-    sprintf(tmp, "%llu", os.reader->eat.EAT[id]);
+    sprintf(tmp, "%llu", os.cores[id]->entry_addr);
     setenv("_MERRY_ADDR_", tmp, 1);
     setenv("_MERRY_CHILD_SURVEY_", "yes", 1);
 

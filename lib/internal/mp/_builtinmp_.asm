@@ -20,10 +20,18 @@
 ;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ;; SOFTWARE.
 
-depends _syscalls_.asm
+depends _builtinintr_.asm
+depends _builtinerrno_.asm
 
-proc __builtin_std_cgets ;; console get string(until a newline)
-proc __builtin_std_cgetc ;; console get character(just one character)
+proc __builtin_std_spawn_process
 
-
-dc _MSTDIN_ 0 ;; The stdin file stream
+;; RETURNS: Ma = 1 for error else 0
+__builtin_std_spawn_process
+    intr _M_NEW_PROC_
+    cmp Ma, 1
+    jne _mp_spawn_ret
+    push Ma
+    call __builtin_set_errno
+    pop Ma
+ _mp_spawn_ret
+    ret

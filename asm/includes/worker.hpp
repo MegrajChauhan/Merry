@@ -151,15 +151,21 @@ namespace masm
         {"_builtinalloc_.asm", "lib/internal/mem/_builtinalloc_.asm"},
         {"_builtinmcvars_.asm", "lib/internal/mt/_builtinmcvars_.asm"},
         {"_builtinmlocks_.asm", "lib/internal/mt/_builtinmlocks_.asm"},
+        {"_builtinmt_.asm", "lib/internal/mt/_builtinmt_.asm"},
+        {"_builtinmp_.asm", "lib/internal/mp/_builtinmp_.asm"},
         {"_builtininit_.asm", "lib/internal/init/_builtininit_.asm"},
         {"_builtindefs_.asm", "lib/internal/utils/_builtindefs_.asm"},
         {"_builtinintr_.asm", "lib/internal/utils/_builtinintr_.asm"},
         {"_builtinutils_.asm", "lib/internal/utils/_builtinutils_.asm"},
         {"_builtinerrno_.asm", "lib/internal/error/_builtinerrno_.asm"},
+        {"_builtindyn_.asm", "lib/internal/bif/_builtindyn_.asm"},
         {"_builtinplatformconstants_.asm", "lib/internal/arch/x86_64/linux/_builtinplatformconstants_.asm"},
         {"_builtinsyscall_.asm", "lib/internal/arch/x86_64/linux/_builtinsyscall_.asm"},
         {"_syscalls_.asm", "lib/internal/arch/_syscalls_.asm"},
         {"stdfio.asm", "lib/stdfio.asm"},
+        {"stddyn.asm", "lib/stdmp.asm"},
+        {"stdmp.asm", "lib/stdmp.asm"},
+        {"stdmt.asm", "lib/stdmt.asm"},
 #endif
     };
 };
