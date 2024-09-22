@@ -152,6 +152,16 @@ namespace masm
         SVC_VAR,
         SVC_EXPR,
 
+        SSS_IMM,
+        SSS_REG,
+        SSS_VAR,
+        SSS_EXPR,
+
+        GSS_IMM,
+        GSS_REG,
+        GSS_VAR,
+        GSS_EXPR,
+
         PUSHA,
         POPA,
 

@@ -358,6 +358,14 @@ void masm::Parser::parse()
             if (!handle_sva_svc(SVA_IMM))
                 exit(1);
             break;
+        case INST_SSS:
+            if (!handle_sva_svc(SSS_IMM))
+                exit(1);
+            break;
+        case INST_GSS:
+            if (!handle_sva_svc(GSS_IMM))
+                exit(1);
+            break;
         case INST_SVC:
             if (!handle_sva_svc(SVC_IMM))
                 exit(1);
@@ -2139,6 +2147,8 @@ void masm::Parser::analyse_nodes()
         }
         case SVA_EXPR:
         case SVC_EXPR:
+        case SSS_EXPR:
+        case GSS_EXPR:
         {
             auto _n = (NodeStack *)n.node.get();
             auto expr = std::get<std::vector<Token>>(_n->second_oper);
@@ -2302,6 +2312,21 @@ void masm::Parser::analyse_nodes()
                 n.kind = (NodeKind)(n.kind - 2);
                 _n->second_oper = r->second.value;
             }
+            break;
+        }
+        case SSS_VAR:
+        case GSS_VAR:
+        {
+            auto _n = (NodeStack *)n.node.get();
+            auto var_name = std::get<std::string>(_n->second_oper);
+            auto r = symtable._const_list.find(var_name);
+            if (r == symtable._const_list.end())
+            {
+                note("The constant '" + var_name + "' doesn't exist.");
+                exit(1);
+            }
+            n.kind = (NodeKind)(n.kind - 2);
+            _n->second_oper = r->second.value;
             break;
         }
         case MOVSXB_VAR:

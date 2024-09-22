@@ -131,6 +131,8 @@ namespace masm
                 {"ret", INST_RET},
                 {"sva", INST_SVA},
                 {"svc", INST_SVC},
+                {"sss", INST_SSS},
+                {"gss", INST_GSS},
                 {"popa", INST_POPA},
                 {"pusha", INST_PUSHA},
                 {"push", INST_PUSH},

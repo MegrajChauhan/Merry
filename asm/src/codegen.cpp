@@ -385,10 +385,14 @@ void masm::CodeGen::sva_svc(NodeStack *n, size_t op)
     {
     case OP_SVA:
     case OP_SVC:
+    case OP_SSS_IMM:
+    case OP_GSS_IMM:
         b.full |= (std::stoull(std::get<std::string>(n->second_oper)) & 0xFFFF);
         break;
     case OP_SVA_REG:
     case OP_SVC_REG:
+    case OP_SSS_REG:
+    case OP_GSS_REG:
         b.bytes.b8 = std::get<Register>(n->second_oper);
         break;
     case OP_SVA_MEM:
@@ -1185,6 +1189,18 @@ void masm::CodeGen::gen()
             break;
         case GVA_VAR:
             load_store_var(GET(NodeLoadStore), OP_GET_ADDR);
+            break;
+        case SSS_IMM:
+            sva_svc(GET(NodeStack), OP_SSS_IMM);
+            break;
+        case GSS_IMM:
+            sva_svc(GET(NodeStack), OP_GSS_IMM);
+            break;
+        case SSS_REG:
+            sva_svc(GET(NodeStack), OP_SSS_REG);
+            break;
+        case GSS_REG:
+            sva_svc(GET(NodeStack), OP_GSS_REG);
             break;
         }
     }

@@ -330,6 +330,20 @@ _THRET_T_ merry_runCore(mptr_t core)
             c->current_inst |= (c->registers[*current & 15] & 0xFFFF);
             merry_execute_svc(c);
             break;
+        case OP_GSS_IMM:
+            merry_execute_gss_imm(c);
+            break;
+        case OP_GSS_REG:
+            c->current_inst |= (c->registers[*current & 15] & 0xFFFF);
+            merry_execute_gss_imm(c);
+            break;
+        case OP_SSS_IMM:
+            merry_execute_sss_imm(c);
+            break;
+        case OP_SSS_REG:
+            c->current_inst |= (c->registers[*current & 15] & 0xFFFF);
+            merry_execute_sss_imm(c);
+            break;
         case OP_PUSH_IMM:
             merry_execute_push_imm(c);
             break;
@@ -1570,6 +1584,19 @@ _exec_(sva)
     core->registers[(current >> 48) & 15] = core->stack_mem[core->bp - off];
 }
 
+_exec_(gss_imm)
+{
+    register mqword_t current = core->current_inst;
+    register mqword_t off = current & 0xFFFF;
+    if ((core->bp + off) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_)
+    {
+        merry_requestHdlr_panic(MERRY_INVALID_VARIABLE_ACCESS, core->core_id);
+        core->stop_running = mtrue;
+        return;
+    }
+    core->registers[(current >> 48) & 15] = core->stack_mem[core->bp + off];
+}
+
 _exec_(svc)
 {
     // the same as sva
@@ -1582,6 +1609,20 @@ _exec_(svc)
         return;
     }
     core->stack_mem[core->bp - off] = core->registers[(current >> 48) & 15];
+}
+
+_exec_(sss_imm)
+{
+    // the same as gss
+    register mqword_t current = core->current_inst;
+    register mqword_t off = current & 0xFFFF;
+    if ((core->bp + off) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_)
+    {
+        merry_requestHdlr_panic(MERRY_INVALID_VARIABLE_ACCESS, core->core_id);
+        core->stop_running = mtrue;
+        return;
+    }
+    core->stack_mem[core->bp + off] = core->registers[(current >> 48) & 15];
 }
 
 _exec_(sva_mem)

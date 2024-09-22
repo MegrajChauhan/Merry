@@ -266,6 +266,8 @@ _exec_(sva);
 _exec_(svc);
 _exec_(sva_mem);
 _exec_(svc_mem);
+_exec_(sss_imm);
+_exec_(gss_imm);
 
 // stack based instructions
 _exec_(push_imm);

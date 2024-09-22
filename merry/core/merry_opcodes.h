@@ -353,6 +353,10 @@ enum
   OP_FCMP32,
 
   OP_JMP_REGR, // address in register
+  OP_GSS_IMM,  // get stack state
+  OP_GSS_REG,
+  OP_SSS_IMM,  // set stack state
+  OP_SSS_REG,
 };
 
 /*
