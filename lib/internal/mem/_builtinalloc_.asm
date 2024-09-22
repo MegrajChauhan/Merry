@@ -35,6 +35,7 @@ proc __builtin_std_realloc
 proc __builtin_std_memcpy
 proc __builtin_std_memscpy   ;; Memory safe copy
 proc __builtin_std_memset
+proc __builtin_std_memcmp
 proc __builtin_std_salloc    ;; Set alloc
 
 proc __builtin_std_create_new_block
@@ -332,6 +333,8 @@ __builtin_std_mem_log_err
 ;; RETURNS: 1 for success and 0 for failure
 __builtin_std_mem_request_more_mem
    call __builtin_quick_save
+   mov Ma, [PTR _Mstd_mem_lock]
+   call __builtin_std_raw_acquire
    push 0
    pop _Mstd_mem_intermediate
    intr _M_MEM_                    ;; ask for more memory
@@ -356,6 +359,8 @@ __builtin_std_mem_request_more_mem
    pop _Mstd_mem_intermediate
 
  _std_mem_request_more_mem_done
+   mov Ma, [PTR _Mstd_mem_lock]
+   call __builtin_std_raw_release
    call __builtin_quick_restore
    loadq Ma, _Mstd_mem_intermediate
    ret
@@ -461,8 +466,10 @@ __builtin_std_create_new_block
 __builtin_std_alloc
    call __builtin_quick_save
    
+   push Ma
    mov Ma, [PTR _Mstd_mem_lock]
    call __builtin_std_raw_acquire
+   pop Ma
 
    push _MSTD_NULL_
    pop _Mstd_mem_intermediate
@@ -513,8 +520,10 @@ __builtin_std_alloc
 __builtin_std_free
    call __builtin_quick_save
 
+   push Ma
    mov Ma, [PTR _Mstd_mem_lock]
    call __builtin_std_raw_acquire
+   pop Ma
 
    movl Mf, Ma
 
@@ -553,6 +562,11 @@ __builtin_std_free
 __builtin_std_memset
    call __builtin_quick_save
    
+   push Ma
+   mov Ma, [PTR _Mstd_mem_lock]
+   call __builtin_std_raw_acquire
+   pop Ma
+
    push _MSTD_NULL_
    pop _Mstd_mem_intermediate
 
@@ -596,6 +610,8 @@ __builtin_std_memset
    loop _std_memset_loop
 
  _std_memset_done
+   mov Ma, [PTR _Mstd_mem_lock]
+   call __builtin_std_raw_release
    call __builtin_quick_restore
    loadq Ma, _Mstd_mem_intermediate
    ret
@@ -604,6 +620,11 @@ __builtin_std_memset
 ;; RETURN: Ma = Mb for Success else NULL
 __builtin_std_memcpy
   call __builtin_quick_save
+
+  push Ma
+  mov Ma, [PTR _Mstd_mem_lock]
+  call __builtin_std_raw_acquire
+  pop Ma
 
   push _MSTD_NULL_
   pop _Mstd_mem_intermediate
@@ -627,6 +648,8 @@ __builtin_std_memcpy
   loop _std_memcpy_loop
 
  _std_memcpy_done
+  mov Ma, [PTR _Mstd_mem_lock]
+  call __builtin_std_raw_release
   call __builtin_quick_restore
   loadq Ma, _Mstd_mem_intermediate
   ret
@@ -704,6 +727,11 @@ __builtin_std_salloc
 __builtin_std_memscpy
   call __builtin_quick_save
 
+  push Ma
+  mov Ma, [PTR _Mstd_mem_lock]
+  call __builtin_std_raw_acquire
+  pop Ma
+  
   push _MSTD_NULL_
   pop _Mstd_mem_intermediate
 
@@ -742,6 +770,46 @@ __builtin_std_memscpy
   call __builtin_std_memcpy
 
  _std_memscpy_done
+  mov Ma, [PTR _Mstd_mem_lock]
+  call __builtin_std_raw_release
+  call __builtin_quick_restore
+  loadq Ma, _Mstd_mem_intermediate
+  ret
+
+;; ARGS: Ma = First pointer, Mb = second pointer, Mc = Number of bytes
+;; RETURNS: Ma = 0 for Equal, 1 for not equal(Every byte must be the same for this)
+__builtin_std_memcmp
+  call __builtin_quick_save
+  
+  push Ma
+  mov Ma, [PTR _Mstd_mem_lock]
+  call __builtin_std_raw_acquire
+  pop Ma
+
+  push 0
+  pop _Mstd_mem_intermediate
+
+  cmp Ma, Mb
+  je _std_memcmp_done
+
+ _std_memcmp_loop
+  loadb M1, Ma
+  loadb M2, Mb
+  cmp M1, M2
+  jne _std_memcmp_not_equal
+  inc Ma
+  inc Mb
+  loop _std_memcmp_loop
+  
+  jmp _std_memcmp_done
+
+ _std_memcmp_not_equal
+  push 1
+  pop _Mstd_mem_intermediate
+
+ _std_memcmp_done
+  mov Ma, [PTR _Mstd_mem_lock]
+  call __builtin_std_raw_release
   call __builtin_quick_restore
   loadq Ma, _Mstd_mem_intermediate
   ret

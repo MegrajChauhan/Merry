@@ -33,6 +33,7 @@ proc std::mem::memset
 proc std::mem::memcpy
 proc std::mem::salloc
 proc std::mem::memscpy
+proc std::mem::memcmp
 
 std::mem::init_allocator
     call __builtin_std_mem_init
@@ -73,6 +74,7 @@ std::mem::pg_count
 ;; Calculate how many addresses that becomes
 ;; Make sure to call 'break' once again to receive the new end point and 'pg_count' to get new info
 ;; RETURNS: 1 for success and 0 for failure
+;; Thread-safe
 std::mem::os_alloc
    call __builtin_std_mem_request_more_mem
    ret
@@ -88,12 +90,14 @@ std::mem::realloc
 ;; ARGS: Ma = Address to the memory, Mb = Size of each member, Mc = Number of members, Md = The value to set
 ;; RETURNS: Ma = Address on success else NULL
 ;; NOTE: Mb can only be as large as 8 and cannot be 0
+;; Thread-safe
 std::mem::memset
     call __builtin_std_memset
     ret
 
 ;; ARGS: Ma = Source address, Mb = Destination address, Mc = Number of bytes
 ;; RETURN: Ma = Mb for Success else NULL
+;; Thread-safe
 std::mem::memcpy
     call __builtin_std_memcpy
     ret
@@ -109,6 +113,14 @@ std::mem::salloc
 ;; ARGS: Ma = Source address, Mb = Destination address, Mc = Number of bytes
 ;; RETURN: Ma = Mb else NULL for error
 ;; NOTE: memscpy is the same as 'memmove' from C-stdlib
+;; Thread-safe
 std::mem::memscpy
     call __builtin_std_memscpy
+    ret
+
+;; ARGS: Ma = First pointer, Mb = second pointer, Mc = Number of bytes
+;; RETURNS: Ma = 0 for Equal, 1 for not equal(Every byte must be the same for this)
+;; Thread-safe
+std::mem::memcmp
+    call __builtin_std_memcmp
     ret

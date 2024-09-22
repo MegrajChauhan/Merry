@@ -39,5 +39,5 @@ dc false 0
 dc SUCCESS [true]
 dc FAILURE [false]
 
-dc __stdlibv__ 00020  ;; [MAJOR][MINOR][PATCH][RELEASE NUMBER]
+ds __stdlibv__ "0.0.5.0" ;; [MAJOR][MINOR][PATCH][RELEASE NUMBER]
 

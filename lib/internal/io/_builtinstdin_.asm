@@ -25,5 +25,12 @@ depends _syscalls_.asm
 proc __builtin_std_cgets ;; console get string(until a newline)
 proc __builtin_std_cgetc ;; console get character(just one character)
 
+;; ARGS: None
+;; RETURNS: Ma = Read character
+__builtin_std_cgetc
+    cin Ma
+    ret
+
+__builtin_std_cgets
 
 dc _MSTDIN_ 0 ;; The stdin file stream
