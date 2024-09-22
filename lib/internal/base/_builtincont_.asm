@@ -21,26 +21,34 @@
 ;; SOFTWARE.
 
 ;; This is the implementation of dynamic containers
+;; This module is extremely forgiving.
+;; There are no errno set and no terminations as well.
+;; Do make use of the return values
+
+;; We also do not use any sort of Magic Number to identify that the pointer
+;; passed is in fact a container.
+;; This module is too risky to be used in programmer's language.
+;; Those who actually use it properly should find it a great helper
 
 depends _builtinalloc_.asm
 depends _builtinerrno_.asm
 depends _builtinmlocks_.asm
 
 proc __builtin_std_cont_create
+proc __builtin_std_cont_destroy
+proc __builtin_std_cont_resize 
+proc __builtin_std_cont_pfirst  ;; pointer to first element
+proc __builtin_std_cont_plast   ;; pointer to last element
+proc __builtin_std_cont_pat     ;; pointer to the asked element
+proc __builtin_std_cont_at      ;; exactly the same as 'pat' so why is this needed? I just said 'I want it.'
+proc __builtin_std_cont_size    ;; get the number of elements 
+proc __builtin_std_cont_is_empty
+proc __builtin_std_cont_capacity
+proc __builtin_std_cont_elen    ;; get per element length
 proc __builtin_std_cont_push
 proc __builtin_std_cont_pop
-proc __builtin_std_cont_pfirst ;; pointer to first element
-proc __builtin_std_cont_plast  ;; pointer to last element
-proc __builtin_std_cont_pat    ;; pointer to the asked element
-proc __builtin_std_cont_resize 
 proc __builtin_std_cont_erase
 proc __builtin_std_cont_eraseat
-proc __builtin_std_cont_destroy
-proc __builtin_std_cont_is_empty
-proc __builtin_std_cont_size    ;; Number of elements 
-proc __builtin_std_cont_capacity
-proc __builtin_std_cont_elen    ;; per element length
-proc __builtin_std_cont_at
 proc __builtin_std_cont_append
 proc __builtin_std_cont_insert
 proc __builtin_std_cont_find
@@ -119,11 +127,11 @@ __builtin_std_cont_create
     mov Mm1, Ma
     ;; we now have the memory we need
     ;; initialize everything else 
+    call __builtin_std_raw_release ;; this will initialize the lock
+    
+    inc Ma
     storeb Mb, Ma ;; store the flag
 
-    inc Ma
-    call __builtin_std_raw_release ;; this will initialize it
-    
     add Ma, 7
     storeq Mm2, Ma ;; elen
     add Ma, 8
@@ -150,21 +158,259 @@ __builtin_std_cont_create
     ret
 
 ;; ARGS: Ma = PTR to the container
+;; RETURNS: Nothing
+;; NOTE: Make sure that every single thread has done what it needs before doing this
 __builtin_std_cont_destroy
+    call __builtin_quick_save
     cmp Ma, _MSTD_NULL_
     je _std_cont_destroy ;; we will be lenient with this
-    push Mm1
     mov Mm1, Ma
-    add Mm1, _MSTD_GET_LOCK_
+    mov Mm2, Ma
     call __builtin_std_raw_release ;; make sure to release it just in case
     
+    add Mm1, 65 ;; to get to the free proc
+    loadq Mm1, Mm1
+    add Mm2, _MSTD_GET_ARRAY_
+    loadq Mm2, Mm2
+    excgq Mm2, Ma
+    call Mm1  ;; free the array
+    excgq Mm2, Ma ;; get the original container structure
+    call Mm1 ;; free the container
 
  _std_cont_destroy
+    call __builtin_quick_restore
     ret
 
+;; ARGS: Ma = PTR to the container, Mb = Factor
+;; RETURNS: Ma = PTR to the resized container else NULL
+;; NOTE: The container is resized by a factor of 2 each time
+;; After each resize, the pointers that you may have for the elements will
+;; be invalidated and hence you should not access them
+;; THREAD-SAFE
+__builtin_std_cont_resize
+   call __builtin_quick_save
+   call __builtin_std_raw_acquire ;; Ma is pointing to the lock
+ 
+   movl Mm1, _MSTD_NULL_
+   sss Mm1, 1
+
+   cmp Ma, _MSTD_NULL_
+   je _std_cont_resize_done
+   
+   mov Mf, Mb
+   mov Mm1, Ma
+   add Mm1, _MSTD_GET_ELEN_
+   loadq Mb, Mm1 ;; get elen
+   add Mm1, 16 ;; get the capacity
+   loadq Mc, Mm1
+   mul Mb, Mf
+   storeq Mb, Mm1 ;; save it
+   mul Mb, Mc ;; total length
+   add Mb, _MSTD_CONT_SIZE_ ;; we must save the container structure's size too
+   add Mm1, 24 ;; get the reallocation procedure
+   loadq Mm1, Mm1
+   call Mm1 ;; Ma hasn't been meddled with
+
+   cmp Ma, _MSTD_NULL_
+   je _std_cont_resize_done
+
+   ;; the reallocation must also copy the old contents to the new memory region
+   ;; update the internals
+   sss Ma, 1 ;; this is what we return 
+
+ _std_cont_resize_done
+   call __builtin_std_raw_release
+   call __builtin_quick_restore
+   ret
+
+;; ARGS: Ma = PTR to a container
+;; RETURNS: Ma = PTR to the first element else NULL for no elements pushed
+;; NOTE: This isn't thread safe and hence if a resize is done then the
+;; pointer will become invalid.
+__builtin_std_cont_pfirst
+   call __builtin_quick_save
+   movl Mm1, _MSTD_NULL_
+   sss Mm1, 1
+
+   cmp Ma, _MSTD_NULL_
+   je _std_cont_pfirst_done
+
+   add Ma, _MSTD_GET_COUNT_
+   loadq Mb, Ma
+
+   cmp Mb, 0
+   je _std_cont_pfirst_done
+
+   add Ma, 48 ;; to get the array
+   loadq Ma, Ma
+   sss Ma, 1 ;; this is what we return
+
+ _std_cont_pfirst_done
+   call __builtin_quick_restore
+   ret
+
+;; ARGS: Ma = PTR to a container
+;; RETURNS: Ma = PTR to the last element else NULL for no elements pushed
+;; NOTE: This isn't thread safe and hence if a resize is done then the
+;; pointer will become invalid.
+__builtin_std_cont_plast
+   call __builtin_quick_save
+   movl Mm1, _MSTD_NULL_
+   sss Mm1, 1
+
+   cmp Ma, _MSTD_NULL_
+   je _std_cont_plast_done
+
+   add Ma, _MSTD_GET_ELEN_
+   loadq Mb, Ma
+   add Ma, 8
+   loadq Mc, Ma
+   cmp Mc, 0
+   je _std_cont_plast_done
+   dec Mc ;; index starts from 0
+   mul Mb, Mc
+
+   cmp Mb, 0
+   je _std_cont_plast_done
+
+   add Ma, 48 ;; to get the array
+   loadq Ma, Ma ;; This gives us the pointer
+   add Ma, Mb
+   sss Ma, 1 ;; this is what we return
+
+ _std_cont_plast_done
+   call __builtin_quick_restore
+   ret
+
+;; ARGS: Ma = PTR to a container, Mb = index
+;; RETURNS: Ma = PTR to the asked element else NULL if no such element exists
+;; NOTE: This isn't thread safe and hence if a resize is done then the
+;; pointer will become invalid.
+__builtin_std_cont_pat
+   call __builtin_quick_save
+   movl Mm1, _MSTD_NULL_
+   sss Mm1, 1
+
+   cmp Ma, _MSTD_NULL_
+   je _std_cont_pat_done
+
+   add Ma, _MSTD_GET_ELEN_
+   loadq Mc, Ma
+   add Ma, 8
+   loadq Md, Ma
+   dec Md ;; index starts from 0
+
+   cmp Md, -1
+   js _std_cont_pat_done
+   cmp Md, Mb
+   js _std_cont_pat_done
+
+   mul Mb, Ma ;; we will get the required address
+   add Ma, 48 ;; to get the array
+   loadq Ma, Ma ;; This gives us the pointer
+   add Ma, Mb
+   sss Ma, 1 ;; this is what we return
+
+ _std_cont_pat_done
+   call __builtin_quick_restore
+   ret
+
+;; ARGS: Ma = PTR to a container, Mb = index
+;; RETURNS: Ma = PTR to the asked element else NULL if no such element exists
+;; NOTE: This isn't thread safe and hence if a resize is done then the
+;; pointer will become invalid.
+__builtin_std_cont_at
+   call __builtin_std_cont_pat
+   ret
+
+;; ARGS: Ma = PTR to a container
+;; RETURNS: Ma = The number of elements else -1
+;; NOTE: Not thread-safe and hence resizes may affect
+__builtin_std_cont_size
+   call __builtin_quick_save
+   movl Mb, -1
+   sss Mb, 1
+
+   cmp Ma, _MSTD_NULL_
+   je _std_cont_size_done
+
+   add Ma, _MSTD_GET_COUNT_
+   loadq Ma, Ma
+   sss Ma, 1 ;; we return this
+
+ _std_cont_size_done
+   call __builtin_quick_restore
+   ret
+
+;; ARGS: Ma = PTR to a container
+;; RETURNS: Ma = 1 for false, NULL for error else 0
+;; NOTE: Not thread-safe and hence resizes may affect
+__builtin_std_cont_is_empty
+   call __builtin_quick_save
+   movl Mb, _MSTD_NULL_
+   sss Mb, 1
+
+   cmp Ma, _MSTD_NULL_
+   je _std_cont_is_empty_done
+
+   add Ma, _MSTD_GET_COUNT_
+   loadq Ma, Ma
+   cmp Ma, 0
+   je _std_cont_is_empty_empty
+
+   movl Ma, 1
+   sss Ma, 1
+   jmp _std_cont_is_empty_done
+
+ _std_cont_is_empty_empty
+   movl Ma, 0
+   sss Ma, 1
+
+ _std_cont_is_empty_done
+   call __builtin_quick_restore
+   ret
+
+;; ARGS: Ma = PTR to a container
+;; RETURNS: Ma = 0 for error else the capacity
+;; NOTE: Not thread-safe and hence resizes may affect
+__builtin_std_cont_capacity
+   call __builtin_quick_save
+   movl Mb, 0
+   sss Mb, 1
+
+   cmp Ma, _MSTD_NULL_
+   je _std_cont_cap_done
+
+   add Ma, _MSTD_GET_CAPACITY_
+   loadq Ma, Ma
+   sss Ma, 1
+
+ _std_cont_cap_done
+   call __builtin_quick_restore
+   ret
+
+;; ARGS: Ma = PTR to a container
+;; RETURNS: Ma = 0 for error else the elen value
+;; NOTE: Not thread-safe and hence resizes may affect
+__builtin_std_cont_elen
+   call __builtin_quick_save
+   movl Mb, 0
+   sss Mb, 1
+
+   cmp Ma, _MSTD_NULL_
+   je _std_cont_elen_done
+
+   add Ma, _MSTD_GET_ELEN_
+   loadq Ma, Ma
+   sss Ma, 1
+
+ _std_cont_elen_done
+   call __builtin_quick_restore
+   ret
+
 ;; The structure of a container
-;; BYTE is_dynamic
 ;; BYTE lock
+;; BYTE is_dynamic
 ;; BYTE resb[6]
 ;; QWORD elen
 ;; QWORD element_count
@@ -184,8 +430,8 @@ dc _MSTD_GET_FIND_PROC_ 32
 dc _MSTD_GET_CAPACITY_ 24
 dc _MSTD_GET_COUNT_ 16
 dc _MSTD_GET_ELEN_ 8
-dc _MSTD_GET_LOCK_ 1
-dc _MSTD_GET_DYN_FLAG_ 0
+dc _MSTD_GET_DYN_FLAG_ 1
+dc _MSTD_GET_LOCK_ 0
 
 ;; Given how the internal allocator requires that the memory isn't meddled with, if you don't want your allocator's data to be overwritten, do not use it.
 ;; Any stdlib construct will allow you to specify a custom allocator which can do whatever it wants with the entire memory.
