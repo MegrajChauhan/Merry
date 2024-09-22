@@ -45,9 +45,11 @@ proc __builtin_std_cont_size    ;; get the number of elements
 proc __builtin_std_cont_is_empty
 proc __builtin_std_cont_capacity
 proc __builtin_std_cont_elen    ;; get per element length
+proc __builtin_std_cont_erase
+proc __builtin_std_cont_is_dynamic
+proc __builtin_std_cont_set_dynamic
 proc __builtin_std_cont_push
 proc __builtin_std_cont_pop
-proc __builtin_std_cont_erase
 proc __builtin_std_cont_eraseat
 proc __builtin_std_cont_append
 proc __builtin_std_cont_insert
@@ -56,8 +58,6 @@ proc __builtin_std_cont_find_last_of
 proc __builtin_std_cont_find_from
 proc __builtin_std_cont_search       ;; search for a specific element and return its number of appearance
 proc __builtin_std_cont_group_search ;; search for a group of elements
-proc __builtin_std_cont_is_dynamic
-proc __builtin_std_cont_set_dynamic
 proc __builtin_std_cont_get_allocator ;; set a custom allocator to be used while creating(It must take the same arguments as the standard functions)
                                       ;; Once an element has been pushed, you may not set an allocator
                                       ;; In fact, once the internal allocator has been used, you may not use your own allocator
@@ -405,6 +405,64 @@ __builtin_std_cont_elen
    sss Ma, 1
 
  _std_cont_elen_done
+   call __builtin_quick_restore
+   ret
+
+;; ARGS: Ma = PTR to a container
+;; RETURNS: Ma = NULL for error else 0
+;; THREAD-SAFE
+__builtin_std_cont_erase
+   call __builtin_quick_save
+   movl Ma, _MSTD_NULL_
+   sss Ma, 1
+   
+   cmp Ma, _MSTD_NULL_
+   je _std_cont_erase_done
+
+   call __builtin_std_raw_acquire
+   push Ma
+   add Ma, _MSTD_GET_COUNT_
+   xor Mb, Mb
+   storeq Mb, Ma
+   sss Mb, 1
+   pop Ma
+ _std_cont_erase_done
+   call __builtin_std_raw_release
+   call __builtin_quick_restore
+   ret
+
+;; ARGS: Ma = PTR to container
+;; RETURNS: 1 for false, NULL for error else 0
+__builtin_std_cont_is_dynamic
+   call __builtin_quick_save
+   movl Ma, _MSTD_NULL_
+   sss Ma, 1
+   
+   cmp Ma, _MSTD_NULL_
+   je _std_cont_is_dyn_done
+
+   add Ma, 1
+   loadb Mb, Ma
+   sss Mb, 1
+ _std_cont_is_dyn_done
+   call __builtin_quick_restore
+   ret
+
+;; ARGS: Ma = PTR to container
+;; RETURNS: Nothing
+__builtin_std_cont_set_dynamic
+   call __builtin_quick_save
+   movl Ma, _MSTD_NULL_
+   je 
+   
+   cmp Ma, _MSTD_NULL_
+   je _std_cont_set_dyn_done
+
+   add Ma, 1
+   movl Mb, 1
+   storeb Mb, Ma
+
+ _std_cont_set_dyn_done
    call __builtin_quick_restore
    ret
 
