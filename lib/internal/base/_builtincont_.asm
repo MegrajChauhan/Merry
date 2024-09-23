@@ -48,8 +48,17 @@ proc __builtin_std_cont_elen    ;; get per element length
 proc __builtin_std_cont_erase
 proc __builtin_std_cont_is_dynamic
 proc __builtin_std_cont_set_dynamic
+proc __builtin_std_cont_get_allocator ;; set a custom allocator to be used while creating(It must take the same arguments as the standard functions)
+                                      ;; Once an element has been pushed, you may not set an allocator
+                                      ;; In fact, once the internal allocator has been used, you may not use your own allocator
+                                      ;; This will return a data structure containing the saved addresses
+proc __builtin_std_cont_set_find ;; Since the container compares every byte when using __builtin_std_cont_find, some data structures might have a different requirement
+                                 ;; Use this to provide the required comparison procedure
+proc __builtin_std_cont_set_group_search
 proc __builtin_std_cont_push
 proc __builtin_std_cont_pop
+;; proc __builtin_std_cont_shiftl
+;; proc __builtin_std_cont_shiftr
 proc __builtin_std_cont_eraseat
 proc __builtin_std_cont_append
 proc __builtin_std_cont_insert
@@ -58,13 +67,6 @@ proc __builtin_std_cont_find_last_of
 proc __builtin_std_cont_find_from
 proc __builtin_std_cont_search       ;; search for a specific element and return its number of appearance
 proc __builtin_std_cont_group_search ;; search for a group of elements
-proc __builtin_std_cont_get_allocator ;; set a custom allocator to be used while creating(It must take the same arguments as the standard functions)
-                                      ;; Once an element has been pushed, you may not set an allocator
-                                      ;; In fact, once the internal allocator has been used, you may not use your own allocator
-                                      ;; This will return a data structure containing the saved addresses
-proc __builtin_std_cont_set_find ;; Since the container compares every byte when using __builtin_std_cont_find, some data structures might have a different requirement
-                                 ;; Use this to provide the required comparison procedure
-proc __builtin_std_cont_set_group_search
 
 proc __builtin_std_cont_def_find_proc
 proc __builtin_std_cont_def_grp_search_proc
@@ -182,44 +184,47 @@ __builtin_std_cont_destroy
     ret
 
 ;; ARGS: Ma = PTR to the container, Mb = Factor
-;; RETURNS: Ma = PTR to the resized container else NULL
-;; NOTE: The container is resized by a factor of 2 each time
+;; RETURNS: Ma = PTR to the new resized array(Not the container) else NULL
+;; NOTE: The container is resized by a factor of FACTOR
 ;; After each resize, the pointers that you may have for the elements will
 ;; be invalidated and hence you should not access them
 ;; THREAD-SAFE
 __builtin_std_cont_resize
    call __builtin_quick_save
-   call __builtin_std_raw_acquire ;; Ma is pointing to the lock
- 
    movl Mm1, _MSTD_NULL_
    sss Mm1, 1
 
    cmp Ma, _MSTD_NULL_
    je _std_cont_resize_done
-   
+   call __builtin_std_raw_acquire ;; Ma is pointing to the lock
+ 
    mov Mf, Mb
    mov Mm1, Ma
+
    add Mm1, _MSTD_GET_ELEN_
    loadq Mb, Mm1 ;; get elen
-   add Mm1, 16 ;; get the capacity
+   add Mm1, 16   ;; get the capacity
    loadq Mc, Mm1
-   mul Mb, Mf
-   storeq Mb, Mm1 ;; save it
+   mul Mc, Mf
+   storeq Mc, Mm1 ;; save it
    mul Mb, Mc ;; total length
-   add Mb, _MSTD_CONT_SIZE_ ;; we must save the container structure's size too
    add Mm1, 24 ;; get the reallocation procedure
    loadq Mm1, Mm1
-   call Mm1 ;; Ma hasn't been meddled with
+   add Ma, _MSTD_GET_ARRAY_
+   mov M1, Mm1
+   loadq Ma, Ma
+   call Mm1
 
    cmp Ma, _MSTD_NULL_
-   je _std_cont_resize_done
+   je _std_cont_resize_failed
 
-   ;; the reallocation must also copy the old contents to the new memory region
-   ;; update the internals
+   storeq Ma, M1 ;; store the new array location
+   
    sss Ma, 1 ;; this is what we return 
 
- _std_cont_resize_done
+ _std_cont_resize_failed
    call __builtin_std_raw_release
+ _std_cont_resize_done
    call __builtin_quick_restore
    ret
 
@@ -426,8 +431,8 @@ __builtin_std_cont_erase
    storeq Mb, Ma
    sss Mb, 1
    pop Ma
- _std_cont_erase_done
    call __builtin_std_raw_release
+ _std_cont_erase_done
    call __builtin_quick_restore
    ret
 
@@ -450,22 +455,169 @@ __builtin_std_cont_is_dynamic
 
 ;; ARGS: Ma = PTR to container
 ;; RETURNS: Nothing
+;; NEEDS TO BE THREAD-SAFE
 __builtin_std_cont_set_dynamic
    call __builtin_quick_save
-   movl Ma, _MSTD_NULL_
-   je 
    
    cmp Ma, _MSTD_NULL_
    je _std_cont_set_dyn_done
 
+   call __builtin_std_raw_acquire
+
    add Ma, 1
    movl Mb, 1
    storeb Mb, Ma
+   sub Ma, 1
 
+   call __builtin_std_raw_release
  _std_cont_set_dyn_done
    call __builtin_quick_restore
    ret
 
+;; ARGS: Ma = PTR to container
+;; RETUNRS: Ma = realloc proc, Mb = free proc else Ma = NULL
+__builtin_std_cont_get_allocator
+   call __builtin_quick_save
+   cmp Ma, _MSTD_NULL_
+   movl Mb, _MSTD_NULL_
+   sss Mb, 1
+   je _std_cont_get_alloc_done
+
+   add Ma, _MSTD_GET_FREE_PROC_
+   loadq Mb, Ma
+   sub Ma, 8
+   loadq Ma, Ma
+   sss Ma, 1
+   sss Mb, 2
+ _std_cont_get_alloc_done
+   call __builtin_quick_restore
+   ret
+
+;; ARGS: Ma = PTR to a container, Mb = Find proc
+;; RETURNS: Ma = 0 for success else 1
+;; THREAD-SAFE
+__builtin_std_cont_set_find
+   call __builtin_quick_save
+   movl Mm1, 1
+   sss Mm1, 1
+   cmp Ma, _MSTD_NULL_
+   je _std_cont_set_find_done
+
+   call __builtin_std_raw_acquire
+   add Ma, _MSTD_GET_FIND_PROC_
+   storeq Mb, Ma ;; Mb could very well be NULL
+   movl Mm1, 0
+   sss Mm1, 1
+   call __builtin_std_raw_release
+ _std_cont_set_find_done
+   call __builtin_quick_restore
+   ret
+
+;; ARGS: Ma = PTR to a container, Mb = group search proc
+;; RETURNS: Ma = 0 for success else 1
+;; THREAD-SAFE
+__builtin_std_cont_set_group_search
+   call __builtin_quick_save
+   movl Mm1, 1
+   sss Mm1, 1
+   cmp Ma, _MSTD_NULL_
+   je _std_cont_set_grp_search_done
+
+   call __builtin_std_raw_acquire
+   add Ma, _MSTD_GET_GRP_SEARCH_PROC_
+   storeq Mb, Ma ;; Mb could very well be NULL
+   movl Mm1, 0
+   sss Mm1, 1
+   call __builtin_std_raw_release
+ _std_cont_set_grp_search_done
+   call __builtin_quick_restore
+   ret
+
+;; ARGS: Ma = PTR to container, Mb = ptr to the element to push
+;; RETUNRS: 0 for success else 1
+;; THREAD-SAFE
+;; NOTE: With this procedure, the data to be pushed must have the correct endianness
+__builtin_std_cont_push
+   call __builtin_quick_save
+   movl Mm1, 1
+   sss Mm1, 1
+   cmp Ma, _MSTD_NULL_
+   je _std_cont_push_done
+   cmp Mb, _MSTD_NULL_
+   je _std_cont_push_done
+
+   call __builtin_std_raw_acquire
+
+   mov M1, Ma ;; temporary storage
+   add M1, _MSTD_GET_COUNT_
+   loadq Mm1, M1  ;; the count
+   add M1, 8
+   loadq Mm2, Ma ;; the capacity
+   cmp Mm1, Mm2
+   js _std_cont_push_continue
+
+   movl Mb, 2 ;; we will resize by a factor of 2
+   push Ma
+   call __builtin_std_cont_resize
+   cmp Ma, _MSTD_NULL_
+   je _std_cont_push_failed
+   pop Ma
+
+ _std_cont_push_continue
+   ;; we have enough memory
+   add Ma, _MSTD_GET_ELEN_
+   loadq Mm3, Ma ;; ELEN
+   mul Mm1, Mm3  ;; to get the offset
+   add Ma, 56  ;; to get the array
+   loadq Ma, Ma
+   add Ma, Mm1 ;; to get the correct offset
+   excgq Ma, Mb ;; correctly place destination and source address
+   mov Mc, Mm3  ;; the number of bytes
+   call __builtin_std_memcpy ;; This will not fail given that everything has worked
+   xor Mm1, Mm1
+   sss Mm1,1
+
+ _std_cont_push_failed
+   call __builtin_std_raw_release
+ _std_cont_push_done
+   call __builtin_quick_restore
+   ret
+
+;; ARGS: Ma = PTR to container, Mb = PTR to where the data needs to be stored
+;; RETURNS: Ma = 1 for error else 0
+__builtin_std_cont_pop
+   call __builtin_quick_save
+   movl Mm1, 1
+   sss Mm1, 1
+   cmp Ma, _MSTD_NULL_
+   je _std_cont_pop_done
+   cmp Mb, _MSTD_NULL_
+   je _std_cont_pop_done
+
+   call __builtin_std_raw_acquire
+   mov M1, Ma ;; temporary storage
+   add M1, _MSTD_GET_COUNT_
+   loadq Mm1, M1  ;; the count
+   cmp Mm1, 0
+   je _std_cont_pop_failed
+   dec Mm1
+   storeq Mm1, M1 
+   sub M1, 8
+   loadq Mm2, M1 ;; the elen
+   mul Mm1, Mm2 ;; get the offset
+   add Ma, _MSTD_GET_ARRAY_
+   loadq Ma, Ma
+   add Ma, Mm1 ;; get the offset
+   mov Mc, Mm2
+   call __builtin_std_memcpy ;; this must not fail
+   xor Ma, Ma
+   sss Ma, 1
+   call __builtin_std_raw_release
+ _std_cont_pop_failed
+   call __builtin_std_raw_release
+ _std_cont_pop_done
+   call __builtin_quick_restore
+   ret
 ;; The structure of a container
 ;; BYTE lock
 ;; BYTE is_dynamic
