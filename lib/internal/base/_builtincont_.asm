@@ -197,7 +197,7 @@ __builtin_std_cont_resize
    cmp Ma, _MSTD_NULL_
    je _std_cont_resize_done
    call __builtin_std_raw_acquire ;; Ma is pointing to the lock
- 
+   push Ma
    mov Mf, Mb
    mov Mm1, Ma
 
@@ -223,6 +223,7 @@ __builtin_std_cont_resize
    sss Ma, 1 ;; this is what we return 
 
  _std_cont_resize_failed
+   pop Ma
    call __builtin_std_raw_release
  _std_cont_resize_done
    call __builtin_quick_restore
@@ -463,12 +464,12 @@ __builtin_std_cont_set_dynamic
    je _std_cont_set_dyn_done
 
    call __builtin_std_raw_acquire
-
+   push Ma
    add Ma, 1
    movl Mb, 1
    storeb Mb, Ma
    sub Ma, 1
-
+   pop Ma
    call __builtin_std_raw_release
  _std_cont_set_dyn_done
    call __builtin_quick_restore
@@ -504,10 +505,12 @@ __builtin_std_cont_set_find
    je _std_cont_set_find_done
 
    call __builtin_std_raw_acquire
+   push Ma
    add Ma, _MSTD_GET_FIND_PROC_
    storeq Mb, Ma ;; Mb could very well be NULL
    movl Mm1, 0
    sss Mm1, 1
+   pop Ma
    call __builtin_std_raw_release
  _std_cont_set_find_done
    call __builtin_quick_restore
@@ -524,10 +527,12 @@ __builtin_std_cont_set_group_search
    je _std_cont_set_grp_search_done
 
    call __builtin_std_raw_acquire
+   push Ma
    add Ma, _MSTD_GET_GRP_SEARCH_PROC_
    storeq Mb, Ma ;; Mb could very well be NULL
    movl Mm1, 0
    sss Mm1, 1
+   pop Ma
    call __builtin_std_raw_release
  _std_cont_set_grp_search_done
    call __builtin_quick_restore
@@ -547,7 +552,8 @@ __builtin_std_cont_push
    je _std_cont_push_done
 
    call __builtin_std_raw_acquire
-
+   
+   push Ma
    mov M1, Ma ;; temporary storage
    add M1, _MSTD_GET_COUNT_
    loadq Mm1, M1  ;; the count
@@ -556,12 +562,16 @@ __builtin_std_cont_push
    cmp Mm1, Mm2
    js _std_cont_push_continue
 
+   mov Mf, Ma
+   call __builtin_std_cont_is_dynamic
+   cmp Ma, 1
+   je _std_cont_push_failed
    movl Mb, 2 ;; we will resize by a factor of 2
-   push Ma
+   mov Ma, Mf
    call __builtin_std_cont_resize
    cmp Ma, _MSTD_NULL_
    je _std_cont_push_failed
-   pop Ma
+   mov Ma, Mf
 
  _std_cont_push_continue
    ;; we have enough memory
@@ -578,6 +588,7 @@ __builtin_std_cont_push
    sss Mm1,1
 
  _std_cont_push_failed
+   pop Ma
    call __builtin_std_raw_release
  _std_cont_push_done
    call __builtin_quick_restore
@@ -595,6 +606,7 @@ __builtin_std_cont_pop
    je _std_cont_pop_done
 
    call __builtin_std_raw_acquire
+   push Ma
    mov M1, Ma ;; temporary storage
    add M1, _MSTD_GET_COUNT_
    loadq Mm1, M1  ;; the count
@@ -612,12 +624,117 @@ __builtin_std_cont_pop
    call __builtin_std_memcpy ;; this must not fail
    xor Ma, Ma
    sss Ma, 1
-   call __builtin_std_raw_release
  _std_cont_pop_failed
+   pop Ma
    call __builtin_std_raw_release
  _std_cont_pop_done
    call __builtin_quick_restore
    ret
+
+;; ARGS: Ma = PTR to a container, Mb = index to erase
+;; RETURNS: 1 for failure else 0
+;; THREAD-SAFE
+__builtin_std_cont_eraseat
+   call __builtin_quick_save
+   movl Mm1, 1
+   sss Mm1, 1
+   cmp Ma, _MSTD_NULL_
+   je _std_cont_eraseat_done
+
+   call __builtin_std_raw_acquire
+   
+   push Ma
+   mov M1, Ma
+   add M1, _MSTD_GET_ELEN_
+   loadq Mm1, M1 ;; elen
+   add M1, 8
+   loadq Mm2, M1 ;; count
+   add M1, 48
+   loadq Mm3, M1 ;; array
+   cmp Mm2, Mb
+   jse _std_cont_eraseat_failed
+   sub Mm2, Mb
+   mul Mm2, Mm1
+   mov Mc, Mm2 ;; number of bytes
+   mul Mb, Mm1
+   add Mm3, Mb
+   mov Mb, Mm3 ;; destination address
+   add Mm3, 8
+   push Ma
+   mov Ma, Mm3 ;; source address
+   call __builtin_std_memcpy ;; This will not fail
+   pop Ma
+   add Ma, _MSTD_GET_COUNT_
+   loadq M1, Ma
+   dec M1
+   storeq M1, Ma ;; update count
+   xor M1, M1
+   sss M1, 1
+ _std_cont_eraseat_failed
+   pop Ma
+   call __builtin_std_raw_release
+ _std_cont_eraseat_done
+   call __builtin_quick_restore
+   ret
+
+;; ARGS: Ma = PTR to container(Lock of this is used), Mb = PTR to the next container(This isn't freed)
+;; RETURNS: Ma = 0 for success else 1
+;; NOTE: The lock for the second container isn't used and it isn't freed afterwards. 
+;;       The ELEN for the first container is used and for the second container isnt' even used.
+;; THREAD-SAFE
+__builtin_std_cont_append
+  call __builtin_quick_save
+  movl M1, _MSTD_NULL_
+  sss M1, 1
+
+  cmp Ma, _MSTD_NULL_
+  je _std_cont_append_done
+  cmp Mb, _MSTD_NULL_
+  je _std_cont_append_done
+
+  call __builtin_std_raw_acquire
+  push Ma
+
+  inc Ma
+  loadb M1, Ma
+  cmp M1, 1
+  jne _std_cont_append_failed ;; The container isn't dynamic
+  
+  ;; we won't even check if the container already has enough memory to add those items
+  ;; we will reallocate no matter what! Make it better if you want!
+  add Mb, _MSTD_GET_COUNT_
+  loadq Mm2, Ma ;; count
+  add Ma, 56
+  loadq M5, Ma ;; The array
+
+  add Ma, 7
+  loadq M1, Ma ;; The elen
+  add Ma, 8
+  loadq M2, Ma ;; count
+  add M2, Mm2  ;; total count
+  storeq M2, Ma ;; save time!
+  sub M2, Mm2 ;; we don't need the total now
+  add Ma, 32
+  loadq M3, Ma ;; realloc proc
+  add Ma, 8
+  loadq M4, Ma ;; free proc
+  add Ma, 8
+  loadq M5, Ma ;; The array
+
+  mov Mc, M2
+  add Mc, Mm2
+  mul Mc, M1 ;; the total number of bytes  
+
+  
+
+
+ _std_cont_append_failed
+  pop Ma
+  call __builtin_std_raw_release
+ _std_cont_append_done
+  call __builtin_quick_restore
+  ret
+
 ;; The structure of a container
 ;; BYTE lock
 ;; BYTE is_dynamic
