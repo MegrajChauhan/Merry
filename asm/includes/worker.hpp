@@ -159,6 +159,7 @@ namespace masm
         {"_builtinutils_.asm", "lib/internal/utils/_builtinutils_.asm"},
         {"_builtinerrno_.asm", "lib/internal/error/_builtinerrno_.asm"},
         {"_builtindyn_.asm", "lib/internal/bif/_builtindyn_.asm"},
+        {"_builtincont_.asm", "lib/internal/base/_builtincont_.asm"},
         {"_builtinplatformconstants_.asm", "lib/internal/arch/x86_64/linux/_builtinplatformconstants_.asm"},
         {"_builtinsyscall_.asm", "lib/internal/arch/x86_64/linux/_builtinsyscall_.asm"},
         {"_syscalls_.asm", "lib/internal/arch/_syscalls_.asm"},
@@ -166,6 +167,7 @@ namespace masm
         {"stddyn.asm", "lib/stdmp.asm"},
         {"stdmp.asm", "lib/stdmp.asm"},
         {"stdmt.asm", "lib/stdmt.asm"},
+        {"stdcont.asm", "lib/stdcont.asm"},
 #endif
     };
 };

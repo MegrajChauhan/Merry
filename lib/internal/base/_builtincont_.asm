@@ -21,8 +21,6 @@
 ;; SOFTWARE.
 
 ;; This is the implementation of dynamic containers
-;; This module is extremely forgiving.
-;; There are no errno set and no terminations as well.
 ;; Do make use of the return values
 
 ;; We also do not use any sort of Magic Number to identify that the pointer
@@ -63,9 +61,8 @@ proc __builtin_std_cont_eraseat
 proc __builtin_std_cont_append
 proc __builtin_std_cont_insert
 proc __builtin_std_cont_find
-proc __builtin_std_cont_find_last_of
-proc __builtin_std_cont_find_from
-proc __builtin_std_cont_search       ;; search for a specific element and return its number of appearance
+;;proc __builtin_std_cont_find_last_of
+;;proc __builtin_std_cont_find_from
 proc __builtin_std_cont_group_search ;; search for a group of elements
 
 proc __builtin_std_cont_def_find_proc
@@ -977,6 +974,78 @@ __builtin_std_cont_insert
   call __builtin_quick_restore
   ret
 
+;; ARGS: Ma = PTR to container, Mb = PTR to the element that needs to be found
+;; RETURNS: Ma = PTR to the first byte of the element if found else NULL
+;; THREAD-SAFE
+__builtin_std_cont_find
+  push _MSTD_NULL_
+  call __builtin_quick_save
+  cmp Ma, _MSTD_NULL_
+  cmp Mb, _MSTD_NULL_
+  je _std_cont_find_inval
+
+  call __builtin_std_raw_acquire
+  add Ma, _MSTD_GET_ELEN_
+  loadq Mc, Ma ;; elen
+  add Ma, 8
+  loadq Md, Ma ;; count
+  add Ma, 16
+  loadq M1, Ma ;; find proc
+  add Ma, 32
+  loadq Ma, Ma ;; the array
+  
+  call M1
+
+  sss Ma, 1
+  gss Ma, 2
+  call __builtin_std_raw_release
+  jmp _std_cont_find_done
+ _std_cont_find_inval
+  movl Ma, _M_EINVAL
+  call __builtin_set_errno
+
+ _std_cont_find_done
+  call __builtin_quick_restore
+  pop Ma
+  ret
+
+;; ARGS: Ma = PTR to container, Mb = PTR to the array that needs to be found, Mc = length of Mb
+;; RETURNS: Ma = PTR to the first byte of the array if found else NULL
+;; THREAD-SAFE
+__builtin_std_cont_group_search
+  push _MSTD_NULL_
+  call __builtin_quick_save
+  cmp Ma, _MSTD_NULL_
+  cmp Mb, _MSTD_NULL_
+  cmp Mc, 0
+  je _std_cont_group_search_inval
+
+  call __builtin_std_raw_acquire
+  add Ma, _MSTD_GET_ELEN_
+  loadq M1, Ma ;; elen
+  add Ma, 8
+  loadq Md, Ma ;; count
+  mul Md, M1   ;; total bytes
+  add Ma, 24
+  loadq M1, Ma ;; group search proc
+  add Ma, 24
+  loadq Ma, Ma ;; the array
+  
+  call M1
+
+  sss Ma, 1
+  gss Ma, 2
+  call __builtin_std_raw_release
+  jmp _std_cont_group_search_done
+ _std_cont_find_inval
+  movl Ma, _M_EINVAL
+  call __builtin_set_errno
+
+ _std_cont_group_search_done
+  call __builtin_quick_restore
+  pop Ma
+  ret
+
 ;; ARGS: Ma = PTR to array, Mb = PTR to the element to compare, Mc = length of element, Md = length of the array(number of elements)
 ;; RETURNS: Ma = PTR to the first byte of the element if found else NULL
 __builtin_std_cont_def_find_proc
@@ -1007,7 +1076,11 @@ __builtin_std_cont_def_find_proc
   jmp _def_find_found
 
  _def_find_loop_maybe_eq_not
+  inc Ma
+  inc Mb
+  loop _def_find_loop_maybe_eq_not
   pop Mc
+
  _def_find_loop_not_eq
   add Ma, Md
   loop _std_cont_def_find_proc_loop
@@ -1026,6 +1099,66 @@ __builtin_std_cont_def_find_proc
   call __builtin_set_errno
 
  _std_cont_def_find_proc_done
+  call __builtin_quick_restore
+  pop Ma
+  ret
+
+;; ARGS: Ma = PTR to array, Mb = PTR to the array of another array to compare, Mc = length of another array, Md = length of the array(number of bytes)
+;; RETURNS: Ma = PTR to the first byte of the group if found else NULL
+__builtin_std_cont_def_grp_search_proc
+  push _MSTD_NULL_
+  call __builtin_quick_save
+  cmp Ma, _MSTD_NULL_
+  cmp Mb, _MSTD_NULL_
+  cmp Mc, 0
+  cmp Md, 0
+  je _std_cont_def_grp_search_proc_inval
+
+  excg Mc, Md
+ 
+ _std_cont_def_grp_search_proc_loop
+  loadb M1, Ma
+  loadb M2, Mb
+  cmp M1, M2
+  jne _std_cont_def_grp_search_proc_not_eq
+  push Mc
+  mov Mc, Md
+  
+ _std_cont_def_grp_search_proc_maybe_eq
+  loadb M1, Ma
+  loadb M2, Mb
+  cmp M1, M2
+  jne _def_find_grp_search_maybe_eq_not
+  inc Ma
+  inc Mb
+  loop _std_cont_def_grp_search_proc_maybe_eq
+  jmp _def_grp_search_found
+
+ _def_find_grp_search_maybe_eq_not
+  inc Ma
+  inc Mb
+  loop _def_find_grp_search_maybe_eq_not
+  pop Mc
+
+ _std_cont_def_grp_search_proc_not_eq
+  inc Ma
+  inc Mb
+  loop _std_cont_def_grp_search_proc_loop
+  
+  jmp _std_cont_def_grp_search_proc_done ;; we didn't find the element
+
+ _def_grp_search_found
+  ;; we found an element
+  ;; the ptr is in Ma but Md bytes shifted
+  sub Ma, Md ;; this gives us the correct address
+  sss Ma, 1
+  jmp _std_cont_def_grp_search_proc_done
+
+ _std_cont_def_grp_search_proc_inval
+  movl Ma, _M_EINVAL
+  call __builtin_set_errno
+
+ _std_cont_def_grp_search_proc_done
   call __builtin_quick_restore
   pop Ma
   ret
