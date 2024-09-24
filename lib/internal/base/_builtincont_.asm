@@ -905,6 +905,131 @@ __builtin_std_cont_append
   pop Ma
   ret
 
+;; ARGS: Ma = PTR to container, Mb = index, Mc = PTR to the element
+;; RETURNS: Ma = PTR to container else NULL
+;; THREAD-SAFE 
+__builtin_std_cont_insert
+  push _MSTD_NULL_
+  call __builtin_quick_save
+  cmp Ma, _MSTD_NULL_
+  cmp Mc, _MSTD_NULL_
+  je _std_cont_insert_inval
+
+  call __builtin_std_raw_acquire
+  mov Mf, Ma ;; temporary
+
+  ;; get all needed internals
+  add Ma, _MSTD_GET_ELEN_
+  loadq M1, Ma ;; elen
+  add Ma, 8
+  loadq M2, Ma ;; count
+  cmp M2, Mb
+  jse _std_cont_insert_failed
+  add Ma, 8
+  loadq M3, Ma ;; capacity
+  cmp M2, M3
+  jns _std_cont_insert_failed
+  add Ma, 40
+  loadq M3, Ma ;; array
+
+  ;; make calculations
+  push Mc
+  mov Mm1, Mb
+  mul Mm1, M1 ;; the offset where we need to insert 
+  mov Mm2, Mm1
+  add Mm2, M1 ;; the offset of the next element
+  mov Mc, M2 
+  dec Mc
+  sub Mc, Mb
+  mul Mc, M1 ;; The number of bytes to shift
+  
+  ;; perform the shift
+  mov Ma, Mm1
+  mov Mb, Mm2
+  call __builtin_std_memcpy ;; won't fail
+  pop Mc
+
+  ;; insert to Mm1
+  mov Ma, Mc
+  mov Mb, Mm1
+  mov Mc, M1
+  call __builtin_std_memcpy ;; shouldn't fail
+
+  ;; update internals
+  push Mf
+  add Mf, _MSTD_GET_COUNT_
+  inc M2
+  storeq M2, Mf
+  pop Mf
+  sss Mf, 1
+  jmp _std_cont_insert_failed ;; didn't fail though
+
+ _std_cont_insert_inval
+  movl Ma, _M_EINVAL
+  call __builtin_set_errno
+  jmp _std_cont_insert_done
+
+ _std_cont_insert_failed
+  mov Ma, Mf
+  call __builtin_std_raw_release
+
+ _std_cont_insert_done
+  call __builtin_quick_restore
+  ret
+
+;; ARGS: Ma = PTR to array, Mb = PTR to the element to compare, Mc = length of element, Md = length of the array(number of elements)
+;; RETURNS: Ma = PTR to the first byte of the element if found else NULL
+__builtin_std_cont_def_find_proc
+  push _MSTD_NULL_
+  call __builtin_quick_save
+  cmp Ma, _MSTD_NULL_
+  cmp Mb, _MSTD_NULL_
+  cmp Mc, 0
+  cmp Md, 0
+  je _std_cont_def_find_proc_inval
+
+  excg Mc, Md
+ 
+ _std_cont_def_find_proc_loop
+  loadb M1, Ma
+  loadb M2, Mb
+  cmp M1, M2
+  jne _def_find_loop_not_eq
+  push Mc
+  mov Mc, Md
+  
+ _def_find_loop_maybe_eq
+  cmp M1, M2
+  jne _def_find_loop_maybe_eq_not
+  inc Ma
+  inc Mb
+  loop _def_find_loop_maybe_eq
+  jmp _def_find_found
+
+ _def_find_loop_maybe_eq_not
+  pop Mc
+ _def_find_loop_not_eq
+  add Ma, Md
+  loop _std_cont_def_find_proc_loop
+  
+  jmp _std_cont_def_find_proc_done ;; we didn't find the element
+
+ _def_find_found
+  ;; we found an element
+  ;; the ptr is in Ma but Md bytes shifted
+  sub Ma, Md ;; this gives us the correct address
+  sss Ma, 1
+  jmp _std_cont_def_find_proc_done
+
+ _std_cont_def_find_proc_inval
+  movl Ma, _M_EINVAL
+  call __builtin_set_errno
+
+ _std_cont_def_find_proc_done
+  call __builtin_quick_restore
+  pop Ma
+  ret
+
 dc _MSTD_CONT_SIZE_ 72 ;; A lot of bytes
 dc _MSTD_GET_ARRAY_ 64
 dc _MSTD_GET_FREE_PROC_ 56
@@ -916,21 +1041,6 @@ dc _MSTD_GET_COUNT_ 16
 dc _MSTD_GET_ELEN_ 8
 dc _MSTD_GET_DYN_FLAG_ 1
 dc _MSTD_GET_LOCK_ 0
-
-;; ARGS: Ma = PTR to container, Mb = index, Mc = PTR to the element
-;; RETURNS: Ma = PTR to container else NULL
-;; THREAD-SAFE 
-__builtin_std_cont_insert
-  call __builtin_quick_save
-  push Ma
-
-
- _std_cont_insert_failed
-  pop Ma
-  call __builtin_std_raw_release
- _std_cont_insert_done
-  call __builtin_quick_restore
-  ret
 ;; The structure of a container
 ;; BYTE lock
 ;; BYTE is_dynamic
