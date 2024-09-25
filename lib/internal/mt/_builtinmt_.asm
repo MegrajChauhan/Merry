@@ -34,8 +34,9 @@ proc __builtin_std_spawn_thread
 __builtin_std_spawn_thread
     intr _M_NEW_CORE_
     cmp Ma, 1
-    jne _mp_spawn_ret
+    jne _mt_spawn_ret
     push Ma
+    mov Ma, Mb
     call __builtin_set_errno
     pop Ma
  _mt_spawn_ret

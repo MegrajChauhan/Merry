@@ -418,6 +418,8 @@ namespace masm
         INST_RET,
         INST_SVA,
         INST_SVC,
+        INST_GSS,
+        INST_SSS,
         INST_PUSHA,
         INST_POPA,
         INST_PUSH,

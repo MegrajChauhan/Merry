@@ -30,7 +30,7 @@
 #include "emit.hpp"
 
 // The format for the VERSION is v<Major>.<Minor>.<Patch>-<State>.<update_count>
-#define VERSION "Masm- v0.1.7-test.23"
+#define VERSION "Masm- v0.1.7a-test.24"
 
 static std::string version_message = "Masm: An Assembler for the Merry Virtual Machine.\n"
                                      "Latest version: ";
@@ -57,7 +57,7 @@ int main(int argc, char **argv)
     masm::Parser p;
     masm::Emit _e;
     // int a = 2;
-    // char *v[] = {"dfds", "../stdtest/stdalloctest.masm"};
+    // char *v[] = {"dfds", "conttest.asm"};
     Masm _asm(argc, argv);
     std::pair<bool, std::string> input_filename, output_filename;
     bool ed = false, dst = false, cd = false, cdf = false;

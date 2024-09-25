@@ -411,10 +411,10 @@ mret_t merry_dmemory_read_dword_atm(MerryDMemory *memory, maddress_t address, mq
     case mtrue:
         merry_dmemory_read_from_next_page_atm(memory, addr.page, this_page, 0, &_ret[0]);
         merry_dmemory_read_from_next_page_atm(memory, addr.page + 1, 4 - this_page, this_page, &_ret[this_page]);
-        *_store_in = (mqword_t)(*(mwptr_t)(_ret));
+        *_store_in = (mqword_t)(*(mdptr_t)(_ret));
         break;
     default:
-        *_store_in = (mqword_t)atomic_load(&memory->pages[addr.page]->address_space + addr.offset);
+        *_store_in = (mqword_t)atomic_load((mdptr_t)(memory->pages[addr.page]->address_space + addr.offset));
     }
     return RET_SUCCESS;
 }
@@ -482,10 +482,10 @@ mret_t merry_dmemory_read_qword(MerryDMemory *memory, maddress_t address, mqptr_
     case mtrue:
         merry_dmemory_read_from_next_page(memory, addr.page, this_page, 0, &_ret[0]);
         merry_dmemory_read_from_next_page(memory, addr.page + 1, 8 - this_page, this_page, &_ret[this_page]);
-        *_store_in = (mqword_t)(*(mdptr_t)(_ret));
+        *_store_in = (mqword_t)(*(mqptr_t)(_ret));
         break;
     default:
-        *_store_in = *((mdptr_t)(memory->pages[addr.page]->address_space + addr.offset));
+        *_store_in = *((mqptr_t)(memory->pages[addr.page]->address_space + addr.offset));
     }
     return RET_SUCCESS;
 }
@@ -502,12 +502,12 @@ mret_t merry_dmemory_read_qword_atm(MerryDMemory *memory, maddress_t address, mq
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
     }
-    switch (surelyF((addr.offset + 1) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
+    switch (surelyF((addr.offset + 7) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_))
     {
     case mtrue:
         merry_dmemory_read_from_next_page_atm(memory, addr.page, this_page, 0, &_ret[0]);
         merry_dmemory_read_from_next_page_atm(memory, addr.page + 1, 8 - this_page, this_page, &_ret[this_page]);
-        *_store_in = (mqword_t)(*(mwptr_t)(_ret));
+        *_store_in = (mqword_t)(*(mqptr_t)(_ret));
         break;
     default:
         *_store_in = atomic_load((mqptr_t)(memory->pages[addr.page]->address_space + addr.offset));

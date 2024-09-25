@@ -308,7 +308,6 @@ __builtin_std_mem_init
    storeb Ma, _Mstd_mem_lock
 
    ;; Initialize allocated memory count
-   movl Ma, 0
    storeq Ma, _Mstd_allocated_mem
 
    ;; Calculate total memory size
@@ -379,7 +378,6 @@ __builtin_std_mem_check_free_blocks
    cmp M1, _MSTD_NULL_
    je _std_mem_check_free_blocks_done
    
-   mov M2, M1
  _std_mem_check_free_blocks_loop
    push M1
    sub M1, _MSTD_MEM_METADATA_BLOCK_LEN
@@ -389,10 +387,10 @@ __builtin_std_mem_check_free_blocks
 
    pop M1
    sub M1, _MSTD_MEM_METADATA_NXT_
-   loadq Mm1, M1
-   cmp Mm1, _MSTD_NULL_
+   loadq M1, M1
+   cmp M1, _MSTD_NULL_
    je _std_mem_check_free_blocks_done ;; NULL- found None
-
+   
    jmp _std_mem_check_free_blocks_loop ;; REDO- again and again until the end
 
  _std_mem_check_free_blocks_found

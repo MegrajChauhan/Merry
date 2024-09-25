@@ -224,7 +224,8 @@ namespace masm
                 {"entry", KEY_ENTRY},
                 {"eepe", KEY_EEPE},
                 {"teepe", KEY_TEEPE},
-                {"depends", KEY_DEPENDS}};
+                {"depends", KEY_DEPENDS}
+            };
 
     struct Token
     {

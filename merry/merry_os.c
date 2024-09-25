@@ -262,18 +262,15 @@ mret_t merry_os_boot_core(msize_t core_id, maddress_t start_addr)
 mret_t merry_os_add_core()
 {
     // just add another core
-    merry_mutex_lock(os._lock);
     MerryCore *new_core = merry_core_init(os.inst_mem, os.data_mem, os.core_count);
     if (new_core == RET_NULL)
     {
-        merry_mutex_unlock(os._lock);
         goto _err;
     }
     MerryThread *th = merry_thread_init();
     if (th == RET_NULL)
     {
         merry_core_destroy(new_core, mtrue);
-        merry_mutex_unlock(os._lock);
         goto _err;
     }
     MerryThread **temp = (MerryThread **)malloc(sizeof(MerryThread *) * (os.core_count));
@@ -281,7 +278,6 @@ mret_t merry_os_add_core()
     {
         merry_core_destroy(new_core, mtrue);
         merry_thread_destroy(th);
-        merry_mutex_unlock(os._lock);
         goto _err;
     }
     MerryCore **tempc = (MerryCore **)malloc(sizeof(MerryCore *) * (os.core_count));
@@ -290,7 +286,6 @@ mret_t merry_os_add_core()
         // we failed again
         merry_core_destroy(new_core, mtrue);
         merry_thread_destroy(th);
-        merry_mutex_unlock(os._lock);
         free(temp);
         goto _err;
     }
@@ -308,7 +303,6 @@ mret_t merry_os_add_core()
     os.core_threads = temp;
     os.cores = tempc;
     os.core_count++;
-    merry_mutex_unlock(os._lock);
     return RET_SUCCESS;
 _err:
     merry_update_errno();
@@ -789,7 +783,9 @@ _os_exec_(get_func_addr)
         free(func_name);
         return RET_FAILURE;
     }
-    os->cores[request->id]->registers[Mb] = function;
+    MerryPtoQ p;
+    p.ptr = (mptr_t)function;
+    os->cores[request->id]->registers[Mb] = p.qword;
     c->registers[Ma] = 0;
     free(func_name);
     return RET_SUCCESS;

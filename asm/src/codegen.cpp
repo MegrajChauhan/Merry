@@ -2,18 +2,23 @@
 
 bool masm::evaluate_consts(SymbolTable *table, Expr *e)
 {
-    for (auto c : table->_const_list)
+    for (auto& c : table->_const_list)
     {
         Variable var = c.second;
+        if (var.name == "NULL")
+            int p = 2;
         if (var.is_expr)
         {
             e->add_expr(var.expr);
-            if (!e->evaluate(true))
+            auto v = e->evaluate(true);
+            if (!v.has_value())
             {
                 note("While evaluating the constant " + var.name);
                 return false;
             }
+            c.second.value = v.value();
             c.second.type = FLOAT;
+            c.second.is_expr = false;
         }
     }
     return true;
@@ -40,6 +45,7 @@ bool masm::evaluate_data(SymbolTable *table, std::unordered_map<std::string, siz
                 return false;
             }
             v.value = res.value();
+            var.second.is_expr = false;
         }
         switch (v.type)
         {
@@ -259,7 +265,7 @@ void masm::CodeGen::mov_imm(NodeMov *n, bool _is64)
     GenBinary b;
     b.bytes.b1 = (_is64) ? OP_MOVE_IMM_64 : OP_MOVE_IMM;
     std::string imm = std::get<std::string>(n->second_oper);
-    size_t _imm = 0;
+    uint64_t _imm = 0;
     if (n->is_float)
     {
         if (_is64)

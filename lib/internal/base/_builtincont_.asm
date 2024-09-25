@@ -28,6 +28,7 @@
 
 depends _builtinalloc_.asm
 depends _builtinerrno_.asm
+depends _builtinerrconsts_.asm
 depends _builtinmlocks_.asm
 
 proc __builtin_std_cont_create
@@ -252,7 +253,7 @@ __builtin_std_cont_capinc
   call __builtin_quick_save
   cmp Ma, _MSTD_NULL_
   cmp Mb, 0
-  je _std_cont_resize_inval
+  je _std_cont_capinc_inval
     
   call __builtin_std_raw_acquire
   sss Ma, 1
@@ -260,7 +261,7 @@ __builtin_std_cont_capinc
   inc Ma
   loadb Mc, Ma
   cmp Mc, 1
-  jne _std_cont_resize_failed
+  jne _std_cont_capinc_failed
   add Ma, 7
   loadq M1, Ma ;; ELEN
   add Ma, 8
@@ -281,7 +282,7 @@ __builtin_std_cont_capinc
   call M4 
   pop Mb
   cmp Ma, _MSTD_NULL_
-  je _std_cont_resize_failed
+  je _std_cont_capinc_failed
 
   ;; update internals
   mov Mc, Ma
@@ -291,16 +292,16 @@ __builtin_std_cont_capinc
   add Ma, 40
   storeq Mc, Ma
   
- _std_cont_resize_failed ;; Doesn't mean we truly failed
+ _std_cont_capinc_failed ;; Doesn't mean we truly failed
   gss Ma, 1
   call __builtin_std_raw_release
-  jmp _std_cont_resize_done
+  jmp _std_cont_capinc_done
 
- _std_cont_resize_inval
+ _std_cont_capinc_inval
   movl Ma, _M_EINVAL
   call __builtin_set_errno
 
- _std_cont_resize_done
+ _std_cont_capinc_done
   call __builtin_quick_restore
   pop Ma
   ret
@@ -657,7 +658,7 @@ __builtin_std_cont_push
   add Ma, 8
   loadq M2, Ma ;; count
   add Ma, 8 
-  loadq M3, 8  ;; capacity
+  loadq M3, Ma  ;; capacity
 
   cmp M2, M3
   js _std_cont_push_continue
@@ -1037,7 +1038,8 @@ __builtin_std_cont_group_search
   gss Ma, 2
   call __builtin_std_raw_release
   jmp _std_cont_group_search_done
- _std_cont_find_inval
+
+ _std_cont_group_search_inval
   movl Ma, _M_EINVAL
   call __builtin_set_errno
 
@@ -1057,7 +1059,7 @@ __builtin_std_cont_def_find_proc
   cmp Md, 0
   je _std_cont_def_find_proc_inval
 
-  excg Mc, Md
+  excgq Mc, Md
  
  _std_cont_def_find_proc_loop
   loadb M1, Ma
@@ -1114,7 +1116,7 @@ __builtin_std_cont_def_grp_search_proc
   cmp Md, 0
   je _std_cont_def_grp_search_proc_inval
 
-  excg Mc, Md
+  excgq Mc, Md
  
  _std_cont_def_grp_search_proc_loop
   loadb M1, Ma

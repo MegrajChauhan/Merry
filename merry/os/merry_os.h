@@ -46,6 +46,7 @@
 #include "merry_traps.h"
 #include "merry_ihdlr.h"
 #include "merry_syscall_hdlr.h"
+#include "merry_helpers.h"
 
 typedef struct Merry Merry;
 

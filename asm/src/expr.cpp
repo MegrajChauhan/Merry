@@ -108,7 +108,9 @@ void masm::Expr::add_addr(std::unordered_map<std::string, size_t> *addr)
 std::optional<std::string> masm::Expr::evaluate(bool _only_const)
 {
     std::string res;
+    F64 f;
     bool _addr = false;
+    bool _make_float = false;
     for (auto t : expr)
     {
         switch (t.type)
@@ -119,10 +121,14 @@ std::optional<std::string> masm::Expr::evaluate(bool _only_const)
         case TokenType::OPER_PTR:
             _addr = true;
             break;
-        case TokenType::NUM_INT:
         case TokenType::NUM_FLOAT:
-            operads.push(std::stod(t.val));
+            _make_float = true;
+        case TokenType::NUM_INT:
+        {
+            f._integer = std::stoull(t.val);
+            operads.push(f._double);
             break;
+        }
         case TokenType::IDENTIFIER:
         {
             // get it's value
@@ -166,7 +172,8 @@ std::optional<std::string> masm::Expr::evaluate(bool _only_const)
                     res->second.value = _r.value();
                     res->second.is_expr = false;
                 }
-                operads.push(std::stod(v.value));
+                f._integer = std::stoull(v.value);
+                operads.push(f._double);
             }
             else
             {
@@ -176,7 +183,7 @@ std::optional<std::string> masm::Expr::evaluate(bool _only_const)
                     note("Expected a variable or a constant that exists.");
                     return {};
                 }
-                if (res->second.type == EXPR)
+                if (res->second.is_expr)
                 {
                     Expr e;
                     e.add_addr(data_addr);
@@ -185,15 +192,16 @@ std::optional<std::string> masm::Expr::evaluate(bool _only_const)
                     auto _r = e.evaluate(_only_const);
                     if (!_r.has_value())
                         return {};
-                    table->_const_list[res->second.name].value = _r.value();
-                    table->_const_list[res->second.name].is_expr = false;
+                    res->second.is_expr = false;
+                    res->second.value = _r.value();
                 }
                 if (_addr)
                 {
                     note("You cannot have addresses to constants.");
                     return {};
                 }
-                operads.push(std::stod(res->second.value));
+                f._integer = std::stoull(res->second.value);
+                operads.push(f._double);
             }
             break;
         }
@@ -257,7 +265,7 @@ std::optional<std::string> masm::Expr::evaluate(bool _only_const)
         note("Invalid expression.");
         return {};
     }
-    if (!_was_addr)
+    if (!_was_addr && _make_float)
         res = std::to_string(operads.top());
     else
     {

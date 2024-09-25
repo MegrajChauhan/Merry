@@ -2272,7 +2272,7 @@ void masm::Parser::analyse_nodes()
             auto r = symtable._const_list.find(var_name);
             if (r == symtable._const_list.end())
             {
-                if ((label_addr.find(var_name) != label_addr.end()))
+                if ((lbl_list.find(var_name) != lbl_list.end()))
                 {
                     n.kind = MOVL_IMM;
                     _n->is_lbl = true;

@@ -654,9 +654,8 @@ _THRET_T_ merry_runCore(mptr_t core)
                     c->stop_running = mtrue;
                     break;
                 }
-                atomic_compare_exchange_strong(_addr_, &val, c->registers[(*current >> 48) & 15] & 0xFF);
+                c->flag.zero = atomic_compare_exchange_strong(_addr_, &val, c->registers[(*current >> 48) & 15] & 0xFF);
             }
-            _update_flags_(&c->flag);
             break;
         case OP_CIN:
             // the input is stored in a register that is encoded into the last 4 bits of the instruction
