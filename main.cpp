@@ -56,9 +56,9 @@ int main(int argc, char **argv)
 {
     masm::Parser p;
     masm::Emit _e;
-    // int a = 2;
-    // char *v[] = {"dfds", "conttest.asm"};
-    Masm _asm(argc, argv);
+    int a = 2;
+    char *v[] = {"dfds", "conttest.asm"};
+    Masm _asm(a, v);
     std::pair<bool, std::string> input_filename, output_filename;
     bool ed = false, dst = false, cd = false, cdf = false;
     _asm.parse_args();

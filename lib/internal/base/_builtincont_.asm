@@ -204,7 +204,7 @@ __builtin_std_cont_resize
   loadq M2, Ma ;; COUNT
   add Ma, 8
   loadq M3, Ma ;; CAPACITY
-  add Ma, 32
+  add Ma, 24
   loadq M4, Ma ;; realloc proc
   add Ma, 16
   loadq Ma, Ma ;; the array
@@ -268,7 +268,7 @@ __builtin_std_cont_capinc
   loadq M2, Ma ;; COUNT
   add Ma, 8
   loadq M3, Ma ;; CAPACITY
-  add Ma, 32
+  add Ma, 24
   loadq M4, Ma ;; realloc proc
   add Ma, 16
   loadq Ma, Ma ;; the array
@@ -672,7 +672,6 @@ __builtin_std_cont_push
   cmp Ma, _MSTD_NULL_
   je _std_cont_push_failed
 
-  sss Ma, 1    ;; This can be safely done now(return)
   excgq Ma, Mf
 
  _std_cont_push_continue
@@ -681,6 +680,7 @@ __builtin_std_cont_push
 
   ;; calculate offsets and write back
   mov Mc, M1
+  mul Mc, M2
   add Ma, Mc 
   excgq Mb, Ma
   call __builtin_std_memcpy ;; This shouldn't fail at all
@@ -691,6 +691,7 @@ __builtin_std_cont_push
   add Mf, _MSTD_GET_COUNT_
   storeq M2, Mf
   pop Mf
+  sss Mf, 1    ;; This can be safely done now(return)
 
  _std_cont_push_failed
   mov Ma, Mf
