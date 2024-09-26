@@ -75,7 +75,7 @@ proc __builtin_std_cont_def_grp_search_proc
 ;; RETURNS: Ma = NULL for failure else a pointer to the new container(Sets ERRNO)
 __builtin_std_cont_create
   push 0
-  call __builtin_quick_save
+  pusha
   movl Mm1, _MSTD_NULL_
   sss Mm1, 1   ;; Return value for error
 
@@ -152,7 +152,7 @@ __builtin_std_cont_create
   call __builtin_set_errno
 
  _std_cont_create_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -160,7 +160,7 @@ __builtin_std_cont_create
 ;; RETURNS: Nothing
 ;; NOTE: Make sure that every single thread has done what it needs before doing this
 __builtin_std_cont_destroy
-  call __builtin_quick_save
+  pusha
   cmp Ma, _MSTD_NULL_
   je _std_cont_destroy_done
 
@@ -174,7 +174,7 @@ __builtin_std_cont_destroy
   call Mb ;; free the container
 
  _std_cont_destroy_done
-  call __builtin_quick_restore
+  popa
   ret
 
 ;; ARGS: Ma = PTR to the container, Mb = Factor
@@ -185,7 +185,7 @@ __builtin_std_cont_destroy
 ;; THREAD-SAFE
 __builtin_std_cont_resize
   push _MSTD_NULL_
-  call __builtin_quick_save
+  pusha
   cmp Ma, _MSTD_NULL_
   cmp Mb, 0
   cmp Mb, 1 ;; this is also invalid
@@ -208,7 +208,6 @@ __builtin_std_cont_resize
   loadq M4, Ma ;; realloc proc
   add Ma, 16
   loadq Ma, Ma ;; the array
-  
   ;; do calculations
   mul Mb, M3
   push Mb
@@ -227,6 +226,7 @@ __builtin_std_cont_resize
   storeq Mb, Ma
   add Ma, 40
   storeq Mc, Ma
+  cout Mf
   
  _std_cont_resize_failed ;; Doesn't mean we truly failed
   gss Ma, 1
@@ -238,7 +238,7 @@ __builtin_std_cont_resize
   call __builtin_set_errno
 
  _std_cont_resize_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -250,7 +250,7 @@ __builtin_std_cont_resize
 ;; THREAD-SAFE
 __builtin_std_cont_capinc
   push _MSTD_NULL_
-  call __builtin_quick_save
+  pusha
   cmp Ma, _MSTD_NULL_
   cmp Mb, 0
   je _std_cont_capinc_inval
@@ -302,7 +302,7 @@ __builtin_std_cont_capinc
   call __builtin_set_errno
 
  _std_cont_capinc_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -312,7 +312,7 @@ __builtin_std_cont_capinc
 ;; pointer will become invalid.
 __builtin_std_cont_pfirst
   push _MSTD_NULL_
-  call __builtin_quick_save
+  pusha
 
   cmp Ma, _MSTD_NULL_
   je _std_cont_pfirst_done
@@ -328,7 +328,7 @@ __builtin_std_cont_pfirst
   sss Ma, 1 ;; this is what we return
 
  _std_cont_pfirst_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -338,7 +338,7 @@ __builtin_std_cont_pfirst
 ;; pointer will become invalid.
 __builtin_std_cont_plast
   push _MSTD_NULL_
-  call __builtin_quick_save
+  pusha
 
   cmp Ma, _MSTD_NULL_
   je _std_cont_plast_done
@@ -358,7 +358,7 @@ __builtin_std_cont_plast
   sss Ma, 1    ;; this is what we return
 
  _std_cont_plast_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -368,7 +368,7 @@ __builtin_std_cont_plast
 ;; pointer will become invalid.
 __builtin_std_cont_pat
   push _MSTD_NULL_
-  call __builtin_quick_save
+  pusha
 
   cmp Ma, _MSTD_NULL_
   je _std_cont_pat_done
@@ -389,7 +389,7 @@ __builtin_std_cont_pat
   sss Ma, 1    ;; this is what we return
 
  _std_cont_pat_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -406,7 +406,7 @@ __builtin_std_cont_at
 ;; NOTE: Not thread-safe and hence resizes may affect
 __builtin_std_cont_size
   push -1
-  call __builtin_quick_save
+  pusha
 
   cmp Ma, _MSTD_NULL_
   je _std_cont_size_done
@@ -416,7 +416,7 @@ __builtin_std_cont_size
   sss Ma, 1 ;; we return this
 
  _std_cont_size_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -425,7 +425,7 @@ __builtin_std_cont_size
 ;; NOTE: Not thread-safe and hence resizes may affect
 __builtin_std_cont_is_empty
   push _MSTD_NULL_
-  call __builtin_quick_save
+  pusha
 
   cmp Ma, _MSTD_NULL_
   je _std_cont_is_empty_done
@@ -444,7 +444,7 @@ __builtin_std_cont_is_empty
   sss Ma, 1
 
  _std_cont_is_empty_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -453,7 +453,7 @@ __builtin_std_cont_is_empty
 ;; NOTE: Not thread-safe and hence resizes may affect
 __builtin_std_cont_is_full
   push _MSTD_NULL_
-  call __builtin_quick_save
+  pusha
 
   cmp Ma, _MSTD_NULL_
   je _std_cont_is_full_done
@@ -474,7 +474,7 @@ __builtin_std_cont_is_full
   sss Ma, 1
 
  _std_cont_is_full_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -483,7 +483,7 @@ __builtin_std_cont_is_full
 ;; NOTE: Not thread-safe and hence resizes may affect
 __builtin_std_cont_capacity
   push 0
-  call __builtin_quick_save
+  pusha
 
   cmp Ma, _MSTD_NULL_
   je _std_cont_cap_done
@@ -493,7 +493,7 @@ __builtin_std_cont_capacity
   sss Ma, 1
 
  _std_cont_cap_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -502,7 +502,7 @@ __builtin_std_cont_capacity
 ;; NOTE: Not thread-safe and hence resizes may affect
 __builtin_std_cont_elen
   push 0
-  call __builtin_quick_save
+  pusha
 
   cmp Ma, _MSTD_NULL_
   je _std_cont_elen_done
@@ -512,7 +512,7 @@ __builtin_std_cont_elen
   sss Ma, 1
 
  _std_cont_elen_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -521,7 +521,7 @@ __builtin_std_cont_elen
 ;; THREAD-SAFE
 __builtin_std_cont_erase
   push 1
-  call __builtin_quick_save
+  pusha
    
   cmp Ma, _MSTD_NULL_
   je _std_cont_erase_done
@@ -535,7 +535,7 @@ __builtin_std_cont_erase
   pop Ma
   call __builtin_std_raw_release
  _std_cont_erase_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -543,7 +543,7 @@ __builtin_std_cont_erase
 ;; RETURNS: 1 for false, NULL for error else 0
 __builtin_std_cont_is_dynamic
   push _MSTD_NULL_
-  call __builtin_quick_save
+  pusha
    
   cmp Ma, _MSTD_NULL_
   je _std_cont_is_dyn_done
@@ -553,7 +553,7 @@ __builtin_std_cont_is_dynamic
   sss Mb, 1
 
  _std_cont_is_dyn_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -561,7 +561,7 @@ __builtin_std_cont_is_dynamic
 ;; RETURNS: Nothing
 ;; NEEDS TO BE THREAD-SAFE
 __builtin_std_cont_set_dynamic
-  call __builtin_quick_save
+  pusha
    
   cmp Ma, _MSTD_NULL_
   je _std_cont_set_dyn_done
@@ -573,13 +573,13 @@ __builtin_std_cont_set_dynamic
   sub Ma, 1
   call __builtin_std_raw_release
  _std_cont_set_dyn_done
-  call __builtin_quick_restore
+  popa
   ret
 
 ;; ARGS: Ma = PTR to container
 ;; RETUNRS: Ma = realloc proc, Mb = free proc else Ma = NULL
 __builtin_std_cont_get_allocator
-   call __builtin_quick_save
+   pusha
    cmp Ma, _MSTD_NULL_
    movl Mb, _MSTD_NULL_
    sss Mb, 1
@@ -592,7 +592,7 @@ __builtin_std_cont_get_allocator
    sss Ma, 1
    sss Mb, 2
  _std_cont_get_alloc_done
-   call __builtin_quick_restore
+   popa
    ret
 
 ;; ARGS: Ma = PTR to a container, Mb = Find proc
@@ -600,7 +600,7 @@ __builtin_std_cont_get_allocator
 ;; THREAD-SAFE
 __builtin_std_cont_set_find
    push 1
-   call __builtin_quick_save
+   pusha
    cmp Ma, _MSTD_NULL_
    je _std_cont_set_find_done
 
@@ -613,7 +613,7 @@ __builtin_std_cont_set_find
    pop Ma
    call __builtin_std_raw_release
  _std_cont_set_find_done
-   call __builtin_quick_restore
+   popa
    pop Ma
    ret
 
@@ -622,7 +622,7 @@ __builtin_std_cont_set_find
 ;; THREAD-SAFE
 __builtin_std_cont_set_group_search
    push 1
-   call __builtin_quick_save
+   pusha
    cmp Ma, _MSTD_NULL_
    je _std_cont_set_grp_search_done
 
@@ -635,7 +635,7 @@ __builtin_std_cont_set_group_search
    pop Ma
    call __builtin_std_raw_release
  _std_cont_set_grp_search_done
-   call __builtin_quick_restore
+   popa
    pop Ma
    ret
 
@@ -645,7 +645,7 @@ __builtin_std_cont_set_group_search
 ;; NOTE: With this procedure, the data to be pushed must have the correct endianness
 __builtin_std_cont_push
   push _MSTD_NULL_
-  call __builtin_quick_save
+  pusha
   cmp Ma, _MSTD_NULL_
   cmp Mb, _MSTD_NULL_
   je _std_cont_push_inval
@@ -682,6 +682,7 @@ __builtin_std_cont_push
   mov Mc, M1
   mul Mc, M2
   add Ma, Mc 
+  mov Mc, M1
   excgq Mb, Ma
   call __builtin_std_memcpy ;; This shouldn't fail at all
 
@@ -703,7 +704,7 @@ __builtin_std_cont_push
   call __builtin_set_errno
   
  _std_cont_push_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -711,7 +712,7 @@ __builtin_std_cont_push
 ;; RETURNS: Ma = PTR to container else NULL
 __builtin_std_cont_pop
   push _MSTD_NULL_
-  call __builtin_quick_save
+  pusha
   cmp Ma, _MSTD_NULL_
   cmp Mb, _MSTD_NULL_
   je _std_cont_pop_inval
@@ -760,7 +761,7 @@ __builtin_std_cont_pop
   call __builtin_std_raw_release
    
  _std_cont_pop_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -769,7 +770,7 @@ __builtin_std_cont_pop
 ;; THREAD-SAFE
 __builtin_std_cont_eraseat
   push _MSTD_NULL_
-  call __builtin_quick_save
+  pusha
   cmp Ma, _MSTD_NULL_
   je _std_cont_eraseat_done
 
@@ -821,7 +822,7 @@ __builtin_std_cont_eraseat
   call __builtin_std_raw_release
 
  _std_cont_eraseat_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -832,7 +833,7 @@ __builtin_std_cont_eraseat
 ;; THREAD-SAFE
 __builtin_std_cont_append
   push _MSTD_NULL_
-  call __builtin_quick_save
+  pusha
   cmp Ma, _MSTD_NULL_
   cmp Mb, _MSTD_NULL_
   je _std_cont_append_inval
@@ -900,7 +901,7 @@ __builtin_std_cont_append
   call __builtin_set_errno
 
  _std_cont_append_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -909,7 +910,7 @@ __builtin_std_cont_append
 ;; THREAD-SAFE 
 __builtin_std_cont_insert
   push _MSTD_NULL_
-  call __builtin_quick_save
+  pusha
   cmp Ma, _MSTD_NULL_
   cmp Mc, _MSTD_NULL_
   je _std_cont_insert_inval
@@ -973,7 +974,7 @@ __builtin_std_cont_insert
   call __builtin_std_raw_release
 
  _std_cont_insert_done
-  call __builtin_quick_restore
+  popa
   ret
 
 ;; ARGS: Ma = PTR to container, Mb = PTR to the element that needs to be found
@@ -981,7 +982,7 @@ __builtin_std_cont_insert
 ;; THREAD-SAFE
 __builtin_std_cont_find
   push _MSTD_NULL_
-  call __builtin_quick_save
+  pusha
   cmp Ma, _MSTD_NULL_
   cmp Mb, _MSTD_NULL_
   je _std_cont_find_inval
@@ -1007,7 +1008,7 @@ __builtin_std_cont_find
   call __builtin_set_errno
 
  _std_cont_find_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -1016,7 +1017,7 @@ __builtin_std_cont_find
 ;; THREAD-SAFE
 __builtin_std_cont_group_search
   push _MSTD_NULL_
-  call __builtin_quick_save
+  pusha
   cmp Ma, _MSTD_NULL_
   cmp Mb, _MSTD_NULL_
   cmp Mc, 0
@@ -1045,7 +1046,7 @@ __builtin_std_cont_group_search
   call __builtin_set_errno
 
  _std_cont_group_search_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -1053,7 +1054,7 @@ __builtin_std_cont_group_search
 ;; RETURNS: Ma = PTR to the first byte of the element if found else NULL
 __builtin_std_cont_def_find_proc
   push _MSTD_NULL_
-  call __builtin_quick_save
+  pusha
   cmp Ma, _MSTD_NULL_
   cmp Mb, _MSTD_NULL_
   cmp Mc, 0
@@ -1102,7 +1103,7 @@ __builtin_std_cont_def_find_proc
   call __builtin_set_errno
 
  _std_cont_def_find_proc_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 
@@ -1110,7 +1111,7 @@ __builtin_std_cont_def_find_proc
 ;; RETURNS: Ma = PTR to the first byte of the group if found else NULL
 __builtin_std_cont_def_grp_search_proc
   push _MSTD_NULL_
-  call __builtin_quick_save
+  pusha
   cmp Ma, _MSTD_NULL_
   cmp Mb, _MSTD_NULL_
   cmp Mc, 0
@@ -1162,7 +1163,7 @@ __builtin_std_cont_def_grp_search_proc
   call __builtin_set_errno
 
  _std_cont_def_grp_search_proc_done
-  call __builtin_quick_restore
+  popa
   pop Ma
   ret
 

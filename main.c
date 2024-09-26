@@ -48,12 +48,13 @@ mret_t merry_main_parse_options(int argc, char **argv);
 void merry_cleanup_and_exit(msize_t ret);
 int merry_main();
 
+// int main()
 int main(int argc, char **argv)
 {
-    int a = 3;
-    char *c[] = {"gdh", "-f", "conttest.mbin"};
-    merry_setup_host(a, c);
-    if (merry_main_parse_options(a, c) == RET_FAILURE)
+    // int argc = 3;
+    // char *argv[] = {"gdh", "-f", "conttest.mbin"};
+    merry_setup_host(argc, argv);
+    if (merry_main_parse_options(argc, argv) == RET_FAILURE)
         merry_cleanup_and_exit(1);
     if (_is_child == mtrue)
         merry_cleanup_and_exit(childmain());

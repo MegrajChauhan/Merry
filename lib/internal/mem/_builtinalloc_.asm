@@ -119,7 +119,7 @@ __builtin_std_mem_populate_allocated_head
 __builtin_std_mem_append_to_free
 
    ;; The block that was provided must have NULL for NXT and PREV
-   call __builtin_quick_save
+   pusha
    
    loadq M1, _Mstd_free_mem_head
 
@@ -152,7 +152,7 @@ __builtin_std_mem_append_to_free
    call __builtin_std_mem_populate_free_head
 
  _std_mem_append_to_free_done
-   call __builtin_quick_restore
+   popa
    ret
 
 ;; ARGS: Ma = address for the block
@@ -160,7 +160,7 @@ __builtin_std_mem_append_to_free
 __builtin_std_mem_append_to_allocated
 
    ;; The block that was provided must have NULL for NXT and PREV
-   call __builtin_quick_save
+   pusha
    
    loadq M1, _Mstd_allocated_mem_head
    
@@ -193,13 +193,13 @@ __builtin_std_mem_append_to_allocated
    call __builtin_std_mem_populate_allocated_head
 
  _std_mem_append_to_allocated_done
-   call __builtin_quick_restore
+   popa
    ret
 
 ;; ARGS: Ma = address for the block to remove
 ;; RETURNS: Nothing
 __builtin_std_mem_remove_from_free
-   call __builtin_quick_save
+   pusha
 
    ;; Updates the Free List and makes NXT and PREV NULL
    movl Mb, Ma          ;; temporary storage
@@ -240,19 +240,19 @@ __builtin_std_mem_remove_from_free
    storeq M1, M2
    
  _std_mem_remove_from_free_done
-   call __builtin_quick_restore
+   popa
    ret
 
 ;; ARGS: Ma = address for the block to remove
 ;; RETURNS: Nothing
 __builtin_std_mem_remove_from_allocated
-   call __builtin_quick_save
+   pusha
 
    ;; Updates the Allocated List and makes NXT and PREV NULL
    movl Mb, Ma          ;; temporary storage
    
    movl Mm1, _MSTD_NULL_
-   storeq M1, Mm1
+   
    sub Mb, _MSTD_MEM_METADATA_NXT_
    loadq M1, Mb
    storeq Mm1, Mb
@@ -270,6 +270,8 @@ __builtin_std_mem_remove_from_allocated
    jmp _std_mem_remove_from_allocated_continue 
 
  _std_mem_remove_from_allocated_is_only_head
+   cmp M1, Ma
+   jne _std_mem_remove_from_allocated_continue
    push _MSTD_NULL_
    pop _Mstd_allocated_mem_head
 
@@ -287,13 +289,13 @@ __builtin_std_mem_remove_from_allocated
    storeq M1, M2
    
  _std_mem_remove_from_allocated_done
-   call __builtin_quick_restore
+   popa
    ret
 
 ;; Initialize memory system.
 ;; ARGS: None, RETURN: Nothing
 __builtin_std_mem_init
-   call __builtin_quick_save
+   pusha
    
    ;; Initialize internal memory management values
    loadq Ma, _Mstd_free_mem_start_addr
@@ -316,7 +318,7 @@ __builtin_std_mem_init
    sub Ma, _Mstd_allocable_mem_start
    storeq Ma, _Mstd_allocable_mem_len     ;; Store available memory size
 
-   call __builtin_quick_restore
+   popa
    ret
 
 ;; ARGS: Ma = PTR to message, Mb= length of msg
@@ -331,7 +333,7 @@ __builtin_std_mem_log_err
 ;; ARGS: Nothing
 ;; RETURNS: 1 for success and 0 for failure
 __builtin_std_mem_request_more_mem
-   call __builtin_quick_save
+   pusha
    mov Ma, [PTR _Mstd_mem_lock]
    call __builtin_std_raw_acquire
    push 0
@@ -360,7 +362,7 @@ __builtin_std_mem_request_more_mem
  _std_mem_request_more_mem_done
    mov Ma, [PTR _Mstd_mem_lock]
    call __builtin_std_raw_release
-   call __builtin_quick_restore
+   popa
    loadq Ma, _Mstd_mem_intermediate
    ret
 
@@ -368,7 +370,7 @@ __builtin_std_mem_request_more_mem
 ;; RETURNS: Ma = NULL for no match else a valid address
 __builtin_std_mem_check_free_blocks
 
-   call __builtin_quick_save
+   pusha
 
    push _MSTD_NULL_
    pop _Mstd_mem_intermediate
@@ -397,14 +399,14 @@ __builtin_std_mem_check_free_blocks
    pop _Mstd_mem_intermediate
 
  _std_mem_check_free_blocks_done
-   call __builtin_quick_restore
+   popa
    loadq Ma, _Mstd_mem_intermediate
    ret
 
 ;; ARGS: Ma = Size of block to create
 ;; RETURNS: Ma = newly allocated block or NULL
 __builtin_std_create_new_block
-   call __builtin_quick_save
+   pusha
    
    push _MSTD_NULL_
    pop _Mstd_mem_intermediate
@@ -454,7 +456,7 @@ __builtin_std_create_new_block
    storeq Mf, M1
 
  _std_create_new_block_done
-   call __builtin_quick_restore
+   popa
    loadq Ma, _Mstd_mem_intermediate
    
    ret
@@ -462,7 +464,7 @@ __builtin_std_create_new_block
 ;; ARGS: Ma = Size of block to allocate
 ;; RETURNS: Ma = NULL for failure else a valid pointer
 __builtin_std_alloc
-   call __builtin_quick_save
+   pusha
    
    push Ma
    mov Ma, [PTR _Mstd_mem_lock]
@@ -509,20 +511,19 @@ __builtin_std_alloc
  _std_alloc_done
    mov Ma, [PTR _Mstd_mem_lock]
    call __builtin_std_raw_release
-   call __builtin_quick_restore
+   popa
    loadq Ma, _Mstd_mem_intermediate
    ret
    
 ;; ARGS: Ma = Address of the block to remove
 ;; RETURNS: Nothing but will throw an error and exit for invalid pointer
 __builtin_std_free
-   call __builtin_quick_save
-
+   pusha
+  
    push Ma
    mov Ma, [PTR _Mstd_mem_lock]
    call __builtin_std_raw_acquire
    pop Ma
-
    movl Mf, Ma
 
    ;; Check if the allocator has been initialized
@@ -545,7 +546,7 @@ __builtin_std_free
    call __builtin_std_mem_append_to_free
    mov Ma, [PTR _Mstd_mem_lock]
    call __builtin_std_raw_release
-   call __builtin_quick_restore
+   popa
    ret
 
  _std_free_error
@@ -558,7 +559,7 @@ __builtin_std_free
 ;; RETURNS: Ma = Address on success else NULL
 ;; NOTE: Mb can only be as large as 8 and cannot be 0
 __builtin_std_memset
-   call __builtin_quick_save
+   pusha
    
    push Ma
    mov Ma, [PTR _Mstd_mem_lock]
@@ -610,15 +611,15 @@ __builtin_std_memset
  _std_memset_done
    mov Ma, [PTR _Mstd_mem_lock]
    call __builtin_std_raw_release
-   call __builtin_quick_restore
+   popa
    loadq Ma, _Mstd_mem_intermediate
    ret
   
 ;; ARGS: Ma = Source address, Mb = Destination address, Mc = Number of bytes
 ;; RETURN: Ma = Mb for Success else NULL
 __builtin_std_memcpy
-  call __builtin_quick_save
-
+  pusha
+  
   push Ma
   mov Ma, [PTR _Mstd_mem_lock]
   call __builtin_std_raw_acquire
@@ -648,15 +649,14 @@ __builtin_std_memcpy
  _std_memcpy_done
   mov Ma, [PTR _Mstd_mem_lock]
   call __builtin_std_raw_release
-  call __builtin_quick_restore
+  popa
   loadq Ma, _Mstd_mem_intermediate
   ret
 
 ;; ARGS: Ma = Old address, Mb = New size
 ;; RETURN: Ma = A new pointer on success else NULL
 __builtin_std_realloc
-  call __builtin_quick_save
-
+  pusha
   ;; We will first allocate new memory with the requested number of bytes and then
   ;; We will memcpy the old data into the new one and free the old one.
   push _MSTD_NULL_
@@ -687,14 +687,14 @@ __builtin_std_realloc
   call __builtin_std_free
 
  _std_realloc_done
-  call __builtin_quick_restore
+  popa
   loadq Ma, _Mstd_mem_intermediate
   ret
 ;; ARGS: Ma = Size of members, Mb = Number of members
 ;; RETURN: Ma = A newly allocated block else NULL for error
 ;; NOTE: salloc is the same as 'calloc' from C stdlib. All the bytes are initialized to 0
 __builtin_std_salloc
-  call __builtin_quick_save
+  pusha
 
   push _MSTD_NULL_
   pop _Mstd_mem_intermediate
@@ -716,14 +716,14 @@ __builtin_std_salloc
   pop _Mstd_mem_intermediate
 
  _std_salloc_done
-  call __builtin_quick_restore
+  popa
   loadq Ma, _Mstd_mem_intermediate
   ret
 ;; ARGS: Ma = Source address, Mb = Destination address, Mc = Number of bytes
 ;; RETURN: Ma = Mb else NULL for error
 ;; NOTE: memscpy is the same as 'memmove' from C-stdlib
 __builtin_std_memscpy
-  call __builtin_quick_save
+  pusha
 
   push Ma
   mov Ma, [PTR _Mstd_mem_lock]
@@ -770,14 +770,14 @@ __builtin_std_memscpy
  _std_memscpy_done
   mov Ma, [PTR _Mstd_mem_lock]
   call __builtin_std_raw_release
-  call __builtin_quick_restore
+  popa
   loadq Ma, _Mstd_mem_intermediate
   ret
 
 ;; ARGS: Ma = First pointer, Mb = second pointer, Mc = Number of bytes
 ;; RETURNS: Ma = 0 for Equal, 1 for not equal(Every byte must be the same for this)
 __builtin_std_memcmp
-  call __builtin_quick_save
+  pusha
   
   push Ma
   mov Ma, [PTR _Mstd_mem_lock]
@@ -808,7 +808,7 @@ __builtin_std_memcmp
  _std_memcmp_done
   mov Ma, [PTR _Mstd_mem_lock]
   call __builtin_std_raw_release
-  call __builtin_quick_restore
+  popa
   loadq Ma, _Mstd_mem_intermediate
   ret
 

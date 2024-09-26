@@ -48,12 +48,12 @@ _std_ret
 ;; ARGS: Ma = PTR arg_count, Mb = PTR arg_value
 ;; RETURN = Nothing, check Ma == 1
 __builtin_std_get_cmd_options
-    call __builtin_quick_save
+    pusha
     loadb M1, _Mstd_option_count
     loadq M2, _Mstd_option_start_addr
     storeb M1, Ma
     storeq M2, Mb
-    call __builtin_quick_restore
+    popa
     ret
 
 ;; Firstly, the initialization data

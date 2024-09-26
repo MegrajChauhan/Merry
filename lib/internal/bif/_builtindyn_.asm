@@ -52,7 +52,7 @@ __builtin_std_dynl_init
 ;; ARGS: Ma = PTR to the library name
 ;; RETURNS: Ma = descriptor else 1 for error 
 __builtin_std_loadlib
-    call __builtin_quick_save
+    pusha
     push Ma
     mov Ma, _Mstd_dyn_loc_
     call __builtin_std_raw_acquire
@@ -73,7 +73,7 @@ __builtin_std_loadlib
     movl Ma, 1
 
  _dynl_done
-    call __builtin_quick_restore
+    popa
     loadq Ma, _Mstd_dyn_intermediate_
     call __builtin_std_raw_release
     ret
@@ -86,7 +86,7 @@ __builtin_std_unloadlib
 ;; ARGS: Ma = handle, Mb = PTR to symbol's name
 ;; RETURNS: Mb = address else Ma = 1 for error
 __builtin_std_symget
-    call __builtin_quick_save
+    pusha
     call __builtin_std_raw_acquire
     
     intr _M_GET_FUNC
@@ -102,7 +102,7 @@ __builtin_std_symget
     call __builtin_set_errno
 
  _symget_done
-    call __builtin_quick_restore
+    popa
     loadq Ma, _Mstd_dyn_intermediate_
     call __builtin_std_raw_release
     ret
@@ -110,7 +110,7 @@ __builtin_std_symget
 ;; ARGS: Ma = handle, Mb = function address, Mc = parameter, Md = length
 ;; RETURNS: Ma = function call result else 1 
 __builtin_std_symcall
-    call __builtin_quick_save
+    pusha
     call __builtin_std_raw_acquire
     
     intr _M_CALL_FUNC
@@ -126,7 +126,7 @@ __builtin_std_symcall
     call __builtin_set_errno
 
  _symcall_done
-    call __builtin_quick_restore
+    popa
     loadq Ma, _Mstd_dyn_intermediate_
     call __builtin_std_raw_release
     ret
@@ -134,7 +134,7 @@ __builtin_std_symcall
 ;; ARGS: Ma = handle, Mb = PTR to function name, Mc = parameter, Md = length
 ;; RETURNS: Ma = function call result else 1 
 __builtin_std_symgc
-    call __builtin_quick_save
+    pusha
     call __builtin_std_raw_acquire
     
     intr _M_GET_AND_CALL_FUNC
@@ -150,7 +150,7 @@ __builtin_std_symgc
     call __builtin_set_errno
 
  _symgc_done
-    call __builtin_quick_restore
+    popa
     loadq Ma, _Mstd_dyn_intermediate_
     call __builtin_std_raw_release
     ret

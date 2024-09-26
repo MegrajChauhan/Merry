@@ -22,7 +22,7 @@ main
     cmp Ma, NULL
     je _error
     storeq Ma, cont
-    intr _M_BP_
+
     ;; new thread
     push Ma
     movl Ma, main2
@@ -30,7 +30,6 @@ main
     cmp Ma, 1
     je _error ;; we won't free it :)
     pop Ma
-    intr _M_BP_
 
     ;; pushing
     mov Mb, [PTR to_push1]
@@ -38,18 +37,21 @@ main
     cmp Ma, NULL
     je _error
     mov M1, [PTR pushing]
+    cout M2
     call print
-    intr _M_BP_
+    ;;intr _M_BP_
 
     ;; try to get information now
+    movl Mc, 1000
+ _tmp
+    loop _tmp
     push Ma
     call std::cont::csize
     uoutq Ma
     mov Ma, 10
     cout Ma
-    pop Ma
-    intr _M_BP_
-    
+    pop Ma    
+
     ;; pop now
     ;; update info(just in case)
     push Ma
@@ -59,8 +61,10 @@ main
     mov Ma, 10
     cout Ma
     pop Ma
+    dec Mc
     intr _M_BP_
-
+    intr _M_BP_
+    intr _M_BP_
  _loop
     movl Mb, [PTR temp]
     call std::cont::pop
@@ -71,6 +75,9 @@ main
     loop _loop
     
     call std::cont::destroy
+    movl Ma, 10
+    cout Ma
+    xor Ma, Ma
     halt
  _error
     movl Ma, 1
@@ -87,7 +94,6 @@ main2
     je _error
     mov M1, [PTR pushing]
     call print
-    intr _M_BP_
     
     ;; resize
     mov Mb, 2
@@ -96,7 +102,6 @@ main2
     je _error
     mov M1, [PTR resizing]
     call print
-    intr _M_BP_
     
     ;; capacity
     push Ma
@@ -105,7 +110,6 @@ main2
     mov Ma, 10
     cout Ma
     pop Ma
-    intr _M_BP_
     
     mov Mb, 0
     mov Mc, [PTR to_push2]
@@ -116,6 +120,7 @@ main2
     call print
     intr _M_BP_
     
+    xor Ma, Ma
     halt
 
 print

@@ -22,18 +22,18 @@
 
 ;; Some quick and useful procedures 
 
-proc __builtin_quick_save
-proc __builtin_quick_restore
+;;proc __builtin_quick_save
+;;proc __builtin_quick_restore
 proc __builtin_align_value
 proc __builtin_exit
 
-__builtin_quick_save
-    pusha
-    ret
+;;__builtin_quick_save
+;;    pusha
+;;    ret
 
-__builtin_quick_restore
-    popa
-    ret
+;; __builtin_quick_restore
+;;    popa
+;;    ret
 
 ;; ARG: Ma = The value to align
 ;; RETURNS: The closest higher multiple of 8 to the value

@@ -301,6 +301,29 @@ mret_t merry_reader_read_instructions(MerryReader *r)
             rlog("Internal Error: Failed to read input file.\n", NULL);
             return RET_FAILURE;
         }
+#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
+        for (msize_t j = 0; j < extra_addrs; j++)
+        {
+            mqword_t current = r->inst.instructions[number_of_pages][j];
+            mqword_t inverted = 0;
+            inverted = current >> 56;
+            inverted <<= 8;
+            inverted |= ((current >> 48) & 255);
+            inverted <<= 8;
+            inverted |= ((current >> 40) & 255);
+            inverted <<= 8;
+            inverted |= ((current >> 32) & 255);
+            inverted <<= 8;
+            inverted |= ((current >> 24) & 255);
+            inverted <<= 8;
+            inverted |= ((current >> 16) & 255);
+            inverted <<= 8;
+            inverted |= ((current >> 8) & 255);
+            inverted <<= 8;
+            inverted |= ((current) & 255);
+            r->inst.instructions[number_of_pages][j] = inverted;
+        }
+#endif
     }
     return RET_SUCCESS;
 }

@@ -75,27 +75,27 @@ end
 ;; ARGS: Ma = FD, Mb = PTR to buffer, Mc = number of bytes to read
 ;; RETURNS: Ma = Number of bytes, 0 ==EOF or -1 for error 
 __builtin_std_file_read
-    call __builtin_quick_save
+    pusha
     mov M1, Ma
     mov M2, Mb
     mov M3, Mc
     mov Ma, _M_SYS_READ_
     syscall
     call __builtin_std_syscall_check_status
-    call __builtin_quick_restore
+    popa
     ret
 
 ;; ARGS: Ma = FD, Mb = PTR to buffer, Mc = number of bytes to write from buffer
 ;; RETURNS: Ma = Number of bytes, 0 or -1 for error
 __builtin_std_file_write
-    call __builtin_quick_save
+    pusha
     mov M1, Ma
     mov M2, Mb
     mov M3, Mc
     mov Ma, _M_SYS_WRITE_
     syscall
     call __builtin_std_syscall_check_status
-    call __builtin_quick_restore
+    popa
     ret
 
 ;; It will be good to note that file I/O is very complicated.

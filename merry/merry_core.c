@@ -136,6 +136,7 @@ _THRET_T_ merry_runCore(mptr_t core)
             break; // stay out of it
         }
         c->pc++;
+        curr = *current;
         switch (merry_get_opcode(*current))
         {
         case OP_NOP: // we don't care about NOP instructions
@@ -229,26 +230,21 @@ _THRET_T_ merry_runCore(mptr_t core)
             merry_execute_fdiv32(c);
             break;
         case OP_MOVE_IMM: // just 32 bits immediates
-            curr = *current;
             c->registers[(curr >> 48) & 15] = (curr) & 0xFFFFFFFF;
             break;
         case OP_MOVE_IMM_64: // 64 bits immediates
             c->registers[*current & 15] = merry_core_get_immediate(c);
             break;
         case OP_MOVE_REG: // moves the whole 8 bytes
-            curr = *current;
             c->registers[(curr >> 4) & 15] = c->registers[curr & 15]; // this is all
             break;
         case OP_MOVE_REG8: // moves only the lowest byte
-            curr = *current;
             c->registers[(curr >> 4) & 15] = c->registers[curr & 15] & 0xFF;
             break;
         case OP_MOVE_REG16: // moves only the lowest 2 bytes
-            curr = *current;
             c->registers[(curr >> 4) & 15] = c->registers[curr & 15] & 0xFFFF;
             break;
         case OP_MOVE_REG32: // moves only the lowest 4 byte
-            curr = *current;
             c->registers[(curr >> 4) & 15] = c->registers[curr & 15] & 0xFFFFFF;
             break;
         case OP_MOVESX_IMM8:
@@ -639,7 +635,9 @@ _THRET_T_ merry_runCore(mptr_t core)
                 c->stop_running = mtrue;
             break;
         case OP_CMPXCHG_REGR:
-            *current |= (c->registers[*current & 15] & 0xFFFFFFFFFFFF);
+            register mqword_t v = c->registers[*current & 15];
+            *current &= 0xFFFFFFFFFFFFFF00;
+            *current |= (v & 0xFFFFFFFFFFFF);
         case OP_CMPXCHG:
             // this operation must be atomic
             // but it cannot be guranteed in a VM
@@ -666,7 +664,7 @@ _THRET_T_ merry_runCore(mptr_t core)
             putchar((int)c->registers[*current & 15]);
             break;
         case OP_SIN_REG:
-            *current |= (c->registers[*current & 15] & 0xFFFFFFFFFFFF);
+            *current = (c->registers[*current & 15] & 0xFFFFFFFFFFFF);
         case OP_SIN:
             // the address to store in is encoded into the instruction
             // the number of bytes to input is in the Mc register
@@ -692,7 +690,7 @@ _THRET_T_ merry_runCore(mptr_t core)
             }
             break;
         case OP_SOUT_REG:
-            *current |= (c->registers[*current & 15] & 0xFFFFFFFFFFFF);
+            *current = (c->registers[*current & 15] & 0xFFFFFFFFFFFF);
         case OP_SOUT:
             // the address to store in is encoded into the instruction
             // the number of bytes to output is in the Mc register
