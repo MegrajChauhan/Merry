@@ -13,13 +13,14 @@ void merry_save_cmd_options(msize_t argc, mstr_t *argv)
     _cmd_opt_len = argc;
     memcpy(_cmd_opts, &argv[0][0], total_len);
 #elif defined(_USE_LINUX_)
-    for (msize_t i = 1; i < argc; i++)
+    for (msize_t i = 0; i < argc; i++)
         total_len += strlen(argv[i]) + 1;
-    _cmd_opts = (mstr_t *)malloc(total_len);
+    _cmd_opts = (mstr_t *)malloc(total_len + 8);
     if (_cmd_opts == NULL)
         return;
     _cmd_opt_len = argc - 1;
     memcpy(_cmd_opts, &argv[1][0], total_len);
+    *(_cmd_opts + total_len) = NULL;
 #endif
 }
 

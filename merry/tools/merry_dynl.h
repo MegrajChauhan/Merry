@@ -38,6 +38,9 @@ typedef struct MerryDynEntry MerryDynEntry;
 typedef struct MerryDynLoader MerryDynLoader;
 
 _MERRY_DEFINE_FUNC_PTR_(mqword_t, dynfunc_t, mptr_t ptr, msize_t len);
+#ifdef _USE_LINUX_
+_MERRY_DEFINE_FUNC_PTR_(int, subsys_t, int rfd, int wrd, msize_t id);
+#endif
 
 struct MerryDynEntry
 {
@@ -68,5 +71,9 @@ void merry_loader_unloadLib(msize_t handle);
 dynfunc_t merry_loader_getFuncSymbol(msize_t handle, mstr_t sym_name);
 
 mbool_t merry_loader_is_still_valid(msize_t handle);
+
+mbool_t merry_loadLib(mstr_t libname, mptr_t *handle);
+void merry_unloadLib(mptr_t *handle);
+subsys_t merry_libsym(mptr_t handle, mstr_t symname);
 
 #endif

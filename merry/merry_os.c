@@ -82,10 +82,42 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _
     os.active_core_count = 0;
     os.err_core_id = 0;
     os.ret = _MERRY_EXIT_SUCCESS_;
+    os._subsystem_running = mfalse;
+    os._subsystem_failure = mfalse;
     merry_trap_install(); // for now, the failure of this doesn't matter
     return RET_SUCCESS;   // we did everything correctly
 failure:
     merry_os_destroy();
+    return RET_FAILURE;
+}
+
+mret_t merry_os_start_subsys()
+{
+    if ((os.os_pipe = merry_open_pipe()) == RET_NULL)
+        goto failure;
+    if (merry_init_subsys(_MERRY_SUBSYS_LEN_) == RET_FAILURE)
+    {
+        merry_destroy_pipe(os.os_pipe);
+        goto failure;
+    }
+    if ((os.subsys_thread = merry_thread_init()) == RET_NULL)
+    {
+        merry_destroy_pipe(os.os_pipe);
+        merry_destroy_subsys();
+        goto failure;
+    }
+    merry_subsys_add_ospipe(os.os_pipe);
+    if (merry_create_detached_thread(os.subsys_thread, &merry_subsys_main, NULL) == RET_FAILURE)
+    {
+        merry_destroy_pipe(os.os_pipe);
+        merry_destroy_subsys();
+        merry_thread_destroy(os.subsys_thread);
+        goto failure;
+    }
+    os._subsystem_running = mtrue;
+    return RET_SUCCESS;
+failure:
+    os._subsystem_failure = mtrue;
     return RET_FAILURE;
 }
 
@@ -196,6 +228,12 @@ void merry_os_destroy()
             merry_thread_destroy(os.core_threads[i]);
         }
         free(os.core_threads);
+    }
+    if (os._subsystem_running == mtrue)
+    {
+        merry_thread_destroy(os.subsys_thread);
+        merry_destroy_subsys();
+        merry_destroy_pipe(os.os_pipe);
     }
     merry_destroy_sender(os.sender);
     merry_destroy_listener(os.listener);
@@ -309,6 +347,12 @@ _err:
     return RET_FAILURE;
 }
 
+_MERRY_INTERNAL_ void merry_os_notify_subsys()
+{
+    char buf = 1;
+    write(os.os_pipe->_wclosed, &buf, 1); // wake it up
+}
+
 _MERRY_INTERNAL_ void merry_os_prepare_for_exit()
 {
     // prepare for termination
@@ -328,6 +372,8 @@ _MERRY_INTERNAL_ void merry_os_prepare_for_exit()
         if (os.sender->queue->data_count == 0)
             merry_cond_signal(os.sender->cond);
     }
+    char _send = _SUBSYS_SHUTDOWN;
+    write(os.os_pipe->_write_fd, &_send, 1);
     os.stop = mtrue; // done
 }
 
@@ -431,6 +477,27 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
                     case _REQ_CALL_LOADED_FUNC:
                         merry_os_execute_request_call_loaded_func(&os, &current_req);
                         break;
+                    case _REQ_START_SUBSYS:
+                        merry_os_execute_request_start_subsys(&os, &current_req);
+                        break;
+                    case _REQ_SUBSYS_ADD_CHANNEL:
+                        merry_os_execute_request_add_channel(&os, &current_req);
+                        break;
+                    case _REQ_SUBSYS_CLOSE_CHANNEL:
+                        merry_os_execute_request_close_channel(&os, &current_req);
+                        break;
+                    case _REQ_SUBSYS_SEND:
+                        merry_os_execute_request_send(&os, &current_req);
+                        break;
+                    case _REQ_SUBSYS_SEND_WAIT:
+                        merry_os_execute_request_send_wait(&os, &current_req);
+                        continue; // the subsystem will wake up the core
+                    case _REQ_GETERRNO:
+                        merry_os_execute_request_geterrno(&os, &current_req);
+                        break;
+                    case _REQ_SUBSYS_STATUS:
+                        merry_os_execute_request_subsys_status(&os, &current_req);
+                        break;
                     default:
                         fprintf(stderr, "Error: Unknown request code: '%llu' is not a valid request code.\n", current_req.request_number);
                         break;
@@ -474,6 +541,13 @@ void merry_os_handle_others(merrot_t _id, msize_t id)
         merry_mem_error("Segmentation Fault(Passed by the Host system)");
         os.stop = mtrue;
         os.ret = _MERRY_EXIT_FAILURE_;
+        break;
+    case MERRY_SUBSYS_FAILED:
+        os._subsystem_failure = mtrue;
+        merry_subsys_close_all();
+        break;
+    case MERRY_SUBSYS_INIT_FAILURE:
+        os._subsystem_failure = mtrue;
         break;
     }
 }
@@ -816,6 +890,123 @@ _os_exec_(call_loaded_func)
     return RET_SUCCESS;
 }
 
+_os_exec_(start_subsys)
+{
+    if (os->_subsystem_running == mtrue && os->_subsystem_failure == mfalse)
+    {
+        os->cores[request->id]->registers[Ma] = 0;
+        return RET_SUCCESS;
+    }
+    os->cores[request->id]->registers[Ma] = merry_os_start_subsys();
+    return RET_SUCCESS;
+}
+
+_os_exec_(add_channel)
+{
+    if (os->_subsystem_running == mfalse && os->_subsystem_failure == mfalse)
+    {
+        os->cores[request->id]->registers[Ma] = -1;
+        return RET_SUCCESS;
+    }
+    msize_t id = merry_subsys_add_channel();
+    register MerryCore *c = os->cores[request->id];
+    // Ma = The address to a null-terminated string of the subsystem's name
+    mstr_t name = merry_dmemory_get_bytes_maybe_over_multiple_pages_upto(os->data_mem, c->registers[Ma], 0);
+    if (name == RET_NULL)
+        goto err;
+    if (id == (mqword_t)-1)
+    {
+        free(name);
+        goto err;
+    }
+    MerrySubChannel *channel = merry_subsys_get_channel(id);
+#ifdef _USE_LINUX_
+    MerryProcess p;
+    if (merry_create_process(&p) == mfalse)
+    {
+        c->registers[Ma] = -1;
+        c->registers[Mb] = merry_get_errno();
+        return RET_FAILURE;
+    }
+    if (p.pid == 0)
+    {
+        char rfd[10];
+        char wfd[10];
+        snprintf(rfd, sizeof(rfd), "%d", channel->send_pipe->_read_fd);
+        snprintf(wfd, sizeof(wfd), "%d", channel->receive_pipe->_write_fd);
+        msize_t argc = 4;
+        mstr_t const argv[] = {"./subsysmain", rfd, wfd, name, NULL};
+        execv(/*Do something about this*/ "./subsysmain", argv);
+        c->registers[Ma] = -1; // we failed
+    }
+#elif _USE_WIN_
+    merry_os_set_env(iport, oport, request->id);
+    if (merry_create_process(&p) == mfalse)
+    {
+        c->registers[Ma] = -1;
+        c->registers[Mb] = merry_get_errno();
+        return RET_FAILURE;
+    }
+#endif
+    merry_config_channel(channel);
+    merry_os_notify_subsys();
+    c->registers[Ma] = id;
+    return RET_SUCCESS;
+err:
+    c->registers[Ma] = -1;
+    return RET_FAILURE;
+}
+
+_os_exec_(close_channel)
+{
+    register MerryCore *c = os->cores[request->id];
+    if (os->_subsystem_running == mfalse && os->_subsystem_failure == mfalse)
+    {
+        c->registers[Ma] = 1;
+        return RET_FAILURE;
+    }
+    merry_subsys_close_channel(c->registers[Ma]);
+    c->registers[Ma] = 0;
+    return RET_FAILURE;
+}
+
+_os_exec_(send)
+{
+    register MerryCore *c = os->cores[request->id];
+    if (os->_subsystem_running == mfalse && os->_subsystem_failure == mfalse)
+    {
+        c->registers[Ma] = 1;
+        return RET_FAILURE;
+    }
+    merry_subsys_write(c->registers[Ma], c->registers[Mb], c->registers[M1], c->registers[M2], c->registers[M3], c->registers[M4]);
+    c->registers[Ma] = 0;
+    return RET_SUCCESS;
+}
+
+_os_exec_(send_wait)
+{
+    register MerryCore *c = os->cores[request->id];
+    if (os->_subsystem_running == mfalse && os->_subsystem_failure == mfalse)
+    {
+        c->registers[Ma] = 1;
+        return RET_FAILURE;
+    }
+    merry_subsys_write(c->registers[Ma], c->registers[Mb], c->registers[M1], c->registers[M2], c->registers[M3], c->registers[M4]);
+    merry_subsys_add_task(c->registers[Ma], c->cond, &c->registers[Ma]);
+    return RET_SUCCESS;
+}
+
+_os_exec_(geterrno)
+{
+    os->cores[request->id]->registers[Ma] = errno;
+}
+
+_os_exec_(subsys_status)
+{
+    os->cores[request->id]->registers[Ma] = os->_subsystem_running == mtrue ? 0 : 1;
+    os->cores[request->id]->registers[Mb] = os->_subsystem_failure == mtrue ? 0 : 1;
+}
+
 void merry_os_notify_dbg(mqword_t sig, mbyte_t arg, mbyte_t arg2)
 {
     if (os.listener_running != mtrue || os.sender_running != mtrue)
@@ -936,6 +1127,7 @@ void merry_os_dump_core_dets(FILE *f)
         if (stack_empty(c))
             continue;
         mqword_t addr = 0;
+        /// TODO: change this so that this actually works
         while (merry_stack_pop(c->ras, &addr) != RET_FAILURE)
         {
             mqword_t i = 0;

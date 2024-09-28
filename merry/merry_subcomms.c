@@ -18,7 +18,6 @@ MerrySubChannel *merry_create_channel()
         return RET_NULL;
     }
     // we can't configure the pipes just yet
-    channel->comms_active = mtrue;
     channel->send_pipe = wpipe;
     channel->receive_pipe = rpipe;
     return channel;
@@ -85,4 +84,5 @@ void merry_config_channel(MerrySubChannel *channel)
         return RET_FAILURE;
     merry_pipe_close_one_end(channel->receive_pipe, _MERRY_CLOWEND_);
     merry_pipe_close_one_end(channel->send_pipe, _MERRY_CLOREND_);
+    channel->comms_active = mtrue;
 }

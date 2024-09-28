@@ -103,6 +103,20 @@ mbool_t merry_loader_loadLib(mstr_t lib_path, msize_t *handle)
     return mtrue; // the library is loaded
 }
 
+mbool_t merry_loadLib(mstr_t libname, mptr_t *handle)
+{
+#if defined(_USE_LINUX_)
+    *handle = dlopen(libname, RTLD_NOW | RTLD_GLOBAL);
+    if (*handle == NULL)
+        return mfalse;
+#elif defined(_USE_WIN_)
+    *handle = LoadLibrary(TEXT(lib_path));
+    if (*handle == NULL)
+        return mfalse;
+#endif
+    return mtrue;
+}
+
 void merry_loader_unloadLib(msize_t handle)
 {
     // this will not throw any error
@@ -120,6 +134,15 @@ void merry_loader_unloadLib(msize_t handle)
     loader.closed_entry_count++;
 }
 
+void merry_unloadLib(mptr_t *handle)
+{
+#if defined(_USE_LINUX_)
+    dlclose(*handle);
+#elif defined(_USE_WIN_)
+    FreeLibrary(*handle);
+#endif
+}
+
 dynfunc_t merry_loader_getFuncSymbol(msize_t handle, mstr_t sym_name)
 {
     if (handle >= loader.entry_count)
@@ -130,6 +153,16 @@ dynfunc_t merry_loader_getFuncSymbol(msize_t handle, mstr_t sym_name)
     return (dynfunc_t)dlsym(loader.entries[handle].lib_handle, sym_name);
 #elif defined(_USE_WIN_)
     return (dynfunc_t)GetProcAddress(loader.entries[handle].lib_handle, sym_name);
+#endif
+    return RET_NULL;
+}
+
+subsys_t merry_libsym(mptr_t handle, mstr_t symname)
+{
+#if defined(_USE_LINUX_)
+    return (subsys_t)dlsym(handle, symname);
+#elif defined(_USE_WIN_)
+    return (subsys_t)GetProcAddress(handle, symname);
 #endif
     return RET_NULL;
 }

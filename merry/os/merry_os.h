@@ -47,6 +47,7 @@
 #include "merry_ihdlr.h"
 #include "merry_syscall_hdlr.h"
 #include "merry_helpers.h"
+#include "merry_subsystem.h"
 
 typedef struct Merry Merry;
 
@@ -74,9 +75,14 @@ struct Merry
   MerryThread *sender_th;
   mbool_t listener_running, listener_stopped;
   mbool_t sender_running, sender_stopped;
+  mbool_t _subsystem_running;
+  mbool_t _subsystem_failure;
+  MerryPipe *os_pipe;
+  MerryThread *subsys_thread;
 };
 
 #define _MERRY_REQUEST_QUEUE_LEN_ 20 // for now
+#define _MERRY_SUBSYS_LEN_ 10 // initial
 
 #define _MERRY_REQUEST_INTERNAL_ERROR_(request_id) (request_id >= 0 && request_id <= 9)
 #define _MERRY_REQUEST_OTHER_(request_id) (request_id >= 10 && request_id <= 50)
@@ -108,6 +114,7 @@ static Merry os;
 
 mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _wait_for_conn);
 mret_t merry_os_init_reader_provided(MerryReader *r, msize_t iport, msize_t oport);
+mret_t merry_os_start_subsys();
 
 void merry_os_start_dbg(mbool_t _flag, msize_t in_port, msize_t out_port);
 
@@ -169,6 +176,14 @@ _os_exec_(dyncall);
 _os_exec_(syscall);
 _os_exec_(get_func_addr);
 _os_exec_(call_loaded_func);
+
+_os_exec_(start_subsys);
+_os_exec_(add_channel);
+_os_exec_(close_channel);
+_os_exec_(send);
+_os_exec_(send_wait);
+_os_exec_(subsys_status);
+_os_exec_(geterrno);
 
 // _os_exec_(fopen);
 // _os_exec_(fclose);

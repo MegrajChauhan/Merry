@@ -71,6 +71,21 @@ enum
     _REQ_SYSCALL,          // make a syscall
     _REQ_GET_FUNC_ADDR,    // get a function's address from a loaded library
     _REQ_CALL_LOADED_FUNC, // call a function that with the address that was received from _REQ_GET_FUNC_ADDR
+    _REQ_START_SUBSYS,
+    _REQ_SUBSYS_ADD_CHANNEL,
+    _REQ_SUBSYS_CLOSE_CHANNEL,
+    _REQ_SUBSYS_SEND,
+    _REQ_SUBSYS_SEND_WAIT,
+    _REQ_SUBSYS_STATUS,
+    _REQ_GETERRNO,
+};
+
+enum
+{
+    _SUBSYS_FAILED, // subsystem failed(the process couldn't continue)
+    _SUBSYS_SHUTDOWN = 0, // sent by manager thread to stop
+    _SUBSYS_CLOSE = 0, // sent to the process to close
+    _SUBSYS_CLOSED, // sent by the process that it has closed
 };
 
 #endif

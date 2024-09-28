@@ -3,7 +3,12 @@
 
 #include "merry_subcomms.h"
 #include "merry_task_queue.h"
+#include "merry_request_hdlr.h"
 #include <string.h>
+
+#ifdef _USE_LINUX_
+#include <sys/epoll.h>
+#endif
 
 typedef struct MerrySubSys MerrySubSys;
 
@@ -17,6 +22,7 @@ struct MerrySubSys
     msize_t subsys_created;
     MerryTaskQueue *queue;
     MerryMutex *lock;
+    mbool_t _stop;
     MerryPipe *os_pipe;
 };
 
@@ -32,10 +38,14 @@ MerrySubChannel *merry_subsys_get_channel(msize_t id);
 
 mret_t merry_subsys_add_task(msize_t request, MerryCond *cond, mqptr_t _store_in);
 
+void merry_subsys_close_all();
+
 _THRET_T_ merry_subsys_main(mptr_t arg);
 
 mret_t merry_subsys_write(msize_t id, msize_t request, mqword_t arg1, mqword_t arg2, mqword_t arg3, mqword_t arg4);
 
 void merry_destroy_subsys();
+
+void merry_subsys_close_channel(msize_t id);
 
 #endif
