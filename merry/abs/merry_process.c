@@ -2,16 +2,23 @@
 
 mbool_t merry_create_process(MerryProcess *p)
 {
+    msize_t _e;
 #ifdef _USE_LINUX_
     p->pid = fork();
     if (p->pid == -1)
+    {
+        _e = MERRY_SYSERR;
         goto _err;
+    }
 #elif defined(_USE_WIN_)
     msize_t _opt_len = 0;
     mstr_t *_opt = NULL;
     merry_get_cmd_options(&_opt_len, &_opt);
     if (*_opt == NULL)
+    {
+        _e = MERRY_VMERR;
         goto _err;
+    }
     ZeroMemory(&p->si, sizeof(p->si));
     p->si.cb = sizeof(si);
     ZeroMemory(&pi, sizeof(pi));
@@ -27,13 +34,16 @@ mbool_t merry_create_process(MerryProcess *p)
             &si,                // Pointer to STARTUPINFO structure
             &pi)                // Pointer to PROCESS_INFORMATION structure
     )
+    {
+        _e = MERRY_SYSERR;
         goto _err;
+    }
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
 #endif
     return mtrue;
 _err:
-    merry_update_errno();
+    merry_set_errno(_e);
     return mfalse;
 }
 

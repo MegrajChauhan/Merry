@@ -34,53 +34,20 @@
 /*
 Since each platform has different number of errno values, we have to be really careful to deal with them.
 */
-#define MERRY_EACCES 0         // Permission denied
-#define MERRY_EEXIST 1         // File exists
-#define MERRY_EFAULT 2         // Bad address
-#define MERRY_EINTR 3          // Interrupted function call
-#define MERRY_EINVAL 4         // Invalid argument
-#define MERRY_EIO 5            // Input/output error
-#define MERRY_EISDIR 6         // Is a directory
-#define MERRY_EMFILE 7         // Too many open files
-#define MERRY_ENAMETOOLONG 8   // File name too long
-#define MERRY_ENFILE 9         // Too many open files in system
-#define MERRY_ENODEV 10        // No such device
-#define MERRY_ENOENT 11        // No such file or directory
-#define MERRY_ENOMEM 12        // Not enough space
-#define MERRY_ENOSPC 13        // No space left on device
-#define MERRY_ENOTDIR 14       // Not a directory
-#define MERRY_ENXIO 15         // No such device or address
-#define MERRY_EOVERFLOW 16     // Value too large to be stored in data type
-#define MERRY_EROFS 17         // Read-only file system
-#define MERRY_ETIMEDOUT 18     // Connection timed out
-#define MERRY_ECONNREFUSED 19  // Connection refused
-#define MERRY_EHOSTUNREACH 20  // No route to host
-#define MERRY_EADDRINUSE 21    // Address already in use
-#define MERRY_EADDRNOTAVAIL 22 // Address not available
-#define MERRY_EAFNOSUPPORT 23  // Address family not supported
-#define MERRY_ENOTCONN 24      // Socket is not connected
-#define MERRY_ECONNRESET 25    // Connection reset
-#define MERRY_EPIPE 26         // Broken pipe
-#define MERRY_EBADF 27         // Bad file descriptor
-#define MERRY_ELOOP 28         // Too many levels of symbolic links
-#define MERRY_ENOTEMPTY 29     // Directory not empty
-#define MERRY_EPERM 30         // Operation not permitted
-#define MERRY_ESHUTDOWN 31     // Cannot send after transport endpoint shutdown
-#define MERRY_NODBG 32         // Debugging was enabled for the child but the debugger wasn't connected at all
-#define MERRY_SYSCALLERR 33    // The syscall being handled by the OS didn't expect the provided argument
-#define MERRY_DYNERR 34        // The recent dynamic library related request failed
-#define MERRY_DYNCLOSED 35     // The handle has already been closed
+#define MERRY_NODBG 0       // Debugging was enabled for the child but the debugger wasn't connected at all
+#define MERRY_SYSCALLERR 1  // The syscall being handled by the OS didn't expect the provided argument
+#define MERRY_DYNERR 2      // The recent dynamic library related request failed
+#define MERRY_DYNCLOSED 3   // The handle has already been closed
+#define MERRY_INIT_FAILED 4 // Failed to initialize something
+#define MERRY_INVAL_ARG 5   // invalid argument
+#define MERRY_SYSERR 6      // error that was caused by the host system itself
+#define MERRY_VMERR 7  // the error was due to the VM
 
 // Our errno value
 _MERRY_INTERNAL_ msize_t merrno = (msize_t)-1;
 
-void merry_update_errno(void);
-
 // This will reset errno
 msize_t merry_get_errno(void);
-
-// This will also reset errno
-void merry_interpret_errno(void);
 
 void merry_set_errno(msize_t _err);
 

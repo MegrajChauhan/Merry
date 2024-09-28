@@ -5,6 +5,7 @@
 #include <merry_types.h>
 #include <windows.h>
 #include <stdlib.h>
+#include "merry_errno.h"
 
 typedef struct MerryMutex MerryMutex;
 typedef struct MerryCond MerryCond;

@@ -4,11 +4,16 @@ MerryMutex *merry_mutex_init()
 {
     MerryMutex *mutex = (MerryMutex *)malloc(sizeof(MerryMutex));
     if (mutex == NULL)
-        return RET_NULL; // failure to allocate
+    {
+        // failure to allocate
+        merry_set_errno(MERRY_VMERR);
+        return RET_NULL;
+    }
 #if defined(_USE_LINUX_)
     if (pthread_mutex_init(&mutex->mutex, NULL) != 0)
     {
         free(mutex);
+        merry_set_errno(MERRY_SYSERR);
         return RET_NULL;
     }
 #elif defined(_USE_WIN_)
@@ -22,11 +27,15 @@ MerryCond *merry_cond_init()
 {
     MerryCond *cond = (MerryCond *)malloc(sizeof(MerryCond));
     if (cond == NULL)
+    {
+        merry_set_errno(MERRY_VMERR);
         return RET_NULL; // failure to allocate
+    }
 #if defined(_USE_LINUX_)
     if (pthread_cond_init(&cond->cond, NULL) != 0)
     {
         free(cond);
+        merry_set_errno(MERRY_SYSERR);
         return RET_NULL;
     }
 #elif defined(_USE_WIN_)
@@ -39,7 +48,10 @@ MerryThread *merry_thread_init()
 {
     MerryThread *thread = (MerryThread *)malloc(sizeof(MerryThread));
     if (thread == NULL)
+    {
+        merry_set_errno(MERRY_VMERR);
         return RET_NULL;
+    }
     // we are simply initializing a MerryThread
     return thread;
 }

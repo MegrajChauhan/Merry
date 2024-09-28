@@ -3,6 +3,7 @@
 
 #include "merry_config.h"
 #include "merry_types.h"
+#include "merry_errno.h"
 #include <unistd.h>
 #include <stdlib.h>
 

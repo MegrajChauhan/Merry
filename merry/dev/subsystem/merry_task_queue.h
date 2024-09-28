@@ -12,12 +12,12 @@ typedef struct MerryTaskQueue MerryTaskQueue;
 _MERRY_CREATE_QUEUE_NODE_NOPTR_(MerryTask, MerryTaskNode);
 _MERRY_CREATE_QUEUE_NOPTR_(MerryTaskQueue, MerryTaskNode);
 
-static _MERRY_ALWAYS_INLINE_ inline mbool_t merry_is_task_queue_full(MerryTaskQueue *queue)
+static inline mbool_t merry_is_task_queue_full(MerryTaskQueue *queue)
 {
     return _MERRY_IS_QUEUE_FULL_NOPTR_(queue) ? mtrue : mfalse;
 }
 
-static _MERRY_ALWAYS_INLINE_ inline mbool_t merry_is_task_queue_empty(MerryTaskQueue *queue)
+static inline mbool_t merry_is_task_queue_empty(MerryTaskQueue *queue)
 {
     return _MERRY_IS_QUEUE_EMPTY_NOPTR_(queue) ? mtrue : mfalse;
 }

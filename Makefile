@@ -19,6 +19,7 @@ usage:
 	
 all: __pretest directories ${OUTPUT_FILES_NAME}
 	${CC} ${FLAGS} ${OUTPUT_FILES_NAME} main.c merry/arithmetic.S ${INC_DIRS} -o ${OUTPUT_DIR}mvm
+	${CC} -ffunction-sections -fdata-sections -Wl,--gc-sections ${FLAGS} ${OUTPUT_FILES_NAME} merry_submain.c ${INC_DIRS} -o ${OUTPUT_DIR}subsysmain
 	make -C asm all dirs=../build/ flags=${flags}
 
 # The command for building the assembler is the simplest for now but hey! it works!

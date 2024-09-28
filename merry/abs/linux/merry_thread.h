@@ -28,6 +28,7 @@
 #include <merry_types.h>
 #include <pthread.h> // this is assuming that the host system is unix-based posix compliant system
 #include <stdlib.h>
+#include "merry_errno.h"
 
 typedef struct MerryMutex MerryMutex;
 typedef struct MerryCond MerryCond;

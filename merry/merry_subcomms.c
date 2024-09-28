@@ -81,7 +81,7 @@ void merry_config_channel(MerrySubChannel *channel)
     // this call is done after the subsystem starts running
     // configure to make sure the right fd remain open
     if (surelyF(channel == RET_NULL))
-        return RET_FAILURE;
+        return;
     merry_pipe_close_one_end(channel->receive_pipe, _MERRY_CLOWEND_);
     merry_pipe_close_one_end(channel->send_pipe, _MERRY_CLOREND_);
     channel->comms_active = mtrue;

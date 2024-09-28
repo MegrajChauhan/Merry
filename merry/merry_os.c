@@ -284,12 +284,10 @@ mret_t merry_os_boot_core(msize_t core_id, maddress_t start_addr)
     // now start the core thread
     if ((os.core_threads[core_id] = merry_thread_init()) == RET_NULL)
     {
-        merry_update_errno();
         return RET_FAILURE;
     }
     if (merry_create_detached_thread(os.core_threads[core_id], &merry_runCore, os.cores[core_id]) == RET_FAILURE)
     {
-        merry_update_errno();
         return RET_FAILURE;
     }
     os.active_core_count++;
@@ -343,7 +341,7 @@ mret_t merry_os_add_core()
     os.core_count++;
     return RET_SUCCESS;
 _err:
-    merry_update_errno();
+
     return RET_FAILURE;
 }
 
@@ -372,8 +370,11 @@ _MERRY_INTERNAL_ void merry_os_prepare_for_exit()
         if (os.sender->queue->data_count == 0)
             merry_cond_signal(os.sender->cond);
     }
-    char _send = _SUBSYS_SHUTDOWN;
-    write(os.os_pipe->_write_fd, &_send, 1);
+    if (os._subsystem_running == mtrue && os._subsystem_failure == mfalse)
+    {
+        char _send = _SUBSYS_SHUTDOWN;
+        write(os.os_pipe->_write_fd, &_send, 1);
+    }
     os.stop = mtrue; // done
 }
 
@@ -647,7 +648,7 @@ _os_exec_(new_core)
     {
         os->cores[request->id]->registers[Ma] = merry_os_boot_core(os->core_count - 1, os->cores[request->id]->registers[Ma]);
     }
-    os->cores[request->id]->registers[Mb] = merry_get_errno();
+    os->cores[request->id]->registers[Mb] = errno;
     return RET_SUCCESS; // for now
 }
 
@@ -659,7 +660,7 @@ _os_exec_(mem)
     if (merry_dmemory_add_new_page(os->data_mem) == RET_FAILURE)
     {
         os->cores[request->id]->registers[Ma] = 1;
-        os->cores[request->id]->registers[Mb] = merry_get_errno();
+        os->cores[request->id]->registers[Mb] = errno;
         return RET_FAILURE;
     }
     os->cores[request->id]->registers[Mb] = (os->data_mem->number_of_pages - 1) * _MERRY_MEMORY_ADDRESSES_PER_PAGE_ + 1;
@@ -686,7 +687,7 @@ _os_exec_(newprocess)
     {
         merry_requestHdlr_release();
         os->cores[request->id]->registers[Ma] = 1;
-        os->cores[request->id]->registers[Mb] = merry_get_errno();
+        os->cores[request->id]->registers[Mb] = errno;
         return RET_FAILURE;
     }
     if (p.pid == 0)
@@ -704,7 +705,7 @@ _os_exec_(newprocess)
     {
         merry_requestHdlr_release();
         os->cores[request->id]->registers[Ma] = 1;
-        os->cores[request->id]->registers[Mb] = merry_get_errno();
+        os->cores[request->id]->registers[Mb] = errno;
         return RET_FAILURE;
     }
 #endif
@@ -925,7 +926,7 @@ _os_exec_(add_channel)
     if (merry_create_process(&p) == mfalse)
     {
         c->registers[Ma] = -1;
-        c->registers[Mb] = merry_get_errno();
+        c->registers[Mb] = errno;
         return RET_FAILURE;
     }
     if (p.pid == 0)
@@ -940,11 +941,11 @@ _os_exec_(add_channel)
         c->registers[Ma] = -1; // we failed
     }
 #elif _USE_WIN_
-    merry_os_set_env(iport, oport, request->id);
+    /// TODO: Update this to work on windows too.
     if (merry_create_process(&p) == mfalse)
     {
         c->registers[Ma] = -1;
-        c->registers[Mb] = merry_get_errno();
+        c->registers[Mb] = errno;
         return RET_FAILURE;
     }
 #endif
@@ -999,6 +1000,7 @@ _os_exec_(send_wait)
 _os_exec_(geterrno)
 {
     os->cores[request->id]->registers[Ma] = errno;
+    os->cores[request->id]->registers[Mb] = merry_get_errno();
 }
 
 _os_exec_(subsys_status)

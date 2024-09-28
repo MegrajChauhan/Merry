@@ -28,6 +28,7 @@
 #include <merry_types.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "merry_errno.h"
 
 // we also need the pid
 #define _MERRY_PROCESS_CREATION_SUCCESS_ 0

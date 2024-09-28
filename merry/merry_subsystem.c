@@ -91,7 +91,7 @@ mret_t merry_subsys_write(msize_t id, msize_t request, mqword_t arg1, mqword_t a
         merry_mutex_unlock(subsys.lock);
         return RET_FAILURE;
     }
-    mqptr_t buffer[5];
+    mqword_t buffer[5];
     buffer[0] = request;
     buffer[1] = arg1;
     buffer[2] = arg2;

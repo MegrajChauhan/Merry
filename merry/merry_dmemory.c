@@ -101,7 +101,6 @@ mret_t merry_dmemory_add_new_page(MerryDMemory *memory)
     memory->number_of_pages++;
     return RET_SUCCESS;
 _err:
-    merry_update_errno();
     return RET_FAILURE;
 }
 

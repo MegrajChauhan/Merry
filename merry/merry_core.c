@@ -2063,6 +2063,7 @@ _lexec_(atm_storeb, mqword_t address)
     // the value should be stored
 }
 
+// not used anymore
 _exec_(syscall)
 {
     /*
@@ -2085,7 +2086,6 @@ _exec_(syscall)
      */
 #ifdef _USE_LINUX_
     core->registers[Ma] = syscall(core->registers[Ma], core->registers[M1], core->registers[M2], core->registers[M3], core->registers[M4], core->registers[M5]);
-    merry_update_errno();
     core->registers[Mb] = merry_get_errno();
 #endif
 }

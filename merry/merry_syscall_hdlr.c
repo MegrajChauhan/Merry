@@ -14,7 +14,7 @@ merry_syscall(open)
 #ifdef _USE_LINUX_
     c->registers[Ma] = syscall(c->registers[Ma], _name, c->registers[M2], c->registers[M3], c->registers[M4], c->registers[M5]);
 #endif
-    merry_update_errno();
+    // merry_update_errno();
     c->registers[Mb] = merry_get_errno();
     free(_name);
 }
@@ -26,7 +26,7 @@ merry_syscall(read)
 #ifdef _USE_LINUX_
     c->registers[Ma] = syscall(c->registers[Ma],c->registers[M1], arr, len);
 #endif
-    merry_update_errno();
+    // merry_update_errno();
     c->registers[Mb] = merry_get_errno();
     if (merry_dmemory_write_bytes_maybe_over_multiple_pages(c->data_mem, c->registers[M2], len, arr) == RET_FAILURE)
     {
@@ -50,7 +50,7 @@ merry_syscall(write)
 #ifdef _USE_LINUX_
     c->registers[Ma] = syscall(c->registers[Ma], c->registers[M1], arr, len);
 #endif
-    merry_update_errno();
+    // merry_update_errno();
     c->registers[Mb] = merry_get_errno();
 }
 
@@ -73,7 +73,7 @@ void merry_exec_syscall(MerryCore *c)
 #ifdef _USE_LINUX_
         c->registers[Ma] = syscall(c->registers[Ma], c->registers[Mb], c->registers[M2], c->registers[M3], c->registers[M4], c->registers[M5]);
 #endif
-        merry_update_errno();
+        // merry_update_errno();
         c->registers[Mb] = merry_get_errno();
     }
 }
