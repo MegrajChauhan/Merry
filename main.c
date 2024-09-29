@@ -52,7 +52,7 @@ int merry_main();
 int main(int argc, char **argv)
 {
     // int argc = 3;
-    // char *argv[] = {"gdh", "-f", "conttest.mbin"};
+    // char *argv[] = {"gdh", "-f", "mptest.mbin"};
     merry_setup_host(argc, argv);
     if (merry_main_parse_options(argc, argv) == RET_FAILURE)
         merry_cleanup_and_exit(1);
@@ -128,39 +128,35 @@ void __get_env_info()
     memset(_data, 0, sizeof(_data));
     _child_freeze = mtrue;
     GetEnvironmentVariable("_MERRY_IPORT_", _data, sizeof(_data));
-    iport = strtoull(_data, NULL, 10); // the value is not invalid
+    iport = strtoull(_data, NULL, 16); // the value is not invalid
     memset(_data, 0, sizeof(_data));
     GetEnvironmentVariable("_MERRY_OPORT_", _data, sizeof(_data));
-    oport = strtoull(_data, NULL, 10); // the value is not invalid
+    oport = strtoull(_data, NULL, 16); // the value is not invalid
     memset(_data, 0, sizeof(_data));
     GetEnvironmentVariable("_MERRY_ADDR_", _data, sizeof(_data));
-    entry = strtoull(_data, NULL, 10); // the value is not invalid
+    entry = strtoull(_data, NULL, 16); // the value is not invalid
 #elif defined(_USE_LINUX_)
-    mstr_t _data;
-    if ((_data = getenv("_MERRY_CHILD_SURVEY_")) == NULL)
+    mstr_t _data = getenv("_MERRY_CHILD_SURVEY_");
+    if ((_data) == NULL)
         return;
     if (strcmp(_data, "no") == 0)
         return; // we have nothing else to do
     // this is indeed a child process
     _is_child = mtrue;
     _data = getenv("_MERRY_CHILD_DEBUG_");
-    if (strcmp(_data, "no") == 0)
-        return;
-    _child_dbg = mtrue;
+    if (strcmp(_data, "yes") == 0)
+        _child_dbg = mtrue;
+
     _data = getenv("_MERRY_CHILD_FREEZE_");
-    if (strcmp(_data, "no") == 0)
-        return;
-    _child_freeze = mtrue;
-    _data = getenv("_MERRY_CHILD_FREEZE_");
-    if (strcmp(_data, "no") == 0)
-        return;
+    if (strcmp(_data, "yes") == 0)
+        _child_freeze = mtrue;
     _child_freeze = mtrue;
     _data = getenv("_MERRY_IPORT_");
-    iport = strtoull(_data, NULL, 10); // the value is not invalid
+    iport = strtoull(_data, NULL, 16); // the value is not invalid
     _data = getenv("_MERRY_OPORT_");
-    oport = strtoull(_data, NULL, 10); // the value is not invalid
+    oport = strtoull(_data, NULL, 16); // the value is not invalid
     _data = getenv("_MERRY_ADDR_");
-    entry = strtoull(_data, NULL, 10); // the value is not invalid
+    entry = strtoull(_data, NULL, 16); // the value is not invalid
 #endif
 }
 

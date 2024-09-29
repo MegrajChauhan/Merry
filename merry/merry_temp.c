@@ -13,14 +13,17 @@ void merry_save_cmd_options(msize_t argc, mstr_t *argv)
     _cmd_opt_len = argc;
     memcpy(_cmd_opts, &argv[0][0], total_len);
 #elif defined(_USE_LINUX_)
+   // Count the total length of all the arguments including their null terminators
     for (msize_t i = 0; i < argc; i++)
-        total_len += strlen(argv[i]) + 1;
-    _cmd_opts = (mstr_t *)malloc(total_len + 8);
+        total_len += strlen(argv[i]) + 1; // +1 for null terminators
+    _cmd_opts = (mstr_t *)malloc((argc + 1) * sizeof(mstr_t *));
     if (_cmd_opts == NULL)
         return;
-    _cmd_opt_len = argc - 1;
-    memcpy(_cmd_opts, &argv[1][0], total_len);
-    *(_cmd_opts + total_len) = NULL;
+    for (msize_t i = 0; i < argc; i++)
+        _cmd_opts[i] = strdup(argv[i]);
+    
+    _cmd_opts[argc] = NULL; // Null-terminate the argument array
+    _cmd_opt_len = argc;
 #endif
 }
 

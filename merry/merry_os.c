@@ -126,6 +126,13 @@ mret_t merry_os_init_reader_provided(MerryReader *r, msize_t iport, msize_t opor
     // we need to put the options into the memory
     os._os_id = os._os_id + 1;
     os.reader = r;
+    if ((os.data_mem = merry_dmemory_init_provided(os.reader->data, os.reader->data_page_count)) == RET_NULL)
+    {
+        merry_destroy_reader(os.reader);
+        return RET_FAILURE;
+    }
+    if ((os.inst_mem = merry_memory_init_provided(os.reader->inst.instructions, os.reader->inst.inst_page_count)) == RET_NULL)
+        goto failure;
     if (merry_loader_init(_MERRY_INITIAL_DYNLOAD_COUNT_) == mfalse)
         return RET_FAILURE;
     msize_t _t = os.reader->data_len;
@@ -153,6 +160,9 @@ mret_t merry_os_init_reader_provided(MerryReader *r, msize_t iport, msize_t opor
     if (os.core_threads == RET_NULL)
         goto failure;
     os.active_core_count = 0;
+    // This init is done with a child process
+    // let them know that they are a child process
+    os.cores[0]->registers[Ma] = 1;
     return RET_SUCCESS; // we did everything correctly
 failure:
     merry_os_destroy();
@@ -674,7 +684,7 @@ _os_exec_(newprocess)
     merry_requestHdlr_acquire();
     msize_t iport, oport;
     merry_os_get_io_port_direct(&iport, &oport);
-    if (iport == oport == 0)
+    if ((iport == 0 || oport == 0) && os->reader->dfe_flag  == mtrue)
     {
         os->reader->dfe_flag = mfalse; // we won't take any more connections
         os->cores[request->id]->registers[Ma] = 1;
@@ -697,7 +707,7 @@ _os_exec_(newprocess)
         mstr_t *argv;
         merry_get_cmd_options(&argc, &argv);
         execv(/*Do something about this*/ "./build/mvm", argv);
-        os->cores[request->id]->registers[Ma] = 1; // we failed
+        exit(EXIT_FAILURE);
     }
 #elif _USE_WIN_
     merry_os_set_env(iport, oport, request->id);
@@ -1036,10 +1046,11 @@ void merry_os_notify_dbg(mqword_t sig, mbyte_t arg, mbyte_t arg2)
 
 void merry_os_get_io_port_direct(msize_t *ip, msize_t *op)
 {
-    if (os.listener_running != mtrue || os.sender_running != mtrue || os.reader->dfe_flag == mfalse)
+    if ((os.listener_running != mtrue || os.sender_running != mtrue))
     {
         *ip = *op = 0;
-        merry_set_errno(MERRY_NODBG);
+        if (os.reader->dfe_flag != mfalse)
+            merry_set_errno(MERRY_NODBG);
         return;
     }
     mbyte_t _to_send[_MERRY_PER_EXCG_BUF_LEN_];
@@ -1218,20 +1229,19 @@ void merry_os_set_env(msize_t ip, msize_t op, msize_t id)
     SetEnvironmentVariable("_MERRY_IPORT_", tmp);
     sprintf(tmp, "%d", op);
     SetEnvironmentVariable("_MERRY_OPORT_", tmp);
-    sprintf(tmp, "%llu", os->reader->eat.EAT[request->id]);
+    sprintf(tmp, "%llu", os.cores[id]->entry_addr);
     SetEnvironmentVariable("_MERRY_ADDR_", tmp);
     SetEnvironmentVariable("_MERRY_CHILD_SURVEY_", "yes");
 #elif defined(_USE_LINUX_)
-    char tmp[16];
-    sprintf(tmp, "%d", ip);
+    char tmp[17];
+    sprintf(tmp, "%lX", ip);
     setenv("_MERRY_CHILD_DEBUG_", os.reader->dfe_flag == mtrue ? "yes" : "no", 1);
     setenv("_MERRY_CHILD_FREEZE_", os.reader->dfw_flag == mtrue ? "yes" : "no", 1);
     setenv("_MERRY_IPORT_", tmp, 1);
-    sprintf(tmp, "%d", op);
+    sprintf(tmp, "%lX", op);
     setenv("_MERRY_OPORT_", tmp, 1);
-    sprintf(tmp, "%llu", os.cores[id]->entry_addr);
+    sprintf(tmp, "%lX", os.cores[id]->entry_addr);
     setenv("_MERRY_ADDR_", tmp, 1);
     setenv("_MERRY_CHILD_SURVEY_", "yes", 1);
-
 #endif
 }

@@ -22,10 +22,10 @@
 
 depends _builtinmp_.asm
 
-proc std::mp:spawn
+proc std::mp::spawn
 
 ;; RETURNS: Ma = 1 for error else 0
-std::mp:spawn
+std::mp::spawn
     call __builtin_std_spawn_process
     ret
 
