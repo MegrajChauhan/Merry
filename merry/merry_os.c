@@ -1129,23 +1129,11 @@ void merry_os_dump_core_dets(FILE *f)
         if (stack_empty(c))
             continue;
         mqword_t addr = 0;
-        /// TODO: change this so that this actually works
-        while (merry_stack_pop(c->ras, &addr) != RET_FAILURE)
+        while (merry_stack_pop(c->callstack, &addr) != RET_FAILURE)
         {
-            mqword_t i = 0;
-            merry_memory_read(os.inst_mem, addr - 1, &i);
-            switch (i >> 56)
-            {
-            case OP_CALL:
-                addr = (i & 0xFFFFFFFFFFFF);
-                break;
-            case OP_CALL_REG:
-                addr = addr - 1;
-                break;
-            }
-            fprintf(f, "\t\t%lX(%s)\n", addr, (sym = merry_reader_get_symbol(os.reader, addr)) == NULL ? "NO SYMBOL FOUND" : (mstr_t)sym);
+            fprintf(f, "\t\t%lX(%s)\n", addr, (sym = merry_reader_get_symbol(os.reader, addr)) == RET_NULL ? "NO SYMBOL FOUND" : (mstr_t)sym);
         }
-        fprintf(f, "\t\t%lX(%s)\n", os.reader->eat.EAT[c->core_id], (sym = merry_reader_get_symbol(os.reader, os.reader->eat.EAT[c->core_id])) == NULL ? "NO SYMBOL FOUND" : (mstr_t)sym);
+        fprintf(f, "\t\t%lX(%s)\n", c->entry_addr, (sym = merry_reader_get_symbol(os.reader, c->entry_addr)) == RET_NULL ? "NO SYMBOL FOUND" : (mstr_t)sym);
     }
 }
 

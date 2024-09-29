@@ -138,6 +138,7 @@ struct MerryCore
     msize_t exception_address;
     mbool_t excp_set;
     msize_t entry_addr;
+    MerryStack* callstack;
 };
 
 _MERRY_INTERNAL_ _MERRY_ALWAYS_INLINE_ inline void merry_core_zero_out_reg(MerryCore *core)

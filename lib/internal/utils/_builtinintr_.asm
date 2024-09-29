@@ -34,3 +34,10 @@ dc _M_GET_AND_CALL_FUNC 161   ;; get a function from a loaded library and call i
 dc _M_SYSCALL 162             ;; make a syscall
 dc _M_GET_FUNC 163            ;; just get the address of a function from a dynamically loaded library
 dc _M_CALL_FUNC 164           ;; use the address got from interrupt 163 to call it as the function 
+dc _M_START_SUBSYS 165
+dc _M_SUBSYS_ADD_CHANNEL 166
+dc _M_SUBSYS_CLOSE_CHANNEL 167
+dc _M_SUBSYS_SEND 168
+dc _M_SUBSYS_SEND_WAIT 169
+dc _M_SUBSYS_STATUS 170
+dc _M_GETERRNO 171

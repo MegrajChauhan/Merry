@@ -41,7 +41,7 @@ Since each platform has different number of errno values, we have to be really c
 #define MERRY_INIT_FAILED 4 // Failed to initialize something
 #define MERRY_INVAL_ARG 5   // invalid argument
 #define MERRY_SYSERR 6      // error that was caused by the host system itself
-#define MERRY_VMERR 7  // the error was due to the VM
+#define MERRY_VMERR 7       // the error was due to the VM
 
 // Our errno value
 _MERRY_INTERNAL_ msize_t merrno = (msize_t)-1;

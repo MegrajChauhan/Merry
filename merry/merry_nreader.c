@@ -401,7 +401,7 @@ mret_t merry_reader_read_sections(MerryReader *r)
     for (msize_t i = 0; i < r->sst.sst_entry_count; i++)
     {
         MerrySection current_section = r->sst.sections[i];
-        if (current_section.rim == mfalse)
+        if (current_section.rim == mfalse && current_section.type != _SYMD && current_section.type != _INFO)
         {
             // skip the section
             mbyte_t _t[current_section.section_len];
@@ -420,7 +420,7 @@ mret_t merry_reader_read_sections(MerryReader *r)
             // Each entry in this section is in the format: ind = address
             // first 8 bytes hold the address of the symbol and the second 8 bytes hold the index
             // Both the address and the index should be in Big Endian format
-            msize_t entries = current_section.section_len / _MERRY_SYMD_PER_ENTRY_LEN_;
+            register msize_t entries = current_section.section_len / _MERRY_SYMD_PER_ENTRY_LEN_;
             r->sym_count += entries;
             r->syms = (MerrySymbol *)realloc(r->syms, sizeof(MerrySymbol) * r->sym_count);
             if (r->syms == NULL)
@@ -436,7 +436,7 @@ mret_t merry_reader_read_sections(MerryReader *r)
                     rlog("Internal Error: Failed to read data.\n", NULL);
                     return RET_FAILURE;
                 }
-                maddress_t address = 0, index = 0;
+                register maddress_t address = 0, index = 0;
 #if _MERRY_BYTE_ORDER_ == _MERRY_LITTLE_ENDIAN_
                 _MERRY_GET_LITTLE_ENDIAN_(address, entry, 0)
                 _MERRY_GET_LITTLE_ENDIAN_(index, entry, 8)
@@ -570,7 +570,7 @@ mret_t merry_reader_read_st(MerryReader *r)
 
 mbptr_t merry_reader_get_symbol(MerryReader *r, maddress_t addr)
 {
-    if (r->ste_flag == mfalse && r->sst.symd_section_provided == mfalse)
+    if (r->ste_flag == mfalse || r->sst.symd_section_provided == mfalse)
         return RET_NULL;
     for (msize_t i = 0; i < r->sym_count; i++)
     {

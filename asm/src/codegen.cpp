@@ -2,7 +2,7 @@
 
 bool masm::evaluate_consts(SymbolTable *table, Expr *e)
 {
-    for (auto& c : table->_const_list)
+    for (auto &c : table->_const_list)
     {
         Variable var = c.second;
         if (var.name == "NULL")
@@ -1217,17 +1217,8 @@ void masm::CodeGen::gen_ST()
     size_t i = 0;
     for (auto l : *lbl_addr)
     {
-        symd[l.second] = i;
-        for (char _c : l.first)
-        {
-            ST.push_back(_c);
-            i++;
-        }
-        ST.push_back(0);
-        i++;
-    }
-    for (auto l : *data_addr)
-    {
+        if (symd.find(l.second) != symd.end())
+            continue;
         symd[l.second] = i;
         for (char _c : l.first)
         {

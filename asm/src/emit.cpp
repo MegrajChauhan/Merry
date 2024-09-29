@@ -37,8 +37,8 @@ void masm::Emit::add_header()
     header[6] <<= 1;
     header[6] |= cd ? 1 : 0;
     header[6] <<= 1;
-    header[6] |= gen_ST ? 1 : 0;
-    header[7] = enable_dbg ? 1 : 0;
+    header[6] = enable_dbg ? 1 : 0;
+    header[7] |= gen_ST ? 1 : 0;
     for (auto v : header)
     {
         f << v;

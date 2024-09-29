@@ -20,6 +20,8 @@
 ;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ;; SOFTWARE.
 
+depends _builtinintr_.asm
+
 proc __builtin_get_errno
 proc __builtin_set_errno
 
@@ -27,12 +29,18 @@ proc __builtin_set_errno
 
 ;; ARGS: Ma = errno value
 __builtin_set_errno
+    push Ma
+    push Mb
+    intr _M_GETERRNO
     storeb Ma, _Mstd_errno
+    storeb Mb, _Mstd_errno_vm_
     ret
 
-;; RETURNS: Ma = errno value
+;; RETURNS: Ma = errno value, Mb = internal error value
 __builtin_get_errno
     loadb Ma, _Mstd_errno
+    loadb Mb, _Mstd_errno_vm_
     ret
 
-db _Mstd_errno 1 ;; just one
+db _Mstd_errno 0
+db _Mstd_errno_vm_ 0

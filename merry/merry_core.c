@@ -43,6 +43,10 @@ MerryCore *merry_core_init(MerryMemory *inst_mem, MerryDMemory *data_mem, msize_
     new_core->ras = merry_init_stack(_MERRY_RAS_LEN_, mtrue, _MERRY_RAS_LIMIT_, _MERRY_RAS_GROW_PER_RESIZE_);
     if (new_core->ras == RET_NULL)
         goto failure;
+    // the same as the RAS
+    new_core->callstack = merry_init_stack(_MERRY_RAS_LEN_, mtrue, _MERRY_RAS_LIMIT_, _MERRY_RAS_GROW_PER_RESIZE_);
+    if (new_core->callstack == RET_NULL)
+        goto failure;
     new_core->excp_set = mfalse;
     return new_core;
 failure:
@@ -74,6 +78,7 @@ void merry_core_destroy(MerryCore *core, mbool_t _cond)
         }
     }
     merry_destroy_stack(core->ras);
+    merry_destroy_stack(core->callstack);
     core->data_mem = NULL;
     core->inst_mem = NULL;
     free(core);
@@ -276,36 +281,57 @@ _THRET_T_ merry_runCore(mptr_t core)
         case OP_JMP_REGR:
             *current |= (c->registers[*current & 15] & 0xFFFFFFFFFFFF);
         case OP_JMP_ADDR:
-            // 6 bytes should be fine
+            // 6 bytes should be fine   
             c->pc = (*current & 0xFFFFFFFFFFFF);
             break;
         case OP_CALL:
             // save the current return address
+            register mqword_t addr = *current & 0xFFFFFFFFFFFF;
             if (merry_stack_push(c->ras, c->pc) == RET_FAILURE)
             {
                 merry_requestHdlr_panic(MERRY_CALL_DEPTH_REACHED, c->core_id);
                 c->stop_running = mtrue;
                 break;
             }
-            c->pc = (*current & 0xFFFFFFFFFFFF); // the address to the first instruction of the procedure
+            if(merry_stack_push(c->callstack, addr) == RET_FAILURE)
+            {
+                merry_requestHdlr_panic(MERRY_INTERNAL_ERROR, c->core_id);
+                c->stop_running = mtrue;
+                break;
+            }
+            c->pc = addr; // the address to the first instruction of the procedure
             merry_execute_call(c);
             break;
         case OP_CALL_REG:
             // save the current return address
+            addr = c->registers[(*current & 15)];
             if (merry_stack_push(c->ras, c->pc) == RET_FAILURE)
             {
                 merry_requestHdlr_panic(MERRY_CALL_DEPTH_REACHED, c->core_id);
                 c->stop_running = mtrue;
                 break;
             }
-            c->pc = c->registers[(*current & 15)]; // the address to the first instruction of the procedure
+            if(merry_stack_push(c->callstack, addr) == RET_FAILURE)
+            {
+                merry_requestHdlr_panic(MERRY_INTERNAL_ERROR, c->core_id);
+                c->stop_running = mtrue;
+                break;
+            }
+            c->pc = addr; // the address to the first instruction of the procedure
             merry_execute_call(c);
             break;
         case OP_RET:
             // we just have to pop the topmost
+            mqword_t a = 0;
             if (merry_stack_pop(c->ras, &c->pc) == RET_FAILURE)
             {
                 merry_requestHdlr_panic(MERRY_INVALID_RETURN, c->core_id);
+                c->stop_running = mtrue;
+                break;
+            }
+            if(merry_stack_pop(c->callstack, &a) == RET_FAILURE)
+            {
+                merry_requestHdlr_panic(MERRY_INTERNAL_ERROR, c->core_id);
                 c->stop_running = mtrue;
                 break;
             }
