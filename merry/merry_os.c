@@ -84,7 +84,7 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _
     os.ret = _MERRY_EXIT_SUCCESS_;
     os._subsystem_running = mfalse;
     os._subsystem_failure = mfalse;
-    merry_trap_install(); // for now, the failure of this doesn't matter
+    // merry_trap_install(); // for now, the failure of this doesn't matter
     return RET_SUCCESS;   // we did everything correctly
 failure:
     merry_os_destroy();
@@ -163,6 +163,7 @@ mret_t merry_os_init_reader_provided(MerryReader *r, msize_t iport, msize_t opor
     // This init is done with a child process
     // let them know that they are a child process
     os.cores[0]->registers[Ma] = 1;
+    merry_trap_install();
     return RET_SUCCESS; // we did everything correctly
 failure:
     merry_os_destroy();
@@ -355,10 +356,9 @@ _err:
     return RET_FAILURE;
 }
 
-_MERRY_INTERNAL_ void merry_os_notify_subsys()
+_MERRY_INTERNAL_ void merry_os_notify_subsys(mstr_t buf, msize_t len)
 {
-    char buf = 1;
-    write(os.os_pipe->_wclosed, &buf, 1); // wake it up
+    ssize_t r = write(os.os_pipe->_write_fd, buf, len); // wake it up
 }
 
 _MERRY_INTERNAL_ void merry_os_prepare_for_exit()
@@ -501,7 +501,8 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
                         merry_os_execute_request_send(&os, &current_req);
                         break;
                     case _REQ_SUBSYS_SEND_WAIT:
-                        merry_os_execute_request_send_wait(&os, &current_req);
+                        if (merry_os_execute_request_send_wait(&os, &current_req) == RET_FAILURE)
+                            break;
                         continue; // the subsystem will wake up the core
                     case _REQ_GETERRNO:
                         merry_os_execute_request_geterrno(&os, &current_req);
@@ -521,6 +522,9 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
     }
     if (os.ret == _MERRY_EXIT_SUCCESS_)
         merry_os_prepare_for_exit();
+    while (os._subsystem_running == mtrue)
+    {
+    }
     // we won't wait at all now
     // while (os.listener_stopped != mtrue || os.sender_stopped != mtrue)
     // {
@@ -538,6 +542,11 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
 #elif defined(_MERRY_HOST_OS_WINDOWS_)
     return os.ret;
 #endif
+}
+
+void merry_os_subsys_stopped()
+{
+    atomic_store(&os._subsystem_running, mfalse);
 }
 
 void merry_os_handle_others(merrot_t _id, msize_t id)
@@ -684,7 +693,7 @@ _os_exec_(newprocess)
     merry_requestHdlr_acquire();
     msize_t iport, oport;
     merry_os_get_io_port_direct(&iport, &oport);
-    if ((iport == 0 || oport == 0) && os->reader->dfe_flag  == mtrue)
+    if ((iport == 0 || oport == 0) && os->reader->dfe_flag == mtrue)
     {
         os->reader->dfe_flag = mfalse; // we won't take any more connections
         os->cores[request->id]->registers[Ma] = 1;
@@ -920,6 +929,11 @@ _os_exec_(add_channel)
         return RET_SUCCESS;
     }
     msize_t id = merry_subsys_add_channel();
+    if (id == (mqword_t)-1)
+    {
+        merry_requestHdlr_panic(MERRY_INTERNAL_ERROR, 0);
+        return RET_FAILURE;
+    }
     register MerryCore *c = os->cores[request->id];
     // Ma = The address to a null-terminated string of the subsystem's name
     mstr_t name = merry_dmemory_get_bytes_maybe_over_multiple_pages_upto(os->data_mem, c->registers[Ma], 0);
@@ -943,12 +957,14 @@ _os_exec_(add_channel)
     {
         char rfd[10];
         char wfd[10];
+        char _id[10];
         snprintf(rfd, sizeof(rfd), "%d", channel->send_pipe->_read_fd);
         snprintf(wfd, sizeof(wfd), "%d", channel->receive_pipe->_write_fd);
-        msize_t argc = 4;
-        mstr_t const argv[] = {"./subsysmain", rfd, wfd, name, NULL};
-        execv(/*Do something about this*/ "./subsysmain", argv);
-        c->registers[Ma] = -1; // we failed
+        snprintf(_id, sizeof(_id), "%llu", id);
+        mstr_t const argv[] = {"./build/subsysmain", rfd, wfd, _id, name, NULL};
+        execv(/*Do something about this*/ "./build/subsysmain", argv);
+        printf("EXECV ERROR\n");
+        exit(EXIT_FAILURE);
     }
 #elif _USE_WIN_
     /// TODO: Update this to work on windows too.
@@ -959,8 +975,11 @@ _os_exec_(add_channel)
         return RET_FAILURE;
     }
 #endif
+    char t[2] = {_SUBSYS_ADD, id & 255};
     merry_config_channel(channel);
-    merry_os_notify_subsys();
+    // merry_(os->os_pipe, t, 2);
+    merry_os_notify_subsys(t, 2);
+    free(name);
     c->registers[Ma] = id;
     return RET_SUCCESS;
 err:
@@ -989,7 +1008,11 @@ _os_exec_(send)
         c->registers[Ma] = 1;
         return RET_FAILURE;
     }
-    merry_subsys_write(c->registers[Ma], c->registers[Mb], c->registers[M1], c->registers[M2], c->registers[M3], c->registers[M4]);
+    if (merry_subsys_write(c->registers[Ma], c->registers[Mb], c->registers[M1], c->registers[M2], c->registers[M3], c->registers[M4]) == RET_FAILURE)
+    {
+        c->registers[Ma] = 1;
+        return RET_FAILURE;
+    }
     c->registers[Ma] = 0;
     return RET_SUCCESS;
 }
@@ -1002,8 +1025,12 @@ _os_exec_(send_wait)
         c->registers[Ma] = 1;
         return RET_FAILURE;
     }
-    merry_subsys_write(c->registers[Ma], c->registers[Mb], c->registers[M1], c->registers[M2], c->registers[M3], c->registers[M4]);
-    merry_subsys_add_task(c->registers[Ma], c->cond, &c->registers[Ma]);
+    if (merry_subsys_write(c->registers[Ma], c->registers[Mb], c->registers[M1], c->registers[M2], c->registers[M3], c->registers[M4]) == RET_FAILURE)
+    {
+        c->registers[Ma] = 1;
+        return RET_FAILURE;
+    }
+    merry_subsys_add_task(c->registers[Mb], c->cond, &c->registers[Ma]);
     return RET_SUCCESS;
 }
 

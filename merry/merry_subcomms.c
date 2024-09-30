@@ -23,6 +23,21 @@ MerrySubChannel *merry_create_channel()
     return channel;
 }
 
+mret_t merry_create_channel_given(MerrySubChannel *c)
+{
+    MerryPipe *rpipe, *wpipe;
+    if ((rpipe = merry_open_pipe()) == RET_NULL)
+        return RET_FAILURE;
+    if ((wpipe = merry_open_pipe()) == RET_NULL)
+    {
+        merry_destroy_pipe(rpipe);
+        return RET_FAILURE;
+    }
+    c->send_pipe = wpipe;
+    c->receive_pipe = rpipe;
+    return RET_SUCCESS;
+}
+
 void merry_inactivate_channel(MerrySubChannel *channel)
 {
     if (surelyF(channel == RET_NULL))
@@ -44,11 +59,11 @@ void merry_close_channel(MerrySubChannel *channel)
     free(channel);
 }
 
-mret_t merry_channel_read(MerrySubChannel *channel, mstr_t buf, msize_t buf_len)
+mret_t merry_channel_read(MerrySubChannel *channel, mstr_t* buf, msize_t buf_len)
 {
     if (surelyF(channel == RET_NULL || buf == NULL))
         return RET_FAILURE;
-    read(channel->receive_pipe->_read_fd, buf, buf_len); // we won't check the return
+    read(channel->receive_pipe->_read_fd, *buf, buf_len); // we won't check the return
     return RET_SUCCESS;
 }
 
@@ -72,7 +87,6 @@ mret_t merry_reactivate_channel(MerrySubChannel *channel)
         merry_pipe_close_both_ends(channel->receive_pipe);
         return RET_FAILURE;
     }
-    channel->comms_active = mtrue;
     return RET_SUCCESS;
 }
 

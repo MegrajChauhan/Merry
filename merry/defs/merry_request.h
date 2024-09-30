@@ -83,9 +83,11 @@ enum
 enum
 {
     _SUBSYS_FAILED, // subsystem failed(the process couldn't continue)
-    _SUBSYS_SHUTDOWN = 0, // sent by manager thread to stop
     _SUBSYS_CLOSE = 0, // sent to the process to close
     _SUBSYS_CLOSED, // sent by the process that it has closed
+    _SUBSYS_SHUTDOWN = 0, // sent by manager thread to stop
+    _SUBSYS_WAKEUP, // sent by manager thread to stop
+    _SUBSYS_ADD, // sent by manager thread to stop
 };
 
 #endif

@@ -16,7 +16,7 @@ typedef struct MerrySubSys MerrySubSys;
 
 struct MerrySubSys
 {
-    MerrySubChannel **channels;
+    MerrySubChannel *channels;
     msize_t subsys_count;
     msize_t subsys_active;
     msize_t subsys_created;
@@ -25,6 +25,8 @@ struct MerrySubSys
     mbool_t _stop;
     MerryPipe *os_pipe;
 };
+
+extern void merry_os_subsys_stopped();
 
 _MERRY_INTERNAL_ MerrySubSys subsys;
 

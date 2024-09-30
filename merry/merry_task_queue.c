@@ -42,6 +42,7 @@ mbool_t merry_pop_task(MerryTaskQueue *queue, MerryTask *dest)
 MerryTask *merry_query_tasks(MerryTaskQueue *queue, msize_t req)
 {
     MerryTaskNode *head = queue->head;
+    MerryTaskNode *tmp = queue->head;
     MerryTaskNode *prev = NULL;
     MerryTaskNode *tail = queue->tail;
     MerryTaskNode *found = NULL;
@@ -54,7 +55,7 @@ MerryTask *merry_query_tasks(MerryTaskQueue *queue, msize_t req)
         }
         prev = head;
         head = head->next;
-    } while (head->next != head);
+    } while (head->next != tmp);
     if (found == NULL)
         return RET_NULL;
     if (prev == NULL)

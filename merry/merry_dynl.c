@@ -103,18 +103,21 @@ mbool_t merry_loader_loadLib(mstr_t lib_path, msize_t *handle)
     return mtrue; // the library is loaded
 }
 
-mbool_t merry_loadLib(mstr_t libname, mptr_t *handle)
+mptr_t merry_loadLib(mstr_t libname)
 {
 #if defined(_USE_LINUX_)
-    *handle = dlopen(libname, RTLD_NOW | RTLD_GLOBAL);
-    if (*handle == NULL)
-        return mfalse;
+    mptr_t handle = dlopen(libname, RTLD_NOW | RTLD_GLOBAL);
+    if (handle == NULL)
+    {
+        printf("Error: %s\n", dlerror());
+        return RET_NULL;
+    }
 #elif defined(_USE_WIN_)
-    *handle = LoadLibrary(TEXT(lib_path));
-    if (*handle == NULL)
-        return mfalse;
+    handle = LoadLibrary(TEXT(lib_path));
+    if (handle == NULL)
+        return RET_NULL;
 #endif
-    return mtrue;
+    return handle;
 }
 
 void merry_loader_unloadLib(msize_t handle)

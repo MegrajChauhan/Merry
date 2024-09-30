@@ -72,7 +72,7 @@ dynfunc_t merry_loader_getFuncSymbol(msize_t handle, mstr_t sym_name);
 
 mbool_t merry_loader_is_still_valid(msize_t handle);
 
-mbool_t merry_loadLib(mstr_t libname, mptr_t *handle);
+mptr_t merry_loadLib(mstr_t libname);
 void merry_unloadLib(mptr_t *handle);
 subsys_t merry_libsym(mptr_t handle, mstr_t symname);
 

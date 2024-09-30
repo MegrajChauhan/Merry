@@ -22,25 +22,29 @@ int main(int argc, char **argv)
 {
     int ret = 0;
 #ifdef _USE_LINUX_
-    int _wfd = strtol(argv[1], NULL, 10);
-    int _rfd = strtol(argv[2], NULL, 10);
+    int _rfd = strtol(argv[1], NULL, 10);
+    int _wfd = strtol(argv[2], NULL, 10);
     mptr_t handle;
 #endif
+    read(_rfd, &ret, 1); // Wait for the subsystem to say that "You are ready to start"
     msize_t id = strtol(argv[3], NULL, 10);
     mstr_t subsysname = argv[4];
-    if (merry_loadLib(subsysname, &handle) == mfalse)
+    handle = merry_loadLib(subsysname);
+    if (handle == RET_NULL)
     {
-        merry_subsys_send_back(_wfd, _SUBSYS_FAILED, 0);
+        merry_subsys_send_back(_wfd, _SUBSYS_FAILED, id);
         return RET_FAILURE;
     }
-    subsys_t subsys_main = merry_libsym(handle, subsysname);
+    subsys_t subsys_main = merry_libsym(handle, "subsys_main");
     if (subsys_main == RET_NULL)
     {
         merry_unloadLib(&handle);
-        merry_subsys_send_back(_wfd, _SUBSYS_FAILED, 0);
+        merry_subsys_send_back(_wfd, _SUBSYS_FAILED, id);
         return RET_FAILURE;
     }
     ret = subsys_main(_rfd, _wfd, id);
     merry_unloadLib(&handle);
+    close(_rfd);
+    close(_wfd);
     return ret;
 }

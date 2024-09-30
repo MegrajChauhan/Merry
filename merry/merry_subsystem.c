@@ -1,18 +1,19 @@
 #include "merry_subsystem.h"
+#include <signal.h>
 
 _MERRY_INTERNAL_ msize_t merry_subsys_find_inactive_channel()
 {
-    for (msize_t i = 0; i < subsys.subsys_created; i++)
+    for (msize_t i = 0; i < subsys.subsys_count; i++)
     {
-        if (subsys.channels[i]->comms_active == mfalse)
+        if (subsys.channels[i].comms_active == mfalse)
             return i;
     }
-    return subsys.subsys_count;
+    return subsys.subsys_count + 1;
 }
 
 mret_t merry_init_subsys(msize_t _expected_subsys_count)
 {
-    subsys.channels = (MerrySubChannel **)malloc(sizeof(MerrySubChannel *) * _expected_subsys_count);
+    subsys.channels = (MerrySubChannel *)malloc(sizeof(MerrySubChannel) * _expected_subsys_count);
     if (subsys.channels == NULL)
         return RET_FAILURE;
     if ((subsys.queue = merry_task_queue_init(20)) == RET_NULL)
@@ -26,9 +27,14 @@ mret_t merry_init_subsys(msize_t _expected_subsys_count)
         merry_task_queue_destroy(subsys.queue);
         return RET_FAILURE;
     }
+    for (msize_t i = 0; i < _expected_subsys_count; i++)
+    {
+        subsys.channels[i].comms_active = mfalse;
+        subsys.channels[i].receive_pipe = NULL;
+        subsys.channels[i].send_pipe = NULL;
+    }
     subsys.subsys_active = 0;
     subsys.subsys_count = _expected_subsys_count;
-    subsys.subsys_created = 0;
     subsys._stop = mfalse;
     return RET_SUCCESS;
 }
@@ -42,32 +48,37 @@ msize_t merry_subsys_add_channel()
 {
     merry_mutex_lock(subsys.lock);
     msize_t res = merry_subsys_find_inactive_channel();
-    if (res != subsys.subsys_count)
+    if (res != (subsys.subsys_count + 1))
     {
-        if (merry_reactivate_channel(subsys.channels[res]) == RET_FAILURE)
+        if ((subsys.channels[res].receive_pipe == NULL) && (merry_create_channel_given(&subsys.channels[res])) == RET_FAILURE)
+            res = (mqword_t)-1;
+        else if (merry_reactivate_channel(&subsys.channels[res]) == RET_FAILURE)
             res = (mqword_t)-1;
     }
     else
+    {
         // add another channel
-        if (subsys.subsys_created == subsys.subsys_count)
+        MerrySubChannel *temp = (MerrySubChannel *)malloc(sizeof(MerrySubChannel) * (subsys.subsys_count + 10));
+        if (temp == NULL)
+            res = (mqword_t)-1;
+        else
         {
-            MerrySubChannel **temp = (MerrySubChannel **)malloc(sizeof(MerrySubChannel *) * (subsys.subsys_count + 10));
-            if (temp == NULL)
+            memcpy(temp, subsys.channels, subsys.subsys_count * sizeof(MerrySubChannel));
+            free(subsys.channels);
+            subsys.channels = temp;
+            res = subsys.subsys_count;
+            for (msize_t i = res; i < 10; i++)
+            {
+                subsys.channels[i].comms_active = mfalse;
+                subsys.channels[i].receive_pipe = NULL;
+                subsys.channels[i].send_pipe = NULL;
+            }
+            subsys.subsys_count += 10;
+            if ((merry_create_channel_given(&subsys.channels[res])) == RET_FAILURE)
                 res = (mqword_t)-1;
             else
-            {
-                memcpy(temp, subsys.channels, subsys.subsys_count * sizeof(MerrySubChannel *));
-                free(subsys.channels);
-                subsys.channels = temp;
-                subsys.subsys_count += 10;
-            }
+                merry_config_channel(&subsys.channels[res]);
         }
-    if ((subsys.channels[subsys.subsys_created] = merry_create_channel()) == RET_NULL)
-        res = (mqword_t)-1;
-    else
-    {
-        res = subsys.subsys_created;
-        subsys.subsys_created++;
     }
     merry_mutex_unlock(subsys.lock);
     return res;
@@ -75,7 +86,7 @@ msize_t merry_subsys_add_channel()
 
 MerrySubChannel *merry_subsys_get_channel(msize_t id)
 {
-    return subsys.channels[id];
+    return &subsys.channels[id];
 }
 
 mret_t merry_subsys_add_task(msize_t request, MerryCond *cond, mqptr_t _store_in)
@@ -86,7 +97,7 @@ mret_t merry_subsys_add_task(msize_t request, MerryCond *cond, mqptr_t _store_in
 mret_t merry_subsys_write(msize_t id, msize_t request, mqword_t arg1, mqword_t arg2, mqword_t arg3, mqword_t arg4)
 {
     merry_mutex_lock(subsys.lock);
-    if (surelyF(id >= subsys.subsys_created || subsys.channels[id]->comms_active == mfalse))
+    if (surelyF(id >= subsys.subsys_count || subsys.channels[id].comms_active == mfalse))
     {
         merry_mutex_unlock(subsys.lock);
         return RET_FAILURE;
@@ -97,7 +108,7 @@ mret_t merry_subsys_write(msize_t id, msize_t request, mqword_t arg1, mqword_t a
     buffer[2] = arg2;
     buffer[3] = arg3;
     buffer[4] = arg4;
-    merry_channel_write(subsys.channels[id], (mstr_t)buffer, 40);
+    merry_channel_write(&subsys.channels[id], (mstr_t)buffer, 40);
     merry_mutex_unlock(subsys.lock);
     return RET_SUCCESS;
 }
@@ -112,8 +123,8 @@ void merry_subsys_close_all()
     buffer[4] = 0;
     for (msize_t id = 0; id < subsys.subsys_created; id++)
     {
-        if (subsys.channels[id]->comms_active == mtrue)
-            merry_channel_write(subsys.channels[id], (mstr_t)buffer, 40);
+        if (subsys.channels[id].comms_active == mtrue)
+            merry_channel_write(&subsys.channels[id], (mstr_t)buffer, 40);
     }
 }
 
@@ -122,7 +133,7 @@ void merry_destroy_subsys()
     if (surelyF(subsys.channels == NULL))
         return;
     for (size_t i = 0; i < subsys.subsys_created; i++)
-        merry_close_channel(subsys.channels[i]);
+        merry_close_channel(&subsys.channels[i]);
     free(subsys.channels);
     merry_mutex_destroy(subsys.lock);
     merry_task_queue_destroy(subsys.queue);
@@ -138,7 +149,7 @@ void merry_subsys_close_channel(msize_t id)
     buffer[2] = 0;
     buffer[3] = 0;
     buffer[4] = 0;
-    merry_channel_write(subsys.channels[id], (mstr_t)buffer, 40);
+    merry_channel_write(&subsys.channels[id], (mstr_t)buffer, 40);
 }
 
 _THRET_T_ merry_subsys_main(mptr_t arg)
@@ -161,10 +172,14 @@ _THRET_T_ merry_subsys_main(mptr_t arg)
         merry_mutex_unlock(subsys.lock);
         goto err;
     }
-    for (msize_t i = 0; i < subsys.subsys_created; i++)
+    for (msize_t i = 0; i < subsys.subsys_count; i++)
     {
-        _e.data.fd = subsys.channels[i]->receive_pipe->_read_fd;
-        if (subsys.channels[i]->comms_active == mtrue && epoll_ctl(epoll_fd, EPOLL_CTL_ADD, subsys.channels[i]->receive_pipe->_read_fd, &_e) == -1)
+        struct epoll_event ev;
+        ev.events = EPOLLIN;
+        if (subsys.channels[i].receive_pipe == NULL)
+            continue;
+        ev.data.fd = subsys.channels[i].receive_pipe->_read_fd;
+        if ((subsys.channels[i].comms_active == mtrue) && (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, subsys.channels[i].receive_pipe->_read_fd, &ev) == -1))
         {
             merry_requestHdlr_panic(MERRY_SUBSYS_INIT_FAILURE, 0);
             merry_mutex_unlock(subsys.lock);
@@ -174,18 +189,21 @@ _THRET_T_ merry_subsys_main(mptr_t arg)
     merry_mutex_unlock(subsys.lock);
     while (subsys._stop == mfalse)
     {
-        int fd_count;
-        merry_mutex_lock(subsys.lock);
-        struct epoll_event events[subsys.subsys_created];
-        merry_mutex_unlock(subsys.lock);
-        fd_count = epoll_wait(epoll_fd, events, subsys.subsys_created, -1);
-        merry_mutex_lock(subsys.lock);
+        int fd_count = 0;
+        struct epoll_event events[subsys.subsys_count + 1];
+        fd_count = epoll_wait(epoll_fd, events, subsys.subsys_count + 1, -1);
         if (fd_count == -1)
         {
-            merry_requestHdlr_panic(MERRY_SUBSYS_FAILED, 0);
-            merry_mutex_unlock(subsys.lock);
-            break;
+            do
+            {
+                fd_count = epoll_wait(epoll_fd, events, subsys.subsys_count + 1, -1);
+                if (fd_count > 0)
+                    break;
+            } while (errno == EINTR);
+            // merry_requestHdlr_panic(MERRY_SUBSYS_FAILED, 0);
+            // break;
         }
+        merry_mutex_lock(subsys.lock);
         for (msize_t i = 0; i < fd_count; i++)
         {
             if (events[i].data.fd == subsys.os_pipe->_read_fd)
@@ -193,15 +211,34 @@ _THRET_T_ merry_subsys_main(mptr_t arg)
                 // we have a request from the OS
                 mbyte_t req;
                 read(subsys.os_pipe->_read_fd, &req, 1);
-                if (req == _SUBSYS_SHUTDOWN)
+                switch (req)
                 {
+                case _SUBSYS_SHUTDOWN:
+                {
+                    merry_subsys_close_all();
+                    merry_os_subsys_stopped();
                     subsys._stop = mtrue;
                     break;
+                }
+                case _SUBSYS_ADD:
+                {
+                    read(subsys.os_pipe->_read_fd, &req, 1);
+                    _e.data.fd = subsys.channels[req].receive_pipe->_read_fd;
+                    if ((subsys.channels[req].comms_active == mtrue) && (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, subsys.channels[req].receive_pipe->_read_fd, &_e) == -1))
+                    {
+                        merry_requestHdlr_panic(MERRY_SUBSYS_INIT_FAILURE, 0);
+                        merry_mutex_unlock(subsys.lock);
+                        goto err;
+                    }
+                    char _s = 1;
+                    write(subsys.channels[req].send_pipe->_write_fd, &_s, 1);
+                    break;
+                }
                 }
             }
             else
             {
-                mbptr_t buf[16];
+                mbyte_t buf[16];
                 read(events[i].data.fd, buf, 16);
                 mqword_t request = *(mqptr_t)buf;
                 mqword_t ret = *(mqptr_t)(buf + 8);
@@ -212,6 +249,8 @@ _THRET_T_ merry_subsys_main(mptr_t arg)
                     // this failure is fatal
                     // we will do something like either shut down the VM
                     // or stop every other process and run without them
+                    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, &_e);
+                    merry_inactivate_channel(&subsys.channels[ret]);
                     merry_requestHdlr_panic(MERRY_SUBSYS_FAILED, 0);
                     merry_mutex_unlock(subsys.lock);
                     goto err;
@@ -219,7 +258,13 @@ _THRET_T_ merry_subsys_main(mptr_t arg)
                 case _SUBSYS_CLOSED:
                 {
                     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, &_e);
-                    merry_inactivate_channel(subsys.channels[ret]);
+                    if (ret >= subsys.subsys_created)
+                    {
+                        merry_requestHdlr_panic(MERRY_SUBSYS_FAILED, 0);
+                        merry_mutex_unlock(subsys.lock);
+                        goto err;
+                    }
+                    merry_inactivate_channel(&subsys.channels[ret]);
                     break;
                 }
                 default:
@@ -235,12 +280,13 @@ _THRET_T_ merry_subsys_main(mptr_t arg)
         merry_mutex_unlock(subsys.lock);
     }
 #endif
+err:
+    printf("Done\n");
     MerryTask t;
     while ((merry_pop_task(subsys.queue, &t)) != mfalse)
     {
         merry_cond_signal(t.cond);
     }
-err:
 #ifdef _USE_LINUX_
     return RET_NULL;
 #elif defined(_USE_WIN_)

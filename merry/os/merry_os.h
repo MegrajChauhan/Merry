@@ -157,6 +157,8 @@ void merry_os_get_io_port_direct(msize_t *ip, msize_t *op);
 
 mqword_t merry_os_get_ret();
 
+void merry_os_subsys_stopped();
+
 void merry_os_set_env(msize_t ip, msize_t op, msize_t id);
 
 #define _os_exec_(reqname) mret_t merry_os_execute_request_##reqname(Merry *os, MerryOSRequest *request)
