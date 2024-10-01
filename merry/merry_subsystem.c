@@ -141,7 +141,7 @@ void merry_destroy_subsys()
 
 void merry_subsys_close_channel(msize_t id)
 {
-    if (surelyF(id >= subsys.subsys_created))
+    if (surelyF(id >= subsys.subsys_count))
         return;
     mqptr_t buffer[5];
     buffer[0] = _SUBSYS_CLOSE;
@@ -194,14 +194,8 @@ _THRET_T_ merry_subsys_main(mptr_t arg)
         fd_count = epoll_wait(epoll_fd, events, subsys.subsys_count + 1, -1);
         if (fd_count == -1)
         {
-            do
-            {
-                fd_count = epoll_wait(epoll_fd, events, subsys.subsys_count + 1, -1);
-                if (fd_count > 0)
-                    break;
-            } while (errno == EINTR);
-            // merry_requestHdlr_panic(MERRY_SUBSYS_FAILED, 0);
-            // break;
+            merry_requestHdlr_panic(MERRY_SUBSYS_FAILED, 0);
+            break;
         }
         merry_mutex_lock(subsys.lock);
         for (msize_t i = 0; i < fd_count; i++)
@@ -218,7 +212,7 @@ _THRET_T_ merry_subsys_main(mptr_t arg)
                     merry_subsys_close_all();
                     merry_os_subsys_stopped();
                     subsys._stop = mtrue;
-                    break;
+                    goto err;
                 }
                 case _SUBSYS_ADD:
                 {
@@ -258,7 +252,7 @@ _THRET_T_ merry_subsys_main(mptr_t arg)
                 case _SUBSYS_CLOSED:
                 {
                     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, &_e);
-                    if (ret >= subsys.subsys_created)
+                    if (ret >= subsys.subsys_count)
                     {
                         merry_requestHdlr_panic(MERRY_SUBSYS_FAILED, 0);
                         merry_mutex_unlock(subsys.lock);
@@ -281,7 +275,6 @@ _THRET_T_ merry_subsys_main(mptr_t arg)
     }
 #endif
 err:
-    printf("Done\n");
     MerryTask t;
     while ((merry_pop_task(subsys.queue, &t)) != mfalse)
     {

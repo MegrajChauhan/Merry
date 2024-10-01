@@ -4,6 +4,7 @@
 merry_ihdlr(termination)
 {
    // The OS knows that this isn't from any process
+   printf("SIG INTERRUPT: Terminating...\n");
    merry_requestHdlr_panic(_SHOULD_EXIT, 0);
 }
 
@@ -12,6 +13,8 @@ merry_ihdlr(termination)
 // We may as well say that we 'ignore' this signal
 merry_ihdlr(interrupt)
 {
+   printf("INTERRUPTED: Terminating....\n");
+   merry_requestHdlr_panic(_SHOULD_EXIT, 0);
 }
 
 // A segmentation fault

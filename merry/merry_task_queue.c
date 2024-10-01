@@ -43,8 +43,6 @@ MerryTask *merry_query_tasks(MerryTaskQueue *queue, msize_t req)
 {
     MerryTaskNode *head = queue->head;
     MerryTaskNode *tmp = queue->head;
-    MerryTaskNode *prev = NULL;
-    MerryTaskNode *tail = queue->tail;
     MerryTaskNode *found = NULL;
     do
     {
@@ -53,22 +51,11 @@ MerryTask *merry_query_tasks(MerryTaskQueue *queue, msize_t req)
             found = head;
             break;
         }
-        prev = head;
         head = head->next;
     } while (head->next != tmp);
     if (found == NULL)
         return RET_NULL;
-    if (prev == NULL)
-    {
-        queue->head = head->next;
-        queue->data_count--;
-        return &found->value;
-    }
-    else
-    {
-        prev->next = found->next;
-        queue->data_count--;
-        return &found->value;
-    }
-    return RET_NULL;
+    found->value.request = 0;
+    queue->data_count--;
+    return &found->value;
 }

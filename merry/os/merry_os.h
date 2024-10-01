@@ -73,10 +73,10 @@ struct Merry
   MerrySender *sender;
   MerryThread *listener_th;
   MerryThread *sender_th;
-  mbool_t listener_running, listener_stopped;
-  mbool_t sender_running, sender_stopped;
-  mbool_t _subsystem_running;
-  mbool_t _subsystem_failure;
+  volatile mbool_t listener_running, listener_stopped;
+  volatile mbool_t sender_running, sender_stopped;
+  volatile mbool_t _subsystem_running;
+  volatile mbool_t _subsystem_failure;
   MerryPipe *os_pipe;
   MerryThread *subsys_thread;
 };

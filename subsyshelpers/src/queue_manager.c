@@ -29,16 +29,10 @@ _THRET_T_ queue_manager(mptr_t arg)
     {
         acquire_lock(manager.lock);
         mqword_t requests[5];
-        printf("Waiting...\n");
         read(manager.rfd, requests, 40);
-        printf("Got it!...\n");
-        if (push_to_queue(manager.queue, requests[0], &requests[1]) == mfalse) // don't check return
-        {
-            printf("Failed to push...\n");
-        }
+        push_to_queue(manager.queue, requests[0], &requests[1]);
         if (manager.queue->data_count == 1)
         {
-            printf("Waking up the thread....\n");
             cond_signal(manager._notfier_cond);
         }
         if (requests[0] == 0)
@@ -48,6 +42,7 @@ _THRET_T_ queue_manager(mptr_t arg)
         }
         release_lock(manager.lock);
     }
+    return NULL;
 }
 
 void queue_manager_destroy()

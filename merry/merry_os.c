@@ -84,7 +84,7 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _
     os.ret = _MERRY_EXIT_SUCCESS_;
     os._subsystem_running = mfalse;
     os._subsystem_failure = mfalse;
-    // merry_trap_install(); // for now, the failure of this doesn't matter
+    merry_trap_install(); // for now, the failure of this doesn't matter
     return RET_SUCCESS;   // we did everything correctly
 failure:
     merry_os_destroy();
@@ -380,7 +380,7 @@ _MERRY_INTERNAL_ void merry_os_prepare_for_exit()
         if (os.sender->queue->data_count == 0)
             merry_cond_signal(os.sender->cond);
     }
-    if (os._subsystem_running == mtrue && os._subsystem_failure == mfalse)
+    if ((os._subsystem_running == mtrue) && (os._subsystem_failure == mfalse))
     {
         char _send = _SUBSYS_SHUTDOWN;
         write(os.os_pipe->_write_fd, &_send, 1);
@@ -546,7 +546,7 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
 
 void merry_os_subsys_stopped()
 {
-    atomic_store(&os._subsystem_running, mfalse);
+    atomic_exchange(&os._subsystem_running, mfalse);
 }
 
 void merry_os_handle_others(merrot_t _id, msize_t id)
@@ -990,7 +990,7 @@ err:
 _os_exec_(close_channel)
 {
     register MerryCore *c = os->cores[request->id];
-    if (os->_subsystem_running == mfalse && os->_subsystem_failure == mfalse)
+    if (os->_subsystem_running == mfalse || os->_subsystem_failure == mtrue)
     {
         c->registers[Ma] = 1;
         return RET_FAILURE;
@@ -1025,12 +1025,12 @@ _os_exec_(send_wait)
         c->registers[Ma] = 1;
         return RET_FAILURE;
     }
+    merry_subsys_add_task(c->registers[Mb], c->cond, &c->registers[Ma]);
     if (merry_subsys_write(c->registers[Ma], c->registers[Mb], c->registers[M1], c->registers[M2], c->registers[M3], c->registers[M4]) == RET_FAILURE)
     {
         c->registers[Ma] = 1;
         return RET_FAILURE;
     }
-    merry_subsys_add_task(c->registers[Mb], c->cond, &c->registers[Ma]);
     return RET_SUCCESS;
 }
 
