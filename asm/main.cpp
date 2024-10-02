@@ -28,6 +28,7 @@
 #include "worker.hpp"
 #include "codegen.hpp"
 #include "emit.hpp"
+#include <iostream>
 
 // The format for the VERSION is v<Major>.<Minor>.<Patch>-<State>.<update_count>
 #define VERSION "Masm- v0.1.8-test.27"

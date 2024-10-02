@@ -38,7 +38,7 @@
 #include <merry_console.h>
 #include <merry_process.h>
 #include "merry_commands.h"
-#include "merry_dbg.h"
+// #include "merry_dbg.h"
 #include <stdatomic.h>
 #include <stdlib.h>
 #include "merry_temp.h"
@@ -48,6 +48,7 @@
 #include "merry_syscall_hdlr.h"
 #include "merry_helpers.h"
 #include "merry_subsystem.h"
+#include "merry_debug.h"
 
 typedef struct Merry Merry;
 
@@ -69,12 +70,15 @@ struct Merry
   mstr_t dump_file;
   msize_t err_core_id;
   mbool_t wait_for_conn;
-  MerryListener *listener;
-  MerrySender *sender;
-  MerryThread *listener_th;
-  MerryThread *sender_th;
-  volatile mbool_t listener_running, listener_stopped;
-  volatile mbool_t sender_running, sender_stopped;
+  // MerryListener *listener;
+  // MerrySender *sender;
+  // MerryThread *listener_th;
+  // MerryThread *sender_th;
+  // volatile mbool_t listener_running, listener_stopped;
+  // volatile mbool_t sender_running, sender_stopped;
+  MerryDebug *dbg;
+  MerryThread *dbg_th;
+  mbool_t dbg_running;
   volatile mbool_t _subsystem_running;
   volatile mbool_t _subsystem_failure;
   MerryPipe *os_pipe;
@@ -82,7 +86,7 @@ struct Merry
 };
 
 #define _MERRY_REQUEST_QUEUE_LEN_ 20 // for now
-#define _MERRY_SUBSYS_LEN_ 10 // initial
+#define _MERRY_SUBSYS_LEN_ 10        // initial
 
 #define _MERRY_REQUEST_INTERNAL_ERROR_(request_id) (request_id >= 0 && request_id <= 9)
 #define _MERRY_REQUEST_OTHER_(request_id) (request_id >= 10 && request_id <= 50)
@@ -113,10 +117,10 @@ static Merry os;
 #define merry_manager_mem_read_inst(inst_mem, address, store_in) merry_memory_read(inst_mem, address, store_in)
 
 mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _wait_for_conn);
-mret_t merry_os_init_reader_provided(MerryReader *r, msize_t iport, msize_t oport);
+mret_t merry_os_init_reader_provided(MerryReader *r);
 mret_t merry_os_start_subsys();
 
-void merry_os_start_dbg(mbool_t _flag, msize_t in_port, msize_t out_port);
+void merry_os_start_dbg();
 
 void merry_os_produce_dump(mstr_t _output_filename);
 
@@ -145,7 +149,7 @@ void merry_os_handle_internal_module_error(merrot_t error_num);
 
 void merry_os_new_proc_init(msize_t ip, msize_t op);
 
-void merry_os_notify_dbg(mqword_t sig, mbyte_t arg, mbyte_t arg2);
+void merry_os_notify_dbg(mqword_t sig, mqword_t arg);
 
 mqword_t merry_os_get_dbg_sig(mbptr_t sig);
 
@@ -153,13 +157,15 @@ void merry_os_set_dbg_sig(mqword_t _sig, mbptr_t sig);
 
 void merry_os_notice(mbool_t _type);
 
+// UN-USED, DEPRECATED
 void merry_os_get_io_port_direct(msize_t *ip, msize_t *op);
 
 mqword_t merry_os_get_ret();
 
 void merry_os_subsys_stopped();
+void merry_os_dbg_stopped();
 
-void merry_os_set_env(msize_t ip, msize_t op, msize_t id);
+void merry_os_set_env(msize_t id);
 
 #define _os_exec_(reqname) mret_t merry_os_execute_request_##reqname(Merry *os, MerryOSRequest *request)
 
@@ -186,6 +192,19 @@ _os_exec_(send);
 _os_exec_(send_wait);
 _os_exec_(subsys_status);
 _os_exec_(geterrno);
+
+_os_exec_(get_core_count);
+_os_exec_(get_active_core_count);
+_os_exec_(get_data_mem_page_count);
+_os_exec_(get_inst_mem_page_count);
+_os_exec_(add_breakpoint);
+_os_exec_(inst_at);
+_os_exec_(data_at);
+_os_exec_(sp_of);
+_os_exec_(bp_of);
+_os_exec_(pc_of);
+_os_exec_(regr_of);
+_os_exec_(continue_core);
 
 // _os_exec_(fopen);
 // _os_exec_(fclose);

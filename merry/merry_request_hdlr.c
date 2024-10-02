@@ -37,7 +37,8 @@ mret_t merry_requestHdlr_push_request(msize_t req_id, msize_t id, MerryCond *req
         // now we wait for the request to be fulfilled
         if (req_hdlr.queue->data_count == 1)
             merry_cond_signal(req_hdlr.host_cond); // wake up the OS
-        merry_cond_wait(req_cond, req_hdlr.lock);  // the return value from the request should be in the requesting core's Registers
+        if (surelyT(req_cond != NULL))
+            merry_cond_wait(req_cond, req_hdlr.lock); // the return value from the request should be in the requesting core's Registers
     }
     goto here;
 here:

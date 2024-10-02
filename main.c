@@ -28,8 +28,6 @@
 _MERRY_INTERNAL_ mbool_t _is_child = mfalse;
 _MERRY_INTERNAL_ mbool_t _child_dbg = mfalse;
 _MERRY_INTERNAL_ mbool_t _child_freeze = mfalse;
-_MERRY_INTERNAL_ msize_t iport = 0;
-_MERRY_INTERNAL_ msize_t oport = 0;
 _MERRY_INTERNAL_ msize_t entry = 0;
 _MERRY_INTERNAL_ mbool_t _os_init = mfalse;
 
@@ -79,7 +77,7 @@ int childmain()
     r->eat.EAT[0] = entry; // start from there
     r->de_flag = r->dfe_flag = _child_dbg;
     r->dfw_flag = cmd_opts->freeze = _child_freeze;
-    if (merry_os_init_reader_provided(r, iport, oport) == RET_FAILURE)
+    if (merry_os_init_reader_provided(r) == RET_FAILURE)
     {
         inerr_log("Internal Error: Child process failed to start.\n");
         return 1;
@@ -114,25 +112,14 @@ void __get_env_info()
     _is_child = mtrue;
     GetEnvironmentVariable("_MERRY_CHILD_DEBUG_", _data, sizeof(_data));
     if (strcmp(_data, "no") == 0)
-        return;
+        _child_dbg = mfalse;
     memset(_data, 0, sizeof(_data));
     _child_dbg = mtrue;
     GetEnvironmentVariable("_MERRY_CHILD_FREEZE_", _data, sizeof(_data));
     if (strcmp(_data, "no") == 0)
-        return;
+        _child_freeze = mfalse;
     memset(_data, 0, sizeof(_data));
     _child_freeze = mtrue;
-    GetEnvironmentVariable("_MERRY_CHILD_FREEZE_", _data, sizeof(_data));
-    if (strcmp(_data, "no") == 0)
-        return;
-    memset(_data, 0, sizeof(_data));
-    _child_freeze = mtrue;
-    GetEnvironmentVariable("_MERRY_IPORT_", _data, sizeof(_data));
-    iport = strtoull(_data, NULL, 16); // the value is not invalid
-    memset(_data, 0, sizeof(_data));
-    GetEnvironmentVariable("_MERRY_OPORT_", _data, sizeof(_data));
-    oport = strtoull(_data, NULL, 16); // the value is not invalid
-    memset(_data, 0, sizeof(_data));
     GetEnvironmentVariable("_MERRY_ADDR_", _data, sizeof(_data));
     entry = strtoull(_data, NULL, 16); // the value is not invalid
 #elif defined(_USE_LINUX_)
@@ -151,10 +138,6 @@ void __get_env_info()
     if (strcmp(_data, "yes") == 0)
         _child_freeze = mtrue;
     _child_freeze = mtrue;
-    _data = getenv("_MERRY_IPORT_");
-    iport = strtoull(_data, NULL, 16); // the value is not invalid
-    _data = getenv("_MERRY_OPORT_");
-    oport = strtoull(_data, NULL, 16); // the value is not invalid
     _data = getenv("_MERRY_ADDR_");
     entry = strtoull(_data, NULL, 16); // the value is not invalid
 #endif
@@ -165,15 +148,11 @@ void __set_env_info()
 #ifdef _USE_WIN_
     SetEnvironmentVariable("_MERRY_CHILD_DEBUG_", "no");
     SetEnvironmentVariable("_MERRY_CHILD_FREEZE_", "no");
-    SetEnvironmentVariable("_MERRY_IPORT_", "0");
-    SetEnvironmentVariable("_MERRY_OPORT_", "0");
     SetEnvironmentVariable("_MERRY_CHILD_SURVEY_", "no");
     SetEnvironmentVariable("_MERRY_ADDR_", "0");
 #elif defined(_USE_LINUX_)
     setenv("_MERRY_CHILD_DEBUG_", "no", 1);
     setenv("_MERRY_CHILD_FREEZE_", "no", 1);
-    setenv("_MERRY_IPORT_", "0", 1);
-    setenv("_MERRY_OPORT_", "0", 1);
     setenv("_MERRY_CHILD_SURVEY_", "no", 1);
     setenv("_MERRY_ADDR_", "0", 1);
 #endif

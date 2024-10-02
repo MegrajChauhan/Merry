@@ -233,7 +233,11 @@ _THRET_T_ merry_subsys_main(mptr_t arg)
             else
             {
                 mbyte_t buf[16];
-                read(events[i].data.fd, buf, 16);
+                if (read(events[i].data.fd, buf, 16) < 16)
+                {
+                    fprintf(stderr, "SUBSYSTEM ERROR[WARNING]: Invalid number of bytes received.\n");
+                    continue;
+                }
                 mqword_t request = *(mqptr_t)buf;
                 mqword_t ret = *(mqptr_t)(buf + 8);
                 switch (request)
@@ -244,7 +248,6 @@ _THRET_T_ merry_subsys_main(mptr_t arg)
                     // we will do something like either shut down the VM
                     // or stop every other process and run without them
                     epoll_ctl(epoll_fd, EPOLL_CTL_DEL, events[i].data.fd, &_e);
-                    merry_inactivate_channel(&subsys.channels[ret]);
                     merry_requestHdlr_panic(MERRY_SUBSYS_FAILED, 0);
                     merry_mutex_unlock(subsys.lock);
                     goto err;

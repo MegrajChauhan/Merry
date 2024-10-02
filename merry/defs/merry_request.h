@@ -62,9 +62,7 @@ enum
     _REQ_NEWCORE,          /*Create a new core for execution. This requires the requesting core's Ma register to contain the address from which the new core should execute from*/
     _REQ_MEM,              // request for more memory
     _REQ_NEWPROCESS,       // create a new process
-    _REQ_INTR,             // a request of the debuggers
     _REQ_BP,               // a request for the debugger
-    _REQ_GDB_INIT,         // the debugger is initialized
     _REQ_LOAD_LIB,         // load a new library
     _REQ_UNLOAD_LIB,       // unload a new library
     _REQ_GET_FUNC,         // get a function from a loaded library
@@ -82,12 +80,12 @@ enum
 
 enum
 {
-    _SUBSYS_FAILED, // subsystem failed(the process couldn't continue)
-    _SUBSYS_CLOSE = 0, // sent to the process to close
-    _SUBSYS_CLOSED, // sent by the process that it has closed
+    _SUBSYS_FAILED,       // subsystem failed(the process couldn't continue)
+    _SUBSYS_CLOSE = 0,    // sent to the process to close
+    _SUBSYS_CLOSED,       // sent by the process that it has closed
     _SUBSYS_SHUTDOWN = 0, // sent by manager thread to stop
-    _SUBSYS_WAKEUP, // sent by manager thread to stop
-    _SUBSYS_ADD, // sent by manager thread to stop
+    _SUBSYS_WAKEUP,       // sent by manager thread to stop
+    _SUBSYS_ADD,          // sent by manager thread to add
 };
 
 #endif
