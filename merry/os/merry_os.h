@@ -167,6 +167,8 @@ void merry_os_dbg_stopped();
 
 void merry_os_set_env(msize_t id);
 
+void merry_os_give_id(msize_t id);
+
 #define _os_exec_(reqname) mret_t merry_os_execute_request_##reqname(Merry *os, MerryOSRequest *request)
 
 // handle the halt request

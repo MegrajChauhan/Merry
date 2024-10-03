@@ -55,9 +55,11 @@ struct MerryCLP
     mbool_t _dump;
     char **_options_;
     msize_t option_count;
+    mbool_t _is_child;
+    mstr_t entry;
 };
 
-MerryCLP *merry_parse_options(int argc, char **argv);
+MerryCLP *merry_parse_options(int argc, char **argv, mbool_t child);
 
 void merry_print_help();
 

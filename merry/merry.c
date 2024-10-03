@@ -1,6 +1,6 @@
 #include "merry.h"
 
-MerryCLP *merry_parse_options(int argc, char **argv)
+MerryCLP *merry_parse_options(int argc, char **argv, mbool_t child)
 {
     if (argc < 2)
     {
@@ -25,6 +25,7 @@ MerryCLP *merry_parse_options(int argc, char **argv)
     clp->_options_ = NULL;
     clp->_version = mfalse;
     clp->freeze = mfalse;
+    clp->entry = NULL;
     mbool_t _clo_provided_ = mfalse;
     int i = 1;
     for (; i < argc; i++)
@@ -119,6 +120,13 @@ MerryCLP *merry_parse_options(int argc, char **argv)
             break;
         }
         default:
+            if (child == mtrue && clp->_is_child == mfalse)
+            {
+                // provides an entry
+                clp->entry = argv[i];
+                clp->_is_child = mtrue;
+                break;
+            }
             rlog("Unknown option '%s'\n", argv[i]);
             clp->_help = mtrue;
             return clp;
@@ -132,19 +140,8 @@ MerryCLP *merry_parse_options(int argc, char **argv)
             clp->_help = mtrue;
             return clp;
         }
-        clp->_options_ = (char **)malloc(sizeof(char *) * (argc - i));
-        if (clp->_options_ == NULL)
-        {
-            rlog("Failed to fully parse the options.\n", NULL);
-            return RET_NULL;
-        }
-        msize_t j = 0;
-        for (; i < argc; i++)
-        {
-            clp->_options_[j] = argv[i];
-            j++;
-        }
-        clp->option_count = j;
+        clp->_options_ = &argv[i];
+        clp->option_count = argc - i;
     }
     return clp;
 }
@@ -154,13 +151,12 @@ void merry_print_help()
     log(
         "Usage; merry -f <path_to_input_file> [OPTIONS]\n"
         "OPTIONS:\n"
-        "-h, --h, -help, --help        --> Print this help\n"
-        "-v, --v, -version, --version  --> Display the current version\n"
-        "-f                            --> Provide the path to the input file\n"
-        "--                            --> Provide Command Line Options for your Program\n"
-        "--dump-file=[PATH],-df=[PATH] --> Tell the VM to produce a dumpfile\n"
-        "                                  If '=' is given, a file name is expected otherwise no need.\n"
-        "-F, --freeze                  --> If DE flag is set; causes the VM to wait for connection for debugging.\n",
+        "-h, --h, -help, --help         --> Print this help\n"
+        "-v, --v, -version, --version   --> Display the current version\n"
+        "-f                             --> Provide the path to the input file\n"
+        "--                             --> Provide Command Line Options for your Program\n"
+        "--dump-file=[PATH],-df=[PATH]  --> Tell the VM to produce a dumpfile\n"
+        "-F, --freeze                   --> If DE flag is set; causes the VM to wait for connection for debugging.\n",
         NULL);
 }
 
@@ -168,8 +164,6 @@ void merry_destroy_parser(MerryCLP *clp)
 {
     if (clp == NULL)
         return;
-    if (clp->_options_ != NULL)
-        free(clp->_options_);
     free(clp);
 }
 
@@ -178,21 +172,15 @@ mret_t merry_parse_d_options(MerryCLP *clp, char *opt)
     msize_t len = strlen(opt);
     if (str_starts_with(opt, "--dump-file") == mtrue)
     {
-        if (len == 11)
+        if (len <= 12)
         {
             // We have no path provided
-            clp->_dump = mtrue;
-            clp->_dump_file = NULL;
-            return RET_SUCCESS;
+            rlog("Error: Dump File name required.\n", NULL);
+            return RET_FAILURE;
         }
         if (str_ends_with(opt, "=") == mtrue)
         {
-            rlog("Error: The option '--dump-file' requires a path. Don't use '=' for default filename.\n", NULL);
-            return RET_FAILURE;
-        }
-        if (opt[11] != '=')
-        {
-            rlog("Error: The option '--dump-file' requires a path. Don't use '=' for default filename.\n", NULL);
+            rlog("Error: The option '--dump-file' requires a path\n", NULL);
             return RET_FAILURE;
         }
         clp->_dump_file = opt + 12;
@@ -201,21 +189,15 @@ mret_t merry_parse_d_options(MerryCLP *clp, char *opt)
     }
     else if (str_starts_with(opt, "-df") == mtrue)
     {
-        if (len == 3)
+        if (len <= 4)
         {
             // We have no path provided
-            clp->_dump = mtrue;
-            clp->_dump_file = NULL;
-            return RET_SUCCESS;
+            rlog("Error: Dump File name required.\n", NULL);
+            return RET_FAILURE;
         }
         if (str_ends_with(opt, "=") == mtrue)
         {
-            rlog("Error: The option '-df' requires a path. Don't use '=' for default filename.\n", NULL);
-            return RET_FAILURE;
-        }
-        if (opt[3] != '=')
-        {
-            rlog("Error: The option '-df' requires a path. Don't use '=' for default filename.\n", NULL);
+            rlog("Error: The option '-df' requires a path.\n", NULL);
             return RET_FAILURE;
         }
         clp->_dump_file = opt + 4;
@@ -224,3 +206,5 @@ mret_t merry_parse_d_options(MerryCLP *clp, char *opt)
     }
     return RET_FAILURE;
 }
+
+// To the ones who dedicate hours into cool cmd options parsers- I am sorry for the abomination.

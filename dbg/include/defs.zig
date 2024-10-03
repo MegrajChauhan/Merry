@@ -1,9 +1,9 @@
-const std = @import("std");
-const print = std.io.getStdOut().writer();
-const read = std.io.getStdIn().reader();
-const log = std.io.getStdErr().writer();
+pub const std = @import("std");
+pub const print = std.io.getStdOut().writer();
+pub const read = std.io.getStdIn().reader();
+pub const log = std.io.getStdErr().writer();
 
-const signals = enum {
+pub const signals = enum {
     CLOSE, // we need to close the debugger
     NEW_CORE, // there was a new core creation
     NEW_OS, // a new OS was created(prepare for a new process in case it expects child debugging)
@@ -16,7 +16,7 @@ const signals = enum {
     MORE_MEM, // new data memory pages were added
 };
 
-const requests = enum {
+pub const requests = enum {
     ACTIVE, // we are now active
     CLOSED, // we are now closed(no more signals)
     GET_CORE_COUNT, // the core count(total)

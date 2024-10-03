@@ -121,7 +121,6 @@ failure:
 mret_t merry_os_init_reader_provided(MerryReader *r)
 {
     // we need to put the options into the memory
-    os._os_id = os._os_id + 1;
     os.reader = r;
     if ((os.data_mem = merry_dmemory_init_provided(os.reader->data, os.reader->data_page_count)) == RET_NULL)
     {
@@ -179,7 +178,7 @@ void merry_os_start_dbg()
         os.wait_for_conn = mfalse;
         return;
     }
-    if (((os.dbg = merry_init_debug()) == RET_NULL) || (merry_create_detached_thread(os.dbg_th, &merry_start_debugging, os.dbg) == RET_FAILURE))
+    if (((os.dbg = merry_init_debug(os._os_id)) == RET_NULL) || (merry_create_detached_thread(os.dbg_th, &merry_start_debugging, os.dbg) == RET_FAILURE))
     {
         rlog("Debugger couldn't initialize.\n", NULL);
         os.reader->dfw_flag = mfalse;
@@ -286,6 +285,7 @@ mret_t merry_os_add_core()
         goto _err;
     }
     MerryThread *th = merry_thread_init();
+
     if (th == RET_NULL)
     {
         merry_core_destroy(new_core, mtrue);
@@ -323,7 +323,6 @@ mret_t merry_os_add_core()
     os.core_count++;
     return RET_SUCCESS;
 _err:
-
     return RET_FAILURE;
 }
 
@@ -709,28 +708,43 @@ _os_exec_(mem)
 _os_exec_(newprocess)
 {
     // This will start a new process
+    register MerryCore *c = os->cores[request->id];
+    register mqword_t _len = c->registers[Mb];
+    mstr_t *_args = (mstr_t *)merry_dmemory_get_bytes_maybe_over_multiple_pages(os->data_mem, c->registers[Ma], _len);
+    if (_args == RET_NULL)
+    {
+        c->registers[Ma] = 1;
+        return RET_FAILURE;
+    }
     merry_requestHdlr_acquire();
-    // msize_t iport, oport;
-    // merry_os_get_io_port_direct(&iport, &oport);
 #ifdef _USE_LINUX_
     MerryProcess p;
     if (merry_create_process(&p) == mfalse)
     {
         merry_requestHdlr_release();
-        os->cores[request->id]->registers[Ma] = 1;
-        os->cores[request->id]->registers[Mb] = errno;
+        c->registers[Ma] = 1;
+        c->registers[Mb] = errno;
         return RET_FAILURE;
     }
     if (p.pid == 0)
     {
-        merry_os_set_env(request->id);
-        msize_t argc;
-        mstr_t *argv;
-        merry_get_cmd_options(&argc, &argv);
-        execv(/*Do something about this*/ "./build/mvm", argv);
+        char entry[32];
+        snprintf(entry, 32, "%llu", c->entry_addr);
+        mstr_t argv[_len + 3];
+        argv[0] = _MERRY_CMAIN_;
+        argv[1] = entry;
+        msize_t i = 2;
+        for (; i < _len; i++)
+        {
+            argv[i] = *_args;
+            _args++;
+        }
+        argv[i] = NULL;
+        execv(/*Do something about this*/ _MERRY_CMAIN_, argv);
         exit(EXIT_FAILURE);
     }
 #elif _USE_WIN_
+    /// TODO: FIX ME
     merry_os_set_env(request->id);
     if (merry_create_process(&p) == mfalse)
     {
@@ -743,6 +757,7 @@ _os_exec_(newprocess)
     merry_requestHdlr_release();
     os->cores[request->id]->registers[Ma] = 0;
     merry_os_notify_dbg(_NEW_OS_, 0);
+    free(_args);
     return RET_SUCCESS;
 }
 
@@ -971,8 +986,8 @@ _os_exec_(add_channel)
         snprintf(rfd, sizeof(rfd), "%d", channel->send_pipe->_read_fd);
         snprintf(wfd, sizeof(wfd), "%d", channel->receive_pipe->_write_fd);
         snprintf(_id, sizeof(_id), "%llu", id);
-        mstr_t const argv[] = {"./build/subsysmain", rfd, wfd, _id, name, NULL};
-        execv(/*Do something about this*/ "./build/subsysmain", argv);
+        mstr_t const argv[] = {_MERRY_SUBSYSMAIN_, rfd, wfd, _id, name, NULL};
+        execv(/*Do something about this*/ _MERRY_SUBSYSMAIN_, argv);
         printf("EXECV ERROR\n");
         exit(EXIT_FAILURE);
     }
@@ -1241,28 +1256,8 @@ mret_t merry_os_error_dump()
 {
     // We first put into the necessary details one by one
     // First a file
-    char finalf[128] = {0};
-    finalf[0] = 'a';
-    msize_t i = 0;
-    while (mtrue)
-    {
-        FILE *f = fopen(finalf, "r");
-        if (f == NULL)
-        {
-            if (finalf[i] != 'z')
-                finalf[i]++;
-            else
-            {
-                i++;
-                finalf[i] = 'a';
-            }
-        }
-        else
-        {
-            fclose(f);
-            break;
-        }
-    }
+    char finalf[128] = {'d', 'u', 'm', 'p', 0};
+    snprintf(finalf + 4, 128, "%d", os._os_id);
     FILE *df = fopen(finalf, "w");
     if (df == NULL)
         return RET_FAILURE;
@@ -1346,4 +1341,9 @@ void merry_os_set_env(msize_t id)
     setenv("_MERRY_ADDR_", tmp, 1);
     setenv("_MERRY_CHILD_SURVEY_", "yes", 1);
 #endif
+}
+
+void merry_os_give_id(msize_t id)
+{
+    os._os_id = id;
 }

@@ -1,40 +1,36 @@
 #include "merry_temp.h"
 
-void merry_save_cmd_options(msize_t argc, mstr_t *argv)
+mret_t lock_file(FILE *file)
 {
-    msize_t total_len = 0;
 #ifdef _USE_WIN_
-    for (msize_t i = 0; i < argc; i++)
-        total_len += strlen(argv[i]) + 1;
-    _cmd_opts = (mstr_t *)malloc(sizeof(char) * total_len);
-    if (_cmd_opts == NULL)
-        return;
-    // don't mind the weird type cast
-    _cmd_opt_len = argc;
-    memcpy(_cmd_opts, &argv[0][0], total_len);
-#elif defined(_USE_LINUX_)
-   // Count the total length of all the arguments including their null terminators
-    for (msize_t i = 0; i < argc; i++)
-        total_len += strlen(argv[i]) + 1; // +1 for null terminators
-    _cmd_opts = (mstr_t *)malloc((argc + 1) * sizeof(mstr_t *));
-    if (_cmd_opts == NULL)
-        return;
-    for (msize_t i = 0; i < argc; i++)
-        _cmd_opts[i] = strdup(argv[i]);
-    
-    _cmd_opts[argc] = NULL; // Null-terminate the argument array
-    _cmd_opt_len = argc;
+    HANDLE h = (HANDLE)_get_osfhandle(_fileno(file));
+    if (h == INVALID_HANDLE_VALUE)
+    {
+        return RET_FAILURE;
+    }
+
+    if (!LockFile(h, 0, 0, 1, 0))
+        return RET_FAILURE; // Lock failed
+#else
+    int fd = fileno(file);
+    if (flock(fd, LOCK_EX) == RET_FAILURE)
+        return RET_FAILURE;
 #endif
+    return RET_SUCCESS;
 }
 
-void merry_get_cmd_options(msize_t *argc, mstr_t **argv)
+mret_t unlock_file(FILE *file)
 {
-    *argc = _cmd_opt_len;
-    *argv = _cmd_opts;
-}
-
-void merry_clean_state()
-{
-    if (_cmd_opts != NULL)
-        free(_cmd_opts);
+#ifdef _USE_WIN_
+    HANDLE h = (HANDLE)_get_osfhandle(_fileno(file));
+    if (h == INVALID_HANDLE_VALUE)
+        return RET_FAILURE;
+    if (!UnlockFile(h, 0, 0, 1, 0))
+        return RET_FAILURE; // Unlock failed
+#else
+    int fd = fileno(file);
+    if (flock(fd, LOCK_UN) == -1)
+        return RET_FAILURE;
+#endif
+    return RET_SUCCESS;
 }

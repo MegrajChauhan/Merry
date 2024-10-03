@@ -1,35 +1,13 @@
 #include "merry_debug.h"
 
-MerryDebug *merry_init_debug()
+MerryDebug *merry_init_debug(msize_t id)
 {
     MerryCond *c = merry_cond_init();
     MerryMutex *l = merry_mutex_init();
     if (c == RET_NULL || l == RET_NULL)
         goto _err;
-    char finalf[128] = {0};
-    finalf[0] = 'i';
-    finalf[1] = 'n';
-    finalf[2] = 'a';
-    msize_t i = 2;
-    while (mtrue)
-    {
-        FILE *f = fopen(finalf, "r");
-        if (f == NULL)
-        {
-            if (finalf[i] != 'z')
-                finalf[i]++;
-            else
-            {
-                i++;
-                finalf[i] = 'a';
-            }
-        }
-        else
-        {
-            fclose(f);
-            break;
-        }
-    }
+    char finalf[128] = {'i', 'n', 0};
+    snprintf(finalf + 2, 128, "%d", id);
 #ifdef _USE_LINUX_
     int ih = open(finalf, O_RDWR | O_CREAT, S_IRWXU);
     if (ih == -1)

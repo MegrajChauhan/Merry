@@ -29,7 +29,7 @@ struct MerryDebug
 
 extern void merry_os_dbg_stopped();
 
-MerryDebug *merry_init_debug();
+MerryDebug *merry_init_debug(msize_t id);
 
 _THRET_T_ merry_start_debugging(mptr_t arg);
 
