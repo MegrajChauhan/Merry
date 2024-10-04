@@ -225,38 +225,6 @@ void merry_os_destroy()
     merry_requestHdlr_destroy();
 }
 
-/*UN-USED OR DEPRECATED*/
-void merry_os_new_proc_cleanup()
-{
-    // merry_mutex_destroy(os._lock);
-    // merry_cond_destroy(os._cond);
-    // if (surelyT(os.cores != NULL))
-    // {
-    //     for (msize_t i = 0; i < os.core_count; i++)
-    //     {
-    //         merry_core_destroy(os.cores[i], mfalse);
-    //     }
-    //     free(os.cores);
-    // }
-    // if (surelyT(os.core_threads != NULL))
-    // {
-    //     for (msize_t i = 0; i < os.core_count; i++)
-    //     {
-    //         merry_thread_destroy(os.core_threads[i]);
-    //     }
-    //     free(os.core_threads);
-    // }
-    // merry_cleanup_sender(os.sender);
-    // os.sender = NULL;
-    // merry_destroy_listener(os.listener);
-    // os.listener = NULL;
-    // merry_thread_destroy(os.listener_th);
-    // merry_thread_destroy(os.sender_th);
-    // os.listener_th = os.sender_th = NULL;
-    // os.listener_stopped = os.sender_stopped = mtrue;
-    // merry_requestHdlr_destroy();
-}
-
 mret_t merry_os_boot_core(msize_t core_id, maddress_t start_addr)
 {
     // this function's job is to boot up the core_id core and prepare it for execution
@@ -761,54 +729,6 @@ _os_exec_(newprocess)
     return RET_SUCCESS;
 }
 
-// UN-USED, DEPRECATED
-_os_exec_(intr)
-{
-    maddress_t addr;
-    mqword_t x;
-    // mbyte_t reply[_MERRY_PER_EXCG_BUF_LEN_];
-    // reply[0] = _REPLY_;
-    // switch (request->opcode)
-    // {
-    // case _GET_CORE_COUNT_:
-    //     reply[15] = os->core_count;
-    //     break;
-    // case _GET_DATA_MEM_PAGE_COUNT_:
-    //     reply[15] = os->data_mem->number_of_pages;
-    //     break;
-    // case _GET_INST_MEM_PAGE_COUNT_:
-    //     reply[15] = os->inst_mem->number_of_pages;
-    //     break;
-    // case _ADD_BREAKPOINT_:
-    //     merry_memory_write(os->inst_mem, request->address, ((0xFFFFFFFFFFFFFFFF | OP_INTR) << 56) | _REQ_BP);
-    //     break;
-    // case _INST_AT_:
-    //     merry_memory_read(os->inst_mem, request->address, &x);
-    //     merry_os_set_dbg_sig(x, reply);
-    //     break;
-    // case _DATA_AT_:
-    //     merry_dmemory_read_qword_atm(os->data_mem, request->address, &x);
-    //     merry_os_set_dbg_sig(x, reply);
-    //     break;
-    // case _SP_OF_:
-    //     merry_os_set_dbg_sig(os->cores[request->arg_id & os->core_count]->sp, reply);
-    //     break;
-    // case _BP_OF_:
-    //     merry_os_set_dbg_sig(os->cores[request->arg_id & os->core_count]->bp, reply);
-    //     break;
-    // case _PC_OF_:
-    //     merry_os_set_dbg_sig(os->cores[request->arg_id & os->core_count]->pc, reply);
-    //     break;
-    // case _REGR_OF_:
-    //     merry_os_set_dbg_sig(os->cores[request->arg_id & os->core_count]->registers[request->address], reply);
-    //     break;
-    // case _CONTINUE_CORE_:
-    //     merry_cond_signal(os->cores[request->arg_id]->cond);
-    //     break;
-    // }
-    // merry_sender_push_sig(os->sender, reply);
-}
-
 _os_exec_(bp)
 {
     merry_os_notify_dbg(_HIT_BP_, request->id);
@@ -1139,50 +1059,11 @@ _os_exec_(continue_core)
     merry_cond_signal(os->cores[request->id & os->core_count]->cond);
 }
 
-// US-USED, DEPRECATED
 void merry_os_notify_dbg(mqword_t sig, mqword_t arg)
 {
     if (os.dbg_running != mtrue)
         return;
     merry_send_to_debugger(os.dbg, sig, arg);
-}
-
-// Un-USED, DEPRECATED
-void merry_os_get_io_port_direct(msize_t *ip, msize_t *op)
-{
-    // if ((os.listener_running != mtrue || os.sender_running != mtrue))
-    // {
-    //     *ip = *op = 0;
-    //     if (os.reader->dfe_flag != mfalse)
-    //         merry_set_errno(MERRY_NODBG);
-    //     return;
-    // }
-    // mbyte_t _to_send[_MERRY_PER_EXCG_BUF_LEN_];
-    // _to_send[0] = _NEW_PROC_IO_PORT_NUM_;
-    // merry_sender_push_sig(os.sender, _to_send);
-    // while (os.listener->t1 == 0 && os.listener->t2 == 0)
-    // {
-    // }
-    // *ip = os.listener->t1;
-    // *op = os.listener->t2;
-    // os.listener->t1 = os.listener->t2 = 0;
-}
-
-/*UN-USED AND DEPRECATED*/
-void merry_os_new_proc_init(msize_t ip, msize_t op)
-{
-    // Here, we reinitialize everything from scratch.
-    // In case of Linux, the OS thread is replicated in the new process
-    // We need to free everything accept the OS and the reader and then redo the initialization
-    // I do believe that mutexes and condition variables are different for different processes unless provided with attributes
-    fflush(stdin);
-    merry_requestHdlr_release();
-    os.reader->eat.eat_entry_count = 1;
-    if (merry_os_init_reader_provided(os.reader) == RET_FAILURE)
-    {
-        rlog("Internal Error: Failed to start new process.\n", NULL);
-        exit(EXIT_FAILURE);
-    }
 }
 
 void merry_os_produce_dump(mstr_t _output_filename)
@@ -1271,76 +1152,9 @@ mret_t merry_os_error_dump()
     return RET_SUCCESS;
 }
 
-// UN-USED, DEPRECATED
-mqword_t merry_os_get_dbg_sig(mbptr_t sig)
-{
-    mqword_t x = sig[8];
-    (x <<= 8);
-    x |= sig[9];
-    (x <<= 8);
-    x |= sig[10];
-    (x <<= 8);
-    x |= sig[11];
-    (x <<= 8);
-    x |= sig[12];
-    (x <<= 8);
-    x |= sig[13];
-    (x <<= 8);
-    x |= sig[14];
-    (x <<= 8);
-    x |= sig[15];
-    return x;
-}
-
-// UN-USED, DEPRECATED
-void merry_os_set_dbg_sig(mqword_t _sig, mbptr_t sig)
-{
-    sig[8] = _sig >> 56;
-    sig[9] = (_sig >> 48) & 255;
-    sig[10] = (_sig >> 40) & 255;
-    sig[11] = (_sig >> 32) & 255;
-    sig[12] = (_sig >> 24) & 255;
-    sig[13] = (_sig >> 16) & 255;
-    sig[14] = (_sig >> 8) & 255;
-    sig[15] = (_sig) & 255;
-}
-
-// UN-USED, DEPRECATED
-void merry_os_notice(mbool_t _type)
-{
-    // printf("DID: %lu\n", _type);
-    // if (_type == mtrue)
-    //     atomic_exchange(&os.listener_running, mtrue);
-    // else if (_type == mfalse)
-    //     atomic_exchange(&os.sender_running, mtrue);
-    // else if (_type == 2)
-    //     atomic_exchange(&os.sender_stopped, mtrue);
-    // else
-    //     atomic_exchange(&os.listener_stopped, mtrue);
-}
-
 mqword_t merry_os_get_ret()
 {
     return os.ret;
-}
-
-void merry_os_set_env(msize_t id)
-{
-#ifdef _USE_WIN_
-    char tmp[16];
-    SetEnvironmentVariable("_MERRY_CHILD_DEBUG_", os->reader->dfe_flag == mtrue ? "yes" : "no");
-    SetEnvironmentVariable("_MERRY_CHILD_FREEZE_", os->reader->dfw_flag == mtrue ? "yes" : "no");
-    sprintf(tmp, "%llu", os.cores[id]->entry_addr);
-    SetEnvironmentVariable("_MERRY_ADDR_", tmp);
-    SetEnvironmentVariable("_MERRY_CHILD_SURVEY_", "yes");
-#elif defined(_USE_LINUX_)
-    char tmp[17];
-    setenv("_MERRY_CHILD_DEBUG_", os.reader->dfe_flag == mtrue ? "yes" : "no", 1);
-    setenv("_MERRY_CHILD_FREEZE_", os.reader->dfw_flag == mtrue ? "yes" : "no", 1);
-    sprintf(tmp, "%lX", os.cores[id]->entry_addr);
-    setenv("_MERRY_ADDR_", tmp, 1);
-    setenv("_MERRY_CHILD_SURVEY_", "yes", 1);
-#endif
 }
 
 void merry_os_give_id(msize_t id)

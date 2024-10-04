@@ -147,25 +147,12 @@ void merry_os_handle_others(merrot_t _id, msize_t id);
 
 void merry_os_handle_internal_module_error(merrot_t error_num);
 
-void merry_os_new_proc_init(msize_t ip, msize_t op);
-
 void merry_os_notify_dbg(mqword_t sig, mqword_t arg);
-
-mqword_t merry_os_get_dbg_sig(mbptr_t sig);
-
-void merry_os_set_dbg_sig(mqword_t _sig, mbptr_t sig);
-
-void merry_os_notice(mbool_t _type);
-
-// UN-USED, DEPRECATED
-void merry_os_get_io_port_direct(msize_t *ip, msize_t *op);
 
 mqword_t merry_os_get_ret();
 
 void merry_os_subsys_stopped();
 void merry_os_dbg_stopped();
-
-void merry_os_set_env(msize_t id);
 
 void merry_os_give_id(msize_t id);
 
@@ -176,7 +163,6 @@ _os_exec_(halt);
 _os_exec_(new_core);
 _os_exec_(mem);
 _os_exec_(newprocess);
-_os_exec_(intr);
 _os_exec_(bp);
 
 _os_exec_(dynl);
