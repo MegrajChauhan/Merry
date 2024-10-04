@@ -30,35 +30,38 @@ dc _M_INVAL_ARG 5   ;; invalid argument
 dc _M_SYSERR 6      ;; error that was caused by the host system itself
 dc _M_VMERR 7       ;; the error was due to the VM
 
-dc _M_EPERM 8       ;; Operation not permitted
-dc _M_ENOENT 9      ;; No such file or directory
-dc _M_ESRCH 10      ;; No such process
-dc _M_EINTR 11      ;; Interrupted system call
-dc _M_EIO 12        ;; I/O error
-dc _M_ENXIO 13      ;; No such device or address
-dc _M_E2BIG 14      ;; Argument list too long
-dc _M_ENOEXEC 15    ;; Exec format error
-dc _M_EBADF 16      ;; Bad file number
-dc _M_ECHILD 17     ;; No child processes
-dc _M_EAGAIN 18     ;; Try again
-dc _M_ENOMEM 19     ;; Out of memory
-dc _M_EACCES 20     ;; Permission denied
-dc _M_EFAULT 21     ;; Bad address
-dc _M_ENOTBLK 22    ;; Block device required
-dc _M_EBUSY 23      ;; Device or resource busy
-dc _M_EEXIST 24     ;; File exists
-dc _M_EXDEV 25      ;; Cross-device link
-dc _M_ENODEV 26     ;; No such device
-dc _M_ENOTDIR 27    ;; Not a directory
-dc _M_EISDIR 28     ;; Is a directory
-dc _M_EINVAL 29     ;; Invalid argument
-dc _M_ENFILE 30     ;; File table overflow
-dc _M_EMFILE 31     ;; Too many open files
-dc _M_ENOTTY 32     ;; Not a typewriter
-dc _M_ETXTBSY 33    ;; Text file busy
-dc _M_EFBIG 34      ;; File too large
-dc _M_ENOSPC 35     ;; No space left on device
-dc _M_ESPIPE 36     ;; Illegal seek
-dc _M_EROFS 37      ;; Read-only file system
-dc _M_EMLINK 38     ;; Too many links
-dc _M_EPIPE 39      ;; Broken pipe
+;; Each operating system has its own set of ERRNO constants with many common
+;; ones as well. The values may differ between the platforms and hence we
+;; will need to handle that inside the stdlib itself.
+;; dc _M_EPERM 8       ;; Operation not permitted
+;; dc _M_ENOENT 9      ;; No such file or directory
+;; dc _M_ESRCH 10      ;; No such process
+;; dc _M_EINTR 11      ;; Interrupted system call
+;; dc _M_EIO 12        ;; I/O error
+;; dc _M_ENXIO 13      ;; No such device or address
+;; dc _M_E2BIG 14      ;; Argument list too long
+;; dc _M_ENOEXEC 15    ;; Exec format error
+;; dc _M_EBADF 16      ;; Bad file number
+;; dc _M_ECHILD 17     ;; No child processes
+;; dc _M_EAGAIN 18     ;; Try again
+;; dc _M_ENOMEM 19     ;; Out of memory
+;; dc _M_EACCES 20     ;; Permission denied
+;; dc _M_EFAULT 21     ;; Bad address
+;; dc _M_ENOTBLK 22    ;; Block device required
+;; dc _M_EBUSY 23      ;; Device or resource busy
+;; dc _M_EEXIST 24     ;; File exists
+;; dc _M_EXDEV 25      ;; Cross-device link
+;; dc _M_ENODEV 26     ;; No such device
+;; dc _M_ENOTDIR 27    ;; Not a directory
+;; dc _M_EISDIR 28     ;; Is a directory
+;; dc _M_EINVAL 29     ;; Invalid argument
+;; dc _M_ENFILE 30     ;; File table overflow
+;; dc _M_EMFILE 31     ;; Too many open files
+;; dc _M_ENOTTY 32     ;; Not a typewriter
+;; dc _M_ETXTBSY 33    ;; Text file busy
+;; dc _M_EFBIG 34      ;; File too large
+;; dc _M_ENOSPC 35     ;; No space left on device
+;; dc _M_ESPIPE 36     ;; Illegal seek
+;; dc _M_EROFS 37      ;; Read-only file system
+;; dc _M_EMLINK 38     ;; Too many links
+;; dc _M_EPIPE 39      ;; Broken pipe

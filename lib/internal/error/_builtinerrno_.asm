@@ -24,6 +24,7 @@ depends _builtinintr_.asm
 
 proc __builtin_get_errno
 proc __builtin_set_errno
+proc __builtin_perrno
 
 ;; proc __builtin_interpret_errno
 
@@ -33,7 +34,7 @@ __builtin_set_errno
     push Mb
     intr _M_GETERRNO
     storeb Ma, _Mstd_errno
-    storeb Mb, _Mstd_errno_vm_
+    storeb Mb, _Mstd_errno_vm_  ;; we will interpret ust this
     ret
 
 ;; RETURNS: Ma = errno value, Mb = internal error value
@@ -41,6 +42,9 @@ __builtin_get_errno
     loadb Ma, _Mstd_errno
     loadb Mb, _Mstd_errno_vm_
     ret
+
+;; ARGS: Ma = PTR to a null-terminated string to be printed before the message
+__builtin_perrno
 
 db _Mstd_errno 0
 db _Mstd_errno_vm_ 0

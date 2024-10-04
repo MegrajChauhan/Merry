@@ -653,7 +653,6 @@ _os_exec_(new_core)
     {
         os->cores[request->id]->registers[Ma] = merry_os_boot_core(os->core_count - 1, os->cores[request->id]->registers[Ma]);
     }
-    os->cores[request->id]->registers[Mb] = errno;
     return RET_SUCCESS; // for now
 }
 
@@ -665,7 +664,6 @@ _os_exec_(mem)
     if (merry_dmemory_add_new_page(os->data_mem) == RET_FAILURE)
     {
         os->cores[request->id]->registers[Ma] = 1;
-        os->cores[request->id]->registers[Mb] = errno;
         return RET_FAILURE;
     }
     os->cores[request->id]->registers[Mb] = (os->data_mem->number_of_pages - 1) * _MERRY_MEMORY_ADDRESSES_PER_PAGE_ + 1;
@@ -691,7 +689,6 @@ _os_exec_(newprocess)
     {
         merry_requestHdlr_release();
         c->registers[Ma] = 1;
-        c->registers[Mb] = errno;
         return RET_FAILURE;
     }
     if (p.pid == 0)
@@ -718,7 +715,6 @@ _os_exec_(newprocess)
     {
         merry_requestHdlr_release();
         os->cores[request->id]->registers[Ma] = 1;
-        os->cores[request->id]->registers[Mb] = errno;
         return RET_FAILURE;
     }
 #endif
@@ -749,7 +745,6 @@ _os_exec_(dynl)
     {
         merry_set_errno(MERRY_DYNERR);
         c->registers[Ma] = 1;
-        c->registers[Mb] = MERRY_DYNERR;
         free(name);
         return RET_FAILURE;
     }
@@ -774,7 +769,6 @@ _os_exec_(dyncall)
     if (param == NULL || func_name == NULL)
     {
         merry_set_errno(MERRY_DYNERR);
-        c->registers[Mb] = MERRY_DYNERR;
         c->registers[Ma] = 1;
         if (!(func_name == NULL))
             free(func_name);
@@ -783,7 +777,6 @@ _os_exec_(dyncall)
     if ((function = merry_loader_getFuncSymbol(c->registers[Ma], func_name)) == RET_NULL)
     {
         merry_set_errno(MERRY_DYNERR);
-        c->registers[Mb] = MERRY_DYNERR;
         c->registers[Ma] = 1;
         free(func_name);
         free(param);
@@ -808,7 +801,6 @@ _os_exec_(get_func_addr)
     if (func_name == NULL)
     {
         merry_set_errno(MERRY_DYNERR);
-        c->registers[Mb] = MERRY_DYNERR;
         c->registers[Ma] = 1;
         if (!(func_name == NULL))
             free(func_name);
@@ -817,7 +809,6 @@ _os_exec_(get_func_addr)
     if ((function = merry_loader_getFuncSymbol(os->cores[request->id]->registers[Ma], func_name)) == RET_NULL)
     {
         merry_set_errno(MERRY_DYNERR);
-        c->registers[Mb] = MERRY_DYNERR;
         c->registers[Ma] = 1;
         free(func_name);
         return RET_FAILURE;
@@ -839,14 +830,12 @@ _os_exec_(call_loaded_func)
     if (param == NULL)
     {
         merry_set_errno(MERRY_DYNERR);
-        c->registers[Mb] = MERRY_DYNERR;
         c->registers[Ma] = 1;
         return RET_FAILURE;
     }
     if (merry_loader_is_still_valid(c->registers[Ma]) == mfalse)
     {
         merry_set_errno(MERRY_DYNCLOSED);
-        c->registers[Mb] = MERRY_DYNCLOSED;
         c->registers[Ma] = 1;
         free(param);
     }
@@ -895,7 +884,6 @@ _os_exec_(add_channel)
     if (merry_create_process(&p) == mfalse)
     {
         c->registers[Ma] = -1;
-        c->registers[Mb] = errno;
         return RET_FAILURE;
     }
     if (p.pid == 0)
@@ -916,7 +904,6 @@ _os_exec_(add_channel)
     if (merry_create_process(&p) == mfalse)
     {
         c->registers[Ma] = -1;
-        c->registers[Mb] = errno;
         return RET_FAILURE;
     }
 #endif
