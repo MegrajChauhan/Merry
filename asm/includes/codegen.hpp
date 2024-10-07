@@ -69,6 +69,7 @@ namespace masm
         void float_mem(NodeArithmetic *n, size_t op);
 
         void mov_imm(NodeMov *n, bool _is64);
+        void cmov_imm(NodeMov *n, size_t opcode);
 
         void mov_reg(NodeMov *n, size_t op);
 

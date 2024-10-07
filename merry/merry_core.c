@@ -237,10 +237,62 @@ _THRET_T_ merry_runCore(mptr_t core)
         case OP_MOVE_IMM: // just 32 bits immediates
             c->registers[(curr >> 48) & 15] = (curr) & 0xFFFFFFFF;
             break;
+        case OP_MOVNZ:
+        case OP_MOVNE:
+            if (c->flag.zero == 0)
+                c->registers[*current & 15] = merry_core_get_immediate(c);
+            break;
+        case OP_MOVE:
+        case OP_MOVZ:
+            if (c->flag.zero == 1)
+                c->registers[*current & 15] = merry_core_get_immediate(c);
+            break;
+        case OP_MOVNC:
+            if (c->flag.carry == 0)
+                c->registers[*current & 15] = merry_core_get_immediate(c);
+            break;
+        case OP_MOVC:
+            if (c->flag.carry == 1)
+                c->registers[*current & 15] = merry_core_get_immediate(c);
+            break;
+        case OP_MOVNO:
+            if (c->flag.overflow == 0)
+                c->registers[*current & 15] = merry_core_get_immediate(c);
+            break;
+        case OP_MOVO:
+            if (c->flag.overflow == 1)
+                c->registers[*current & 15] = merry_core_get_immediate(c);
+            break;
+        case OP_MOVNN:
+            if (c->flag.negative == 0)
+                c->registers[*current & 15] = merry_core_get_immediate(c);
+            break;
+        case OP_MOVN:
+            if (c->flag.negative == 1)
+                c->registers[*current & 15] = merry_core_get_immediate(c);
+            break;
+        case OP_MOVS:
+        case OP_MOVNG:
+            if (c->greater == 0)
+                c->registers[*current & 15] = merry_core_get_immediate(c);
+            break;
+        case OP_MOVNS:
+        case OP_MOVG:
+            if (c->greater == 1)
+                c->registers[*current & 15] = merry_core_get_immediate(c);
+            break;
+        case OP_MOVGE:
+            if (c->greater == 1 || c->flag.zero == 1)
+                c->registers[*current & 15] = merry_core_get_immediate(c);
+            break;
+        case OP_MOVSE:
+            if (c->greater == 0 || c->flag.zero == 1)
+                c->registers[*current & 15] = merry_core_get_immediate(c);
+            break;
         case OP_MOVE_IMM_64: // 64 bits immediates
             c->registers[*current & 15] = merry_core_get_immediate(c);
             break;
-        case OP_MOVE_REG: // moves the whole 8 bytes
+        case OP_MOVE_REG:                                             // moves the whole 8 bytes
             c->registers[(curr >> 4) & 15] = c->registers[curr & 15]; // this is all
             break;
         case OP_MOVE_REG8: // moves only the lowest byte
@@ -281,7 +333,7 @@ _THRET_T_ merry_runCore(mptr_t core)
         case OP_JMP_REGR:
             *current |= (c->registers[*current & 15] & 0xFFFFFFFFFFFF);
         case OP_JMP_ADDR:
-            // 6 bytes should be fine   
+            // 6 bytes should be fine
             c->pc = (*current & 0xFFFFFFFFFFFF);
             break;
         case OP_CALL:
@@ -293,7 +345,7 @@ _THRET_T_ merry_runCore(mptr_t core)
                 c->stop_running = mtrue;
                 break;
             }
-            if(merry_stack_push(c->callstack, addr) == RET_FAILURE)
+            if (merry_stack_push(c->callstack, addr) == RET_FAILURE)
             {
                 merry_requestHdlr_panic(MERRY_INTERNAL_ERROR, c->core_id);
                 c->stop_running = mtrue;
@@ -311,7 +363,7 @@ _THRET_T_ merry_runCore(mptr_t core)
                 c->stop_running = mtrue;
                 break;
             }
-            if(merry_stack_push(c->callstack, addr) == RET_FAILURE)
+            if (merry_stack_push(c->callstack, addr) == RET_FAILURE)
             {
                 merry_requestHdlr_panic(MERRY_INTERNAL_ERROR, c->core_id);
                 c->stop_running = mtrue;
@@ -320,8 +372,61 @@ _THRET_T_ merry_runCore(mptr_t core)
             c->pc = addr; // the address to the first instruction of the procedure
             merry_execute_call(c);
             break;
+        case OP_RETZ:
+        case OP_RETE:
+            if (c->flag.zero == 1)
+                goto _ret;
+            break;
+        case OP_RETNZ:
+        case OP_RETNE:
+            if (c->flag.zero == 0)
+                goto _ret;
+            break;
+        case OP_RETNC:
+            if (c->flag.carry == 0)
+                goto _ret;
+            break;
+        case OP_RETC:
+            if (c->flag.carry == 1)
+                goto _ret;
+            break;
+        case OP_RETNO:
+            if (c->flag.overflow == 0)
+                goto _ret;
+            break;
+        case OP_RETO:
+            if (c->flag.overflow == 1)
+                goto _ret;
+            break;
+        case OP_RETNN:
+            if (c->flag.negative == 0)
+                goto _ret;
+            break;
+        case OP_RETN:
+            if (c->flag.negative == 1)
+                goto _ret;
+            break;
+        case OP_RETS:
+        case OP_RETNG:
+            if (c->greater == 0)
+                goto _ret;
+            break;
+        case OP_RETNS:
+        case OP_RETG:
+            if (c->greater == 1)
+                goto _ret;
+            break;
+        case OP_RETGE:
+            if (c->greater == 1 || c->flag.zero == 1)
+                goto _ret;
+            break;
+        case OP_RETSE:
+            if (c->greater == 0 || c->flag.zero == 1)
+                goto _ret;
+            break;
         case OP_RET:
-            // we just have to pop the topmost
+        // we just have to pop the topmost
+        _ret:
             mqword_t a = 0;
             if (merry_stack_pop(c->ras, &c->pc) == RET_FAILURE)
             {
@@ -329,7 +434,7 @@ _THRET_T_ merry_runCore(mptr_t core)
                 c->stop_running = mtrue;
                 break;
             }
-            if(merry_stack_pop(c->callstack, &a) == RET_FAILURE)
+            if (merry_stack_pop(c->callstack, &a) == RET_FAILURE)
             {
                 merry_requestHdlr_panic(MERRY_INTERNAL_ERROR, c->core_id);
                 c->stop_running = mtrue;

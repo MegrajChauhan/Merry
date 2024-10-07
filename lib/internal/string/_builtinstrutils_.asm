@@ -236,4 +236,5 @@ __builtin_std_ends_with
    ret
 
 ;; ARGS: Ma = PTR to the string, Mb = index start, Mc = index end
+;; RETURNS: Ma = PTR to a newly allocated 
 __builtin_std_substr

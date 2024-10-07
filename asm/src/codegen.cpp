@@ -299,6 +299,31 @@ void masm::CodeGen::mov_imm(NodeMov *n, bool _is64)
     code.push_back(b);
 }
 
+void masm::CodeGen::cmov_imm(NodeMov *n, size_t opcode)
+{
+    GenBinary b;
+    b.bytes.b1 = opcode;
+    std::string imm = std::get<std::string>(n->second_oper);
+    uint64_t _imm = 0;
+    b.bytes.b8 = n->reg;
+    code.push_back(b);
+    b.full = 0;
+    if (n->is_lbl)
+        _imm = (*lbl_addr)[imm];
+    else
+    {
+        if (n->is_float)
+        {
+            F64 f;
+            f._double = std::stod(imm);
+            _imm = f._integer;
+        }
+        else
+            _imm = std::stoull(imm);
+    }
+    code.push_back(b);
+}
+
 void masm::CodeGen::mov_reg(NodeMov *n, size_t op)
 {
     GenBinary b;
@@ -733,6 +758,54 @@ void masm::CodeGen::gen()
         case LFDIV_MEM:
             float_mem(GET(NodeArithmetic), OP_FDIV_MEM);
             break;
+        case MOVNZ_IMM:
+            cmov_imm(GET(NodeMov), OP_MOVNZ);
+            break;
+        case MOVZ_IMM:
+            cmov_imm(GET(NodeMov), OP_MOVZ);
+            break;
+        case MOVNE_IMM:
+            cmov_imm(GET(NodeMov), OP_MOVNE);
+            break;
+        case MOVE_IMM:
+            cmov_imm(GET(NodeMov), OP_MOVE);
+            break;
+        case MOVNC_IMM:
+            cmov_imm(GET(NodeMov), OP_MOVNC);
+            break;
+        case MOVC_IMM:
+            cmov_imm(GET(NodeMov), OP_MOVC);
+            break;
+        case MOVNO_IMM:
+            cmov_imm(GET(NodeMov), OP_MOVNO);
+            break;
+        case MOVO_IMM:
+            cmov_imm(GET(NodeMov), OP_MOVO);
+            break;
+        case MOVNN_IMM:
+            cmov_imm(GET(NodeMov), OP_MOVNN);
+            break;
+        case MOVN_IMM:
+            cmov_imm(GET(NodeMov), OP_MOVN);
+            break;
+        case MOVNG_IMM:
+            cmov_imm(GET(NodeMov), OP_MOVNG);
+            break;
+        case MOVG_IMM:
+            cmov_imm(GET(NodeMov), OP_MOVG);
+            break;
+        case MOVNS_IMM:
+            cmov_imm(GET(NodeMov), OP_MOVNS);
+            break;
+        case MOVS_IMM:
+            cmov_imm(GET(NodeMov), OP_MOVS);
+            break;
+        case MOVGE_IMM:
+            cmov_imm(GET(NodeMov), OP_MOVGE);
+            break;
+        case MOVSE_IMM:
+            cmov_imm(GET(NodeMov), OP_MOVSE);
+            break;
         case MOV_IMM:
             mov_imm(GET(NodeMov), false);
             break;
@@ -788,6 +861,54 @@ void masm::CodeGen::gen()
             break;
         case RET:
             generate_singles(OP_RET);
+            break;
+        case RETNZ:
+            generate_singles(OP_RETNZ);
+            break;
+        case RETZ:
+            generate_singles(OP_RETZ);
+            break;
+        case RETNE:
+            generate_singles(OP_RETNE);
+            break;
+        case RETE:
+            generate_singles(OP_RETE);
+            break;
+        case RETNC:
+            generate_singles(OP_RETNC);
+            break;
+        case RETC:
+            generate_singles(OP_RETC);
+            break;
+        case RETNO:
+            generate_singles(OP_RETNO);
+            break;
+        case RETO:
+            generate_singles(OP_RETO);
+            break;
+        case RETNN:
+            generate_singles(OP_RETNN);
+            break;
+        case RETN:
+            generate_singles(OP_RETN);
+            break;
+        case RETNG:
+            generate_singles(OP_RETNG);
+            break;
+        case RETG:
+            generate_singles(OP_RETG);
+            break;
+        case RETNS:
+            generate_singles(OP_RETNS);
+            break;
+        case RETS:
+            generate_singles(OP_RETS);
+            break;
+        case RETGE:
+            generate_singles(OP_RETGE);
+            break;
+        case RETSE:
+            generate_singles(OP_RETSE);
             break;
         case SVA_IMM:
             sva_svc(GET(NodeStack), OP_SVA);

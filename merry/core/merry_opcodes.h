@@ -355,8 +355,42 @@ enum
   OP_JMP_REGR, // address in register
   OP_GSS_IMM,  // get stack state
   OP_GSS_REG,
-  OP_SSS_IMM,  // set stack state
+  OP_SSS_IMM, // set stack state
   OP_SSS_REG,
+
+  OP_MOVNZ,
+  OP_MOVZ,
+  OP_MOVNE,
+  OP_MOVE,
+  OP_MOVNC,
+  OP_MOVC,
+  OP_MOVNO,
+  OP_MOVO,
+  OP_MOVNN,
+  OP_MOVN,
+  OP_MOVNG,
+  OP_MOVG,
+  OP_MOVNS,
+  OP_MOVS,
+  OP_MOVGE,
+  OP_MOVSE,
+
+  OP_RETNZ,
+  OP_RETZ,
+  OP_RETNE,
+  OP_RETE,
+  OP_RETNC,
+  OP_RETC,
+  OP_RETNO,
+  OP_RETO,
+  OP_RETNN,
+  OP_RETN,
+  OP_RETNG,
+  OP_RETG,
+  OP_RETNS,
+  OP_RETS,
+  OP_RETGE,
+  OP_RETSE,
 };
 
 /*

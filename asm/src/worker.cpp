@@ -146,6 +146,54 @@ void masm::Parser::parse()
         case INST_RET:
             handle_one(RET);
             break;
+        case INST_RETC:
+            handle_one(RETC);
+            break;
+        case INST_RETE:
+            handle_one(RETE);
+            break;
+        case INST_RETG:
+            handle_one(RETG);
+            break;
+        case INST_RETGE:
+            handle_one(RETGE);
+            break;
+        case INST_RETN:
+            handle_one(RETN);
+            break;
+        case INST_RETNC:
+            handle_one(RETNC);
+            break;
+        case INST_RETNE:
+            handle_one(RETNE);
+            break;
+        case INST_RETNG:
+            handle_one(RETNG);
+            break;
+        case INST_RETNN:
+            handle_one(RETNN);
+            break;
+        case INST_RETNO:
+            handle_one(RETNO);
+            break;
+        case INST_RETNS:
+            handle_one(RETNS);
+            break;
+        case INST_RETNZ:
+            handle_one(RETNZ);
+            break;
+        case INST_RETO:
+            handle_one(RETO);
+            break;
+        case INST_RETS:
+            handle_one(RETS);
+            break;
+        case INST_RETSE:
+            handle_one(RETSE);
+            break;
+        case INST_RETZ:
+            handle_one(RETZ);
+            break;
         case INST_CFLAGS:
             handle_one(CFLAGS);
             break;
@@ -244,6 +292,66 @@ void masm::Parser::parse()
             break;
         case INST_MOV:
             if (!handle_mov(MOV_IMM))
+                exit(1);
+            break;
+        case INST_MOVNZ:
+            if (!handle_mov(MOVNZ_IMM))
+                exit(1);
+            break;
+        case INST_MOVZ:
+            if (!handle_mov(MOVZ_IMM))
+                exit(1);
+            break;
+        case INST_MOVNE:
+            if (!handle_mov(MOVNE_IMM))
+                exit(1);
+            break;
+        case INST_MOVE:
+            if (!handle_mov(MOVE_IMM))
+                exit(1);
+            break;
+        case INST_MOVNC:
+            if (!handle_mov(MOVNC_IMM))
+                exit(1);
+            break;
+        case INST_MOVC:
+            if (!handle_mov(MOVC_IMM))
+                exit(1);
+            break;
+        case INST_MOVNO:
+            if (!handle_mov(MOVNO_IMM))
+                exit(1);
+            break;
+        case INST_MOVO:
+            if (!handle_mov(MOVO_IMM))
+                exit(1);
+            break;
+        case INST_MOVNN:
+            if (!handle_mov(MOVNN_IMM))
+                exit(1);
+            break;
+        case INST_MOVN:
+            if (!handle_mov(MOVN_IMM))
+                exit(1);
+            break;
+        case INST_MOVNG:
+            if (!handle_mov(MOVNG_IMM))
+                exit(1);
+            break;
+        case INST_MOVG:
+            if (!handle_mov(MOVG_IMM))
+                exit(1);
+            break;
+        case INST_MOVNS:
+            if (!handle_mov(MOVNS_IMM))
+                exit(1);
+            break;
+        case INST_MOVS:
+            if (!handle_mov(MOVS_IMM))
+                exit(1);
+            break;
+        case INST_MOVGE:
+            if (!handle_mov(MOVGE_IMM))
                 exit(1);
             break;
         case INST_MOVL:
@@ -1072,13 +1180,13 @@ bool masm::Parser::handle_mov(NodeKind k)
     }
     default:
     {
-        if ((t.type >= KEY_Ma && t.type <= KEY_Mm5))
+        if ((t.type >= KEY_Ma && t.type <= KEY_Mm5) && !(k >= MOVNZ_IMM && k <= MOVSE_IMM))
         {
             node.kind = (NodeKind)(k + 1);
             a->second_oper = regr_map.find(t.type)->second;
             break;
         }
-        log(fname, "Expected a register, variable or immediate here after the first operand.", l.get_line_st(), l.get_col_st());
+        log(fname, "Expected a register(not for conditional mov), variable or immediate here after the first operand.", l.get_line_st(), l.get_col_st());
         return false;
     }
     }
@@ -1987,6 +2095,9 @@ void masm::Parser::make_label_address()
             case CMP_IMM:
                 i++;
                 break;
+            default:
+                if (l.kind >= MOVNZ_IMM && l.kind <= MOVSE_EXPR)
+                    i++;
             }
         }
     }
@@ -2131,6 +2242,21 @@ void masm::Parser::analyse_nodes()
         case MOVSXB_EXPR:
         case MOVSXW_EXPR:
         case MOVSXD_EXPR:
+        case MOVNZ_EXPR:
+        case MOVZ_EXPR:
+        case MOVNE_EXPR:
+        case MOVE_EXPR:
+        case MOVNC_EXPR:
+        case MOVC_EXPR:
+        case MOVNO_EXPR:
+        case MOVO_EXPR:
+        case MOVNN_EXPR:
+        case MOVN_EXPR:
+        case MOVNG_EXPR:
+        case MOVG_EXPR:
+        case MOVNS_EXPR:
+        case MOVS_EXPR:
+        case MOVGE_EXPR:
         {
             auto _n = (NodeMov *)n.node.get();
             auto expr = std::get<std::vector<Token>>(_n->second_oper);
@@ -2288,6 +2414,40 @@ void masm::Parser::analyse_nodes()
                 break;
             }
             n.kind = MOVL_IMM;
+            _n->second_oper = r->second.value;
+            _n->is_float = r->second.type == FLOAT;
+            break;
+        }
+        case MOVNZ_VAR:
+        case MOVZ_VAR:
+        case MOVNE_VAR:
+        case MOVE_VAR:
+        case MOVNC_VAR:
+        case MOVC_VAR:
+        case MOVNO_VAR:
+        case MOVO_VAR:
+        case MOVNN_VAR:
+        case MOVN_VAR:
+        case MOVNG_VAR:
+        case MOVG_VAR:
+        case MOVNS_VAR:
+        case MOVS_VAR:
+        case MOVGE_VAR:
+        {
+            auto _n = (NodeMov *)n.node.get();
+            auto var_name = std::get<std::string>(_n->second_oper);
+            auto r = symtable._const_list.find(var_name);
+            if (r == symtable._const_list.end())
+            {
+                if ((lbl_list.find(var_name) != lbl_list.end()))
+                {
+                    n.kind = (NodeKind)(n.kind - 2);
+                    _n->is_lbl = true;
+                    break;
+                }
+                break;
+            }
+            n.kind = (NodeKind)(n.kind - 2);
             _n->second_oper = r->second.value;
             _n->is_float = r->second.type == FLOAT;
             break;
