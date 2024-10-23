@@ -32,3 +32,19 @@ dc _MSTD_SUCCESS_ 0
 ;; Platform-specific definitions
 dc _M_LINUX_ 1
 dc _M_AMD_ 1
+
+dc TRUE 1
+dc FALSE 0
+dc __x86_64__ 1
+
+dc __LITTLE_ENDIAN 0x00
+dc __BIG_ENDIAN 0x01
+dc __HYBRID_ENDIAN 0x02
+
+defined __x86_64__
+dc _ENDIAN_ [__LITTLE_ENDIAN]
+end
+
+defined _M_LINUX_
+dc _LLIBS_ 1 ;; use linux libraries
+end

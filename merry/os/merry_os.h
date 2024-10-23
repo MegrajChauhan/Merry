@@ -193,6 +193,7 @@ _os_exec_(bp_of);
 _os_exec_(pc_of);
 _os_exec_(regr_of);
 _os_exec_(continue_core);
+_os_exec_(bt_of);
 
 // _os_exec_(fopen);
 // _os_exec_(fclose);

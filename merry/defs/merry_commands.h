@@ -38,6 +38,7 @@
 #define _PC_OF_ 267                   // get the PC of some core
 #define _REGR_OF_ 268                 // get the requested register
 #define _CONTINUE_CORE_ 269           // continue the core that previously hit breakpoint
+#define _BT_OF_ 270                   // get the call stack of some core
 
 // Signals
 #define _CLOSE_ 0                // terminate yourself! sly debugger!

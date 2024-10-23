@@ -56,10 +56,10 @@ __lib_subsys_init
 
 __lib_uses_dynlib
     movl Ma, 1
-    storeb Ma, _Mstd_dyn_init
+    storeb Ma, _Mstd_dyn_any
     ret
 
-__lib_dynlib_any
+__lib_dynlib_init
     movl Ma, 1
-    storeb Ma, _Mstd_dyn_any
+    storeb Ma, _Mstd_dyn_init
     ret

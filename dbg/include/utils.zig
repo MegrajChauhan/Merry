@@ -1,2 +1,1 @@
-const defs = @import("defs.zig");
-const fs = defs.std.fs;
+pub var highest_os_id_count: u8 = 0;

@@ -488,6 +488,9 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
                     case _CONTINUE_CORE_:
                         merry_os_execute_request_continue_core(&os, &current_req);
                         break;
+                    case _BT_OF_:
+                        merry_os_execute_request_bt_of(&os, &current_req);
+                        break;
                     default:
                         fprintf(stderr, "Error: Unknown request code: '%llu' is not a valid request code.\n", current_req.request_number);
                         break;
@@ -1044,6 +1047,19 @@ _os_exec_(regr_of)
 _os_exec_(continue_core)
 {
     merry_cond_signal(os->cores[request->id & os->core_count]->cond);
+}
+
+_os_exec_(bt_of)
+{
+    // firstly, return how many stack frames there are
+    // This way the debugger can anticipate how many bytes to expect
+    size_t core_id = request->id;
+    MerryCore *core = os->cores[core_id & os->core_count];
+    merry_os_notify_dbg(_REPLY_, core->ras->sp + 1);
+    for (msize_t i = 0; i <= core->ras->sp; i++)
+    {
+        merry_os_notify_dbg(_REPLY_, *(core->ras->array + i));
+    }
 }
 
 void merry_os_notify_dbg(mqword_t sig, mqword_t arg)

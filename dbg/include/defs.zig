@@ -3,7 +3,8 @@ pub const print = std.io.getStdOut().writer();
 pub const read = std.io.getStdIn().reader();
 pub const log = std.io.getStdErr().writer();
 
-pub const signals = enum {
+// Any request that the VM sends to us
+pub const IncomingReq_t = enum {
     CLOSE, // we need to close the debugger
     NEW_CORE, // there was a new core creation
     NEW_OS, // a new OS was created(prepare for a new process in case it expects child debugging)
@@ -16,7 +17,8 @@ pub const signals = enum {
     MORE_MEM, // new data memory pages were added
 };
 
-pub const requests = enum {
+// Any request that we send to the VM
+pub const MakeRequest_t = enum {
     ACTIVE, // we are now active
     CLOSED, // we are now closed(no more signals)
     GET_CORE_COUNT, // the core count(total)
@@ -31,5 +33,6 @@ pub const requests = enum {
     PC_OF, // PC regr of
     REGR_OF, // one regr of
     CONTINUE_CORE, // continue the core that hit BP
+    BT_OF, // Get the backtrace of some core
 };
 
