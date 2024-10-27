@@ -194,7 +194,7 @@ _THRET_T_ merry_subsys_main(mptr_t arg)
         fd_count = epoll_wait(epoll_fd, events, subsys.subsys_count + 1, -1);
         if (fd_count == -1)
         {
-            merry_requestHdlr_panic(MERRY_SUBSYS_FAILED, 0);
+            merry_requestHdlr_panic(MERRY_SUBSYS_INIT_FAILURE, 0);
             break;
         }
         merry_mutex_lock(subsys.lock);

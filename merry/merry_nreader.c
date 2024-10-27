@@ -50,7 +50,7 @@ _MERRY_INTERNAL_ void merry_reader_return_all_mem(MerryReader *r)
     }
 }
 
-_MERRY_INTERNAL_ inline msize_t merry_reader_addr_to_pg_index(maddress_t addr)
+msize_t merry_reader_addr_to_pg_index(maddress_t addr)
 {
     return addr / _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
 }
@@ -94,13 +94,11 @@ void merry_destroy_reader(MerryReader *r)
     if (r->sst.sections != NULL)
         free(r->sst.sections);
     if (r->st.st_data != NULL)
-    {
         free(r->st.st_data);
-    }
     if (r->syms != NULL)
-    {
         free(r->syms);
-    }
+    if (r->affordable_offsets)
+        free(r->affordable_offsets);
     free(r);
 }
 
@@ -266,6 +264,14 @@ mret_t merry_reader_read_eat(MerryReader *r)
 
 mret_t merry_reader_read_inst_page(MerryReader *r, mqptr_t store_in, msize_t pg_ind)
 {
+    if (store_in)
+        return RET_SUCCESS;
+    store_in = merry_reader_get_mem_from_os(1);
+    if (!store_in)
+    {
+        merry_reader_give_mem_to_os(r->inst.instructions, r->inst.inst_page_count);
+        return RET_FAILURE;
+    }
     msize_t pos = r->inst.start_offset + pg_ind * _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
     fseek(r->f, pos, SEEK_SET);
     if (pg_ind == (r->inst.inst_page_count - 1))
@@ -348,12 +354,6 @@ mret_t merry_reader_read_instructions(MerryReader *r)
     r->inst.start_offset = ftell(r->f);
     for (msize_t i = 0; i < r->eat.eat_entry_count; i++)
     {
-        r->inst.instructions[i] = merry_reader_get_mem_from_os(1);
-        if (!r->inst.instructions[i])
-        {
-            merry_reader_give_mem_to_os(r->inst.instructions, r->inst.inst_page_count);
-            return RET_FAILURE;
-        }
         if (merry_reader_read_inst_page(r, r->inst.instructions[i], merry_reader_addr_to_pg_index(r->eat.EAT[i])) == RET_FAILURE)
             return RET_FAILURE;
     }
@@ -422,6 +422,13 @@ mret_t merry_reader_read_sst(MerryReader *r)
 
 mret_t merry_reader_read_data_page(MerryReader *r, msize_t pg_ind, MerrySection *s)
 {
+    if (r->data[pg_ind])
+        return RET_SUCCESS;
+    if ((r->data[pg_ind] = (mbptr_t)merry_reader_get_mem_from_os(1)) == NULL)
+    {
+        merry_reader_give_mem_to_os(r->data, r->data_page_count);
+        return RET_FAILURE;
+    }
     fseek(r->f, r->affordable_offsets[pg_ind], SEEK_SET);
     if (pg_ind == (r->data_page_count - 1))
     {
@@ -489,8 +496,8 @@ mret_t merry_reader_read_data_page(MerryReader *r, msize_t pg_ind, MerrySection 
                 inverted |= ((current) & 255);
                 r->data[pg_ind][j] = inverted;
             }
-        }
 #endif
+        }
     }
 }
 
@@ -512,7 +519,7 @@ mret_t merry_reader_read_sections(MerryReader *r)
         free(r->affordable_offsets);
         return RET_FAILURE;
     }
-    msize_t current_index = 0, current_off = 0;
+    msize_t current_index = 0;
     msize_t _pages_of_data_read_ = 0;
     for (msize_t i = 0; i < r->sst.sst_entry_count; i++)
     {
@@ -557,8 +564,8 @@ mret_t merry_reader_read_sections(MerryReader *r)
                 _MERRY_GET_LITTLE_ENDIAN_(address, entry, 0)
                 _MERRY_GET_LITTLE_ENDIAN_(index, entry, 8)
 #else
-                    address = *(mqptr_t)(entry);
-                    index = *(mqptr_t)(entry + 8);
+                address = *(mqptr_t)(entry);
+                index = *(mqptr_t)(entry + 8);
 #endif
                 r->syms[j].address = address;
                 r->syms[j].index = index;
@@ -568,6 +575,19 @@ mret_t merry_reader_read_sections(MerryReader *r)
         case _OTHER:
         case _DATA:
         {
+            if (current_section.rim == mtrue)
+            {
+                r->affordable_offsets[current_index] = ftell(r->f);
+                if (_pages_of_data_read_ < 5)
+                {
+                    if (merry_reader_read_data_page(r, current_index, &current_section) == RET_FAILURE)
+                        return RET_FAILURE;
+                }
+                else
+                    fseek(r->f, current_section.section_len, SEEK_CUR);
+                _pages_of_data_read_++;
+                current_index++;
+            }
         }
         }
     }

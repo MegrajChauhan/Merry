@@ -491,6 +491,12 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
                     case _BT_OF_:
                         merry_os_execute_request_bt_of(&os, &current_req);
                         break;
+                    case READ_DATA_PAGE:
+                        merry_os_execute_request_read_data_pg(&os, &current_req);
+                        break;
+                    case READ_INST_PAGE:
+                        merry_os_execute_request_read_inst_pg(&os, &current_req);
+                        break;
                     default:
                         fprintf(stderr, "Error: Unknown request code: '%llu' is not a valid request code.\n", current_req.request_number);
                         break;
@@ -1060,6 +1066,52 @@ _os_exec_(bt_of)
     {
         merry_os_notify_dbg(_REPLY_, *(core->ras->array + i));
     }
+}
+
+_os_exec_(read_data_pg)
+{
+    msize_t pg_ind = request->id;
+    MerrySection s = os->reader->sst.sections[pg_ind];
+    if (merry_reader_read_data_page(os->reader, pg_ind, &s) != RET_SUCCESS)
+    {
+        // this is a proper error[The OS will handle it right here as internal error]
+        rlog("Internal Error: VM failed to retrieve the requested data page at demand.\n", NULL);
+        os->stop = mtrue;
+        os->ret = RET_FAILURE;
+        os->data_mem->error = MERRY_MEM_INVALID_ACCESS; // set to something as an indication
+        return RET_FAILURE;
+    }
+    os->data_mem->pages[pg_ind]->address_space = os->reader->data[pg_ind]; // already initialized(we don't use madvise here because this page will be immediately used anyways)
+    // in case of data memory, we will read two pages at once
+    pg_ind++;
+    if (os->reader->data_page_count == pg_ind)
+        return RET_SUCCESS;
+    s = os->reader->sst.sections[pg_ind];
+    if (merry_reader_read_data_page(os->reader, pg_ind, &s) != RET_SUCCESS)
+    {
+        // this is a proper error[The OS will handle it right here as internal error]
+        rlog("Internal Error: VM failed to retrieve the requested data page at demand.\n", NULL);
+        os->stop = mtrue;
+        os->ret = RET_FAILURE;
+        os->data_mem->error = MERRY_MEM_INVALID_ACCESS; // set to something as an indication
+        return RET_FAILURE;
+    }
+    os->data_mem->pages[pg_ind]->address_space = os->reader->data[pg_ind];
+}
+
+_os_exec_(read_inst_pg)
+{
+    msize_t pg_ind = request->id;
+    MerrySection s = os->reader->sst.sections[pg_ind];
+    if (merry_reader_read_inst_page(os->reader, os->reader->inst.instructions[pg_ind], pg_ind) != RET_SUCCESS)
+    {
+        rlog("Internal Error: VM failed to retrieve the requested instruction page at demand.\n", NULL);
+        os->stop = mtrue;
+        os->ret = RET_FAILURE;
+        os->inst_mem->error = MERRY_MEM_INVALID_ACCESS; // set to something as an indication
+        return RET_FAILURE;
+    }
+    os->inst_mem->pages[pg_ind]->address_space = os->reader->inst.instructions[pg_ind];
 }
 
 void merry_os_notify_dbg(mqword_t sig, mqword_t arg)

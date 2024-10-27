@@ -78,6 +78,16 @@ MerryMemory *merry_memory_init(msize_t num_of_pages)
         madvise(memory->pages[i]->address_space, _MERRY_MEMORY_ADDRESSES_PER_PAGE_, MADV_WILLNEED);
 #endif
     }
+    if ((memory->cond = merry_cond_init()) == NULL)
+    {
+        merry_memory_free(memory);
+        return NULL;
+    }
+    if ((memory->lock = merry_mutex_init()) == NULL)
+    {
+        merry_memory_free(memory);
+        return NULL;
+    }
     // we have allocated everything successfully
     return memory;
 }
@@ -112,9 +122,22 @@ MerryMemory *merry_memory_init_provided(mqptr_t *mapped_pages, msize_t num_of_pa
             return RET_NULL;
         }
 #ifdef _USE_LINUX_
-        madvise(memory->pages[i]->address_space, _MERRY_MEMORY_ADDRESSES_PER_PAGE_, MADV_RANDOM);
-        madvise(memory->pages[i]->address_space, _MERRY_MEMORY_ADDRESSES_PER_PAGE_, MADV_WILLNEED);
+        if (mapped_pages[i])
+        {
+            madvise(memory->pages[i]->address_space, _MERRY_MEMORY_ADDRESSES_PER_PAGE_, MADV_RANDOM);
+            madvise(memory->pages[i]->address_space, _MERRY_MEMORY_ADDRESSES_PER_PAGE_, MADV_WILLNEED);
+        }
 #endif
+    }
+    if ((memory->cond = merry_cond_init()) == NULL)
+    {
+        merry_memory_free(memory);
+        return NULL;
+    }
+    if ((memory->lock = merry_mutex_init()) == NULL)
+    {
+        merry_memory_free(memory);
+        return NULL;
     }
     // we have allocated everything successfully
     return memory;
@@ -132,6 +155,10 @@ void merry_memory_free(MerryMemory *memory)
         }
         free(memory->pages);
     }
+    if (memory->cond)
+        merry_cond_destroy(memory->cond);
+    if (memory->lock)
+        merry_mutex_destroy(memory->lock);
     free(memory);
 }
 
@@ -149,6 +176,15 @@ mret_t merry_memory_read(MerryMemory *memory, maddress_t address, mqptr_t _store
         // this implies the request is for a page that doesn't exist
         memory->error = MERRY_MEM_INVALID_ACCESS;
         return RET_FAILURE;
+    }
+    if (!memory->pages[addr.page]->address_space)
+    {
+        // we have yet to read this page
+        merry_mutex_lock(memory->lock);
+        merry_requestHdlr_push_request(READ_INST_PAGE, addr.page, memory->cond);
+        merry_mutex_unlock(memory->lock);
+        if (memory->error == MERRY_MEM_INVALID_ACCESS)
+            return RET_FAILURE;
     }
     *_store_in = memory->pages[addr.page]->address_space[addr.offset];
     // in LITTLE ENDIAN systems dereferencing temp will correctly get the next 7 bytes but in little endian format

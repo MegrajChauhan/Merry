@@ -148,6 +148,8 @@ void merry_destroy_reader(MerryReader *r);
 
 mret_t merry_reader_is_file_fit_to_read(MerryReader *r);
 
+msize_t merry_reader_addr_to_pg_index(maddress_t addr);
+
 mret_t merry_reader_read_header(MerryReader *r);
 
 mret_t merry_reader_validate_header_info(MerryReader *r);
@@ -159,6 +161,8 @@ mret_t merry_reader_read_inst_page(MerryReader *r, mqptr_t store_in, msize_t pg_
 mret_t merry_reader_read_instructions(MerryReader *r);
 
 mret_t merry_reader_read_sst(MerryReader *r);
+
+mret_t merry_reader_read_data_page(MerryReader *r, msize_t pg_ind, MerrySection *s);
 
 mret_t merry_reader_read_sections(MerryReader *r);
 

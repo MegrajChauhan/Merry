@@ -195,6 +195,9 @@ _os_exec_(regr_of);
 _os_exec_(continue_core);
 _os_exec_(bt_of);
 
+_os_exec_(read_data_pg);
+_os_exec_(read_inst_pg);
+
 // _os_exec_(fopen);
 // _os_exec_(fclose);
 // _os_exec_(fread);

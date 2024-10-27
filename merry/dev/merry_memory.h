@@ -41,6 +41,7 @@
 #include <merry_mem.h>
 #include <merry_thread.h>
 #include <merry_errors.h>
+#include "merry_request.h"
 
 // declarations
 // typedef struct MerryMemPageDetails MerryMemPageDetails; // the details about a memory page
@@ -67,6 +68,8 @@ struct MerryMemory
     MerryMemPage **pages;    // the pages
     msize_t number_of_pages; // the number of pages
     merrot_t error;          // any error that the Memory encounters
+    MerryCond *cond;
+    MerryMutex *lock;
 };
 
 struct MerryAddress
@@ -74,6 +77,8 @@ struct MerryAddress
     unsigned int page;
     unsigned int offset;
 };
+
+extern mret_t merry_requestHdlr_push_request(msize_t req_id, msize_t id, MerryCond *req_cond);
 
 MerryMemory *merry_memory_init(msize_t num_of_pages);
 

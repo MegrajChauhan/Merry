@@ -80,6 +80,13 @@ enum
 
 enum
 {
+    // The requests here start at 1024 and used by the VM internally
+    READ_INST_PAGE,
+    READ_DATA_PAGE,
+};
+
+enum
+{
     _SUBSYS_FAILED,       // subsystem failed(the process couldn't continue)
     _SUBSYS_CLOSE = 0,    // sent to the process to close
     _SUBSYS_CLOSED,       // sent by the process that it has closed
