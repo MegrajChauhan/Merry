@@ -115,6 +115,7 @@ struct MerryInstSection
     msize_t inst_section_len; /* Instruction section length */
     mqptr_t *instructions;    /* The read instructions */
     msize_t inst_page_count;  /* The instruction page count */
+    msize_t start_offset;
 };
 
 struct MerryEAT
@@ -127,17 +128,18 @@ struct MerryEAT
 struct MerryReader
 {
     mbool_t de_flag, ste_flag, dfe_flag, dfw_flag;
-    MerryInstSection inst;   /*The instruction section details*/
-    MerryEAT eat;            /* The details about the EAT section */
-    MerrySsT sst;            /*The SsT*/
-    MerryST st;              /*The ST*/
-    mbptr_t *data;           /*For data containing sections*/
-    msize_t data_len;        /* The data section length in bytes */
-    msize_t data_page_count; /* How many pages are there? */
-    FILE *f;                 /* the opened file */
-    msize_t flen;            /*The file's length*/
-    MerrySymbol *syms;       /*Data from symd*/
-    msize_t sym_count;       /*The number of symbols*/
+    MerryInstSection inst;       /*The instruction section details*/
+    MerryEAT eat;                /* The details about the EAT section */
+    MerrySsT sst;                /*The SsT*/
+    MerryST st;                  /*The ST*/
+    mbptr_t *data;               /*For data containing sections*/
+    msize_t *affordable_offsets; /// NOTE: Doing this was more affordable then reading every page of data hence the name
+    msize_t data_len;            /* The data section length in bytes */
+    msize_t data_page_count;     /* How many pages are there? */
+    FILE *f;                     /* the opened file */
+    msize_t flen;                /*The file's length*/
+    MerrySymbol *syms;           /*Data from symd*/
+    msize_t sym_count;           /*The number of symbols*/
 };
 
 MerryReader *merry_init_reader(mcstr_t filename);
@@ -152,6 +154,8 @@ mret_t merry_reader_validate_header_info(MerryReader *r);
 
 mret_t merry_reader_read_eat(MerryReader *r);
 
+mret_t merry_reader_read_inst_page(MerryReader *r, mqptr_t store_in, msize_t pg_ind);
+
 mret_t merry_reader_read_instructions(MerryReader *r);
 
 mret_t merry_reader_read_sst(MerryReader *r);
@@ -163,5 +167,7 @@ mret_t merry_reader_read_st(MerryReader *r);
 mret_t merry_reader_read_file(MerryReader *r);
 
 mbptr_t merry_reader_get_symbol(MerryReader *r, maddress_t addr);
+
+// mret_t merry_reader_read_page(MerryReader *r, )
 
 #endif

@@ -13,6 +13,13 @@ _MERRY_INTERNAL_ mptr_t *merry_reader_get_mem_from_os(msize_t count)
 {
     // This will get us memory pages from the Host OS directly
     // On failure, we can do nothing but exit
+    if (count == 1)
+    {
+        mptr_t res = _MERRY_MEMORY_PGALLOC_MAP_PAGE_;
+        if (res == _MERRY_RET_GET_ERROR_)
+            return NULL;
+        return res;
+    }
     mptr_t *addrs = (mptr_t *)malloc(sizeof(mptr_t) * count);
     if (addrs == NULL)
         return NULL;
@@ -41,6 +48,11 @@ _MERRY_INTERNAL_ void merry_reader_return_all_mem(MerryReader *r)
         merry_reader_give_mem_to_os((void *)r->data, r->data_page_count);
         free(r->data);
     }
+}
+
+_MERRY_INTERNAL_ inline msize_t merry_reader_addr_to_pg_index(maddress_t addr)
+{
+    return addr / _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
 }
 
 MerryReader *merry_init_reader(mcstr_t filename)
@@ -252,6 +264,76 @@ mret_t merry_reader_read_eat(MerryReader *r)
     return RET_SUCCESS;
 }
 
+mret_t merry_reader_read_inst_page(MerryReader *r, mqptr_t store_in, msize_t pg_ind)
+{
+    msize_t pos = r->inst.start_offset + pg_ind * _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+    fseek(r->f, pos, SEEK_SET);
+    if (pg_ind == (r->inst.inst_page_count - 1))
+    {
+        msize_t extra_addrs = r->inst.inst_section_len - (pg_ind * _MERRY_MEMORY_ADDRESSES_PER_PAGE_) / 8;
+        if (fread(store_in, 8, extra_addrs, r->f) != extra_addrs)
+        {
+            rlog("Internal Error: Failed to read input file.\n", NULL);
+            return RET_FAILURE;
+        }
+#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
+        for (msize_t j = 0; j < extra_addrs; j++)
+        {
+            mqword_t current = store_in[j];
+            mqword_t inverted = 0;
+            inverted = current >> 56;
+            inverted <<= 8;
+            inverted |= ((current >> 48) & 255);
+            inverted <<= 8;
+            inverted |= ((current >> 40) & 255);
+            inverted <<= 8;
+            inverted |= ((current >> 32) & 255);
+            inverted <<= 8;
+            inverted |= ((current >> 24) & 255);
+            inverted <<= 8;
+            inverted |= ((current >> 16) & 255);
+            inverted <<= 8;
+            inverted |= ((current >> 8) & 255);
+            inverted <<= 8;
+            inverted |= ((current) & 255);
+            store_in[j] = inverted;
+        }
+#endif
+    }
+    else
+    {
+        if (fread(store_in, 8, _MERRY_MEMORY_QS_PER_PAGE_, r->f) != _MERRY_MEMORY_QS_PER_PAGE_)
+        {
+            rlog("Internal Error: Failed to read input file.\n", NULL);
+            return RET_FAILURE;
+        }
+#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
+        for (msize_t j = 0; j < _MERRY_MEMORY_QS_PER_PAGE_; j++)
+        {
+            mqword_t current = store_in[j];
+            mqword_t inverted = 0;
+            inverted = current >> 56;
+            inverted <<= 8;
+            inverted |= ((current >> 48) & 255);
+            inverted <<= 8;
+            inverted |= ((current >> 40) & 255);
+            inverted <<= 8;
+            inverted |= ((current >> 32) & 255);
+            inverted <<= 8;
+            inverted |= ((current >> 24) & 255);
+            inverted <<= 8;
+            inverted |= ((current >> 16) & 255);
+            inverted <<= 8;
+            inverted |= ((current >> 8) & 255);
+            inverted <<= 8;
+            inverted |= ((current) & 255);
+            store_in[j] = inverted;
+        }
+#endif
+    }
+    return RET_SUCCESS;
+}
+
 mret_t merry_reader_read_instructions(MerryReader *r)
 {
     // Necessary checks are already made before
@@ -260,70 +342,20 @@ mret_t merry_reader_read_instructions(MerryReader *r)
     msize_t number_of_pages = inst_count / _MERRY_MEMORY_QS_PER_PAGE_;
     msize_t extra_addrs = inst_count % _MERRY_MEMORY_QS_PER_PAGE_;
     r->inst.inst_page_count = number_of_pages + (extra_addrs > 0 ? 1 : 0);
-    if ((r->inst.instructions = (mqptr_t *)merry_reader_get_mem_from_os(r->inst.inst_page_count)) == NULL)
+    r->inst.instructions = (mqptr_t *)calloc(r->inst.inst_page_count, 8);
+    if (!r->inst.instructions)
         return RET_FAILURE;
-    for (msize_t i = 0; i < number_of_pages; i++)
+    r->inst.start_offset = ftell(r->f);
+    for (msize_t i = 0; i < r->eat.eat_entry_count; i++)
     {
-        if (fread(r->inst.instructions[i], 8, _MERRY_MEMORY_QS_PER_PAGE_, r->f) != _MERRY_MEMORY_QS_PER_PAGE_)
+        r->inst.instructions[i] = merry_reader_get_mem_from_os(1);
+        if (!r->inst.instructions[i])
         {
-            rlog("Internal Error: Failed to read input file.\n", NULL);
+            merry_reader_give_mem_to_os(r->inst.instructions, r->inst.inst_page_count);
             return RET_FAILURE;
         }
-#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
-        for (msize_t j = 0; j < _MERRY_MEMORY_QS_PER_PAGE_; j++)
-        {
-            mqword_t current = r->inst.instructions[i][j];
-            mqword_t inverted = 0;
-            inverted = current >> 56;
-            inverted <<= 8;
-            inverted |= ((current >> 48) & 255);
-            inverted <<= 8;
-            inverted |= ((current >> 40) & 255);
-            inverted <<= 8;
-            inverted |= ((current >> 32) & 255);
-            inverted <<= 8;
-            inverted |= ((current >> 24) & 255);
-            inverted <<= 8;
-            inverted |= ((current >> 16) & 255);
-            inverted <<= 8;
-            inverted |= ((current >> 8) & 255);
-            inverted <<= 8;
-            inverted |= ((current) & 255);
-            r->inst.instructions[i][j] = inverted;
-        }
-#endif
-    }
-    // Now read the remaining instructions
-    if (extra_addrs > 0)
-    {
-        if (fread(r->inst.instructions[number_of_pages], 8, extra_addrs, r->f) != extra_addrs)
-        {
-            rlog("Internal Error: Failed to read input file.\n", NULL);
+        if (merry_reader_read_inst_page(r, r->inst.instructions[i], merry_reader_addr_to_pg_index(r->eat.EAT[i])) == RET_FAILURE)
             return RET_FAILURE;
-        }
-#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
-        for (msize_t j = 0; j < extra_addrs; j++)
-        {
-            mqword_t current = r->inst.instructions[number_of_pages][j];
-            mqword_t inverted = 0;
-            inverted = current >> 56;
-            inverted <<= 8;
-            inverted |= ((current >> 48) & 255);
-            inverted <<= 8;
-            inverted |= ((current >> 40) & 255);
-            inverted <<= 8;
-            inverted |= ((current >> 32) & 255);
-            inverted <<= 8;
-            inverted |= ((current >> 24) & 255);
-            inverted <<= 8;
-            inverted |= ((current >> 16) & 255);
-            inverted <<= 8;
-            inverted |= ((current >> 8) & 255);
-            inverted <<= 8;
-            inverted |= ((current) & 255);
-            r->inst.instructions[number_of_pages][j] = inverted;
-        }
-#endif
     }
     return RET_SUCCESS;
 }
@@ -331,6 +363,8 @@ mret_t merry_reader_read_instructions(MerryReader *r)
 // we read this section only if SsT len is greater than 0 in the first place
 mret_t merry_reader_read_sst(MerryReader *r)
 {
+    msize_t pos = r->inst.start_offset + r->inst.inst_page_count * _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+    fseek(r->f, pos, SEEK_SET);
     msize_t sst_entry_count = r->sst.sst_len / _MERRY_SST_PER_ENTRY_LEN_;
     // We are still well within len
     r->sst.sections = (MerrySection *)malloc(sizeof(MerrySection) * sst_entry_count);
@@ -386,6 +420,80 @@ mret_t merry_reader_read_sst(MerryReader *r)
     return RET_SUCCESS;
 }
 
+mret_t merry_reader_read_data_page(MerryReader *r, msize_t pg_ind, MerrySection *s)
+{
+    fseek(r->f, r->affordable_offsets[pg_ind], SEEK_SET);
+    if (pg_ind == (r->data_page_count - 1))
+    {
+        msize_t extra_addrs = r->data_len - (pg_ind * _MERRY_MEMORY_ADDRESSES_PER_PAGE_);
+        if (fread(r->data[pg_ind], 1, extra_addrs, r->f) != extra_addrs)
+        {
+            rlog("Internal Error: Failed to read input file.\n", NULL);
+            return RET_FAILURE;
+        }
+        if (s->ras != mtrue)
+        {
+#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
+            for (msize_t j = 0; j < extra_addrs; j++)
+            {
+                mqword_t current = r->data[pg_ind][j];
+                mqword_t inverted = 0;
+                inverted = current >> 56;
+                inverted <<= 8;
+                inverted |= ((current >> 48) & 255);
+                inverted <<= 8;
+                inverted |= ((current >> 40) & 255);
+                inverted <<= 8;
+                inverted |= ((current >> 32) & 255);
+                inverted <<= 8;
+                inverted |= ((current >> 24) & 255);
+                inverted <<= 8;
+                inverted |= ((current >> 16) & 255);
+                inverted <<= 8;
+                inverted |= ((current >> 8) & 255);
+                inverted <<= 8;
+                inverted |= ((current) & 255);
+                r->data[pg_ind][j] = inverted;
+            }
+#endif
+        }
+    }
+    else
+    {
+        if (fread(r->data[pg_ind], 1, _MERRY_MEMORY_ADDRESSES_PER_PAGE_, r->f) != _MERRY_MEMORY_ADDRESSES_PER_PAGE_)
+        {
+            rlog("Internal Error: Failed to read input file.\n", NULL);
+            return RET_FAILURE;
+        }
+        if (s->ras != mtrue)
+        {
+#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
+            for (msize_t j = 0; j < _MERRY_MEMORY_ADDRESSES_PER_PAGE_; j++)
+            {
+                mqword_t current = r->data[pg_ind][j];
+                mqword_t inverted = 0;
+                inverted = current >> 56;
+                inverted <<= 8;
+                inverted |= ((current >> 48) & 255);
+                inverted <<= 8;
+                inverted |= ((current >> 40) & 255);
+                inverted <<= 8;
+                inverted |= ((current >> 32) & 255);
+                inverted <<= 8;
+                inverted |= ((current >> 24) & 255);
+                inverted <<= 8;
+                inverted |= ((current >> 16) & 255);
+                inverted <<= 8;
+                inverted |= ((current >> 8) & 255);
+                inverted <<= 8;
+                inverted |= ((current) & 255);
+                r->data[pg_ind][j] = inverted;
+            }
+        }
+#endif
+    }
+}
+
 mret_t merry_reader_read_sections(MerryReader *r)
 {
     // based on the information from the SsT, read the various sections
@@ -395,9 +503,17 @@ mret_t merry_reader_read_sections(MerryReader *r)
     msize_t number_of_pages = data_count / _MERRY_MEMORY_QS_PER_PAGE_;
     msize_t extra_addrs = data_count % _MERRY_MEMORY_QS_PER_PAGE_;
     r->data_page_count = number_of_pages + (extra_addrs > 0 ? 1 : 0);
-    if ((r->data = (mbptr_t *)merry_reader_get_mem_from_os(r->data_page_count)) == NULL)
+    r->affordable_offsets = malloc(8 * number_of_pages);
+    if (!r->affordable_offsets)
         return RET_FAILURE;
+    r->data = (mbptr_t *)calloc(r->data_page_count, 8);
+    if (!r->data)
+    {
+        free(r->affordable_offsets);
+        return RET_FAILURE;
+    }
     msize_t current_index = 0, current_off = 0;
+    msize_t _pages_of_data_read_ = 0;
     for (msize_t i = 0; i < r->sst.sst_entry_count; i++)
     {
         MerrySection current_section = r->sst.sections[i];
@@ -441,8 +557,8 @@ mret_t merry_reader_read_sections(MerryReader *r)
                 _MERRY_GET_LITTLE_ENDIAN_(address, entry, 0)
                 _MERRY_GET_LITTLE_ENDIAN_(index, entry, 8)
 #else
-                address = *(mqptr_t)(entry);
-                index = *(mqptr_t)(entry + 8);
+                    address = *(mqptr_t)(entry);
+                    index = *(mqptr_t)(entry + 8);
 #endif
                 r->syms[j].address = address;
                 r->syms[j].index = index;
@@ -452,96 +568,6 @@ mret_t merry_reader_read_sections(MerryReader *r)
         case _OTHER:
         case _DATA:
         {
-            if (current_section.ras == mtrue)
-            {
-                while (current_section.section_len > 0)
-                {
-                    msize_t current_page_cap = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - current_off;
-                    if (current_page_cap >= current_section.section_len)
-                    {
-                        if (fread((r->data[current_index] + current_off), 1, current_section.section_len, r->f) != current_section.section_len)
-                        {
-                            rlog("Internal Error: Failed to read data.\n", NULL);
-                            return RET_FAILURE;
-                        }
-                        if ((current_off + current_section.section_len) >= _MERRY_MEMORY_ADDRESSES_PER_PAGE_)
-                        {
-                            current_off = 0;
-                            current_index++;
-                        }
-                        else
-                        {
-                            current_off += current_section.section_len;
-                        }
-                        current_section.section_len -= current_section.section_len; // basically 0 every time
-                    }
-                    else
-                    {
-                        if (fread((r->data[current_index] + current_off), 1, current_page_cap, r->f) != current_page_cap)
-                        {
-                            rlog("Internal Error: Failed to read data.\n", NULL);
-                            return RET_FAILURE;
-                        }
-                        current_index++;
-                        current_off += 0;
-                        current_section.section_len -= current_page_cap;
-                    }
-                }
-            }
-            else if (current_section.rim == mtrue)
-            {
-                while (current_section.section_len > 0)
-                {
-                    msize_t current_page_cap = (_MERRY_MEMORY_ADDRESSES_PER_PAGE_ - current_index);
-                    msize_t to_read = current_page_cap / 8;
-                    if (current_page_cap < current_section.section_len)
-                    {
-                        if (fread((r->data[current_index] + current_off), 8, to_read, r->f) != to_read)
-                        {
-                            rlog("Internal Error: Failed to read data.\n", NULL);
-                            return RET_FAILURE;
-                        }
-                        current_index++;
-                        current_off = 0;
-                        current_section.section_len -= current_page_cap;
-                    }
-                    else
-                    {
-                        to_read = current_section.section_len / 8;
-                        if (fread((r->data[current_index] + current_off), 8, to_read, r->f) != to_read)
-                        {
-                            rlog("Internal Error: Failed to read data.\n", NULL);
-                            return RET_FAILURE;
-                        }
-                        current_off += current_section.section_len;
-                        current_section.section_len -= current_section.section_len;
-                    }
-#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
-                    for (msize_t j = 0; j < _MERRY_MEMORY_QS_PER_PAGE_; j++)
-                    {
-                        mqword_t current = r->inst.instructions[i][j];
-                        mqword_t inverted = 0;
-                        inverted = current >> 56;
-                        inverted <<= 8;
-                        inverted |= ((current >> 48) & 255);
-                        inverted <<= 8;
-                        inverted |= ((current >> 40) & 255);
-                        inverted <<= 8;
-                        inverted |= ((current >> 32) & 255);
-                        inverted <<= 8;
-                        inverted |= ((current >> 24) & 255);
-                        inverted <<= 8;
-                        inverted |= ((current >> 16) & 255);
-                        inverted <<= 8;
-                        inverted |= ((current >> 8) & 255);
-                        inverted <<= 8;
-                        inverted |= ((current) & 255);
-                        r->inst.instructions[i][j] = inverted;
-                    }
-#endif
-                }
-            }
-            break;
         }
         }
     }
