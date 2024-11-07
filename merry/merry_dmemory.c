@@ -79,12 +79,12 @@ MerryDMemory *merry_dmemory_init(msize_t num_of_pages)
     }
     if ((memory->cond = merry_cond_init()) == NULL)
     {
-        merry_memory_free(memory);
+        merry_dmemory_free(memory);
         return NULL;
     }
     if ((memory->lock = merry_mutex_init()) == NULL)
     {
-        merry_memory_free(memory);
+        merry_dmemory_free(memory);
         return NULL;
     }
     // we have allocated everything successfully
@@ -153,12 +153,12 @@ MerryDMemory *merry_dmemory_init_provided(mbptr_t *mapped_pages, msize_t num_of_
     }
     if ((memory->cond = merry_cond_init()) == NULL)
     {
-        merry_memory_free(memory);
+        merry_dmemory_free(memory);
         return NULL;
     }
     if ((memory->lock = merry_mutex_init()) == NULL)
     {
-        merry_memory_free(memory);
+        merry_dmemory_free(memory);
         return NULL;
     }
     // we have allocated everything successfully
@@ -747,7 +747,7 @@ mbptr_t merry_dmemory_get_byte_address(MerryDMemory *memory, maddress_t address)
         merry_requestHdlr_push_request(READ_DATA_PAGE, addr.page, memory->cond);
         merry_mutex_unlock(memory->lock);
         if (memory->error == MERRY_MEM_INVALID_ACCESS)
-            return RET_FAILURE;
+            return RET_NULL;
     }
     // this just basically returns an actual address to the address that the manager can use
     return &memory->pages[addr.page]->address_space[addr.offset];
@@ -774,7 +774,7 @@ mbptr_t merry_dmemory_get_byte_address_bounds(MerryDMemory *memory, maddress_t a
         merry_requestHdlr_push_request(READ_DATA_PAGE, addr.page, memory->cond);
         merry_mutex_unlock(memory->lock);
         if (memory->error == MERRY_MEM_INVALID_ACCESS)
-            return RET_FAILURE;
+            return RET_NULL;
     }
     // this just basically returns an actual address to the address that the manager can use
     return &memory->pages[addr.page]->address_space[addr.offset];
@@ -796,7 +796,7 @@ mwptr_t merry_dmemory_get_word_address(MerryDMemory *memory, maddress_t address)
         merry_requestHdlr_push_request(READ_DATA_PAGE, addr.page, memory->cond);
         merry_mutex_unlock(memory->lock);
         if (memory->error == MERRY_MEM_INVALID_ACCESS)
-            return RET_FAILURE;
+            return RET_NULL;
     }
     // this just basically returns an actual address to the address that the manager can use
     return (mwptr_t)(memory->pages[addr.page]->address_space + addr.offset);
@@ -825,7 +825,7 @@ mwptr_t merry_dmemory_get_word_address_bounds(MerryDMemory *memory, maddress_t a
         merry_requestHdlr_push_request(READ_DATA_PAGE, addr.page, memory->cond);
         merry_mutex_unlock(memory->lock);
         if (memory->error == MERRY_MEM_INVALID_ACCESS)
-            return RET_FAILURE;
+            return RET_NULL;
     }
     // this just basically returns an actual address to the address that the manager can use
     return (mwptr_t)(memory->pages[addr.page]->address_space + addr.offset);
@@ -847,7 +847,7 @@ mdptr_t merry_dmemory_get_dword_address(MerryDMemory *memory, maddress_t address
         merry_requestHdlr_push_request(READ_DATA_PAGE, addr.page, memory->cond);
         merry_mutex_unlock(memory->lock);
         if (memory->error == MERRY_MEM_INVALID_ACCESS)
-            return RET_FAILURE;
+            return RET_NULL;
     }
     // this just basically returns an actual address to the address that the manager can use
     return (mdptr_t)(memory->pages[addr.page]->address_space + addr.offset);
@@ -876,7 +876,7 @@ mdptr_t merry_dmemory_get_dword_address_bounds(MerryDMemory *memory, maddress_t 
         merry_requestHdlr_push_request(READ_DATA_PAGE, addr.page, memory->cond);
         merry_mutex_unlock(memory->lock);
         if (memory->error == MERRY_MEM_INVALID_ACCESS)
-            return RET_FAILURE;
+            return RET_NULL;
     }
     // this just basically returns an actual address to the address that the manager can use
     return (mdptr_t)(memory->pages[addr.page]->address_space + addr.offset);
@@ -898,7 +898,7 @@ mqptr_t merry_dmemory_get_qword_address(MerryDMemory *memory, maddress_t address
         merry_requestHdlr_push_request(READ_DATA_PAGE, addr.page, memory->cond);
         merry_mutex_unlock(memory->lock);
         if (memory->error == MERRY_MEM_INVALID_ACCESS)
-            return RET_FAILURE;
+            return RET_NULL;
     }
     // this just basically returns an actual address to the address that the manager can use
     return (mqptr_t)(memory->pages[addr.page]->address_space + addr.offset);
@@ -927,7 +927,7 @@ mqptr_t merry_dmemory_get_qword_address_bounds(MerryDMemory *memory, maddress_t 
         merry_requestHdlr_push_request(READ_DATA_PAGE, addr.page, memory->cond);
         merry_mutex_unlock(memory->lock);
         if (memory->error == MERRY_MEM_INVALID_ACCESS)
-            return RET_FAILURE;
+            return RET_NULL;
     }
     // this just basically returns an actual address to the address that the manager can use
     return (mqptr_t)(memory->pages[addr.page]->address_space + addr.offset);
@@ -954,7 +954,7 @@ mstr_t merry_dmemory_get_bytes_maybe_over_multiple_pages(MerryDMemory *memory, m
         merry_requestHdlr_push_request(READ_DATA_PAGE, addr.page, memory->cond);
         merry_mutex_unlock(memory->lock);
         if (memory->error == MERRY_MEM_INVALID_ACCESS)
-            return RET_FAILURE;
+            return RET_NULL;
     }
     msize_t dist_from_end = _MERRY_MEMORY_ADDRESSES_PER_PAGE_ - addr.offset;
     if (dist_from_end > length)
@@ -990,7 +990,7 @@ mstr_t merry_dmemory_get_bytes_maybe_over_multiple_pages(MerryDMemory *memory, m
                 merry_requestHdlr_push_request(READ_DATA_PAGE, addr.page, memory->cond);
                 merry_mutex_unlock(memory->lock);
                 if (memory->error == MERRY_MEM_INVALID_ACCESS)
-                    return RET_FAILURE;
+                    return RET_NULL;
             }
             memcpy(curr, memory->pages[addr.page]->address_space, _MERRY_MEMORY_ADDRESSES_PER_PAGE_);
             curr += _MERRY_MEMORY_ADDRESSES_PER_PAGE_;

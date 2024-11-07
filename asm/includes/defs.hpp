@@ -517,7 +517,7 @@ namespace masm
         INST_MOVNS,
         INST_MOVS,
         INST_MOVGE,
-        INST_RETSE,
+        INST_MOVSE,
         INST_MOVL,
         INST_MOVB,
         INST_MOVW,

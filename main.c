@@ -40,7 +40,7 @@ int main()
 // int main(int argc, char **argv)
 {
     int argc = 3;
-    char *argv[] = {"gdh", "-f", "bin/filetest.mbin"};
+    char *argv[] = {"gdh", "-f", "filetest.mbin"};
     // merry_save_cmd_options(argc, argv); // should this fail then no more debugging the child processes
     if (merry_get_and_set_id() == RET_FAILURE)
     {

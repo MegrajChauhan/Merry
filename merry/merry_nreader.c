@@ -266,17 +266,17 @@ mret_t merry_reader_read_inst_page(MerryReader *r, mqptr_t store_in, msize_t pg_
 {
     if (store_in)
         return RET_SUCCESS;
-    store_in = merry_reader_get_mem_from_os(1);
+    store_in = (mqptr_t)merry_reader_get_mem_from_os(1);
     if (!store_in)
     {
-        merry_reader_give_mem_to_os(r->inst.instructions, r->inst.inst_page_count);
+        merry_reader_give_mem_to_os((mptr_t)r->inst.instructions, r->inst.inst_page_count);
         return RET_FAILURE;
     }
     msize_t pos = r->inst.start_offset + pg_ind * _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
-    fseek(r->f, pos, SEEK_SET);
+    fseek(r->f, SEEK_SET, pos);
     if (pg_ind == (r->inst.inst_page_count - 1))
     {
-        msize_t extra_addrs = r->inst.inst_section_len - (pg_ind * _MERRY_MEMORY_ADDRESSES_PER_PAGE_) / 8;
+        msize_t extra_addrs = (r->inst.inst_section_len - (pg_ind * _MERRY_MEMORY_ADDRESSES_PER_PAGE_)) / 8;
         if (fread(store_in, 8, extra_addrs, r->f) != extra_addrs)
         {
             rlog("Internal Error: Failed to read input file.\n", NULL);
@@ -363,8 +363,8 @@ mret_t merry_reader_read_instructions(MerryReader *r)
 // we read this section only if SsT len is greater than 0 in the first place
 mret_t merry_reader_read_sst(MerryReader *r)
 {
-    msize_t pos = r->inst.start_offset + r->inst.inst_page_count * _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
-    fseek(r->f, pos, SEEK_SET);
+    msize_t pos = r->inst.start_offset + (r->inst.inst_section_len);
+    fseek(r->f, SEEK_SET, pos);
     msize_t sst_entry_count = r->sst.sst_len / _MERRY_SST_PER_ENTRY_LEN_;
     // We are still well within len
     r->sst.sections = (MerrySection *)malloc(sizeof(MerrySection) * sst_entry_count);
@@ -426,10 +426,10 @@ mret_t merry_reader_read_data_page(MerryReader *r, msize_t pg_ind, MerrySection 
         return RET_SUCCESS;
     if ((r->data[pg_ind] = (mbptr_t)merry_reader_get_mem_from_os(1)) == NULL)
     {
-        merry_reader_give_mem_to_os(r->data, r->data_page_count);
+        merry_reader_give_mem_to_os((mptr_t)r->data, r->data_page_count);
         return RET_FAILURE;
     }
-    fseek(r->f, r->affordable_offsets[pg_ind], SEEK_SET);
+    fseek(r->f, SEEK_SET, r->affordable_offsets[pg_ind]);
     if (pg_ind == (r->data_page_count - 1))
     {
         msize_t extra_addrs = r->data_len - (pg_ind * _MERRY_MEMORY_ADDRESSES_PER_PAGE_);
@@ -510,7 +510,7 @@ mret_t merry_reader_read_sections(MerryReader *r)
     msize_t number_of_pages = data_count / _MERRY_MEMORY_QS_PER_PAGE_;
     msize_t extra_addrs = data_count % _MERRY_MEMORY_QS_PER_PAGE_;
     r->data_page_count = number_of_pages + (extra_addrs > 0 ? 1 : 0);
-    r->affordable_offsets = malloc(8 * number_of_pages);
+    r->affordable_offsets = malloc(8 * r->data_page_count);
     if (!r->affordable_offsets)
         return RET_FAILURE;
     r->data = (mbptr_t *)calloc(r->data_page_count, 8);
@@ -524,7 +524,7 @@ mret_t merry_reader_read_sections(MerryReader *r)
     for (msize_t i = 0; i < r->sst.sst_entry_count; i++)
     {
         MerrySection current_section = r->sst.sections[i];
-        if (current_section.rim == mfalse && current_section.type != _SYMD && current_section.type != _INFO)
+        if ((current_section.rim == mfalse && current_section.type != _SYMD) || current_section.type == _INFO)
         {
             // skip the section
             mbyte_t _t[current_section.section_len];
@@ -578,13 +578,13 @@ mret_t merry_reader_read_sections(MerryReader *r)
             if (current_section.rim == mtrue)
             {
                 r->affordable_offsets[current_index] = ftell(r->f);
-                if (_pages_of_data_read_ < 5)
+                if (_pages_of_data_read_ < 5 && current_index < r->data_page_count)
                 {
                     if (merry_reader_read_data_page(r, current_index, &current_section) == RET_FAILURE)
                         return RET_FAILURE;
                 }
                 else
-                    fseek(r->f, current_section.section_len, SEEK_CUR);
+                    fseek(r->f,SEEK_CUR, current_section.section_len);
                 _pages_of_data_read_++;
                 current_index++;
             }
