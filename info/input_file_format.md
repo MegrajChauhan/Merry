@@ -99,3 +99,11 @@ Position: third last bit of the second last byte.
 **RAS:** Last bit of the 10th byte of the respective SsT entry 
 
 **Note:** The purpose of the ST index in the entry is to give the section a name. This can be used by the assembler to pass specific named sections.
+
+# Input File Version 2
+Everything is exactly the same except for how the data section is placed.
+
+## Changes
+1. **Others Section:** The __others__ section will no longer be read into memory even with the __RIM__ flag.
+2. **Data Section:** The __data__ section should not be fragmented i.e multiple data sections is not allowed.
+3. **Custom Section Types:** The user may define 253 unique sections of their liking.

@@ -128,18 +128,24 @@ struct MerryEAT
 struct MerryReader
 {
     mbool_t de_flag, ste_flag, dfe_flag, dfw_flag;
-    MerryInstSection inst;       /*The instruction section details*/
-    MerryEAT eat;                /* The details about the EAT section */
-    MerrySsT sst;                /*The SsT*/
-    MerryST st;                  /*The ST*/
-    mbptr_t *data;               /*For data containing sections*/
-    msize_t *affordable_offsets; /// NOTE: Doing this was more affordable then reading every page of data hence the name
-    msize_t data_len;            /* The data section length in bytes */
-    msize_t data_page_count;     /* How many pages are there? */
-    FILE *f;                     /* the opened file */
-    msize_t flen;                /*The file's length*/
-    MerrySymbol *syms;           /*Data from symd*/
-    msize_t sym_count;           /*The number of symbols*/
+    MerryInstSection inst;         /*The instruction section details*/
+    MerryEAT eat;                  /* The details about the EAT section */
+    MerrySsT sst;                  /*The SsT*/
+    MerryST st;                    /*The ST*/
+    mbptr_t *data;                 /*For data containing sections*/
+    msize_t affordable_offsets[2]; /// NOTE: Doing this was more affordable then reading every page of data hence the name
+    msize_t data_len;              /* The data section length in bytes */
+    msize_t data_page_count;       /* How many pages are there? */
+    FILE *f;                       /* the opened file */
+    msize_t flen;                  /*The file's length*/
+    MerrySymbol *syms;             /*Data from symd*/
+    msize_t sym_count;             /*The number of symbols*/
+    MerrySection *data_section;    /*Direct refrence to the data section*/
+    MerrySection *str_section;     /*Direct refrence to the string section*/
+    MerrySection *first;           /*The section that comes first*/
+    MerrySection *second;          /*The section that comes second*/
+    maddress_t overlap_st_addr;    /*The starting address of the overlapped region*/
+    maddress_t overlap_ed_addr;    /*The ending address of the overlapped region*/
 };
 
 MerryReader *merry_init_reader(mcstr_t filename);
@@ -162,9 +168,11 @@ mret_t merry_reader_read_instructions(MerryReader *r);
 
 mret_t merry_reader_read_sst(MerryReader *r);
 
-mret_t merry_reader_read_data_page(MerryReader *r, msize_t pg_ind, MerrySection *s);
+mret_t merry_reader_read_data_page(MerryReader *r, msize_t address);
 
 mret_t merry_reader_read_sections(MerryReader *r);
+
+mret_t merry_reader_read_data_sections(MerryReader *r);
 
 mret_t merry_reader_read_st(MerryReader *r);
 
