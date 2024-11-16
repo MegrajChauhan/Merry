@@ -6,6 +6,7 @@
 #include "merry_errno.h"
 #include "merry_types.h"
 #include "merry_config.h"
+#include "merry_console.h"
 
 typedef struct MerryPipe MerryPipe;
 

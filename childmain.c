@@ -15,11 +15,9 @@ mret_t merry_get_and_set_id();
 int main(int argc, char **argv)
 {
     // we will do things differently with child main
+    inlog("VM intialization started[CHILD PROCESS]....");
     if (merry_get_and_set_id() == RET_FAILURE)
-    {
-        inerr_log("CHILD ERROR: Failed to provide ID to the Manager.\n");
         return 1;
-    }
     if (merry_main_parse_options(argc, argv) == RET_FAILURE)
         merry_cleanup_and_exit(1);
     merry_cleanup_and_exit(merry_main());
@@ -27,10 +25,11 @@ int main(int argc, char **argv)
 
 mret_t merry_main_parse_options(int argc, char **argv)
 {
-    cmd_opts = merry_parse_options(argc, argv, mtrue);
+    // In the child process, the "help" and "version" options are useless but anyway.
+    cmd_opts = merry_parse_options(argc, argv, mfalse);
     if (cmd_opts == RET_NULL)
     {
-        merry_print_help();
+        mreport("Command Line Option parsing error.");
         return RET_FAILURE;
     }
     // if help is to be printed, ignore every other options
@@ -48,10 +47,11 @@ mret_t merry_main_parse_options(int argc, char **argv)
     // see if input file was provided or not
     if (cmd_opts->_inp_file == NULL)
     {
-        fprintf(stderr, "Error: Expected path to input file, provided none\n");
+        mreport("Error: Expected path to input file, provided none.");
         merry_print_help();
         goto _err;
     }
+    log("Received Input File: %s'%s'%s", BOLDWHITE, cmd_opts->_inp_file, RESET);
     goto _success;
 _err:
     merry_destroy_parser(cmd_opts);
@@ -71,9 +71,11 @@ void merry_cleanup_and_exit(msize_t ret)
 
 int merry_main()
 {
+    log("Pre-Initialization[VM(Child Process[%d]) about to start execution]", id);
     MerryReader *r = merry_init_reader(cmd_opts->_inp_file);
     if (r == RET_NULL)
         return 1;
+    log("VM Child Process[%d] attempting to read the input file.", id);
     if (merry_reader_read_file(r) == RET_FAILURE)
     {
         merry_destroy_reader(r);
@@ -85,7 +87,7 @@ int merry_main()
     r->eat.EAT[0] = strtoull(cmd_opts->entry == NULL ? "0" : cmd_opts->entry, NULL, 10); // start from there
     if (merry_os_init_reader_provided(r) == RET_FAILURE)
     {
-        inerr_log("Internal Error: Child process failed to start.\n");
+        log("New VM child process[ID: %d] failed to start.", id);
         return 1;
     }
     if (cmd_opts->_dump == mtrue)
@@ -94,23 +96,30 @@ int merry_main()
     os_thread = merry_thread_init();
     if (os_thread == RET_NULL)
     {
-        inerr_log("Internal Error: Child process failed to start after initialization.\n");
+        log("New VM child process[ID: %d] failed to start[Manager Thread failed to initialize].", id);
         return 1;
     }
+    log("Attempting to start the Manager(OS ID: %d) Thread", id);
     if (merry_create_thread(os_thread, &merry_os_start_vm, NULL) == RET_FAILURE)
     {
-        inerr_log("Internal Error: Child process failed to start after initialization.\n");
+        log("New VM child process[ID: %d] failed to start[Manager Thread failed to start].", id);
         return 1;
     }
+    log("Started execution[ID: %d]....", id);
+    log("Waiting for the VM[ID: %d] to finish...", id);
     merry_thread_join(os_thread, NULL);
     return merry_os_get_ret();
 }
 
 mret_t merry_get_and_set_id()
 {
-    FILE *f = fopen(_MERRY_ID_FILE_, "r");
+    inlog("Obtaining a new OS ID.");
+    FILE *f = fopen(_MERRY_ID_FILE_, "w");
     if (f == RET_NULL)
+    {
+        mreport("Failed to obtain an OS ID from the ID FILE.");
         return RET_FAILURE;
+    }
     if (lock_file(f) == RET_FAILURE)
     {
         fclose(f);
@@ -125,5 +134,6 @@ mret_t merry_get_and_set_id()
         return RET_FAILURE;
     }
     fclose(f);
+    log("Obtained a new OS ID %d.", _init);
     return RET_SUCCESS;
 }

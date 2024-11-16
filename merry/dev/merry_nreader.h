@@ -180,6 +180,14 @@ mret_t merry_reader_read_file(MerryReader *r);
 
 mbptr_t merry_reader_get_symbol(MerryReader *r, maddress_t addr);
 
-// mret_t merry_reader_read_page(MerryReader *r, )
+mbool_t merry_is_valid_address(MerryReader *r, msize_t address);
+
+mbptr_t merry_allocate_page_memory(MerryReader *r, maddress_t pg_index);
+
+void merry_detect_multi_section(MerryReader *r, msize_t address, mbool_t *is_multi_page, mbool_t *from_first_page);
+
+void merry_convert_to_big_endian(mbptr_t data, msize_t length);
+
+mret_t merry_read_data(FILE *f, mbptr_t buffer, msize_t offset, msize_t length);
 
 #endif

@@ -7,6 +7,7 @@
 #include <windows.h>
 #include "merry_temp.h"
 #include "merry_errno.h"
+#include "merry_console.h"
 
 // we also need the pid
 #define _MERRY_PROCESS_CREATION_SUCCESS_ 0

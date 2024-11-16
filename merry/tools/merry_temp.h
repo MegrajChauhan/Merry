@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "merry_config.h"
+#include "merry_console.h"
 
 #ifdef _USE_WIN_
 #include <windows.h>

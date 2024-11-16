@@ -27,6 +27,7 @@
 #include "merry_config.h"
 #include "merry_types.h"
 #include "merry_ihdlr.h"
+#include "merry_console.h"
 #include <signal.h>
 #include <unistd.h>
 #include <stdlib.h>

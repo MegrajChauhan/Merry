@@ -2,9 +2,11 @@
 
 MerryPipe *merry_open_pipe()
 {
+    inlog("Creating a new PIPE.");
     MerryPipe *p = (MerryPipe *)malloc(sizeof(MerryPipe));
     if (p == NULL)
     {
+        mreport("Failed to allocate a PIPE");
         merry_set_errno(MERRY_VMERR);
         return RET_NULL;
     }
@@ -13,6 +15,7 @@ MerryPipe *merry_open_pipe()
     if (pipe(p->pfd) == -1)
     {
         free(p);
+        mreport("Failed to allocate a PIPE(SYS ERR)");
         merry_set_errno(MERRY_SYSERR);
         return RET_NULL;
     }
@@ -26,6 +29,7 @@ MerryPipe *merry_open_pipe()
     if (!CreatePipe(&p->_read_handle, &p->_write_handle, &saAttr, 0)) // Default size
     {
         free(p);
+        mreport("Failed to allocate a PIPE(SYS ERR)");
         merry_set_errno(MERRY_SYSERR);
         return RET_NULL;
     }
@@ -33,17 +37,13 @@ MerryPipe *merry_open_pipe()
     p->_in_use = mtrue;
     p->_rclosed = mfalse;
     p->_wclosed = mfalse;
+    inlog("PIPE creation successful.");
     return p;
 }
 
 void merry_pipe_close_one_end(MerryPipe *pipe, int end)
 {
-    if (surelyF(pipe == RET_NULL))
-    {
-        merry_set_errno(MERRY_INVAL_ARG);
-        return;
-    }
-
+    massert(pipe);
     switch (end)
     {
 #ifdef _USE_LINUX_
@@ -100,16 +100,14 @@ void merry_pipe_close_both_ends(MerryPipe *pipe)
 
 mret_t merry_pipe_reopen(MerryPipe *_pipe)
 {
-    if (surelyF(_pipe == RET_NULL))
-    {
-        merry_set_errno(MERRY_INVAL_ARG);
-        return RET_FAILURE;
-    }
+    inlog("Re-Opening a closed PIPE");
+    massert(_pipe);
 
 #ifdef _USE_LINUX_
     if (pipe(_pipe->pfd) == -1)
     {
         merry_set_errno(MERRY_SYSERR);
+        mreport("Re-Opening a closed PIPE failed(SYS ERR)");
         return RET_FAILURE;
     }
 #elif defined(_USE_WIN_)
@@ -121,24 +119,21 @@ mret_t merry_pipe_reopen(MerryPipe *_pipe)
     // Create an anonymous pipe
     if (!CreatePipe(&_pipe->_read_handle, &_pipe->_write_handle, &saAttr, 0)) // Default size
     {
+        mreport("Re-Opening a closed PIPE failed(SYS ERR)");
         merry_set_errno(MERRY_SYSERR);
         return RET_FAILURE;
     }
-
 #endif
     _pipe->_in_use = mtrue;
     _pipe->_rclosed = mfalse;
     _pipe->_wclosed = mfalse;
+    inlog("PIPE successfully re-opened");
     return RET_SUCCESS;
 }
 
 void merry_destroy_pipe(MerryPipe *pipe)
 {
-    if (surelyF(pipe == RET_NULL))
-    {
-        merry_set_errno(MERRY_INVAL_ARG);
-        return;
-    }
+    massert(pipe);
 
 #ifdef _USE_LINUX_
     if (pipe->_rclosed != mtrue)
@@ -157,11 +152,7 @@ void merry_destroy_pipe(MerryPipe *pipe)
 #ifdef _USE_WIN_
 void merry_pipe_prevent_inheritance(MerryPipe *pipe, int flag)
 {
-    if (surelyF(pipe == RET_NULL))
-    {
-        merry_set_errno(MERRY_INVAL_ARG);
-        return;
-    }
+    massert(pipe);
     switch (flag)
     {
     case _MERRY_IN_RFD_:

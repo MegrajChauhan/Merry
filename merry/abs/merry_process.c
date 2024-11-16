@@ -2,6 +2,7 @@
 
 mbool_t merry_create_process(MerryProcess *p)
 {
+    inlog("New Process Creation");
     msize_t _e;
 #ifdef _USE_LINUX_
     p->pid = fork();
@@ -42,8 +43,10 @@ mbool_t merry_create_process(MerryProcess *p)
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
 #endif
+    inlog("Process Creation Success");
     return mtrue;
 _err:
+    inlog("Process Creation Failed");
     merry_set_errno(_e);
     return mfalse;
 }

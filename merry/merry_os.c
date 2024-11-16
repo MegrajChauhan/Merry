@@ -1070,33 +1070,42 @@ _os_exec_(bt_of)
 
 _os_exec_(read_data_pg)
 {
-    // msize_t pg_ind = request->id;
-    // MerrySection s = os->reader->sst.sections[pg_ind];
-    // if (merry_reader_read_data_page(os->reader, pg_ind, &s) != RET_SUCCESS)
-    // {
-    //     // this is a proper error[The OS will handle it right here as internal error]
-    //     rlog("Internal Error: VM failed to retrieve the requested data page at demand.\n", NULL);
-    //     os->stop = mtrue;
-    //     os->ret = RET_FAILURE;
-    //     os->data_mem->error = MERRY_MEM_INVALID_ACCESS; // set to something as an indication
-    //     return RET_FAILURE;
-    // }
-    // os->data_mem->pages[pg_ind]->address_space = os->reader->data[pg_ind]; // already initialized(we don't use madvise here because this page will be immediately used anyways)
-    // // in case of data memory, we will read two pages at once
-    // pg_ind++;
-    // if (os->reader->data_page_count == pg_ind)
-    //     return RET_SUCCESS;
-    // s = os->reader->sst.sections[pg_ind];
-    // if (merry_reader_read_data_page(os->reader, pg_ind, &s) != RET_SUCCESS)
-    // {
-    //     // this is a proper error[The OS will handle it right here as internal error]
-    //     rlog("Internal Error: VM failed to retrieve the requested data page at demand.\n", NULL);
-    //     os->stop = mtrue;
-    //     os->ret = RET_FAILURE;
-    //     os->data_mem->error = MERRY_MEM_INVALID_ACCESS; // set to something as an indication
-    //     return RET_FAILURE;
-    // }
-    // os->data_mem->pages[pg_ind]->address_space = os->reader->data[pg_ind];
+    msize_t pg_ind = request->id;
+    msize_t pg_st_addr = pg_ind * _MERRY_MEMORY_ADDRESSES_PER_PAGE_;
+    if (merry_reader_read_data_page(os->reader, pg_st_addr) != RET_SUCCESS)
+    {
+        // this is a proper error[The OS will handle it right here as internal error]
+        rlog("Internal Error: VM failed to retrieve the requested data page at demand.\n", NULL);
+        os->stop = mtrue;
+        os->ret = RET_FAILURE;
+        os->data_mem->error = MERRY_MEM_INVALID_ACCESS; // set to something as an indication
+        return RET_FAILURE;
+    }
+    os->data_mem->pages[pg_ind]->address_space = os->reader->data[pg_ind]; // already initialized(we don't use madvise here because this page will be immediately used anyways)
+    // in case of data memory, we will read three pages at once
+    pg_ind--;
+    if (merry_reader_read_data_page(os->reader, pg_ind * _MERRY_MEMORY_ADDRESSES_PER_PAGE_) != RET_SUCCESS)
+    {
+        // this is a proper error[The OS will handle it right here as internal error]
+        rlog("Internal Error: VM failed to retrieve the requested data page at demand.\n", NULL);
+        os->stop = mtrue;
+        os->ret = RET_FAILURE;
+        os->data_mem->error = MERRY_MEM_INVALID_ACCESS; // set to something as an indication
+        return RET_FAILURE;
+    }
+    pg_ind += 2;
+    if (os->reader->data_page_count == pg_ind)
+        return RET_SUCCESS;
+    if (merry_reader_read_data_page(os->reader, pg_ind * _MERRY_MEMORY_ADDRESSES_PER_PAGE_) != RET_SUCCESS)
+    {
+        // this is a proper error[The OS will handle it right here as internal error]
+        rlog("Internal Error: VM failed to retrieve the requested data page at demand.\n", NULL);
+        os->stop = mtrue;
+        os->ret = RET_FAILURE;
+        os->data_mem->error = MERRY_MEM_INVALID_ACCESS; // set to something as an indication
+        return RET_FAILURE;
+    }
+    os->data_mem->pages[pg_ind]->address_space = os->reader->data[pg_ind];
 }
 
 _os_exec_(read_inst_pg)

@@ -2,6 +2,7 @@
 #define _MERRY_SUBCOMMS_
 
 #include "merry_pipe.h"
+#include "merry_console.h"
 #include <stdlib.h>
 
 typedef struct MerrySubChannel MerrySubChannel;

@@ -4,6 +4,7 @@
 #include "merry_subcomms.h"
 #include "merry_task_queue.h"
 #include "merry_request_hdlr.h"
+#include "merry_console.h"
 #include <string.h>
 
 #ifdef _USE_LINUX_

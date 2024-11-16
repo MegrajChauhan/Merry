@@ -33,6 +33,7 @@
 #endif
 #include <stdlib.h>
 #include <string.h>
+#include "merry_console.h"
 
 typedef struct MerryDynEntry MerryDynEntry;
 typedef struct MerryDynLoader MerryDynLoader;

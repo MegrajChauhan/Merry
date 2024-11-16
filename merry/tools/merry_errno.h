@@ -24,6 +24,8 @@
 #ifndef _MERRY_ERRNO_
 #define _MERRY_ERRNO_
 
+// This is a pretty useless module(need to reuse this somehow)
+
 /*This module isn't being used at all actually.*/
 
 #include <errno.h>
@@ -34,6 +36,12 @@
 /*
 Since each platform has different number of errno values, we have to be really careful to deal with them.
 */
+
+/**
+ * The problem we have:
+ * Each platform has it's own set of ERRNO values and so to support different platform means
+ * supporting every single ERRNO value, which is pure absurdity.
+ */
 #define MERRY_NODBG 0       // Debugging was enabled for the child but the debugger wasn't connected at all
 #define MERRY_SYSCALLERR 1  // The syscall being handled by the OS didn't expect the provided argument
 #define MERRY_DYNERR 2      // The recent dynamic library related request failed
