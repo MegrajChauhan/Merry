@@ -34,6 +34,7 @@
 #include "merry_types.h"
 #include "merry_core.h"
 #include "merry_request_hdlr.h"
+#include "merry_console.h"
 #include <stdlib.h>
 #ifdef _USE_LINUX_
 #include <syscall.h>

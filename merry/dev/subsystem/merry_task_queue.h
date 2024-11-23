@@ -4,6 +4,7 @@
 #include "merry_task.h"
 #include "merry_queue.h"
 #include "merry_config.h"
+#include "merry_console.h"
 #include <stdlib.h>
 
 typedef struct MerryTaskNode MerryTaskNode;

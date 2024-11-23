@@ -93,11 +93,11 @@ struct Merry
 #define _MERRY_REQUEST_PROGRAM_ERROR_(request_id) (request_id >= 51 && request_id <= 150)
 #define _MERRY_REQUEST_VALID_(req_id) (req_id >= 151)
 
-#define merry_mem_error(msg) fprintf(stderr, "Memory Error: %s.\n", msg)
-#define merry_internal_module_error(msg) fprintf(stderr, "Internal Error; %s.\n", msg)
-#define merry_general_error(type, msg) fprintf(stderr, "%s: %s.\n", type, msg)
+#define merry_mem_error(msg) mreportA("MEM ERROR: %s", msg)
+#define merry_internal_module_error(msg) mreportA("MODULE ERROR: %s", msg)
+#define merry_general_error(type, msg) mreportA("%s: %s", type, msg)
 
-#define merry_error(msg, ...) err_log("Error: %s\n", msg, __VA_ARGS__)
+#define merry_error(msg, ...) merry_log(_MERRY_LOG_ERR_, msg, __VA_ARGS__)
 
 #define _MERRY_DEFAULT_DUMP_FILE_ "mdump"
 

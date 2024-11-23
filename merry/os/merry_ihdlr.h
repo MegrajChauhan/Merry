@@ -28,6 +28,7 @@
 #include "merry_types.h"
 #include "merry_errno.h"
 #include "merry_request_hdlr.h"
+#include "merry_console.h"
 
 _MERRY_DEFINE_FUNC_PTR_(void, mihdlr_t, int _s);
 

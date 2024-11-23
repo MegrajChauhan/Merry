@@ -33,25 +33,25 @@ mret_t merry_main_parse_options(int argc, char **argv)
         return RET_FAILURE;
     }
     // if help is to be printed, ignore every other options
-    if (cmd_opts->_help == mtrue)
+    if (cmd_opts->help == mtrue)
     {
         merry_print_help();
         merry_cleanup_and_exit(0);
     }
     // if version is to be printed, do the same as help
-    if (cmd_opts->_version == mtrue)
+    if (cmd_opts->version == mtrue)
     {
         fprintf(stdout, "Merry Virtual Machine: A 64-bit virtual machine\nLatest version-%lu %s\n", _MERRY_VERSION_, _MERRY_VERSION_STATE_);
         merry_cleanup_and_exit(0);
     }
     // see if input file was provided or not
-    if (cmd_opts->_inp_file == NULL)
+    if (cmd_opts->inp_file == NULL)
     {
         mreport("Error: Expected path to input file, provided none.");
         merry_print_help();
         goto _err;
     }
-    log("Received Input File: %s'%s'%s", BOLDWHITE, cmd_opts->_inp_file, RESET);
+    log("Received Input File: %s'%s'%s", BOLDWHITE, cmd_opts->inp_file, RESET);
     goto _success;
 _err:
     merry_destroy_parser(cmd_opts);
@@ -72,7 +72,7 @@ void merry_cleanup_and_exit(msize_t ret)
 int merry_main()
 {
     log("Pre-Initialization[VM(Child Process[%d]) about to start execution]", id);
-    MerryReader *r = merry_init_reader(cmd_opts->_inp_file);
+    MerryReader *r = merry_init_reader(cmd_opts->inp_file);
     if (r == RET_NULL)
         return 1;
     log("VM Child Process[%d] attempting to read the input file.", id);
@@ -90,8 +90,8 @@ int merry_main()
         log("New VM child process[ID: %d] failed to start.", id);
         return 1;
     }
-    if (cmd_opts->_dump == mtrue)
-        merry_os_produce_dump(cmd_opts->_dump_file);
+    if (cmd_opts->dump == mtrue)
+        merry_os_produce_dump(cmd_opts->dump_file);
     merry_os_give_id(id);
     os_thread = merry_thread_init();
     if (os_thread == RET_NULL)

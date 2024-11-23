@@ -1,210 +1,185 @@
 #include "merry.h"
 
+// State handlers
+_MERRY_INTERNAL_ MerryState handle_start(MerryStateMachine *sm);
+_MERRY_INTERNAL_ MerryState handle_help(MerryStateMachine *sm);
+_MERRY_INTERNAL_ MerryState handle_version(MerryStateMachine *sm);
+_MERRY_INTERNAL_ MerryState handle_input_file(MerryStateMachine *sm);
+_MERRY_INTERNAL_ MerryState handle_dump_file(MerryStateMachine *sm);
+_MERRY_INTERNAL_ MerryState handle_freeze(MerryStateMachine *sm);
+_MERRY_INTERNAL_ MerryState handle_unknown(MerryStateMachine *sm);
+
 MerryCLP *merry_parse_options(int argc, char **argv, mbool_t child)
 {
+    inlog("Parsing command line options...");
     if (argc < 2)
     {
-        // we have an error here
-        rlog("Error parsing command line options.\n", NULL);
-        return RET_NULL;
+        mreport("Error parsing command-line options: no arguments provided.");
+        return NULL;
     }
+
+    // Initialize parser and state machine
     MerryCLP *clp = (MerryCLP *)malloc(sizeof(MerryCLP));
-    if (clp == NULL)
+    if (!clp)
     {
-        // This is funny and unintended.
-        // if the malloc fails, this message will be thrown while displaying the "help" message
-        // even though the command was probably correct
-        rlog("Failed to parse options\n", NULL);
-        return RET_NULL;
+        mreport("Failed to allocate memory for command-line parser.");
+        return NULL;
     }
-    clp->_dump = mfalse;
-    clp->option_count = 0;
-    clp->_dump_file = NULL;
-    clp->_inp_file = NULL;
-    clp->_help = mfalse;
-    clp->_options_ = NULL;
-    clp->_version = mfalse;
-    clp->freeze = mfalse;
-    clp->entry = NULL;
-    mbool_t _clo_provided_ = mfalse;
-    int i = 1;
-    for (; i < argc; i++)
+    memset(clp, 0, sizeof(MerryCLP));
+
+    MerryStateMachine sm = {
+        .current_state = STATE_START,
+        .parser = clp,
+        .argc = argc,
+        .argv = argv,
+        .index = 1,
+        .is_child = child};
+
+    while (sm.current_state != STATE_DONE)
     {
-        if (_clo_provided_ == mtrue)
-            break;
-        switch (argv[i][0])
+        switch (sm.current_state)
         {
-        case '-':
-        {
-            // some options may start with '-' and some may start with '--'
-            // there is no clear distinction for it. For eg: '-h', '--help', '--h' and '-help' are the same and valid
-            switch (argv[i][1])
-            {
-            case '-':
-            {
-                switch (argv[i][2])
-                {
-                case 'h':
-                    if (strcmp(&argv[i][2], "help") == 0 || strcmp(&argv[i][2], "h") == 0)
-                    {
-                        clp->_help = mtrue; // the program asks for help
-                    }
-                    break;
-                case 'v':
-                    if (strcmp(&argv[i][2], "version") == 0 || strcmp(&argv[i][2], "v") == 0)
-                    {
-                        clp->_version = mtrue; // the program asks for version
-                    }
-                    break;
-                case 'd':
-                    if (merry_parse_d_options(clp, argv[i]) == RET_FAILURE)
-                    {
-                        clp->_help = mtrue;
-                        return clp;
-                    }
-                    break;
-                case 'f':
-                    if (strcmp(&argv[i][2], "freeze") == 0)
-                        clp->freeze = mtrue; // the program asks for version
-                    break;
-                default:
-                    _clo_provided_ = mtrue;
-                    break;
-                }
-                break;
-            }
-                // we don't have a second '-'
-            case 'h':
-                if (strcmp(&argv[i][1], "help") == 0 || strcmp(&argv[i][1], "h") == 0)
-                {
-                    clp->_help = mtrue; // the program asks for help
-                }
-                break;
-            case 'v':
-                if (strcmp(&argv[i][1], "v") == 0 || strcmp(&argv[i][1], "version") == 0)
-                {
-                    clp->_version = mtrue; // the program asks for version
-                }
-                break;
-            case 'f':
-                // the following option after this must be a destination to the input file
-                if (clp->_inp_file != NULL)
-                {
-                    rlog("Two input files provided: Ignoring the second one.\n", NULL);
-                    break;
-                }
-                if (argc < (i + 2))
-                {
-                    rlog("Expected path to input file after '-f' option, got EOF instead.\n", NULL);
-                    clp->_help = mtrue;
-                    return clp;
-                }
-                clp->_inp_file = argv[i + 1];
-                i++;
-                break;
-            case 'F':
-                clp->freeze = mtrue;
-                break;
-            case 'd':
-                if (merry_parse_d_options(clp, argv[i]) == RET_FAILURE)
-                {
-                    clp->_help = mtrue;
-                    return clp;
-                }
-                break;
-            default:
-                rlog("Unknown option '%s'\n", argv[i]);
-                clp->_help = mtrue;
-                return clp;
-            }
+        case STATE_START:
+            sm.current_state = handle_start(&sm);
             break;
-        }
+        case STATE_HELP:
+            sm.current_state = handle_help(&sm);
+            break;
+        case STATE_VERSION:
+            sm.current_state = handle_version(&sm);
+            break;
+        case STATE_INPUT_FILE:
+            sm.current_state = handle_input_file(&sm);
+            break;
+        case STATE_DUMP_FILE:
+            sm.current_state = handle_dump_file(&sm);
+            break;
+        case STATE_FREEZE:
+            sm.current_state = handle_freeze(&sm);
+            break;
+        case STATE_UNKNOWN:
+            sm.current_state = handle_unknown(&sm);
+            break;
         default:
-            if (child == mtrue && clp->_is_child == mfalse)
-            {
-                // provides an entry
-                clp->entry = argv[i];
-                clp->_is_child = mtrue;
-                break;
-            }
-            rlog("Unknown option '%s'\n", argv[i]);
-            clp->_help = mtrue;
-            return clp;
+            sm.current_state = STATE_DONE;
+            break;
         }
     }
-    if (_clo_provided_ == mtrue)
-    {
-        if (argc == (i))
-        {
-            rlog("Expected Command Line Options after '--' but found none.\n", NULL);
-            clp->_help = mtrue;
-            return clp;
-        }
-        clp->_options_ = &argv[i];
-        clp->option_count = argc - i;
-    }
+
     return clp;
+}
+
+static MerryState handle_start(MerryStateMachine *sm)
+{
+    if (sm->index >= sm->argc)
+        return STATE_DONE;
+
+    char *arg = sm->argv[sm->index];
+    sm->index++;
+
+    if (strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0)
+    {
+        return STATE_HELP;
+    }
+    else if (strcmp(arg, "-v") == 0 || strcmp(arg, "--version") == 0)
+    {
+        return STATE_VERSION;
+    }
+    else if (strcmp(arg, "-f") == 0)
+    {
+        return STATE_INPUT_FILE;
+    }
+    else if (strncmp(arg, "--dump-file", 11) == 0 || strncmp(arg, "-df", 3) == 0)
+    {
+        return STATE_DUMP_FILE;
+    }
+    else if (strcmp(arg, "-F") == 0 || strcmp(arg, "--freeze") == 0)
+    {
+        return STATE_FREEZE;
+    }
+    else if (strcmp(arg, "--") == 0)
+    {
+        sm->parser->options = &sm->argv[sm->index];
+        sm->parser->option_count = sm->argc - sm->index;
+        return STATE_DONE;
+    }
+    else
+    {
+        return STATE_UNKNOWN;
+    }
+}
+
+static MerryState handle_help(MerryStateMachine *sm)
+{
+    sm->parser->help = mtrue;
+    return STATE_DONE;
+}
+
+static MerryState handle_version(MerryStateMachine *sm)
+{
+    sm->parser->version = mtrue;
+    return STATE_DONE;
+}
+
+static MerryState handle_input_file(MerryStateMachine *sm)
+{
+    if (sm->index >= sm->argc)
+    {
+        mreport("Expected input file after '-f' option.");
+        sm->parser->help = mtrue;
+        return STATE_DONE;
+    }
+
+    sm->parser->inp_file = sm->argv[sm->index];
+    sm->index++;
+    return STATE_START;
+}
+
+static MerryState handle_dump_file(MerryStateMachine *sm)
+{
+    char *arg = sm->argv[sm->index - 1];
+
+    char *path = strchr(arg, '=');
+    if (!path || strlen(path) <= 1)
+    {
+        mreport("Expected file path for dump file option.");
+        sm->parser->help = mtrue;
+        return STATE_DONE;
+    }
+
+    sm->parser->dump_file = path + 1;
+    sm->parser->dump = mtrue;
+    return STATE_START;
+}
+
+static MerryState handle_freeze(MerryStateMachine *sm)
+{
+    sm->parser->freeze = mtrue;
+    return STATE_START;
+}
+
+static MerryState handle_unknown(MerryStateMachine *sm)
+{
+    mreportA("Unknown option '%s'\n", sm->argv[sm->index - 1]);
+    sm->parser->help = mtrue;
+    return STATE_DONE;
 }
 
 void merry_print_help()
 {
-    log(
-        "Usage; merry -f <path_to_input_file> [OPTIONS]\n"
+    printf(
+        "Usage: merry -f <path_to_input_file> [OPTIONS]\n"
         "OPTIONS:\n"
-        "-h, --h, -help, --help         --> Print this help\n"
-        "-v, --v, -version, --version   --> Display the current version\n"
-        "-f                             --> Provide the path to the input file\n"
-        "--                             --> Provide Command Line Options for your Program\n"
-        "--dump-file=[PATH],-df=[PATH]  --> Tell the VM to produce a dumpfile\n"
-        "-F, --freeze                   --> If DE flag is set; causes the VM to wait for connection for debugging.\n",
-        NULL);
+        "-h, --help                      Print this help\n"
+        "-v, --version                   Display the version\n"
+        "-f <file>                       Specify input file\n"
+        "--dump-file=<path>, -df=<path>  Generate a dump file\n"
+        "-F, --freeze                    Enable freeze mode\n"
+        "--                              Specify options for your program\n");
 }
 
 void merry_destroy_parser(MerryCLP *clp)
 {
-    if (clp == NULL)
-        return;
-    free(clp);
+    if (clp)
+        free(clp);
 }
-
-mret_t merry_parse_d_options(MerryCLP *clp, char *opt)
-{
-    msize_t len = strlen(opt);
-    if (str_starts_with(opt, "--dump-file") == mtrue)
-    {
-        if (len <= 12)
-        {
-            // We have no path provided
-            rlog("Error: Dump File name required.\n", NULL);
-            return RET_FAILURE;
-        }
-        if (str_ends_with(opt, "=") == mtrue)
-        {
-            rlog("Error: The option '--dump-file' requires a path\n", NULL);
-            return RET_FAILURE;
-        }
-        clp->_dump_file = opt + 12;
-        clp->_dump = mtrue;
-        return RET_SUCCESS;
-    }
-    else if (str_starts_with(opt, "-df") == mtrue)
-    {
-        if (len <= 4)
-        {
-            // We have no path provided
-            rlog("Error: Dump File name required.\n", NULL);
-            return RET_FAILURE;
-        }
-        if (str_ends_with(opt, "=") == mtrue)
-        {
-            rlog("Error: The option '-df' requires a path.\n", NULL);
-            return RET_FAILURE;
-        }
-        clp->_dump_file = opt + 4;
-        clp->_dump = mtrue;
-        return RET_SUCCESS;
-    }
-    return RET_FAILURE;
-}
-
-// To the ones who dedicate hours into cool cmd options parsers- I am sorry for the abomination.

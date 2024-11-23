@@ -42,6 +42,7 @@
 #include <merry_thread.h>
 #include <merry_errors.h>
 #include "merry_request.h"
+#include "merry_console.h"
 
 // declarations
 // typedef struct MerryMemPageDetails MerryMemPageDetails; // the details about a memory page

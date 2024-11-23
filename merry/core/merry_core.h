@@ -35,6 +35,7 @@
 #include <merry_stack.h>
 #include <merry_thread.h>
 #include "merry_errno.h"
+#include "merry_console.h"
 
 #if defined(_USE_LINUX_)
 #include <unistd.h>

@@ -7,12 +7,14 @@ MerryMutex *merry_mutex_init()
     {
         // failure to allocate
         merry_set_errno(MERRY_VMERR);
+        mreport("Failed to allocate a MUTEX");
         return RET_NULL;
     }
 #if defined(_USE_LINUX_)
     if (pthread_mutex_init(&mutex->mutex, NULL) != 0)
     {
         free(mutex);
+        mreport("Failed to allocate a MUTEX(SYS ERR)");
         merry_set_errno(MERRY_SYSERR);
         return RET_NULL;
     }
@@ -29,12 +31,14 @@ MerryCond *merry_cond_init()
     if (cond == NULL)
     {
         merry_set_errno(MERRY_VMERR);
+        mreport("Failed to allocate a COND_VAR");
         return RET_NULL; // failure to allocate
     }
 #if defined(_USE_LINUX_)
     if (pthread_cond_init(&cond->cond, NULL) != 0)
     {
         free(cond);
+        mreport("Failed to allocate a COND_VAR(SYS ERR)");
         merry_set_errno(MERRY_SYSERR);
         return RET_NULL;
     }
@@ -50,6 +54,7 @@ MerryThread *merry_thread_init()
     if (thread == NULL)
     {
         merry_set_errno(MERRY_VMERR);
+        mreport("Failed to allocate a THREAD");
         return RET_NULL;
     }
     // we are simply initializing a MerryThread
@@ -58,8 +63,7 @@ MerryThread *merry_thread_init()
 
 void merry_mutex_destroy(MerryMutex *mutex)
 {
-    if (surelyF(mutex == NULL))
-        return;
+    massert(mutex != NULL);
 #if defined(_USE_LINUX_)
     pthread_mutex_destroy(&mutex->mutex);
 #elif defined(_USE_WIN_)
@@ -70,8 +74,7 @@ void merry_mutex_destroy(MerryMutex *mutex)
 
 void merry_cond_destroy(MerryCond *cond)
 {
-    if (surelyF(cond == NULL))
-        return;
+    massert(cond != NULL);
 #if defined(_USE_LINUX_)
     pthread_cond_destroy(&cond->cond);
 #endif
@@ -81,15 +84,13 @@ void merry_cond_destroy(MerryCond *cond)
 
 void merry_thread_destroy(MerryThread *thread)
 {
-    if (surelyF(thread == NULL))
-        return;
+    massert(thread != NULL);
     free(thread);
 }
 
 void merry_mutex_lock(MerryMutex *mutex)
 {
-    if (surelyF(mutex == NULL))
-        return;
+    massert(mutex != NULL);
 #if defined(_USE_LINUX_)
     pthread_mutex_lock(&mutex->mutex);
 #elif defined(_USE_WIN_)
@@ -99,8 +100,7 @@ void merry_mutex_lock(MerryMutex *mutex)
 
 void merry_mutex_unlock(MerryMutex *mutex)
 {
-    if (surelyF(mutex == NULL))
-        return;
+    massert(mutex != NULL);
 #if defined(_USE_LINUX_)
     pthread_mutex_unlock(&mutex->mutex);
 #elif defined(_USE_WIN_)
@@ -110,8 +110,8 @@ void merry_mutex_unlock(MerryMutex *mutex)
 
 void merry_cond_wait(MerryCond *cond, MerryMutex *lock)
 {
-    if (surelyF(cond == NULL || lock == NULL))
-        return;
+    massert(cond != NULL);
+    massert(lock != NULL);
 #if defined(_USE_LINUX_)
     pthread_cond_wait(&cond->cond, &lock->mutex);
 #elif defined(_USE_WIN_)
@@ -121,8 +121,7 @@ void merry_cond_wait(MerryCond *cond, MerryMutex *lock)
 
 void merry_cond_signal(MerryCond *cond)
 {
-    if (surelyF(cond == NULL))
-        return;
+    massert(cond != NULL);
 #if defined(_USE_LINUX_)
     pthread_cond_signal(&cond->cond);
 #elif defined(_USE_WIN_)
@@ -132,8 +131,7 @@ void merry_cond_signal(MerryCond *cond)
 
 void merry_cond_broadcast(MerryCond *cond)
 {
-    if (surelyF(cond == NULL))
-        return;
+    massert(cond != NULL);
 #if defined(_USE_LINUX_)
     pthread_cond_broadcast(&cond->cond);
 #elif defined(_USE_WIN_)
@@ -143,19 +141,24 @@ void merry_cond_broadcast(MerryCond *cond)
 
 mret_t merry_create_detached_thread(MerryThread *thread, ThreadExecFunc func, void *arg)
 {
-    if (surelyF(thread == NULL || func == NULL))
-        return RET_FAILURE;
+    massert(thread != NULL);
+    massert(func != NULL);
 #if defined(_USE_LINUX_)
     pthread_attr_t attr;
     if (pthread_attr_init(&attr) != 0)
+    {
+        mreport("Failed to initialize DETACHED THREAD(SYS ERR)");
         return RET_FAILURE; // we failed
+    }
     if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0)
     {
+        mreport("Failed to initialize DETACHED THREAD(SYS ERR)");
         pthread_attr_destroy(&attr);
         return RET_FAILURE;
     }
     if (pthread_create(&thread->thread, &attr, func, arg) != 0)
     {
+        mreport("Failed to create DETACHED THREAD(SYS ERR)");
         pthread_attr_destroy(&attr);
         return RET_FAILURE;
     }
@@ -163,32 +166,40 @@ mret_t merry_create_detached_thread(MerryThread *thread, ThreadExecFunc func, vo
 #elif defined(_USE_WIN_)
     thread->thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)func, arg, 0, NULL);
     if (thread->thread == NULL)
+    {
+        mreport("Failed to create DETACHED THREAD(SYS ERR)");
         return RET_FAILURE;
+    }
 #endif
     return RET_SUCCESS;
 }
 
 mret_t merry_create_thread(MerryThread *thread, ThreadExecFunc func, void *arg)
 {
-    if (surelyF(thread == NULL || func == NULL))
-        return RET_FAILURE;
+    massert(thread != NULL);
+    massert(func != NULL);
 #if defined(_USE_LINUX_)
     if (pthread_create(&thread->thread, NULL, func, arg) != 0)
+    {
+        mreport("Failed to create THREAD(SYS ERR)");
         return RET_FAILURE;
+    }
 #elif defined(_USE_WIN_)
     thread->thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)func, arg, 0, NULL);
     if (thread->thread == NULL)
+    {
+        mreport("Failed to create THREAD(SYS ERR)");
         return RET_FAILURE;
+    }
 #endif
     return RET_SUCCESS;
 }
 
 mret_t merry_thread_join(MerryThread *thread, void *return_val)
 {
-    if (surelyF(thread == NULL))
-        return RET_FAILURE;
+    massert(thread != NULL);
 #if defined(_USE_LINUX_)
-    pthread_join(thread->thread, &return_val);
+    pthread_join(thread->thread, return_val);
 #elif defined(_USE_WIN_)
     WaitForSingleObject(thread->thread, INFINITE);
 #endif

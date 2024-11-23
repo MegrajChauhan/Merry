@@ -26,6 +26,7 @@
 
 #include <merry_types.h>
 #include <merry_utils.h>
+#include "merry_console.h"
 #include <stdlib.h>
 
 typedef struct MerryStack MerryStack;

@@ -3,11 +3,15 @@
 
 MerryCore *merry_core_init(MerryMemory *inst_mem, MerryDMemory *data_mem, msize_t id)
 {
+    log("Initialzing VCore[ID: %lu]", id);
     // allocate a new core
     MerryCore *new_core = (MerryCore *)malloc(sizeof(MerryCore));
     // check if the core has been initialized
     if (new_core == RET_NULL)
+    {
+        mreport("Failed to allocate memory for VCore");
         return RET_NULL;
+    }
     new_core->bp = 0; // initialize these registers to 0
     new_core->pc = 0;
     new_core->sp = (mqword_t)(-1);
@@ -34,7 +38,10 @@ MerryCore *merry_core_init(MerryMemory *inst_mem, MerryDMemory *data_mem, msize_
     merry_core_zero_out_reg(new_core);
     new_core->stack_mem = (mqptr_t)_MERRY_MEM_GET_PAGE_(_MERRY_STACKMEM_BYTE_LEN_, _MERRY_PROT_DEFAULT_, _MERRY_FLAG_DEFAULT_);
     if (new_core->stack_mem == RET_NULL)
+    {
+        mreport("Failed to allocate a stack[SYS ERR]");
         goto failure;
+    }
 #ifdef _USE_LINUX_
     madvise(new_core->stack_mem, _MERRY_STACKMEM_BYTE_LEN_, MADV_RANDOM);
     madvise(new_core->stack_mem, _MERRY_STACKMEM_BYTE_LEN_, MADV_WILLNEED);
@@ -126,6 +133,7 @@ _MERRY_INTERNAL_ void merry_cmp_floats32(MerryCore *core, float val1, float val2
 _THRET_T_ merry_runCore(mptr_t core)
 {
     MerryCore *c = (MerryCore *)core;
+    log("VCore: %d[ACTIVE]", c->core_id);
     register mqptr_t current = &c->current_inst;
     register mqword_t curr = 0;
     F32 f32;

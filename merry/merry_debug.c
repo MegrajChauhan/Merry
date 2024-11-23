@@ -83,7 +83,7 @@ _THRET_T_ merry_start_debugging(mptr_t arg)
         // In future, the input length may be variable based on the request
         mbyte_t buf[16];
         if (read(e.data.fd, buf, 16) < 16)
-            fprintf(stderr, "INVALID DEBUG COMMAND[WARNING]\n");
+            mreport("INVALID DEBUG COMMAND[WARNING]");
         else
         {
             register mqword_t op = *(mqptr_t)buf;

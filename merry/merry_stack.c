@@ -2,13 +2,18 @@
 
 MerryStack *merry_init_stack(msize_t len, mbool_t dynamic, msize_t upper_lim, msize_t per_resize)
 {
+    inlog("Creating a STACK");
     MerryStack *st = (MerryStack *)malloc(sizeof(MerryStack));
     if (st == NULL)
+    {
+        mreport("Failed to allocate a STACK");
         return RET_NULL;
+    }
     st->array = (mqptr_t)malloc(8 * len);
     if (st->array == NULL)
     {
         free(st);
+        mreport("Failed to allocate a STACK[ARRAY]");
         return RET_NULL;
     }
     st->size = len;
@@ -21,10 +26,8 @@ MerryStack *merry_init_stack(msize_t len, mbool_t dynamic, msize_t upper_lim, ms
 
 _MERRY_ALWAYS_INLINE_ inline void merry_destroy_stack(MerryStack *stack)
 {
-    if (surelyF(stack == NULL))
-        return;
-    if (surelyT(stack->array != NULL))
-        free(stack->array);
+    massert_field(stack, array);
+    free(stack->array);
     free(stack);
 }
 
@@ -35,7 +38,10 @@ _MERRY_INTERNAL_ mret_t merry_stack_resize(MerryStack *st)
         return RET_FAILURE; // cannot exceed upper limit
     st->array = (mqptr_t)realloc(st->array, 8 * (st->size + st->add_per_resize));
     if (st->array == NULL)
+    {
+        mreport("Failed to resize a STACK");
         return RET_FAILURE;
+    }
     st->size = new_len;
     return RET_SUCCESS;
 }

@@ -36,7 +36,7 @@
 #define _MERRY_VERSION_MAJOR_ 0
 
 #define _MERRY_VERSION_ (_MERRY_VERSION_MAJOR_ * 100000) + (_MERRY_VERSION_MINOR_ * 10000) + _MERRY_VERSION_CHANGE_
-#define _MERRY_VERSION_STATE_ "test-3.16"
+#define _MERRY_VERSION_STATE_ "test-3.20"
 
 #define _MERRY_ID_FILE_ "__num__"               // update the location
 #define _MERRY_CMAIN_ "./build/cmain"           // update the location

@@ -4,7 +4,7 @@
 merry_ihdlr(termination)
 {
    // The OS knows that this isn't from any process
-   printf("SIG INTERRUPT: Terminating...\n");
+   mreport("Signal Received to Terminate.....");
    merry_requestHdlr_panic(_SHOULD_EXIT, 0);
 }
 
@@ -13,7 +13,7 @@ merry_ihdlr(termination)
 // We may as well say that we 'ignore' this signal
 merry_ihdlr(interrupt)
 {
-   printf("INTERRUPTED: Terminating....\n");
+   mreport("Interrupted....");
    merry_requestHdlr_panic(_SHOULD_EXIT, 0);
 }
 
@@ -21,6 +21,7 @@ merry_ihdlr(interrupt)
 // either in imem or dmem
 merry_ihdlr(segv)
 {
+   mreport("SEGMENTATION FAULT RECEIVED[FATAL]");
    merry_requestHdlr_panic(MERRY_SEGV, 0);
 }
 
@@ -32,15 +33,15 @@ merry_ihdlr(segv)
  * To the program, the pointer may be completely valid and it should be but due to how
  * we have the memories implemented, it is compulsory for the entire string to be on the same page.
  * This applies to other data types too. This is a pain but it is one of the sacrifices made to
- * squeeze out speed for the VM. Every check done everytime a memory address is accessed is truly a pain.
+ * squeeze out speed from the VM. Every check done everytime a memory address is accessed is truly a pain.
  * The only solution to this is to let the programmer freely write the program without having to worry about it
  * and handle the alignment in the assembler. This is a viable option but it makes the binary bigger.
- * I believe that that sacrifice is worth it BUT the next problem lies with dynamic allocations.
+ * I believe that this sacrifice is worth it BUT the next problem lies with dynamic allocations.
  * A running program might allocate some memory but the assembler won't be able to do anything about it.
  * This also means that the library will have to make sure that everything is aligned.
  * This is all a pain and I hope to solve it sometime.
- * The only most feasible solution that I have for this problem is the limited use and power of syscall.
+ * The only feasible solution that I have for this problem is the limited use and power of syscall.
  * The syscall instruction may be passed to the OS for handling.
- * This was we can limit the programs from making certain calls and make sure that
+ * This way we can limit the programs from making certain calls and make sure that
  * those calls are harmless. The only flipside to this being the implementation details.
  */

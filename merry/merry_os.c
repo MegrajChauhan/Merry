@@ -2,25 +2,29 @@
 
 mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _wait_for_conn)
 {
-    // initialize the os
+    inlog("Initializing the MANAGER THREAD");
     os._os_id = 0;
     if (merry_loader_init(_MERRY_INITIAL_DYNLOAD_COUNT_) == mfalse)
         return RET_FAILURE;
     os.reader = merry_init_reader(_inp_file);
     if (os.reader == RET_NULL)
         return RET_FAILURE;
+
     // initialize the memory
     if (merry_reader_read_file(os.reader) == RET_FAILURE)
     {
         merry_destroy_reader(os.reader);
         return RET_FAILURE;
     }
+    inlog("Initializing Data Memory");
     if ((os.data_mem = merry_dmemory_init_provided(os.reader->data, os.reader->data_page_count)) == RET_NULL)
     {
         merry_destroy_reader(os.reader);
         return RET_FAILURE;
     }
+
     // we need to put the options into the memory
+    inlog("Putting the Options in their place....");
     msize_t len = 0;
     for (msize_t i = 0; i < count; i++)
     {
@@ -39,15 +43,20 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _
                 goto failure;
         }
     }
+
     // we have that in memory now
     msize_t _t = os.reader->data_len;
+    inlog("Initializing Instruction Memory");
     // perform initialization for the inst mem as well. Unlike data memory, instruction page len cannot be 0
     if ((os.inst_mem = merry_memory_init_provided(os.reader->inst.instructions, os.reader->inst.inst_page_count)) == RET_NULL)
         goto failure;
     // initialize all the cores
     os.cores = (MerryCore **)malloc(sizeof(MerryCore *) * os.reader->eat.eat_entry_count);
     if (os.cores == NULL)
+    {
+        mreport("Failed to allocate memory for the VCores");
         goto failure;
+    }
     os.core_count = os.reader->eat.eat_entry_count;
     for (msize_t i = 0; i < os.reader->eat.eat_entry_count; i++)
     {
@@ -75,12 +84,16 @@ mret_t merry_os_init(mcstr_t _inp_file, char **options, msize_t count, mbool_t _
     os.stop = mfalse;
     os.core_threads = (MerryThread **)malloc(sizeof(MerryThread *) * (os.core_count));
     if (os.core_threads == RET_NULL)
+    {
+        mreport("Failed to allocate memory for the VCores");
         goto failure;
+    }
     os.active_core_count = 0;
     os.err_core_id = 0;
     os.ret = _MERRY_EXIT_SUCCESS_;
     os._subsystem_running = mfalse;
     os._subsystem_failure = mfalse;
+    inlog("Installing Traps....");
     merry_trap_install(); // for now, the failure of this doesn't matter
     return RET_SUCCESS;   // we did everything correctly
 failure:
@@ -90,6 +103,7 @@ failure:
 
 mret_t merry_os_start_subsys()
 {
+    inlog("Starting SubSystem...");
     if ((os.os_pipe = merry_open_pipe()) == RET_NULL)
         goto failure;
     if (merry_init_subsys(_MERRY_SUBSYS_LEN_) == RET_FAILURE)
@@ -121,12 +135,15 @@ failure:
 mret_t merry_os_init_reader_provided(MerryReader *r)
 {
     // we need to put the options into the memory
+    inlog("Initializing the MANAGER THREAD");
     os.reader = r;
+    inlog("Initializing Data Memory");
     if ((os.data_mem = merry_dmemory_init_provided(os.reader->data, os.reader->data_page_count)) == RET_NULL)
     {
         merry_destroy_reader(os.reader);
         return RET_FAILURE;
     }
+    inlog("Initializing Instruction Memory");
     if ((os.inst_mem = merry_memory_init_provided(os.reader->inst.instructions, os.reader->inst.inst_page_count)) == RET_NULL)
         goto failure;
     if (merry_loader_init(_MERRY_INITIAL_DYNLOAD_COUNT_) == mfalse)
@@ -135,7 +152,10 @@ mret_t merry_os_init_reader_provided(MerryReader *r)
     // initialize all the cores
     os.cores = (MerryCore **)malloc(sizeof(MerryCore *) * os.reader->eat.eat_entry_count);
     if (os.cores == NULL)
+    {
+        mreport("Failed to allocate memory for the VCores");
         goto failure;
+    }
     os.core_count = os.reader->eat.eat_entry_count;
     for (msize_t i = 0; i < os.reader->eat.eat_entry_count; i++)
     {
@@ -161,6 +181,7 @@ mret_t merry_os_init_reader_provided(MerryReader *r)
     // This init is done with a child process
     // let them know that they are a child process
     os.cores[0]->registers[Ma] = 1;
+    inlog("Installing Traps....");
     merry_trap_install();
     return RET_SUCCESS; // we did everything correctly
 failure:
@@ -170,17 +191,18 @@ failure:
 
 void merry_os_start_dbg()
 {
+    inlog("Starting Debugging...");
     os.dbg_th = merry_thread_init();
     if (os.dbg_th == RET_NULL)
     {
-        rlog("Failed to start the debugger.\n", NULL);
+        mreport("Failed to start the debugger");
         os.reader->dfw_flag = mfalse;
         os.wait_for_conn = mfalse;
         return;
     }
     if (((os.dbg = merry_init_debug(os._os_id)) == RET_NULL) || (merry_create_detached_thread(os.dbg_th, &merry_start_debugging, os.dbg) == RET_FAILURE))
     {
-        rlog("Debugger couldn't initialize.\n", NULL);
+        mreport("Debugger couldn't initialize");
         os.reader->dfw_flag = mfalse;
         os.wait_for_conn = mfalse;
         return;
@@ -231,6 +253,7 @@ mret_t merry_os_boot_core(msize_t core_id, maddress_t start_addr)
     os.cores[core_id]->pc = start_addr; // point to the starting address of the core
     os.cores[core_id]->entry_addr = start_addr;
     // now start the core thread
+    log("Booting VCore %lu", core_id);
     if ((os.core_threads[core_id] = merry_thread_init()) == RET_NULL)
     {
         return RET_FAILURE;
@@ -247,13 +270,13 @@ mret_t merry_os_boot_core(msize_t core_id, maddress_t start_addr)
 mret_t merry_os_add_core()
 {
     // just add another core
+    inlog("Adding a new core...");
     MerryCore *new_core = merry_core_init(os.inst_mem, os.data_mem, os.core_count);
     if (new_core == RET_NULL)
     {
         goto _err;
     }
     MerryThread *th = merry_thread_init();
-
     if (th == RET_NULL)
     {
         merry_core_destroy(new_core, mtrue);
@@ -262,6 +285,7 @@ mret_t merry_os_add_core()
     MerryThread **temp = (MerryThread **)malloc(sizeof(MerryThread *) * (os.core_count));
     if (temp == NULL)
     {
+        mreport("Failed to allocate memory for a new core");
         merry_core_destroy(new_core, mtrue);
         merry_thread_destroy(th);
         goto _err;
@@ -270,6 +294,7 @@ mret_t merry_os_add_core()
     if (tempc == NULL)
     {
         // we failed again
+        mreport("Failed to allocate memory for a new core");
         merry_core_destroy(new_core, mtrue);
         merry_thread_destroy(th);
         free(temp);
@@ -303,6 +328,7 @@ _MERRY_INTERNAL_ void merry_os_prepare_for_exit()
 {
     // prepare for termination
     // firstly tell all cores to shut down
+    inlog("Preparing for Termination...");
     for (msize_t i = 0; i < os.core_count; i++)
     {
         atomic_exchange(&os.cores[i]->stop_running, mtrue);
@@ -327,6 +353,7 @@ _MERRY_INTERNAL_ void merry_os_prepare_for_exit()
 _THRET_T_ merry_os_start_vm(mptr_t some_arg)
 {
     // this will start the OS
+    inlog("Manager is starting now....");
     MerryOSRequest current_req;
     while (os.wait_for_conn == mtrue)
     {
@@ -338,9 +365,12 @@ _THRET_T_ merry_os_start_vm(mptr_t some_arg)
         {
             if (current_req.request_number == _DBG_ACTIVE_)
                 break;
-            // ignore every other request right now
+            else if (current_req.request_number == _SHOULD_EXIT || current_req.request_number == MERRY_SEGV)
+                return (mptr_t)&os.ret;
+            // ignore every other request right now(This isn't the way to go and any core isn't running either so it doesn't matter)
         }
     }
+    inlog("Booting up VCores...");
     for (msize_t i = 0; i < os.core_count; i++)
     {
         if (merry_os_boot_core(i, os.reader->eat.EAT[i]) != RET_SUCCESS)
@@ -554,11 +584,13 @@ void merry_os_handle_others(merrot_t _id, msize_t id)
         break;
     case MERRY_SUBSYS_FAILED:
         merry_subsys_close_all();
-        inerr_log("Subsystem failed to continue(Speculative Termination)\n");
+        merry_error("Subsystem failed to continue(Speculative Termination)", NULL);
     case MERRY_SUBSYS_INIT_FAILURE:
         os._subsystem_failure = mtrue;
+        merry_error("Subsystem failed to initialize", NULL);
         break;
     case MERRY_DBG_UNAVILABLE:
+        merry_error("Debugger not available[Probably failed to start on VM end]", NULL);
         os.dbg_running = mfalse;
         os.dbg->stop = mtrue;
         os.stop = mfalse;
@@ -606,12 +638,12 @@ void merry_os_handle_error(merrot_t error, msize_t id)
         break;
     case MERRY_INTERNAL_ERROR:
         merry_general_error("Internal Machine Error", "This isn't your fault most probably, try running the program again.");
-
         break;
     default:
         if (os.cores[id]->excp_set == mtrue)
         {
-            os.cores[id]->pc = os.cores[id]->exception_address;
+            os.cores[id]->pc = os.cores[id]->exception_address; // This doesn't save the return address and that is because we don't expect
+                                                                // this to return
             return;
         }
         merry_error("Unknown error code: '%llu' is not a valid error code", error);
@@ -1075,7 +1107,7 @@ _os_exec_(read_data_pg)
     if (merry_reader_read_data_page(os->reader, pg_st_addr) != RET_SUCCESS)
     {
         // this is a proper error[The OS will handle it right here as internal error]
-        rlog("Internal Error: VM failed to retrieve the requested data page at demand.\n", NULL);
+        mreport("VM failed to retrieve the requested data page at demand.");
         os->stop = mtrue;
         os->ret = RET_FAILURE;
         os->data_mem->error = MERRY_MEM_INVALID_ACCESS; // set to something as an indication
@@ -1087,7 +1119,7 @@ _os_exec_(read_data_pg)
     if (merry_reader_read_data_page(os->reader, pg_ind * _MERRY_MEMORY_ADDRESSES_PER_PAGE_) != RET_SUCCESS)
     {
         // this is a proper error[The OS will handle it right here as internal error]
-        rlog("Internal Error: VM failed to retrieve the requested data page at demand.\n", NULL);
+        mreport("VM failed to retrieve the requested data page at demand.");
         os->stop = mtrue;
         os->ret = RET_FAILURE;
         os->data_mem->error = MERRY_MEM_INVALID_ACCESS; // set to something as an indication
@@ -1099,7 +1131,7 @@ _os_exec_(read_data_pg)
     if (merry_reader_read_data_page(os->reader, pg_ind * _MERRY_MEMORY_ADDRESSES_PER_PAGE_) != RET_SUCCESS)
     {
         // this is a proper error[The OS will handle it right here as internal error]
-        rlog("Internal Error: VM failed to retrieve the requested data page at demand.\n", NULL);
+        mreport("VM failed to retrieve the requested data page at demand");
         os->stop = mtrue;
         os->ret = RET_FAILURE;
         os->data_mem->error = MERRY_MEM_INVALID_ACCESS; // set to something as an indication
@@ -1114,7 +1146,7 @@ _os_exec_(read_inst_pg)
     MerrySection s = os->reader->sst.sections[pg_ind];
     if (merry_reader_read_inst_page(os->reader, os->reader->inst.instructions[pg_ind], pg_ind) != RET_SUCCESS)
     {
-        rlog("Internal Error: VM failed to retrieve the requested instruction page at demand.\n", NULL);
+        mreport("VM failed to retrieve the requested instruction page at demand");
         os->stop = mtrue;
         os->ret = RET_FAILURE;
         os->inst_mem->error = MERRY_MEM_INVALID_ACCESS; // set to something as an indication

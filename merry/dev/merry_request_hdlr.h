@@ -28,6 +28,7 @@
 #include <merry_request_queue.h>
 #include <merry_errors.h>
 #include <merry_thread.h>
+#include "merry_console.h"
 #include <stdlib.h>
 
 typedef struct MerryRequestHdlr MerryRequestHdlr;

@@ -28,6 +28,7 @@
 #include <merry_request.h>
 #include <merry_queue.h>
 #include <merry_thread.h>
+#include "merry_console.h"
 
 typedef struct MerryRequestNode MerryRequestNode;
 typedef struct MerryRequestQueue MerryRequestQueue;

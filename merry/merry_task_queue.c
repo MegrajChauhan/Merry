@@ -5,11 +5,15 @@ MerryTaskQueue *merry_task_queue_init(msize_t queue_len)
     MerryTaskQueue *queue;
     _MERRY_QUEUE_INIT_(MerryTaskQueue, queue);
     if (queue == NULL)
+    {
+        mreport("Failed to create TASK QUEUE");
         return RET_NULL;
+    }
     mbool_t ret = mtrue;
     _MERRY_QUEUE_CREATE_NODES_NOPTR_(queue, MerryTaskNode, queue_len, ret);
     if (ret == mfalse)
     {
+        mreport("Failed to create TASK QUEUE NODES");
         _MERRY_DESTROY_QUEUE_NOPTR_(queue);
         return RET_NULL;
     }
@@ -18,11 +22,13 @@ MerryTaskQueue *merry_task_queue_init(msize_t queue_len)
 
 void merry_task_queue_destroy(MerryTaskQueue *queue)
 {
+    massert(queue);
     _MERRY_DESTROY_QUEUE_NOPTR_(queue);
 }
 
 mbool_t merry_push_task(MerryTaskQueue *queue, MerryCond *cond, msize_t req, mqptr_t _store_in)
 {
+    massert(queue);
     mbool_t ret = mtrue;
     MerryTask t;
     t.cond = cond;

@@ -6,12 +6,14 @@ _MERRY_INTERNAL_ MerryDMemPage *merry_mem_allocate_new_mempage()
     if (new_page == RET_NULL)
     {
         // failed allocation
+        mreport("Failed to allocate a new DMEM PAGE");
         return RET_NULL;
     }
     // try allocating the address space
     if ((new_page->address_space = (mbptr_t)_MERRY_DMEMORY_PGALLOC_MAP_PAGE_) == NULL)
     {
         free(new_page);
+        mreport("Request for a new DMEM PAGE failed[SYS ERR]");
         return RET_NULL; // we failed
     }
     // everything went successfully
@@ -24,6 +26,7 @@ _MERRY_INTERNAL_ MerryDMemPage *merry_mem_allocate_new_mempage_provided(mbptr_t 
     if (new_page == RET_NULL)
     {
         // failed allocation
+        mreport("Failed to allocate a new DMEM PAGE");
         return RET_NULL;
     }
     // try allocating the address space
@@ -47,10 +50,12 @@ _MERRY_INTERNAL_ void merry_mem_free_mempage(MerryDMemPage *page)
 // exposed function: initialize memory with num_of_pages pages
 MerryDMemory *merry_dmemory_init(msize_t num_of_pages)
 {
+    inlog("Initializing Component DMemory...");
     MerryDMemory *memory = (MerryDMemory *)malloc(sizeof(MerryDMemory));
     if (memory == RET_NULL)
     {
         // we failed
+        mreport("Failed to allocate memory for DMEM");
         return RET_NULL;
     }
     memory->error = MERRY_ERROR_NONE;
@@ -59,6 +64,7 @@ MerryDMemory *merry_dmemory_init(msize_t num_of_pages)
     if (memory->pages == RET_NULL)
     {
         // failed
+        mreport("Failed to allocate memory for DMEM PAGES");
         free(memory);
         return RET_NULL;
     }
@@ -99,6 +105,7 @@ mret_t merry_dmemory_add_new_page(MerryDMemory *memory)
     MerryDMemPage **temp = memory->pages;
     if ((memory->pages = (MerryDMemPage **)realloc(memory->pages, sizeof(MerryDMemPage *) * (memory->number_of_pages + 1))) == NULL)
     {
+        mreport("Failed to allocate memory for a DMEM PAGE[New Page allocation]");
         merry_mem_free_mempage(new_pg);
         memory->pages = temp; // restore on fail
         goto _err;
@@ -118,10 +125,12 @@ MerryDMemory *merry_dmemory_init_provided(mbptr_t *mapped_pages, msize_t num_of_
 {
     // just perform the regular allocation but don't map new pages
     // instead use the already mapped ones
+    inlog("Initializing Component DMemory...");
     MerryDMemory *memory = (MerryDMemory *)malloc(sizeof(MerryDMemory));
     if (memory == RET_NULL)
     {
         // we failed
+        mreport("Failed to allocate memory for DMEM");
         return RET_NULL;
     }
     memory->error = MERRY_ERROR_NONE;
@@ -131,6 +140,7 @@ MerryDMemory *merry_dmemory_init_provided(mbptr_t *mapped_pages, msize_t num_of_
     {
         // failed
         free(memory);
+        mreport("Failed to allocate memory for DMEM PAGES");
         return RET_NULL;
     }
     // now we need to initialize every single page

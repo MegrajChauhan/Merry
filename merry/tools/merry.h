@@ -26,37 +26,52 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <merry_os.h>
 #include "merry_helpers.h"
+#include "merry_console.h"
 
 #define _MERRY_MAX_OPTIONS_ 4
 
-typedef enum MerryCLOption_t MerryCLOption_t;
-typedef struct MerryCLOption MerryCLOption; // an option
-typedef struct MerryCLP MerryCLP;           // command line parser
+typedef enum MerryState MerryState;
+typedef struct MerryCLP MerryCLP;
+typedef struct MerryStateMachine MerryStateMachine;
 
-enum MerryCLOption_t
+enum MerryState
 {
-    _OPT_HELP,      // '-h; , '--h', '-help', '--help'
-    _OPT_FILE,      // -I <Input file>
-    _OPT_VER,       // -v, --v, -version, --version
-    _OPT_DUMP_FILE, // --dump-file, -df
-    _OPT_CLO,       // --
-    _OPT_FREEZE,    // -F, --freeze
+    STATE_START,
+    STATE_HELP,
+    STATE_VERSION,
+    STATE_INPUT_FILE,
+    STATE_DUMP_FILE,
+    STATE_FREEZE,
+    STATE_PARSE_OPTIONS,
+    STATE_UNKNOWN,
+    STATE_DONE,
 };
 
 struct MerryCLP
 {
-    mbool_t _help;
-    mbool_t _version;
+    mbool_t help;
+    mbool_t version;
     mbool_t freeze;
-    mstr_t _inp_file;
-    mstr_t _dump_file;
-    mbool_t _dump;
-    char **_options_;
+    mstr_t inp_file;
+    mstr_t dump_file;
+    mbool_t dump;
+    char **options;
     msize_t option_count;
-    mbool_t _is_child;
+    mbool_t is_child;
     mstr_t entry;
+};
+
+struct MerryStateMachine
+{
+    MerryState current_state;
+    MerryCLP *parser;
+    int argc;
+    char **argv;
+    int index; // Current index in argv
+    mbool_t is_child;
 };
 
 MerryCLP *merry_parse_options(int argc, char **argv, mbool_t child);
@@ -64,7 +79,5 @@ MerryCLP *merry_parse_options(int argc, char **argv, mbool_t child);
 void merry_print_help();
 
 void merry_destroy_parser(MerryCLP *clp);
-
-mret_t merry_parse_d_options(MerryCLP *clp, char *opt);
 
 #endif

@@ -7,12 +7,14 @@ _MERRY_INTERNAL_ MerryMemPage *merry_mem_allocate_new_mempage()
     if (new_page == RET_NULL)
     {
         // failed allocation
+        mreport("Failed to allocate a new MEM page");
         return RET_NULL;
     }
     // try allocating the address space
     if ((new_page->address_space = (mqptr_t)_MERRY_MEMORY_PGALLOC_MAP_PAGE_) == NULL)
     {
         free(new_page);
+        mreport("Request for memory failed[SYS ERR]");
         return RET_NULL; // we failed
     }
     // everything went successfully
@@ -25,6 +27,7 @@ _MERRY_INTERNAL_ MerryMemPage *merry_mem_allocate_new_mempage_provided(mqptr_t p
     if (new_page == RET_NULL)
     {
         // failed allocation
+        mreport("Failed to allocate a new MEM page");
         return RET_NULL;
     }
     // try allocating the address space
@@ -48,10 +51,12 @@ _MERRY_INTERNAL_ void merry_mem_free_mempage(MerryMemPage *page)
 // exposed function: initialize memory with num_of_pages pages
 MerryMemory *merry_memory_init(msize_t num_of_pages)
 {
+    inlog("Initializing Component Memory...");
     MerryMemory *memory = (MerryMemory *)malloc(sizeof(MerryMemory));
     if (memory == RET_NULL)
     {
         // we failed
+        mreport("Failed to allocate memory for MEM");
         return RET_NULL;
     }
     memory->error = MERRY_ERROR_NONE;
@@ -60,6 +65,7 @@ MerryMemory *merry_memory_init(msize_t num_of_pages)
     if (memory->pages == RET_NULL)
     {
         // failed
+        mreport("Failed to allocate memory for MEM PAGES");
         free(memory);
         return RET_NULL;
     }
@@ -96,10 +102,12 @@ MerryMemory *merry_memory_init_provided(mqptr_t *mapped_pages, msize_t num_of_pa
 {
     // just perform the regular allocation but don't map new pages
     // instead use the already mapped ones
+    inlog("Initializing Component Memory...");
     MerryMemory *memory = (MerryMemory *)malloc(sizeof(MerryMemory));
     if (memory == RET_NULL)
     {
         // we failed
+        mreport("Failed to allocate memory for MEM");
         return RET_NULL;
     }
     memory->error = MERRY_ERROR_NONE;
@@ -109,6 +117,7 @@ MerryMemory *merry_memory_init_provided(mqptr_t *mapped_pages, msize_t num_of_pa
     {
         // failed
         free(memory);
+        mreport("Failed to allocate memory for MEM PAGES");
         return RET_NULL;
     }
     // now we need to initialize every single page

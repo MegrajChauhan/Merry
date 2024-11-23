@@ -2,14 +2,17 @@
 
 mret_t merry_requestHdlr_init(msize_t queue_len, MerryCond *cond)
 {
+    inlog("Creating a REQUEST HANDLER");
     req_hdlr.queue = merry_request_queue_init(queue_len);
     if (req_hdlr.queue == RET_NULL)
     {
+        mreport("Failed to initialize the REQUEST HANDLER's QUEUE");
         return RET_FAILURE;
     }
     req_hdlr.lock = merry_mutex_init();
     if (req_hdlr.lock == RET_NULL)
     {
+        mreport("Failed to initialize the REQUEST HANDLER's QUEUE");
         merry_request_queue_destroy(req_hdlr.queue);
         return RET_FAILURE;
     }

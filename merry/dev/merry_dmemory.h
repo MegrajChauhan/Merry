@@ -33,6 +33,7 @@
 #include <string.h>
 #include <stdatomic.h>
 #include "merry_request.h"
+#include "merry_console.h"
 
 typedef struct MerryDMemPage MerryDMemPage; // the memory page
 typedef struct MerryDMemory MerryDMemory;   // the memory that manages these pages

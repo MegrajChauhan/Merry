@@ -60,25 +60,25 @@ mret_t merry_main_parse_options(int argc, char **argv)
         return RET_FAILURE;
     }
     // if help is to be printed, ignore every other options
-    if (cmd_opts->_help == mtrue)
+    if (cmd_opts->help == mtrue)
     {
         merry_print_help();
         merry_cleanup_and_exit(0);
     }
     // if version is to be printed, do the same as help
-    if (cmd_opts->_version == mtrue)
+    if (cmd_opts->version == mtrue)
     {
         fprintf(stdout, "Merry Virtual Machine: A 64-bit virtual machine\nLatest version-%lu %s\n", _MERRY_VERSION_, _MERRY_VERSION_STATE_);
         merry_cleanup_and_exit(0);
     }
     // see if input file was provided or not
-    if (cmd_opts->_inp_file == NULL)
+    if (cmd_opts->inp_file == NULL)
     {
         mreport("Expected path to input file, provided none.");
         merry_print_help();
         goto _err;
     }
-    log("Received Input File: %s'%s'%s", BOLDWHITE, cmd_opts->_inp_file, RESET);
+    log("Received Input File: %s'%s'%s", BOLDWHITE, cmd_opts->inp_file, RESET);
     goto _success;
 _err:
     merry_destroy_parser(cmd_opts);
@@ -90,20 +90,22 @@ _success:
 void merry_cleanup_and_exit(msize_t ret)
 {
     merry_destroy_parser(cmd_opts);
-    merry_thread_destroy(os_thread);
     if (_os_init == mtrue)
+    {
+        merry_thread_destroy(os_thread);
         merry_os_destroy();
+    }
     exit(ret);
 }
 
 int merry_main()
 {
     inlog("Pre-Initialization[VM about to start execution]");
-    if (merry_os_init(cmd_opts->_inp_file, (cmd_opts->option_count > 0) ? cmd_opts->_options_ : NULL, cmd_opts->option_count, cmd_opts->freeze) == RET_FAILURE)
+    if (merry_os_init(cmd_opts->inp_file, (cmd_opts->option_count > 0) ? cmd_opts->options : NULL, cmd_opts->option_count, cmd_opts->freeze) == RET_FAILURE)
         return 1;
     _os_init = mtrue;
-    if (cmd_opts->_dump == mtrue)
-        merry_os_produce_dump(cmd_opts->_dump_file);
+    if (cmd_opts->dump == mtrue)
+        merry_os_produce_dump(cmd_opts->dump_file);
     os_thread = merry_thread_init();
     if (os_thread == NULL) // We can never be sure that this will always work so no debug assertions
     {
@@ -111,16 +113,15 @@ int merry_main()
         return 1;
     }
     inlog("Attempting to start the Manager(OS) Thread");
-    // if (merry_create_thread(os_thread, &merry_os_start_vm, NULL) == RET_FAILURE)
-    // {
-    //     mreport("After-initialization failure[The Manager Thread failed to start]");
-    //     return 1;
-    // }
+    if (merry_create_thread(os_thread, &merry_os_start_vm, NULL) == RET_FAILURE)
+    {
+        mreport("After-initialization failure[The Manager Thread failed to start]");
+        return 1;
+    }
     inlog("Started execution....");
     inlog("Waiting for the VM to finish...");
-    // merry_thread_join(os_thread, NULL);
-    // return merry_os_get_ret();
-    return 0;
+    merry_thread_join(os_thread, NULL);
+    return merry_os_get_ret();
 }
 
 mret_t merry_get_and_set_id()
