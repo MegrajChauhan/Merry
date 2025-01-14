@@ -11,6 +11,7 @@
 #include "merry_types.h"
 #include "merry_core.h"
 #include "merry_request_hdlr.h"
+#include "merry_sys_defin.h"
 #include "merry_console.h"
 #include <stdlib.h>
 #ifdef _USE_LINUX_
@@ -23,6 +24,7 @@
 merry_syscall(open);
 merry_syscall(read);
 merry_syscall(write);
+merry_syscall(exit);
 
 /**
  * Ma = syscall call number

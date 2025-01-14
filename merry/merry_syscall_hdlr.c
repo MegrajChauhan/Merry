@@ -13,7 +13,7 @@ merry_syscall(open)
         return;
     }
 #ifdef _USE_LINUX_
-    c->registers[Ma] = syscall(c->registers[Ma], _name, c->registers[M2], c->registers[M3], c->registers[M4], c->registers[M5]);
+    c->registers[Ma] = syscall(SYS_open, _name, c->registers[M2], c->registers[M3], c->registers[M4], c->registers[M5]);
 #endif
     // merry_update_errno();
     c->registers[Mb] = merry_get_errno();
@@ -26,7 +26,7 @@ merry_syscall(read)
     register msize_t len = c->registers[M3];
     mbyte_t arr[len];
 #ifdef _USE_LINUX_
-    c->registers[Ma] = syscall(c->registers[Ma],c->registers[M1], arr, len);
+    c->registers[Ma] = syscall(SYS_read, c->registers[M1], arr, len);
 #endif
     // merry_update_errno();
     c->registers[Mb] = merry_get_errno();
@@ -51,10 +51,16 @@ merry_syscall(write)
         return;
     }
 #ifdef _USE_LINUX_
-    c->registers[Ma] = syscall(c->registers[Ma], c->registers[M1], arr, len);
+    c->registers[Ma] = syscall(SYS_write, c->registers[M1], arr, len);
 #endif
     // merry_update_errno();
     c->registers[Mb] = merry_get_errno();
+}
+
+merry_syscall(exit)
+{
+    inlog("SYSCALL MADE(TERMINATING)");
+    merry_requestHdlr_panic(_REQ_EXIT, c->core_id);
 }
 
 void merry_exec_syscall(MerryCore *c)
@@ -63,19 +69,19 @@ void merry_exec_syscall(MerryCore *c)
     switch (c->registers[Ma])
     {
 #ifdef _USE_LINUX_
-    case SYS_open:
+    case _SYS_OPEN:
         merry_syscall_open(c);
         break;
-    case SYS_read:
+    case _SYS_READ:
         merry_syscall_read(c);
         break;
-    case SYS_write:
+    case _SYS_WRITE:
         merry_syscall_write(c);
         break;
 #endif
     default:
 #ifdef _USE_LINUX_
-        mreportA("Unsupported Syscall request[NOT IMPLEMENTED SAFE SYSCALL FOR SYSCALL NUMBER %lu]",c->registers[Ma]);
+        mreportA("Unsupported Syscall request[NOT IMPLEMENTED SAFE SYSCALL FOR SYSCALL NUMBER %lu]", c->registers[Ma]);
         c->registers[Ma] = 0;
 #endif
         // merry_update_errno();
