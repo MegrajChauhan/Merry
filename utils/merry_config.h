@@ -1,6 +1,11 @@
 #ifndef _MERRY_CONFIGS_
 #define _MERRY_CONFIGS_
 
+// Only 64-bit support
+#if __SIZEOF_VOID__ == 4
+#error Merry Only supports 64-bit systems
+#endif
+
 #define _MERRY_LITTLE_ENDIAN_ 0x00
 #define _MERRY_BIG_ENDIAN_ 0x01
 
@@ -10,13 +15,13 @@
 #define _MERRY_VERSION_MINOR_ 1
 #define _MERRY_VERSION_MAJOR_ 0
 
-#define _MERRY_VERSION_ (_MERRY_VERSION_MAJOR_ * 100000) + (_MERRY_VERSION_MINOR_ * 10000) + _MERRY_VERSION_CHANGE_
-#define _MERRY_VERSION_STATE_ "test-3.20"
+// #define _MERRY_VERSION_ (_MERRY_VERSION_MAJOR_ * 100000) + (_MERRY_VERSION_MINOR_ * 10000) + _MERRY_VERSION_CHANGE_
+// #define _MERRY_VERSION_STATE_ "test-3.20"
 
-#define _MERRY_ID_FILE_ "__num__"               // update the location
-#define _MERRY_CMAIN_ "./build/cmain"           // update the location
-#define _MERRY_SUBSYSMAIN_ "./build/subsysmain" // update the location
-#define _MERRY_VMMAIN_ "./build/mvm"            // update the location
+// #define _MERRY_ID_FILE_ "__num__"               // update the location
+// #define _MERRY_CMAIN_ "./build/cmain"           // update the location
+// #define _MERRY_SUBSYSMAIN_ "./build/subsysmain" // update the location
+#define _MERRY_VMMAIN_ "./build/mvm" // update the location
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #define _MERRY_BYTE_ORDER_ _MERRY_LITTLE_ENDIAN_
@@ -43,7 +48,7 @@
 #define _MERRY_HOST_OS_LINUX_ 1
 #define _USE_LINUX_
 #define _MERRY_HOST_ID_OS_ 0x00
-#ifndef __USE_MISC
+#ifndef __USE_MISC // for STDLIB
 #define __USE_MISC
 #endif
 #endif
