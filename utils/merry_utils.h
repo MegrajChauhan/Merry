@@ -50,16 +50,22 @@
 
 #else
 #define _MERRY_TEST_
-#define merry_assert(cond)                                                                                       \
-    do                                                                                                           \
-    {                                                                                                            \
-        if (surelyF(!(cond)))                                                                                    \
-        {                                                                                                        \
-            printf("Condition: "_MERRY_STRINGIFY_((cond)) ": Failed. Line %zu[FILE: %s]\n", __LINE__, __FILE__); \
-        }                                                                                                        \
-        exit(-1);                                                                                                \
+#define merry_assert(cond)                                                                                                              \
+    do                                                                                                                                  \
+    {                                                                                                                                   \
+        if (surelyF(!(cond)))                                                                                                           \
+        {                                                                                                                               \
+            merry_talk(stderr, "ERROR: ", "Condition: "_MERRY_STRINGIFY_((cond)) ": Failed. Line %zu[FILE: %s]\n", __LINE__, __FILE__); \
+            exit(-1);                                                                                                                       \
+        }                                                                                                                               \
     } while (0)
 
+/**
+ * The existence of this pointer checker is based on:
+ * -- The VM may pass in NULL pointers or invalid pointers
+ * So during the testing, if we figure out which pointers are freed and how, we can solve the issue
+ * and this macro is  useless in the release mode.
+ */
 #define merry_check_ptr(ptr) merry_assert(ptr != NULL)
 
 #define merry_log(msg, ...) merry_talk(stdout, "LOG", msg, __VA_ARGS__)

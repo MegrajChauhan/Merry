@@ -1,8 +1,8 @@
 # Variable definitions
 CC = gcc
 FLAGS = -Wall -Wextra -MMD -MP -O3
-DIRS = merry/core merry/defs merry/dev merry/dev/subsystem merry/os merry/tools utils 
-SRC_DIR = merry/abs/ merry/
+DIRS = utils
+SRC_DIR = merry/
 INC_DIRS = ${addprefix -I, ${DIRS}}
 FLAGS += ${flags}
 
@@ -17,11 +17,11 @@ usage:
 	@echo "make all dirs=<Output_directory>"
 	@echo "make clean dirs=<Output_directory>"
 	
-all: __pretest directories ${OUTPUT_FILES_NAME}
-	${CC} ${FLAGS} ${OUTPUT_FILES_NAME} main.c merry/arithmetic.S ${INC_DIRS} -o ${OUTPUT_DIR}mvm
-	${CC} ${FLAGS} ${OUTPUT_FILES_NAME} childmain.c merry/arithmetic.S ${INC_DIRS} -o ${OUTPUT_DIR}cmain
-	${CC} -ffunction-sections -fdata-sections -Wl,--gc-sections ${FLAGS} ${OUTPUT_FILES_NAME} merry_submain.c ${INC_DIRS} -o ${OUTPUT_DIR}subsysmain
-	make -C asm all dirs=../build/ flags=${flags}
+all: directories ${OUTPUT_FILES_NAME}
+	${CC} ${FLAGS} ${OUTPUT_FILES_NAME} main.c ${INC_DIRS} -o ${OUTPUT_DIR}mvm
+# ${CC} ${FLAGS} ${OUTPUT_FILES_NAME} childmain.c merry/arithmetic.S ${INC_DIRS} -o ${OUTPUT_DIR}cmain
+# ${CC} -ffunction-sections -fdata-sections -Wl,--gc-sections ${FLAGS} ${OUTPUT_FILES_NAME} merry_submain.c ${INC_DIRS} -o ${OUTPUT_DIR}subsysmain
+# make -C asm all dirs=../build/ flags=${flags}
 
 # The command for building the assembler is the simplest for now but hey! it works!
 
@@ -39,20 +39,20 @@ directories:
 clean:
 	rm -rf ${OUTPUT_DIR}
 
-__pretest:
-ifeq ($(OS),Windows_NT)
-    DIRS += merry/abs/win
-	@echo Windows is not currently fully supported :(
-	@exit
-	INC_DIRS += ${addprefix -I, merry/abs/win}
-else
-    UNAME_S := $(shell uname -s)
-    ifeq ($(UNAME_S),Linux)
-		DIRS += merry/abs/linux
-		INC_DIRS += ${addprefix -I, merry/abs/linux}
-    endif
-endif
+# __pretest:
+# ifeq ($(OS),Windows_NT)
+#     DIRS += merry/abs/win
+# 	@echo Windows is not currently fully supported :(
+# 	@exit
+# 	INC_DIRS += ${addprefix -I, merry/abs/win}
+# else
+#     UNAME_S := $(shell uname -s)
+#     ifeq ($(UNAME_S),Linux)
+# 		DIRS += merry/abs/linux
+# 		INC_DIRS += ${addprefix -I, merry/abs/linux}
+#     endif
+# endif
 
-.PHONY: __pretest all usage clean directories
+.PHONY: all usage clean directories
 
 -include $(DEPS)
