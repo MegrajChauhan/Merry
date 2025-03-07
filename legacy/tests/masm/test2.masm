@@ -1,6 +1,0 @@
-;; test2
-
-proc abc
-
-abc
-   halt
