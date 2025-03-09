@@ -87,8 +87,8 @@ union MerryDoubleToQword
     mqword_t q_val;
 };
 
-mbool_t str_starts_with(mstr_t src, mstr_t _prefix);
+// mbool_t str_starts_with(mstr_t src, mstr_t _prefix);
 
-mbool_t str_ends_with(mstr_t src, mstr_t _suffix);
+// mbool_t str_ends_with(mstr_t src, mstr_t _suffix);
 
 #endif
