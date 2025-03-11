@@ -44,4 +44,6 @@ typedef HANDLE mdataline_t;
 
 _MERRY_DEFINE_FUNC_PTR_(_THRET_T_, mthexec_t, mptr_t);
 
+mret_t merry_open_pipe(mdataline_t *rline, mdataline_t *wline);
+
 #endif

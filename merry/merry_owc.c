@@ -1,22 +1,9 @@
 #include <merry_owc.h>
 
-_MERRY_INTERNAL_ mret_t merry_open_pipe(MerryOWC *owc)
+_MERRY_INTERNAL_ mret_t merry_open_pipe_owc(MerryOWC *owc)
 {
     merry_check_ptr(owc);
-#ifdef _USE_LINUX_
-    if (pipe(owc->pfd) == -1)
-        return RET_FAILURE;
-#elif defined(_USE_WIN_)
-    SECURITY_ATTRIBUTES saAttr;
-    saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-    saAttr.bInheritHandle = TRUE; // Handles can be inherited by child processes
-    saAttr.lpSecurityDescriptor = NULL;
-
-    // Create an anonymous owc
-    if (!CreatePipe(&owc->_read_line, &owc->_write_line, &saAttr, 0)) // Default size
-        return RET_FAILURE;
-#endif
-    return RET_SUCCESS;
+    return merry_open_pipe(&owc->_read_line, &owc->_write_line);
 }
 
 MerryOWC *merry_open_owc()
@@ -25,7 +12,7 @@ MerryOWC *merry_open_owc()
     if (owc == NULL)
         return RET_NULL;
 
-    if (merry_open_pipe(owc) == RET_FAILURE)
+    if (merry_open_pipe_owc(owc) == RET_FAILURE)
     {
         free(owc);
         return RET_NULL;
@@ -84,7 +71,7 @@ mret_t merry_owc_reopen(MerryOWC *owc)
 
     // to be sure, we will make sure to close both ends
     merry_owc_free_channel(owc);
-    if (merry_open_pipe(owc) == RET_FAILURE)
+    if (merry_open_pipe_owc(owc) == RET_FAILURE)
         return RET_FAILURE;
 
     owc->_in_use = mtrue;

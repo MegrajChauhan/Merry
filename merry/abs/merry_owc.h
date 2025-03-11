@@ -33,6 +33,16 @@ struct MerryOWC
     mbool_t _wclosed;
 };
 
+#define merry_owc_init(owc, rline, wline, rclosed, wclosed) \
+    do                                                      \
+    {                                                       \
+        (owc)->_read_line = (rline);                        \
+        (owc)->_write_line = (wline);                       \
+        (owc)->_in_use = mtrue;                             \
+        (owc)->_rclosed = (rclosed);                        \
+        (owc)->_wclosed = (wclosed);                        \
+    } while (0)
+
 MerryOWC *merry_open_owc();
 
 void merry_owc_only_speak(MerryOWC *owc);
