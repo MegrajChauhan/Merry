@@ -25,19 +25,9 @@ struct MerryMemoryPageBase
     mbool_t init;
 };
 
-#define merry_init_normal_memory_page(pg, buf)   \
-    do                                           \
-    {                                            \
-        ((pg)->buf = (buf); (pg)->init = mtrue;) \
-    } while (0)
+MerryNormalMemoryPage *merry_create_normal_memory_page();
 
-#define merry_deinit_normal_memory_page(pg)                          \
-    do                                                               \
-    {                                                                \
-        merry_check_ptr((pg));                                       \
-        merry_check_ptr((pg)->buf);                                  \
-        merry_return_memory_page((pg)->buf, _MERRY_BYTES_PER_PAGE_); \
-    } while (0)
+mret_t merry_initialize_normal_memory_page(MerryNormalMemoryPage *pg);
 
 MerryNormalMemoryPage *merry_obtain_normal_memory_page();
 

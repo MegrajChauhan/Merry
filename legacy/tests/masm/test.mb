@@ -1,0 +1,53 @@
+;; ;; This is the "build script" for the project
+
+data asm/tests/masm/test.mdat ;; Include the "test.mdat" data file and put its contents at first
+code asm/tests/masm/test.masm ;; The code
+code asm/tests/masm/test2.masm
+
+;; depends <another .mb file to include here>
+
+;; Here the <THING TO DO> means one of the above command obviously
+;; defined <CONSTANT/VARIABLE> <THING TO DO> end
+;; ndefined <CONSTANT/VARIABLE> <THING TO DO> end
+
+;; ;; Thanks to the way the input file format is created, there can be multiple entries
+;; ;; The first entry that is given is the main thread that will start
+entry _just_a_label
+;; entry <ANOTHER ENTRY LABEL OR PROCEDURE>
+
+;; ;; eepe = EAT entry per entry(meaning how many times to copy the above two in final binary)
+;; eepe <A NUMBER>
+
+;; ;; eepe but just for ENTRY
+;; teepe <ENTRY> <A NUMBER> ;; if <ENTRY> doesn't exist, a new entry is created
+
+;; Here is a more detailed explanation:
+;; The file format allows you to start with multiple threads from the start.
+;; Hence, you can have multiple "main" functions.
+;; Here is an example:
+;; entry my_main
+;; eepe 12
+;; The above two will result in 12 threads being created which will run from the start.
+;; All 12 will start from the same address.
+;; If you want to have different threads to start from different address then just 
+;; add more entries.
+;; Here is another example:
+;; entry main_1
+;; entry ur_mon
+;; entry sum
+;; WIth the above three lines, you have three entries at different addresses defined.
+;; eepe 3
+;; With the above line, there will be 3 threads per entry i.e 3 threads running main_1 and so on for the other 2.
+;; teepe ur_mon 5
+;; This above line will overwrite the 3 just for ur_mon and there will now be 5 threads for this address.
+;; Note that if you use eepe once again after this, the effect of teepe is overwritten.
+
+;; Include the files as necessary just like above
+;; For now these are the only two things that can be done with this file type
+;; In future, maybe this file does more than just this
+
+;; The order in which the files appear is the exact order in which they appear in their respective sections in the final binary
+;; This file makes sure that a file is not included more than once.
+;; With the probable addition of built-in variables, more things could be done.
+;; Data file cannot contain code and the code file cannot contain data.
+;; There is no need for includes as any file in here already shares a scope.

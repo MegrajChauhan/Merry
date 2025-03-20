@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <dlfcn.h>
 
 typedef pthread_t mthread_t;
 typedef pthread_mutex_t mmutex_t;
@@ -41,6 +42,8 @@ typedef HANDLE mdataline_t;
 // Default flag (not used in Windows)
 #define _MERRY_FLAG_DEFAULT_
 #endif
+
+typedef mptr_t mdlentry_t; // same for windows and linux
 
 _MERRY_DEFINE_FUNC_PTR_(_THRET_T_, mthexec_t, mptr_t);
 

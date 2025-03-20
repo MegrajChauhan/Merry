@@ -1,0 +1,315 @@
+;; This contains just the code
+;; Any data here will result in an error
+
+;; There are two types of labels: procedures and simple labels
+
+proc main ;; The above is a procedure i.e it is globally visible meaning it may be called from any file
+
+main ;; the definition of proc main
+
+;; Given that parsing becomes simpler, labels cannot share the same name throughout the same project
+_just_a_label
+  nop
+  halt
+
+;; variants of add
+  add Mm1, 1234 ;; regr + imm
+  add Ma, Mb    ;; regr + regr
+  add M1, a     ;; regr + variable
+  ;; unfortunately there is no "add M1, [Ma]" with address in Ma
+  ;; The reason for this is that there is no instruction in the VM that supports this
+  ;; The ISA of VM was to make execution faster so the complicated decoding can be avoided
+  ;; This has limited us in the number of instructions we can have.
+  ;; We may implement extended ISA in the future
+
+  ;; The same from above can be copied for sub, mul, div and mod
+  sub Mm1, 1234 ;; regr - imm
+  sub Ma, Mb    ;; regr - regr
+  sub M1, a     ;; regr - variable
+
+  mul Mm1, 1234 ;; regr * imm
+  mul Ma, Mb    ;; regr * regr
+  mul M1, a     ;; regr * variable
+
+  div Mm1, 1234 ;; regr / imm
+  div Ma, Mb    ;; regr / regr
+  div M1, a     ;; regr / variable
+
+  mod Mm1, 1234 ;; regr % imm
+  mod Ma, Mb    ;; regr % regr
+  mod M1, a     ;; regr % variable
+  
+  ;; There isn't much difference between the signed and unsigned version of the arithmetic
+  ;; instructions. If you provide immediates that are properly sign extended then that will work
+  ;; too. Signed and unsigned both affect the same set of flags and so using any is fine.
+  ;; The below iadd with immediate performs sign extension to the immediate which the unsigned
+  ;; doesn't do. Unless dedicated versions of the signed instructions for all lengths of data
+  ;; types is provided, the program has no choice but to perform the sign extension first and
+  ;; then proceeding to use the unsigned instructions. For eg: iadd M1, Mm1 assumes a 64-bit
+  ;; signed value in both registers. So you will have to perform a sign extension first.
+  ;; for example: say you have to add 7288 and -73 but you have stored -73 as byte in memory
+  ;; you may do
+  movsxb Ma, Ma ;; assuming the operand is already in Ma
+  iadd Ma, 7288 ;; Now it behaves as intended
+
+  iadd Mm5, -347 ;; treat as signed
+  iadd M1, Mm1
+  
+  isub Mm5, -347
+  isub M1, Mm1
+  
+  imul Mm5, -347
+  imul M1, Mm1
+  
+  idiv Mm5, -347
+  idiv M1, Mm1
+  
+  imod Mm5, -347
+  imod M1, Mm1
+
+  ;; NOTE: The assembler ignores all commas so you can do whatever you want.
+  
+  ;; FLoating point instructions don't take anything other than registers and variables as operands
+  ;; Having immediates would be convinient, isn't it?
+  ;; I am getting new ideas as I develop the assembler so in future
+  addf M1, M2 ;; 32-bit floating point values
+  addlf M1, M2 ;; 64-bit floating point values
+
+  subf M1, M2 
+  sublf M1, M2
+
+  mulf M1, M2 
+  mullf M1, M2
+
+  divf M1, M2 
+  divlf M1, M2
+
+  ;; must be defined as "df" or "dlf"
+  addf M1, float ;; 32-bit floating point values
+  addlf M1, long_float ;; 64-bit floating point values
+
+  subf M1, float 
+  sublf M1, long_float
+
+  mulf M1, float
+  mullf M1, long_float
+
+  divf M1, float 
+  divlf M1, long_float
+
+  ;; No mods for floats
+
+  mov Mf, 56379 ;; 32-bit immediates only
+  mov Me, 7238.544 ;; only 32-bit floating point numbers
+  mov Ma, Mb
+  mov Mc, d ;; translated to corresponding load instruction
+  mov Ma, _just_a_label ;; This also works now. The address of the label is stored.
+                        ;; since we allow variables and labels to have the same name
+                        ;; variables will get the priority
+
+  movl Mf, 85789375389 ;; 64-bit immediates
+  movl Mm4, 378246.437437 ;; 64-bit floating point immediate
+  ;; movl M5, M3 ;; This won't throw an error but this is useless to do as the same can be done with mov M5, M3
+  ;; movl Ma, a  ;; The same as mov regr, any_var 
+
+  ;; These below only work on registers
+  movb Ma, Mb ;; move the lowest byte from Mb to Ma, overwrites the above bytes of Ma
+  movw Ma, Mb ;; move the lower 2 bytes from Mb to Ma, overwrites the above bytes of Ma
+  movd Ma, Mb ;; move the lower 4 bytes from Mb to Ma, overwrites the above bytes of Ma
+
+  ;; It would have made more sense if "movl regr, var" forced the assembler to translate it to 
+  ;; 64-bit load no matter what but then that would be preety useless.
+
+  ;; These instructions will ignore the numbers after the '.'
+  movsxb Ma, 65   ;; for bytes only
+  movsxw Ma, 7236 ;; for word only
+  movsxd Ma, -1739 ;; for dwords only 
+
+  movsxb Ma, Mb ;; sign extends only the specified number of bytes(overwrites the higher bytes)
+  movsxw Ma, Mb ;; sign extends only the specified number of bytes(overwrites the higher bytes)
+  movsxd Ma, Mb ;; sign extends only the specified number of bytes(overwrites the higher bytes) 
+  
+  movsxb Ma, a ;; translated to corresponding load and movesxX instruction
+  movsxw Ma, a ;; translated to corresponding load and movesxX instruction
+  movsxd Ma, a ;; translated to corresponding load and movesxX instruction
+  
+  ;; Jump instruction has two formats in truth.
+  ;; One takes the literal address to jump to while the other takes an offset
+  ;; Taking an offset isn't really useful for now
+  ;; So we will only have one type of JMP.
+  jmp _just_a_label ;; only takes labels as the operand.
+
+  call main ;; There is no rule that says that call should work on procedures only
+            ;; but do make sure that there is a ret somewhere after the label
+  call Ma   ;; Newly added instruction- Will be helpful for function pointers
+  ret
+
+  ;; SVA= Stack Variable Access, SVC = Stack Variable Change
+  ;; negative offset and attempts to change BP's old value will result in error
+  sva Ma, 829 ;; Access the variable at offset of 829 from BP and put it in Ma
+  sva Ma, a   ;; The offset is in 'a'
+  sva Ma, Mb  ;; The offset is in Mb
+  svc Ma, 3   ;; Change the variable at offset 3 from BP to the value in Ma
+  svc Ma, a   ;; The offset is in 'a'
+  svc Ma, Mb   ;; The offset is in Mb
+
+  pusha
+  popa
+  push 1234 ;; use negatives as well, floats as well
+  pop Ma
+  push d ;; here the assembler will handle the internal translation based on the datatype of the variable
+  push _just_a_label ;; push the address of the label
+
+  pop Ma
+  pop c
+  pop _just_a_label ;; just to be sure, this also works but the thing in DATA memory will be affected. Serious chances of corruption
+  ;; Jokes on you actually. The above in translated to "push _just_a_label". Now! You bad guy trying to be a smart-ass, figure out why
+  ;; your code isn't doing what it says.
+
+  and Ma, 7383
+  and Ma, Mb
+  ;; and Ma, a ;; This doesn't work for logical instructions
+  or Ma, 7383
+  or Ma, Mb
+  xor Ma, 7383
+  xor Ma, Mb
+  lshift Mb, 23
+  rshift Ma, 12
+  
+  not Mf
+  inc Ma
+  dec Ma
+
+  cmp Ma, 4683
+  cmp Mc, Md
+  cmp M1, d
+  
+  ;; Md is the scale
+  ;; Mc is the index
+  ;; Mb is the base
+  ;; Ma is the destination
+  ;; Ma = Mb + Mc * Md
+  lea Ma Mb Mc Md
+
+  ;; With the load/store regr, regr
+  ;; This translates to 64-bit load internally. Thus, perform logical operations to get the actually needed data
+
+  loadq Ma, a
+  loadq Ma, Mb ;; address in Mb
+  loadd Ma, a
+  loadd Ma, Mb
+  loadw Ma, a
+  loadw Ma, Mb
+  loadb Ma, a
+  loadb Ma, Mb
+
+  ;; Here the value in the register is stored in the variable so don't be confused.
+  ;; This syntax is just to feel good because it would be odd otherwise(Every other instruction following the opposite syntax of this doesn't feel right to me)
+  storeq Ma, a
+  storeq Ma, Mb ;; address in Mb(store what is in Ma into the address in Mb)
+  stored Ma, a
+  stored Ma, Mb
+  storew Ma, a
+  storew Ma, Mb
+  storeb Ma, a
+  storeb Ma, Mb
+
+  atm loadq Ma, a
+  atm loadd Ma, a
+  atm loadw Ma, a
+  atm loadb Ma, a
+ 
+  atm storeq Ma, a
+  atm stored Ma, a
+  atm storew Ma, a
+  atm storeb Ma, a
+  
+  ;; if *a == Ma then *a = Mb else Ma = *a
+  cmpxchg Ma, Mb, a ;; obviously the variable should preferably be byte sized
+  
+  outr  ;; print the content of all registers as signed int
+  uoutr ;; print the content of all registers as signed int 
+
+  cin Ma ;; read a character into Ma
+  cout Ma ;; print a character from Ma
+
+  in Mb ;;read a byte
+  out Mb ;; print the byte
+  inw Mc
+  outw Mc
+  ind Mc
+  outd Mc
+  inq Mc
+  outq Mc
+  
+  uin Mb 
+  uout Mb
+  uinw Mc
+  uoutw Mc
+  uind Mc
+  uoutd Mc
+  uinq Mc
+  uoutq Mc
+
+  inf Ma ;; 32-bit floats
+  inlf Mb ;; 64-bit floats
+  outf Ma
+  outlf Mb
+
+  ;; for the following two instruction, the length of the string must be in Mc
+  sin greet
+  sout name
+
+  ;; excg family of instruction exchanges the said number bytes between the registers
+  ;; upper bytes are conserved
+  excgb Ma, Mb
+  excgw Ma, Mb
+  excgd Ma, Mb
+  excgq Ma, Mb
+
+  ;; The same as movX but the upper bytes are not affected
+  moveb Ma, Mb
+  movew Mc, Md
+  moved Me, Mf
+
+  cflags ;; clear the flags register
+  reset  ;; reset all registers to 0
+  clz    ;; clear zero flag
+  cln    ;; clear negative flag
+  clc    ;; clear carry flag
+  clo    ;; clear overflow flag
+
+  jnz _just_a_label
+  jz _just_a_label
+  jne _just_a_label
+  je _just_a_label
+  jnc _just_a_label
+  jc _just_a_label
+  jno _just_a_label
+  jo _just_a_label
+  jnn _just_a_label
+  jn _just_a_label
+  jng _just_a_label
+  jg _just_a_label
+  jns _just_a_label
+  js _just_a_label
+  jge _just_a_label
+  jse _just_a_label
+
+  loop _just_a_label ;; loops until Mc != 0
+
+  intr ABC
+  intr 123
+
+  sete _just_a_label ;; set exception function(a function that will be called when calle is executed)
+  calle
+
+  ;; The convention for this is that the program should provide the arguments in order:
+  ;; Ma, M1, M2, M3, M4, M4, M5
+  ;; The order of the arguments can be looked up in the ABI for the platform.
+  ;; Ma is the syscall number
+  syscall
+
+;; Here is the thing.
+;; A procedure or a label can have the same name as an identifier
+;; The assembler will know which you are referencing based on the context.
