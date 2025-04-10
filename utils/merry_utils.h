@@ -41,6 +41,16 @@
 // tools
 #define merry_talk(f, kind, message, ...) fprintf(f, kind ": " message, __VA_ARGS__)
 
+#define merry_check_condition(cond)                                                                                                     \
+    do                                                                                                                                  \
+    {                                                                                                                                   \
+        if (surelyF(!(cond)))                                                                                                           \
+        {                                                                                                                               \
+            merry_talk(stderr, "ERROR: ", "Condition: "_MERRY_STRINGIFY_((cond)) ": Failed. Line %zu[FILE: %s]\n", __LINE__, __FILE__); \
+            exit(-1);                                                                                                                   \
+        }                                                                                                                               \
+    } while (0)
+
 #ifdef _MERRY_RELEASE_
 
 #define merry_assert(cond)
@@ -50,15 +60,7 @@
 
 #else
 #define _MERRY_TEST_
-#define merry_assert(cond)                                                                                                              \
-    do                                                                                                                                  \
-    {                                                                                                                                   \
-        if (surelyF(!(cond)))                                                                                                           \
-        {                                                                                                                               \
-            merry_talk(stderr, "ERROR: ", "Condition: "_MERRY_STRINGIFY_((cond)) ": Failed. Line %zu[FILE: %s]\n", __LINE__, __FILE__); \
-            exit(-1);                                                                                                                       \
-        }                                                                                                                               \
-    } while (0)
+#define merry_assert(cond) merry_check_condition(cond)
 
 /**
  * The existence of this pointer checker is based on:
