@@ -14,7 +14,7 @@ typedef MerryList MerryDynamicList; // The same base though
 #define merry_is_dyn_list_empty(list) merry_is_list_empty(list)
 #define merry_is_dyn_list_full(list) merry_is_list_full(list)
 #define merry_dyn_list_has_at_least(list, len) merry_list_has_at_least(list, len)
-#define merry_create_dynamic_list(capacity, elem_len) ((MerryDynamicList*)merry_create_list((capacity), (elem_len)))
+#define merry_create_dynamic_list(capacity, elem_len, state) ((MerryDynamicList*)merry_create_list((capacity), (elem_len), (state)))
 #define merry_add_capacity_to_dynamic_list(list, _additional_cap) merry_add_capacity_to_list((MerryList*)(list), (_additional_cap))
 #define merry_dynamic_list_resize(list, factor) merry_list_resize_list((MerryList*)(list), (factor))
 #define merry_erase_dynamic_list(list) merry_erase_list((MerryList*)(list))

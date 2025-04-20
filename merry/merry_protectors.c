@@ -23,7 +23,7 @@ mret_t merry_cond_init(mcond_t *cond)
 #elif defined(_USE_WIN_)
     InitializeConditionVariable(cond);
 #endif
-    return cond; // return if success
+    return RET_SUCCESS; // return if success
 }
 
 void merry_mutex_destroy(mmutex_t mutex)

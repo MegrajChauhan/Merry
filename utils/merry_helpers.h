@@ -87,6 +87,8 @@ union MerryDoubleToQword
     mqword_t q_val;
 };
 
+void merry_LITTLE_ENDIAN_to_BIG_ENDIAN(MerryHostMemLayout *le);
+
 // mbool_t str_starts_with(mstr_t src, mstr_t _prefix);
 
 // mbool_t str_ends_with(mstr_t src, mstr_t _suffix);

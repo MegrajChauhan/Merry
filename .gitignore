@@ -8,3 +8,5 @@ inpFile.mbin
 push.sh
 main
 *.o
+compile_commands.json
+

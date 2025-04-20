@@ -46,7 +46,7 @@
     {                                                                                                                                   \
         if (surelyF(!(cond)))                                                                                                           \
         {                                                                                                                               \
-            merry_talk(stderr, "ERROR: ", "Condition: "_MERRY_STRINGIFY_((cond)) ": Failed. Line %zu[FILE: %s]\n", __LINE__, __FILE__); \
+            merry_talk(stderr, "ERROR", "Condition: "_MERRY_STRINGIFY_((cond)) ": Failed. Line %d[FILE: %s]\n", __LINE__, __FILE__); \
             exit(-1);                                                                                                                   \
         }                                                                                                                               \
     } while (0)
@@ -77,5 +77,7 @@
 #endif
 
 #define merry_err(msg, ...) merry_talk(stderr, "ERROR", msg, __VA_ARGS__)
+
+#define merry_msg(msg, ...) fprintf(stderr, msg "\n", __VA_ARGS__)
 
 #endif

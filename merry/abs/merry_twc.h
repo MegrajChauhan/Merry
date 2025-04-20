@@ -7,6 +7,7 @@
 #include <merry_types.h>
 #include <merry_utils.h>
 #include <merry_owc.h>
+#include "merry_state.h"
 #include <stdlib.h>
 
 typedef struct MerryTWC MerryTWC;
@@ -32,12 +33,13 @@ struct MerryTWC
 {
     MerryOWC rc;
     MerryOWC wc;
+    MerryState state;
 };
 
-mret_t merry_twc_base_form(MerryTWCBase *base);
+mret_t merry_twc_base_form(MerryTWCBase *base, MerryState *state);
 
 // we create this using the base
-MerryTWC *merry_twc_create(mdataline_t rline, mdataline_t wline);
+MerryTWC *merry_twc_create(mdataline_t rline, mdataline_t wline, MerryState *state);
 
 mret_t merry_twc_send(MerryTWC *twc, mbptr_t data, msize_t len);
 

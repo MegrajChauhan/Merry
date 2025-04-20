@@ -4,6 +4,7 @@
 #include <merry_config.h>
 #include <merry_utils.h>
 #include <merry_types.h>
+#include "merry_state.h"
 #include <stdlib.h>
 #include <string.h> // memcpy
 
@@ -16,6 +17,7 @@ struct MerryList
     msize_t buf_cap;
     msize_t curr_ptr; // the current index when there is an element
     msize_t max_ind;
+    MerryState lstate;
 };
 
 // curr_ptr points to the last element that was pushed
@@ -25,7 +27,7 @@ struct MerryList
 #define merry_is_list_full(list) (!merry_is_list_empty(list) && (list)->curr_ptr >= (list)->max_ind)
 #define merry_list_has_at_least(list, len) (!(merry_is_list_empty(list)) && ((((list)->curr_ptr) < (list)->max_ind) && (list)->curr_ptr + 1) >= (len))
 
-MerryList *merry_create_list(msize_t capacity, msize_t elem_len);
+MerryList *merry_create_list(msize_t capacity, msize_t elem_len, MerryState *state);
 
 // MerryList is not dynamic by default and hence we need ways to increase the estimated size
 // This adds to the current capacity

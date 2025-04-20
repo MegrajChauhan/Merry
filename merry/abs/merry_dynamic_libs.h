@@ -5,10 +5,11 @@
 #include <merry_utils.h>
 #include <merry_types.h>
 #include <merry_platform.h>
+#include "merry_state.h"
 
 // we don't know what type of function we might want
 
-mdlentry_t merry_load_dynamic_library(mstr_t path);
+mdlentry_t merry_load_dynamic_library(mstr_t path, MerryState *state);
 
 void merry_unload_dynamic_library(mdlentry_t entry);
 

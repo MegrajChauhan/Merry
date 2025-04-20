@@ -1,0 +1,65 @@
+#ifndef _MERRY_64_BIT_CORE_ISA_
+#define _MERRY_64_BIT_CORE_ISA_
+
+enum
+{
+  __NOP64,
+  __ADD64_REG,
+  __ADD64_IMM,
+  __ADD64_MEMB,
+  __ADD64_MEMW,
+  __ADD64_MEMD,
+  __ADD64_MEMQ,
+  
+  __SUB64_REG,
+  __SUB64_IMM,
+  __SUB64_MEMB,
+  __SUB64_MEMW,
+  __SUB64_MEMD,
+  __SUB64_MEMQ,
+  
+  __MUL64_REG,
+  __MUL64_IMM,
+  __MUL64_MEMB,
+  __MUL64_MEMW,
+  __MUL64_MEMD,
+  __MUL64_MEMQ,
+  
+  __DIV64_REG,
+  __DIV64_IMM,
+  __DIV64_MEMB,
+  __DIV64_MEMW,
+  __DIV64_MEMD,
+  __DIV64_MEMQ,
+
+  __IADD64_REG,
+  __IADD64_IMM,
+  __IADD64_MEMB,
+  __IADD64_MEMW,
+  __IADD64_MEMD,
+  __IADD64_MEMQ,
+  
+  __ISUB64_REG,
+  __ISUB64_IMM,
+  __ISUB64_MEMB,
+  __ISUB64_MEMW,
+  __ISUB64_MEMD,
+  __ISUB64_MEMQ,
+  
+  __IMUL64_REG,
+  __IMUL64_IMM,
+  __IMUL64_MEMB,
+  __IMUL64_MEMW,
+  __IMUL64_MEMD,
+  __IMUL64_MEMQ,
+  
+  __IDIV64_REG,
+  __IDIV64_IMM,
+  __IDIV64_MEMB,
+  __IDIV64_MEMW,
+  __IDIV64_MEMD,
+  __IDIV64_MEMQ,
+
+};
+
+#endif

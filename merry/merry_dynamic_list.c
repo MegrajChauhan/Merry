@@ -7,7 +7,7 @@ mret_t merry_dynamic_list_push(MerryDynamicList *list, mptr_t elem)
     merry_check_ptr(elem);
     merry_check_ptr(list->buf);
 
-    if (surelyF(merry_is_dynamic_list_full(list)))
+    if (surelyF(merry_is_dyn_list_full(list)))
     {
         // This is where the behavior shifts compared to the MerryList
 

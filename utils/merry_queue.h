@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <merry_types.h>
 #include <merry_utils.h>
+#include "merry_state.h"
 
 // The queues store items as pointers
 
@@ -39,6 +40,7 @@ struct MerryDynamicQueue
     MerryQueueNode *head;
     MerryQueueNode *tail;
     msize_t data_count;
+    MerryState qstate;
 };
 
 struct MerryStaticQueue
@@ -48,13 +50,14 @@ struct MerryStaticQueue
     MerryQueueNode *tail;
     msize_t data_count;
     msize_t capacity;
+    MerryState qstate;
 };
 
 #define merry_is_dynamic_queue_empty(queue) ((queue)->data_count == 0)
 #define merry_is_static_queue_empty(queue) ((queue)->data_count == 0)
 #define merry_is_static_queue_full(queue) ((queue)->data_count >= (queue)->capacity)
 
-MerryDynamicQueue *merry_dynamic_queue_init();
+MerryDynamicQueue *merry_dynamic_queue_init(MerryState *state);
 
 mret_t merry_dynamic_queue_push(MerryDynamicQueue *queue, mptr_t data);
 
@@ -65,7 +68,7 @@ void merry_dynamic_queue_clear(MerryDynamicQueue *queue);
 void merry_dynamic_queue_destroy(MerryDynamicQueue *queue);
 
 // The given capacity is final
-MerryStaticQueue *merry_static_queue_init(msize_t capacity);
+MerryStaticQueue *merry_static_queue_init(msize_t capacity, MerryState *state);
 
 mret_t merry_static_queue_push(MerryStaticQueue *queue, mptr_t data);
 

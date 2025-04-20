@@ -5,6 +5,10 @@
 // The ones in the config and utils are different category of contants
 
 #include <merry_types.h>
+#include "merry_utils.h"
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
 
 // Page len: The number of bytes in a page(each page is 1MB is len)
 #define _MERRY_PAGE_LEN_ 1048576
@@ -25,6 +29,14 @@ struct MerryConsts
 {
     msize_t stack_len; // The number of pages for a stack(not the number of bytes)
     // ....
+    int *program_args;
+    int inp_file_index;
 };
+
+#define _MERRY_HELP_MSG_ \
+	"Usage: mvm [Options] [Path to Input File]...\n" \
+	"Options:\n"
+
+mret_t merry_parse_arg(int argc, char **argv, MerryConsts *consts);
 
 #endif

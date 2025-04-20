@@ -31,42 +31,37 @@
     } while (0)
 
 typedef struct MerryRAM MerryRAM;
-_MERRY_DEFINE_FUNC_PTR_(mret_t, mmem_byte_read_t, MerryRAM *, maddress_t, mbptr_t);
-_MERRY_DEFINE_FUNC_PTR_(mret_t, mmem_word_read_t, MerryRAM *, maddress_t, mwptr_t);
-_MERRY_DEFINE_FUNC_PTR_(mret_t, mmem_dword_read_t, MerryRAM *, maddress_t, mdptr_t);
-_MERRY_DEFINE_FUNC_PTR_(mret_t, mmem_qword_read_t, MerryRAM *, maddress_t, mqptr_t);
-_MERRY_DEFINE_FUNC_PTR_(mret_t, mmem_byte_write_t, MerryRAM *, maddress_t, mbyte_t);
-_MERRY_DEFINE_FUNC_PTR_(mret_t, mmem_word_write_t, MerryRAM *, maddress_t, mword_t);
-_MERRY_DEFINE_FUNC_PTR_(mret_t, mmem_dword_write_t, MerryRAM *, maddress_t, mdword_t);
-_MERRY_DEFINE_FUNC_PTR_(mret_t, mmem_qword_write_t, MerryRAM *, maddress_t, mqptr_t);
 
 struct MerryRAM
 {
     MerryNormalMemoryPage **pages; // all of the pages
     msize_t page_count;            // Number of pages
     mmutex_t lock;
-    MerryState state;
 };
 
-MerryRAM *merry_create_RAM(msize_t number_of_pages);
+MerryRAM *merry_create_RAM(msize_t number_of_pages, MerryState *state);
 
-mret_t merry_RAM_add_pages(MerryRAM *ram, msize_t num); // add num new pages
+mret_t merry_RAM_add_pages(MerryRAM *ram, msize_t num, MerryState *state); // add num new pages
 
-mret_t merry_RAM_read_byte(MerryRAM *ram, maddress_t address, mbptr_t store_in);
+mret_t merry_RAM_read_byte(MerryRAM *ram, maddress_t address, mbptr_t store_in, MerryState *state);
 
-mret_t merry_RAM_read_word(MerryRAM *ram, maddress_t address, mwptr_t store_in);
+mret_t merry_RAM_read_word(MerryRAM *ram, maddress_t address, mwptr_t store_in, MerryState *state);
 
-mret_t merry_RAM_read_dword(MerryRAM *ram, maddress_t address, mdptr_t store_in);
+mret_t merry_RAM_read_dword(MerryRAM *ram, maddress_t address, mdptr_t store_in, MerryState *state);
 
-mret_t merry_RAM_read_qword(MerryRAM *ram, maddress_t address, mqptr_t store_in);
+mret_t merry_RAM_read_qword(MerryRAM *ram, maddress_t address, mqptr_t store_in, MerryState *state);
 
-mret_t merry_RAM_write_byte(MerryRAM *ram, maddress_t address, mbyte_t value);
+mret_t merry_RAM_write_byte(MerryRAM *ram, maddress_t address, mbyte_t value, MerryState *state);
 
-mret_t merry_RAM_write_word(MerryRAM *ram, maddress_t address, mword_t value);
+mret_t merry_RAM_write_word(MerryRAM *ram, maddress_t address, mword_t value, MerryState *state);
 
-mret_t merry_RAM_write_dword(MerryRAM *ram, maddress_t address, mdword_t value);
+mret_t merry_RAM_write_dword(MerryRAM *ram, maddress_t address, mdword_t value, MerryState *state);
 
-mret_t merry_RAM_write_qword(MerryRAM *ram, maddress_t address, mqword_t value);
+mret_t merry_RAM_write_qword(MerryRAM *ram, maddress_t address, mqword_t value, MerryState *state);
+
+mbptr_t merry_RAM_bulk_read(MerryRAM *ram, maddress_t address, msize_t length, MerryState *state);
+
+mret_t merry_RAM_bulk_write(MerryRAM *ram, maddress_t address, msize_t length, mbptr_t to_write, MerryState *state);
 
 void merry_destroy_RAM(MerryRAM *ram);
 

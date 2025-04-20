@@ -6,6 +6,7 @@
 #include <merry_platform.h>
 #include <merry_types.h>
 #include <merry_utils.h>
+#include "merry_state.h"
 #include <stdlib.h>
 
 typedef struct MerryOWC MerryOWC;
@@ -31,6 +32,7 @@ struct MerryOWC
     mbool_t _in_use;
     mbool_t _rclosed;
     mbool_t _wclosed;
+    MerryState state;
 };
 
 #define merry_owc_init(owc, rline, wline, rclosed, wclosed) \
@@ -43,7 +45,7 @@ struct MerryOWC
         (owc)->_wclosed = (wclosed);                        \
     } while (0)
 
-MerryOWC *merry_open_owc();
+MerryOWC *merry_open_owc(MerryState *state);
 
 void merry_owc_only_speak(MerryOWC *owc);
 
