@@ -8,7 +8,8 @@ _MERRY_INTERNAL_ void __parse_option(char *opt);
 
 mret_t merry_parse_arg(int argc, char **argv, MerryConsts *consts) {
   merry_check_ptr(argv);
-  if (surelyF(argc < 2)) {
+  mbool_t file_found = mfalse;
+  if (surelyF(argc < 3)) {
     merry_err("%s", _MERRY_HELP_MSG_);
     return RET_FAILURE;
   }
@@ -39,6 +40,12 @@ mret_t merry_parse_arg(int argc, char **argv, MerryConsts *consts) {
         free(args);
         return RET_FAILURE;
       }
+      if (surelyF(file_found == mtrue)) {
+        merry_talk(stderr, "Error", "Multiple Input Files at once.\n", NULL);
+        free(args);
+        return RET_FAILURE;
+      }
+      file_found = mtrue;
       i++;
       consts->inp_file_index = i;
       break;
@@ -49,6 +56,11 @@ mret_t merry_parse_arg(int argc, char **argv, MerryConsts *consts) {
       break;
     }
     }
+  }
+  if (surelyF(file_found != mtrue)) {
+    merry_talk(stderr, "Error", "No Input File provided at all.\n", NULL);
+    free(args);
+    return RET_FAILURE;
   }
 
   consts->program_args = args;

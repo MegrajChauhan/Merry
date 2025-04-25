@@ -20,12 +20,14 @@
 #include "merry_core_types.h"
 #include "merry_ram.h"
 #include "merry_platform.h"
+#include <float.h>
+#include <math.h>
 
 #define flags_res(x, size) unsigned long x : size
 
 typedef struct MerryCoreBase MerryCoreBase;
 typedef struct MerryFlagsRegr MerryFlagsRegr;
-
+typedef struct MerryFFlagsRegr MerryFFlagsRegr;
 // Some of the functions that the cores have to provide
 // cptr is the core: Get the core details
 _MERRY_DEFINE_FUNC_PTR_(MerryCoreBase*, mcoredetails_t, MerryState *state);
@@ -46,12 +48,28 @@ struct MerryCoreBase
   mcoreexec_t exec_func;
   
   unsigned int core_id; // assigned by Graves for every core
+  mbool_t stop;
 
   mcond_t cond;
   mmutex_t lock;
   
   mcore_t core_type;
   MerryState state; // The state of the core
+
+  mqword_t wild_request;
+  mqword_t wild_request_hdlr;
+  mbool_t wild_request_hdlr_set;
+};
+
+struct MerryFFlagsRegr
+{
+   flags_res(zf, 1); // zero flag
+   flags_res(sf, 1); // sign flag
+   flags_res(uof, 1); // unordered flag
+   flags_res(of, 1); // overflow flag
+   flags_res(uf, 1); // underflow flag
+   flags_res(inv, 1); // invalid flag
+   flags_res(res, 2); // reserved
 };
 
 struct MerryFlagsRegr
@@ -76,4 +94,10 @@ struct MerryFlagsRegr
 
 extern void merry_update_flags_regr(MerryFlagsRegr *reg);
 extern void merry_compare_two_values(mqword_t v1, mqword_t v2, MerryFlagsRegr *reg);
+
+void merry_core_base_clean(MerryCoreBase *base);
+
+void merry_compare_f32(float a, float b, MerryFFlagsRegr *regr);
+void merry_compare_f64(double a, double b, MerryFFlagsRegr *regr);
+
 #endif

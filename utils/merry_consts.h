@@ -35,7 +35,10 @@ struct MerryConsts
 
 #define _MERRY_HELP_MSG_ \
 	"Usage: mvm [Options] [Path to Input File]...\n" \
-	"Options:\n"
+	"Options:\n" \
+	"-f, --file             --> Provide Path to Input File\n" \
+	"-h, --help             --> Display this help message\n"  \
+	"-v, --version          --> Display Current Version\n" 
 
 mret_t merry_parse_arg(int argc, char **argv, MerryConsts *consts);
 

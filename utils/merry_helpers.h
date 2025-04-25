@@ -5,6 +5,10 @@
 #include <merry_config.h>
 #include <string.h>
 
+#define sign_extend8(val) do { if ((val >> 7) == 1) val |= 0xFFFFFFFFFFFFFF00;} while(0)
+#define sign_extend16(val) do {if ((val >> 15) == 1) val |= 0xFFFFFFFFFFFF0000;} while(0)
+#define sign_extend32(val) do {if ((val >> 31) == 1) val |= 0xFFFFFFFFFF000000;} while(0)
+
 typedef union MerryPtrToQword MerryPtrToQword;
 typedef union MerryHostMemLayout MerryHostMemLayout;
 typedef union MerryFloatToDword MerryFloatToDword;

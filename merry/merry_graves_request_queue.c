@@ -43,6 +43,7 @@ mret_t merry_SEND_REQUEST(MerryGravesRequest *creq) {
     return RET_FAILURE;
   }
 
+  merry_cond_signal(g_queue.graves_cond);
   merry_cond_wait(creq->base->cond, g_queue.queue_lock);
   merry_mutex_unlock(g_queue.queue_lock);
   return RET_SUCCESS;

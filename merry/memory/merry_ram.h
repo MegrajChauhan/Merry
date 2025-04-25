@@ -17,6 +17,7 @@
 #include <merry_protectors.h>
 #include <merry_state.h>
 #include <stdlib.h>
+#include <stdatomic.h>
 
 /**
  * The addresses are 64-bit and one page has _MERRY_PAGE_LEN_ addresses.
@@ -59,9 +60,27 @@ mret_t merry_RAM_write_dword(MerryRAM *ram, maddress_t address, mdword_t value, 
 
 mret_t merry_RAM_write_qword(MerryRAM *ram, maddress_t address, mqword_t value, MerryState *state);
 
+mret_t merry_RAM_read_byte_atm(MerryRAM *ram, maddress_t address, mbptr_t store_in, MerryState *state);
+
+mret_t merry_RAM_read_word_atm(MerryRAM *ram, maddress_t address, mwptr_t store_in, MerryState *state);
+
+mret_t merry_RAM_read_dword_atm(MerryRAM *ram, maddress_t address, mdptr_t store_in, MerryState *state);
+
+mret_t merry_RAM_read_qword_atm(MerryRAM *ram, maddress_t address, mqptr_t store_in, MerryState *state);
+
+mret_t merry_RAM_write_byte_atm(MerryRAM *ram, maddress_t address, mbyte_t value, MerryState *state);
+
+mret_t merry_RAM_write_word_atm(MerryRAM *ram, maddress_t address, mword_t value, MerryState *state);
+
+mret_t merry_RAM_write_dword_atm(MerryRAM *ram, maddress_t address, mdword_t value, MerryState *state);
+
+mret_t merry_RAM_write_qword_atm(MerryRAM *ram, maddress_t address, mqword_t value, MerryState *state);
+
 mbptr_t merry_RAM_bulk_read(MerryRAM *ram, maddress_t address, msize_t length, MerryState *state);
 
 mret_t merry_RAM_bulk_write(MerryRAM *ram, maddress_t address, msize_t length, mbptr_t to_write, MerryState *state);
+
+mret_t merry_RAM_cmpxchg(MerryRAM *ram, maddress_t address, mbyte_t expected, mbyte_t desired, MerryState *state);
 
 void merry_destroy_RAM(MerryRAM *ram);
 

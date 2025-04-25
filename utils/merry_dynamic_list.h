@@ -20,6 +20,7 @@ typedef MerryList MerryDynamicList; // The same base though
 #define merry_erase_dynamic_list(list) merry_erase_list((MerryList*)(list))
 #define merry_destroy_dynamic_list(list) merry_destroy_list((MerryList*)(list))
 #define merry_dynamic_list_pop(list) merry_list_pop((MerryList*)(list))
+#define merry_dynamic_list_at(list, at) merry_list_at((MerryList*)(list), at)
 
 // The extra conversions are probably unnecessary given that MerryDynamicList is just a sugar coating around MerryList in which the
 // push and pop behave slightly differently

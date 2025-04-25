@@ -40,6 +40,8 @@ mret_t merry_list_push(MerryList *list, mptr_t elem);
 
 mptr_t merry_list_pop(MerryList *list);
 
+mptr_t merry_list_at(MerryList *list, msize_t at);
+
 // we won't be providing iterators given how it is not safe
 void merry_erase_list(MerryList *list);
 

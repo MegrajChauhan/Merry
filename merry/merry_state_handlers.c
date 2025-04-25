@@ -3,21 +3,23 @@
 void merry_MAKE_SENSE_OF_STATE(MerryState *state) {
   merry_check_ptr(state);
 
-  MerryState s = *state;
-  merry_HANDLE_CONTEXT(s.context, s.arg);
+  MerryState *s = state;
+  merry_HANDLE_CONTEXT(s->context, s->arg);
   do {
-    switch (s.origin) {
+    switch (s->origin) {
     case _MERRY_INTERNAL_SYSTEM_ERROR_:
-      merry_HANDLE_INTERNAL_SYS_ERROR(s.err.sys_error, s.arg);
+      merry_HANDLE_INTERNAL_SYS_ERROR(s->err.sys_error, s->arg);
       break;
     case _MERRY_PROGRAM_ERROR_:
-      merry_HANDLE_PROGRAM_ERROR(s.err.prog_error, s.arg);
+      merry_HANDLE_PROGRAM_ERROR(s->err.prog_error, s->arg);
       break;
     case _MERRY_ORIGIN_NONE_:
       break;
     }
-    s = *s.child_state;
-  } while (s.child_state != NULL);
+    merry_assign_state(*s, _MERRY_ORIGIN_NONE_, 0);
+    merry_provide_context(*s, _MERRY_CONT_NONE_);
+    s = s->child_state;
+  } while (s != NULL);
 }
 
 void merry_HANDLE_INTERNAL_SYS_ERROR(msyserr_t err, MerryPtrToQword arg) {
@@ -100,6 +102,21 @@ void merry_HANDLE_INTERNAL_SYS_ERROR(msyserr_t err, MerryPtrToQword arg) {
   case _MERRY_INSTRUCTION_SECTION_CANNOT_BE_ZERO_:
     merry_msg("Instruction sections cannot have a length of 0 bytes.", NULL);
     break;
+  case _MERRY_BULK_OPERATION_CANNOT_BE_DONE_ON_LENGTH_ZERO_:
+    merry_msg("Cannot provide a BULK READ/WRITE with the load size of 0.",
+              NULL);
+    break;
+  case _MERRY_FAILED_TO_ADD_CORE_:
+    merry_msg("Failed to ADD a new EXECUTING CORE.", NULL);
+    break;
+  case _MERRY_STACK_OVERFLOW_:
+    merry_msg("STACK Overflowed: WISE USE of the STACK is advised.", NULL);
+    break;
+  case _MERRY_STACK_UNDERFLOW_:
+    merry_msg("STACK Underflowed: POPPING from STACK when there is NOTHING is "
+              "not good!",
+              NULL);
+    break;
   }
 }
 
@@ -108,11 +125,23 @@ void merry_HANDLE_PROGRAM_ERROR(mprogerr_t err, MerryPtrToQword arg) {
   case _DIV_BY_ZERO_:
     merry_msg("CORE=%zu: Attempt to divide by zero.", arg.qword);
     break;
+  case _INVALID_PROCEDURE_RETURN_:
+    merry_msg("INVALID RETURN: The CORE didn't know where to RETURN to when it "
+              "didn't jump before.",
+              NULL);
+    break;
+  case _INVALID_STACK_ACCESS_:
+    merry_msg("STACK IS FED UP: The address you used to access the STACK is "
+              "out of bounds.",
+              NULL);
+    break;
   }
 }
 
 void merry_HANDLE_CONTEXT(mcont_t cont, MerryPtrToQword arg) {
   switch (cont) {
+  case _MERRY_CONT_NONE_:
+    break;
   case _MERRY_CORE_BASE_INITIALIZATION_: {
     merry_msg("While INITIALIZING a new CORE BASE:", NULL);
     break;
@@ -121,5 +150,17 @@ void merry_HANDLE_CONTEXT(mcont_t cont, MerryPtrToQword arg) {
     merry_msg("While INITIALIZING CORE[ID: %zu]:", arg.qword);
     break;
   }
+  case _MERRY_GRAVES_INITIALIZATION_:
+    merry_msg("While INITIALIZING the MANAGER GRAVES..", NULL);
+    break;
+  case _MERRY_GRAVES_SERVING_REQUEST_:
+    merry_msg("While SERVING a request[REQ_ID=%zu]:", arg.qword);
+    break;
+  case _MERRY_GRAVES_BOOTING_A_CORE_:
+    merry_msg("While BOOTING UP a NEW CORE[CORE_ID=%zu]:", arg.qword);
+    break;
+  case _MERRY_CORE_EXECUTING_:
+    merry_msg("While a CORE was EXECUTING[CORE_ID=%zu]:", arg.qword);
+    break;
   }
 }

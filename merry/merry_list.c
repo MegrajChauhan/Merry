@@ -113,6 +113,17 @@ mptr_t merry_list_pop(MerryList *list) {
   return res;
 }
 
+mptr_t merry_list_at(MerryList *list, msize_t at) {
+  merry_check_ptr(list);
+  merry_check_ptr(list->buf);
+
+  if (surelyF(merry_is_list_empty(list)))
+    return RET_NULL;
+  if (surelyF(at >= list->curr_ptr))
+    return RET_NULL;
+  return (mptr_t)((char *)list->buf + (list->elem_len * at));
+}
+
 void merry_erase_list(MerryList *list) {
   merry_check_ptr(list);
   merry_check_ptr(list->buf);

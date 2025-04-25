@@ -15,9 +15,9 @@ DEPS=${patsubst %.c, ${OUTPUT_DEPS}%.d, ${FILES_TO_COMPILE}}
 	
 all: directories ${OUTPUT_FILES_NAME}
 	${CC} ${FLAGS} ${OUTPUT_FILES_NAME} merry/merry_assembly.S main.c ${INC_DIRS} -o ${OUTPUT_DIR}mvm
-# ${CC} ${FLAGS} ${OUTPUT_FILES_NAME} childmain.c merry/arithmetic.S ${INC_DIRS} -o ${OUTPUT_DIR}cmain
-# ${CC} -ffunction-sections -fdata-sections -Wl,--gc-sections ${FLAGS} ${OUTPUT_FILES_NAME} merry_submain.c ${INC_DIRS} -o ${OUTPUT_DIR}subsysmain
-# make -C asm all dirs=../build/ flags=${flags}
+	make -C masm all flags=${flags}
+
+WATCH_PROJECT: directories ${OUTPUT_FILES_NAME}
 
 ${OUTPUT_DIR}${SRC_DIR}%.o: ${SRC_DIR}%.c 
 	${CC} ${FLAGS} ${INC_DIRS} -c $< -o $@
