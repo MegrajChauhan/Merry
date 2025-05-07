@@ -1,27 +1,27 @@
 #ifndef _MERRY_64_BIT_CORE_
 #define _MERRY_64_BIT_CORE_
 
+#include "merry_64_bit_core_isa.h"
 #include "merry_core_base.h"
-#include "merry_utils.h"
-#include "merry_types.h"
+#include "merry_core_types.h"
+#include "merry_graves_request_queue.h"
 #include "merry_platform.h"
 #include "merry_ram.h"
-#include "merry_state.h"
 #include "merry_stack.h"
-#include "merry_core_types.h"
-#include "merry_64_bit_core_isa.h"
-#include "merry_graves_request_queue.h"
+#include "merry_state.h"
+#include "merry_types.h"
+#include "merry_utils.h"
 #include <stdlib.h>
 
 #define _MERRY_64_BIT_CORE_REGR_COUNT_ 16
-#define EXEC64(name) void name##64(Merry64BitCore *core, MerryHostMemLayout inst)
+#define EXEC64(name)                                                           \
+  void name##64(Merry64BitCore * core, MerryHostMemLayout inst)
 #define _MERRY_64_BIT_CORE_TBS_LIM_ 50
 
-enum
-{
-ACC,
-BP,
-SP,
+enum {
+  ACC,
+  BP,
+  SP,
   R0,
   R1,
   R2,
@@ -40,8 +40,7 @@ SP,
 
 typedef struct Merry64BitCore Merry64BitCore;
 
-struct Merry64BitCore
-{
+struct Merry64BitCore {
   MerryCoreBase *base;
   mqword_t regr[REG_COUNT_64];
   MerryFlagsRegr fregr;
@@ -49,15 +48,16 @@ struct Merry64BitCore
   mqword_t pc; // program counter
   MerryRAM *stack;
   MerryRAM *ram;
-  MerryRAM* iram; // only for instructions
-  MerryStack* tbs; // Trace-back Stack
-  MerryStack* cstack; // Call Stack
+  MerryRAM *iram;     // only for instructions
+  MerryStack *tbs;    // Trace-back Stack
+  MerryStack *cstack; // Call Stack
   MerryGravesRequest *req;
 };
 
 MerryCoreBase *merry_64_bit_core_base(MerryState *state);
 
-void *merry_64_bit_core_init(MerryCoreBase* base, MerryRAM *ram, MerryRAM* iram, maddress_t start_point);
+void *merry_64_bit_core_init(MerryCoreBase *base, MerryRAM *ram, MerryRAM *iram,
+                             maddress_t start_point);
 
 void merry_64_bit_core_destroy(void *cptr);
 

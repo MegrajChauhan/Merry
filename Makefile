@@ -1,7 +1,7 @@
 # Variable definitions
 CC = gcc
 FLAGS = -Wall -Wextra -MMD -MP
-DIRS = utils utils/base merry/abs merry/cores merry/cores/core64 merry/graves merry/internals merry/memory
+DIRS = utils utils/base merry/abs merry/cores merry/cores/core64 merry/graves merry/internals merry/memory 
 SRC_DIR = merry/
 INC_DIRS = ${addprefix -I, ${DIRS}}
 FLAGS += ${flags}
@@ -12,12 +12,11 @@ OUTPUT_DEPS= build/
 FILES_TO_COMPILE = ${foreach _D, ${SRC_DIR},${wildcard ${_D}*.c}}
 OUTPUT_FILES_NAME = ${patsubst %.c, ${OUTPUT_DIR}%.o, ${FILES_TO_COMPILE}}
 DEPS=${patsubst %.c, ${OUTPUT_DEPS}%.d, ${FILES_TO_COMPILE}}
-	
-all: directories ${OUTPUT_FILES_NAME}
-	${CC} ${FLAGS} ${OUTPUT_FILES_NAME} merry/merry_assembly.S main.c ${INC_DIRS} -o ${OUTPUT_DIR}mvm
-	make -C masm all flags=${flags}
 
-WATCH_PROJECT: directories ${OUTPUT_FILES_NAME}
+all: directories ${OUTPUT_FILES_NAME} ${ASM_OUTPUT_FILES_NAME}
+	${CC} ${FLAGS} ${OUTPUT_FILES_NAME} merry/merry_assembly.S mvm.c ${INC_DIRS} -o ${OUTPUT_DIR}mvm
+
+WATCH_PROJECT: directories ${OUTPUT_FILES_NAME} ${ASM_OUTPUT_FILES_NAME}
 
 ${OUTPUT_DIR}${SRC_DIR}%.o: ${SRC_DIR}%.c 
 	${CC} ${FLAGS} ${INC_DIRS} -c $< -o $@
@@ -32,20 +31,6 @@ directories:
 
 clean:
 	rm -rf ${OUTPUT_DIR}
-
-# __pretest:
-# ifeq ($(OS),Windows_NT)
-#     DIRS += merry/abs/win
-# 	@echo Windows is not currently fully supported :(
-# 	@exit
-# 	INC_DIRS += ${addprefix -I, merry/abs/win}
-# else
-#     UNAME_S := $(shell uname -s)
-#     ifeq ($(UNAME_S),Linux)
-# 		DIRS += merry/abs/linux
-# 		INC_DIRS += ${addprefix -I, merry/abs/linux}
-#     endif
-# endif
 
 .PHONY: all clean directories
 

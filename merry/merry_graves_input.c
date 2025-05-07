@@ -19,7 +19,7 @@ mbool_t merry_graves_reader_confirm_input_file(MerryGravesInput *reader) {
   reader->file_size = ftell(reader->fd);
   rewind(reader->fd);
 
-  if (reader->file_size < 81) {
+  if (reader->file_size < 64) {
     merry_assign_state(reader->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
                        _MERRY_INPUT_FILE_DOESNT_FIT_FORMAT_);
     fclose(reader->fd);
@@ -72,10 +72,6 @@ mret_t merry_graves_reader_read_input(MerryGravesInput *reader) {
     return RET_FAILURE;
   if (merry_graves_reader_parse_data_and_string_header(reader) == RET_FAILURE)
     return RET_FAILURE;
-  if (merry_graves_reader_parse_symbol_table_header(reader) == RET_FAILURE)
-    return RET_FAILURE;
-  if (merry_graves_reader_parse_SIT_header(reader) == RET_FAILURE)
-    return RET_FAILURE;
   if (merry_graves_reader_perform_checksum(reader) == RET_FAILURE)
     return RET_FAILURE;
   if (merry_graves_reader_parse_ITIT(reader) == RET_FAILURE)
@@ -83,10 +79,6 @@ mret_t merry_graves_reader_read_input(MerryGravesInput *reader) {
   if (merry_graves_reader_parse_instruction_sections(reader) == RET_FAILURE)
     return RET_FAILURE;
   if (merry_graves_reader_parse_data_and_string_section(reader) == RET_FAILURE)
-    return RET_FAILURE;
-  if (merry_graves_reader_parse_symbol_table(reader) == RET_FAILURE)
-    return RET_FAILURE;
-  if (merry_graves_reader_parse_SIT(reader) == RET_FAILURE)
     return RET_FAILURE;
   if (merry_graves_reader_prep_memory(reader) == RET_FAILURE)
     return RET_FAILURE;
@@ -111,10 +103,6 @@ void merry_graves_reader_destroy(MerryGravesInput *reader) {
 
   if (reader->data_ram != NULL)
     merry_destroy_RAM(reader->data_ram);
-  if (reader->sit.entries != NULL)
-    free(reader->sit.entries);
-  if (reader->sym_table.symbols != NULL)
-    free(reader->sym_table.symbols);
   if (reader->itit.entries != NULL)
     free(reader->itit.entries);
   if (reader->data_offsets != NULL)
@@ -200,50 +188,6 @@ merry_graves_reader_parse_data_and_string_header(MerryGravesInput *reader) {
   return RET_SUCCESS;
 }
 
-mret_t merry_graves_reader_parse_symbol_table_header(MerryGravesInput *reader) {
-  merry_check_ptr(reader);
-  MerryHostMemLayout le;
-  fread(&le.whole_word, 8, 1, reader->fd);
-#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
-  merry_LITTLE_ENDIAN_to_BIG_ENDIAN(&le);
-#endif
-  reader->metadata.ST_len = le.whole_word;
-  if (!reader->metadata.st_available && reader->metadata.ST_len != 0) {
-    merry_log("STA flag set to FALSE but ST is available anyway.\n", NULL);
-    merry_log("Ignoring STA Flag.\n", NULL);
-    reader->metadata.st_available = mtrue;
-  } else if (reader->metadata.st_available && reader->metadata.ST_len == 0) {
-    merry_log("STA flag set to TRUE but ST is not available.\n", NULL);
-    merry_log("Ignoring STA Flag.\n", NULL);
-    reader->metadata.st_available = mfalse;
-  }
-
-  return RET_SUCCESS;
-}
-
-mret_t merry_graves_reader_parse_SIT_header(MerryGravesInput *reader) {
-  merry_check_ptr(reader);
-  MerryHostMemLayout le;
-  fread(&le.whole_word, 8, 1, reader->fd);
-#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
-  merry_LITTLE_ENDIAN_to_BIG_ENDIAN(&le);
-#endif
-  reader->metadata.SIT_len = le.whole_word;
-  if (reader->metadata.st_available && reader->metadata.SIT_len == 0) {
-    merry_log("ST available but SIT is not. ST alone is useless.\n", NULL);
-    merry_log("Ignoring STA Flag.\n", NULL);
-    reader->metadata.st_available = mfalse;
-  }
-
-  if ((reader->metadata.SIT_len % 16) != 0) {
-    merry_assign_state(reader->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
-                       _MERRY_MISALIGNED_SIT_HEADER_);
-    return RET_FAILURE;
-  }
-
-  return RET_SUCCESS;
-}
-
 mret_t merry_graves_reader_perform_checksum(MerryGravesInput *reader) {
   merry_check_ptr(reader);
 
@@ -256,7 +200,6 @@ mret_t merry_graves_reader_perform_checksum(MerryGravesInput *reader) {
   reader->metadata.DI_len = le.whole_word;
 
   if ((reader->metadata.DI_len + reader->metadata.ITIT_len +
-       reader->metadata.SIT_len + reader->metadata.ST_len +
        reader->metadata.data_section_len + reader->metadata.string_section_len +
        56) >= reader->file_size) {
     merry_assign_state(reader->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
@@ -316,7 +259,6 @@ mret_t merry_graves_reader_parse_ITIT(MerryGravesInput *reader) {
   }
 
   if ((reader->metadata.DI_len + reader->metadata.ITIT_len +
-       reader->metadata.SIT_len + reader->metadata.ST_len +
        reader->metadata.data_section_len + reader->metadata.string_section_len +
        reader->metadata.total_instructions_len + 56) > reader->file_size) {
     merry_assign_state(reader->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
@@ -432,20 +374,6 @@ merry_graves_reader_parse_data_and_string_section(MerryGravesInput *reader) {
   return RET_SUCCESS;
 }
 
-mret_t merry_graves_reader_parse_symbol_table(MerryGravesInput *reader) {
-  merry_check_ptr(reader);
-  reader->sym_table.file_offset = ftell(reader->fd);
-  fseek(reader->fd, reader->metadata.ST_len, SEEK_CUR);
-  reader->sym_table.symbols = NULL;
-  return RET_SUCCESS;
-}
-
-mret_t merry_graves_reader_parse_SIT(MerryGravesInput *reader) {
-  merry_check_ptr(reader);
-  reader->sit.file_offset = ftell(reader->fd);
-  return RET_SUCCESS;
-}
-
 mret_t merry_graves_reader_prep_memory(MerryGravesInput *reader) {
   merry_check_ptr(reader);
 
@@ -462,26 +390,6 @@ mret_t merry_graves_reader_prep_memory(MerryGravesInput *reader) {
       return RET_FAILURE;
   }
 
-  return RET_SUCCESS;
-}
-
-mret_t merry_graves_reader_load_symbols(MerryGravesInput *reader) {
-  merry_check_ptr(reader);
-
-  fseek(reader->fd, 0, reader->sym_table.file_offset);
-
-  if ((reader->sym_table.symbols = (mstr_t)malloc(reader->metadata.ST_len)) ==
-      NULL) {
-    merry_assign_state(reader->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
-                       _MERRY_MEM_ALLOCATION_FAILURE_);
-    return RET_FAILURE;
-  }
-
-  fread(reader->sym_table.symbols, 1, reader->metadata.ST_len, reader->fd);
-
-  /// Note: This is not complete yet.
-  /// The SIT is yet to be loaded but before that an implementation
-  /// for a dictionary or pairs or ordered/unordered lists is needed.
   return RET_SUCCESS;
 }
 

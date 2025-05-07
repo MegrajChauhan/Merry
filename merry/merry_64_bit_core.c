@@ -835,7 +835,7 @@ _THRET_T_ merry_64_bit_core_run(void *arg) {
       break;
     case OP_INTR:
       core->req->type = PROGRAM_REQUEST;
-      core->req->args[0] = current.whole_word;
+      core->req->args[0] = current.half_words.w1;
       core->req->args[1] = core->regr[R1];
       core->req->args[2] = core->regr[R2];
       core->req->args[3] = core->regr[R3];
