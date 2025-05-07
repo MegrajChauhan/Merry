@@ -10,7 +10,7 @@
 // for function returns
 #define RET_SUCCESS 0
 #define RET_FAILURE 1
-#define RET_AMBIGIOUS 2    // extra return to be used for any third sort of return
+#define RET_UNKNWON 2 // The call failed for reasons that are unknown(stdlib failure, kernel failure)
 #define RET_NULL (void *)0 // used by functions
 
 typedef unsigned char mbool_t; // bool
@@ -48,7 +48,5 @@ typedef msize_t merrot_t;
 #elif defined(_USE_WIN_)
 #define _THRET_T_ unsigned __stdcall
 #endif
-
-#include "merry_errno.h"
 
 #endif

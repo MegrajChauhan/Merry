@@ -1,81 +1,63 @@
-#include "merry_stack.h"
+#include <merry_stack.h>
 
-MerryStack *merry_init_stack(msize_t len, mbool_t dynamic, msize_t upper_lim, msize_t per_resize)
-{
-    inlog("Creating a STACK");
-    MerryStack *st = (MerryStack *)malloc(sizeof(MerryStack));
-    if (st == NULL)
-    {
-        mreport("Failed to allocate a STACK");
-        return RET_NULL;
-    }
-    st->array = (mqptr_t)malloc(8 * len);
-    if (st->array == NULL)
-    {
-        free(st);
-        mreport("Failed to allocate a STACK[ARRAY]");
-        return RET_NULL;
-    }
-    st->size = len;
-    st->sp = (mqword_t)(-1);
-    st->dynamic = dynamic;
-    st->add_per_resize = per_resize;
-    st->upper_lim = (upper_lim == 0) ? 1000 : upper_lim; // upper limit == 0 means no limit but since we want it to be limited, 1000 is the limit
-    return st;
+MerryStack *merry_stack_init(msize_t cap, MerryState *state) {
+  MerryStack *st = (MerryStack *)malloc(sizeof(MerryStack));
+  if (!st) {
+    merry_assign_state(*state, _MERRY_INTERNAL_SYSTEM_ERROR_,
+                       _MERRY_MEM_ALLOCATION_FAILURE_);
+    return RET_NULL;
+  }
+  st->buf = (mptr_t *)malloc(sizeof(mptr_t) * cap);
+  if (!st->buf) {
+    merry_assign_state(*state, _MERRY_INTERNAL_SYSTEM_ERROR_,
+                       _MERRY_MEM_ALLOCATION_FAILURE_);
+    free(st);
+    return RET_NULL;
+  }
+
+  merry_assign_state(st->sstate, _MERRY_ORIGIN_NONE_, 0);
+  st->sp = (msize_t)(-1);
+  st->cap = cap;
+  st->sp_max = cap - 1;
+  st->sstate.child_state = NULL;
+  return st;
 }
 
-_MERRY_ALWAYS_INLINE_ inline void merry_destroy_stack(MerryStack *stack)
-{
-    massert_field(stack, array);
-    free(stack->array);
-    free(stack);
+mret_t merry_stack_push(MerryStack *stack, mptr_t value) {
+  merry_check_ptr(stack);
+  merry_check_ptr(stack->buf);
+  merry_check_ptr(value);
+
+  if (merry_is_stack_full(stack))
+    return RET_FAILURE;
+
+  stack->sp++;
+  stack->buf[stack->sp] = value;
+  return RET_SUCCESS;
 }
 
-_MERRY_INTERNAL_ mret_t merry_stack_resize(MerryStack *st)
-{
-    mqword_t new_len = st->size + st->add_per_resize;
-    if (new_len > st->upper_lim)
-        return RET_FAILURE; // cannot exceed upper limit
-    st->array = (mqptr_t)realloc(st->array, 8 * (st->size + st->add_per_resize));
-    if (st->array == NULL)
-    {
-        mreport("Failed to resize a STACK");
-        return RET_FAILURE;
-    }
-    st->size = new_len;
-    return RET_SUCCESS;
+mptr_t merry_stack_pop(MerryStack *stack) {
+  merry_check_ptr(stack);
+  merry_check_ptr(stack->buf);
+
+  if (merry_is_stack_empty(stack))
+    return RET_NULL;
+
+  register mptr_t v = stack->buf[stack->sp];
+  stack->sp--;
+  return v;
 }
 
-mret_t merry_stack_push(MerryStack *st, mqword_t _to_push)
-{
-    if (stack_full(st))
-    {
-        if (st->dynamic != mtrue)
-            return RET_FAILURE; // the stack is full
-        // resize the stack
-        if (merry_stack_resize(st) == RET_FAILURE)
-            return RET_FAILURE;
-    }
-    // we have the stack and it should be resized if it was empty
-    st->sp++;
-    st->array[st->sp] = _to_push;
-    return RET_SUCCESS;
+void merry_stack_clear(MerryStack *stack) {
+  merry_check_ptr(stack);
+  merry_check_ptr(stack->buf);
+
+  stack->sp = (msize_t)-1;
 }
 
-_MERRY_ALWAYS_INLINE_ inline mret_t merry_stack_pop(MerryStack *st, mqptr_t store_in)
-{
-    if (stack_empty(st))
-        return RET_FAILURE; // the stack is empty
-    *store_in = st->array[st->sp];
-    st->sp--;
-    return RET_SUCCESS;
-}
-
-_MERRY_ALWAYS_INLINE_ inline void merry_stack_popn(MerryStack *st)
-{
-    // simply pop the top value and return
-    // don't care about errors
-    if (stack_empty(st))
-        return;
-    st->sp--;
+void merry_stack_destroy(MerryStack *stack) {
+  merry_check_ptr(stack);
+  merry_check_ptr(stack->buf);
+  free(stack->buf);
+  free(stack);
 }
