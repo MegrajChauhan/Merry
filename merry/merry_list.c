@@ -93,10 +93,9 @@ mret_t merry_list_push(MerryList *list, mptr_t elem) {
     return RET_FAILURE;
 
   list->curr_ptr++;
-  register mptr_t curr_index =
+  mptr_t curr_index =
       (mptr_t)((mstr_t)list->buf + (list->elem_len * list->curr_ptr));
   memcpy(curr_index, elem, list->elem_len);
-
   return RET_SUCCESS;
 }
 
@@ -119,7 +118,7 @@ mptr_t merry_list_at(MerryList *list, msize_t at) {
 
   if (surelyF(merry_is_list_empty(list)))
     return RET_NULL;
-  if (surelyF(at >= list->curr_ptr))
+  if (surelyF(at > list->curr_ptr))
     return RET_NULL;
   return (mptr_t)((char *)list->buf + (list->elem_len * at));
 }

@@ -1,8 +1,9 @@
 #include "merry_core_base.h"
 
 void merry_core_base_clean(MerryCoreBase *base) {
-  merry_mutex_destroy(base->lock);
-  merry_cond_destroy(base->cond);
+  merry_check_ptr(base);
+  merry_mutex_destroy(&base->lock);
+  merry_cond_destroy(&base->cond);
   free(base);
 }
 

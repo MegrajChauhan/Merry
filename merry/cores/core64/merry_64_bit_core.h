@@ -35,7 +35,7 @@ enum {
   R10,
   R11,
   R12,
-  REG_COUNT_64,
+  REG_COUNT_64 = 15,
 };
 
 typedef struct Merry64BitCore Merry64BitCore;

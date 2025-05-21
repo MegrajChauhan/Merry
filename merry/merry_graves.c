@@ -25,14 +25,6 @@ mret_t merry_graves_init(int argc, char **argv) {
     return RET_FAILURE;
   }
 
-  if ((graves.core_base_func_list =
-           merry_create_list(__CORE_TYPE_COUNT, sizeof(mcoredetails_t),
-                             &graves.master_state)) == RET_NULL) {
-    merry_MAKE_SENSE_OF_STATE(&graves.master_state);
-    merry_graves_reader_destroy(graves.reader);
-    return RET_FAILURE;
-  }
-
   if ((graves.all_cores = merry_create_dynamic_list(
            __CORE_TYPE_COUNT, sizeof(MerryGravesCoreRepr),
            &graves.master_state)) == RET_NULL) {
@@ -63,6 +55,14 @@ mret_t merry_graves_init(int argc, char **argv) {
     return RET_FAILURE;
   }
 
+  if (merry_graves_req_queue_init(&graves.master_cond, &graves.master_state) ==
+      RET_FAILURE) {
+    merry_provide_context(graves.master_state, _MERRY_GRAVES_INITIALIZATION_);
+    merry_MAKE_SENSE_OF_STATE(&graves.master_state);
+    merry_graves_destroy();
+    return RET_FAILURE;
+  }
+
   // We need to pass the program arguments somehow.
   // We shall do it here.
 
@@ -70,14 +70,8 @@ mret_t merry_graves_init(int argc, char **argv) {
 }
 
 mret_t merry_graves_acquaint_with_cores() {
-  if (merry_list_push(graves.core_base_func_list, merry_64_bit_core_base) ==
-      RET_FAILURE)
-    goto __error;
-
+  graves.core_base_func_list[0] = merry_64_bit_core_base;
   return RET_SUCCESS;
-__error:
-  graves.master_state = graves.core_base_func_list->lstate;
-  return RET_FAILURE;
 }
 
 mret_t merry_graves_find_old_core(msize_t *ind) {
@@ -96,20 +90,11 @@ mret_t merry_graves_find_old_core(msize_t *ind) {
 
 mret_t merry_graves_add_new_core(mcore_t c_type, maddress_t begin) {
   MerryCoreBase *base;
-  mcoredetails_t details;
+  mcoredetails_t details = graves.core_base_func_list[c_type];
 
-  if ((details = merry_list_at(graves.core_base_func_list, c_type)) ==
-      RET_NULL) {
-    merry_assign_state(graves.master_state, _MERRY_INTERNAL_SYSTEM_ERROR_,
-                       _MERRY_FAILED_TO_ADD_CORE_);
-    graves.master_state.child_state = &graves.core_base_func_list->lstate;
-    return RET_FAILURE;
-  }
-
-  if ((base = details(&graves.master_state)) == RET_NULL)
+  if ((base = (details)(&graves.master_state)) == RET_NULL)
     return RET_FAILURE;
 
-  base->core_id = graves.core_count;
   void *tmp;
   if ((tmp = base->init_func(base, graves.reader->data_ram,
                              graves.reader->iram[c_type], begin)) == RET_NULL) {
@@ -119,11 +104,10 @@ mret_t merry_graves_add_new_core(mcore_t c_type, maddress_t begin) {
   }
   msize_t i;
   if (merry_graves_find_old_core(&i) == RET_FAILURE) {
-    graves.core_count++;
-
     MerryGravesCoreRepr repr;
     repr.base = base;
     repr.cptr = tmp;
+    base->core_id = graves.core_count;
 
     if (merry_dynamic_list_push(graves.all_cores, &repr) == RET_FAILURE) {
       merry_assign_state(graves.master_state, _MERRY_INTERNAL_SYSTEM_ERROR_,
@@ -132,10 +116,12 @@ mret_t merry_graves_add_new_core(mcore_t c_type, maddress_t begin) {
       merry_core_base_clean(base);
       return RET_FAILURE;
     }
+    graves.core_count++;
   } else {
     MerryGravesCoreRepr *repr = merry_dynamic_list_at(graves.all_cores, i);
     repr->base = base;
     repr->cptr = tmp;
+    base->core_id = i;
   }
 
   return RET_SUCCESS;
@@ -164,8 +150,10 @@ mret_t merry_graves_clean_a_core(msize_t cid) {
     merry_log("The hell!! At cleaning a core.\n", NULL);
     return RET_FAILURE;
   }
-  repr->base->free_func(repr->cptr); // the base is cleaned up as well
+  merry_cond_signal(&repr->base->cond); // tell the core to continue
+  repr->base->free_func(repr->cptr);    // the base is cleaned up as well
   repr->cptr = NULL;
+  repr->base = NULL;
   graves.active_cores--;
   return RET_SUCCESS;
 }
@@ -187,28 +175,31 @@ _THRET_T_ merry_graves_run_VM(void *arg) {
   }
   graves.active_cores++;
 
-  MerryGravesRequest request;
+  MerryGravesRequest *request;
 
   while (graves.active_cores != 0) {
     if (merry_graves_wants_work(&request) == RET_FAILURE) {
-      merry_MAKE_SENSE_OF_STATE(merry_graves_req_queue_state());
-      break;
+      merry_cond_wait(&graves.master_cond, &graves.master_lock);
     } else {
-      switch (request.type) {
+      switch (request->type) {
       case SHUT_DOWN:
-        HANDLE_SHUTDOWN(&request);
+        HANDLE_SHUTDOWN(request);
         break;
       case TRY_LOADING_NEW_PAGE_DATA:
-        HANDLE_LOADING_NEW_PAGE_DATA(&request);
+        merry_cond_signal(&request->base->cond);
+        HANDLE_LOADING_NEW_PAGE_DATA(request);
         break;
       case TRY_LOADING_NEW_PAGE_INST:
-        HANDLE_LOADING_NEW_PAGE_INST(&request);
+        merry_cond_signal(&request->base->cond);
+        HANDLE_LOADING_NEW_PAGE_INST(request);
         break;
       case PROBLEM_ENCOUNTERED:
-        HANDLE_PROBLEM_ENCOUNTERED(&request);
+        merry_cond_signal(&request->base->cond);
+        HANDLE_PROBLEM_ENCOUNTERED(request);
         break;
       case PROGRAM_REQUEST:
-        HANDLE_PROGRAM_REQUEST(&request);
+        merry_cond_signal(&request->base->cond);
+        HANDLE_PROGRAM_REQUEST(request);
         break;
       }
     }
@@ -233,8 +224,6 @@ int merry_GRAVES_RULE(int argc, char **argv) {
 }
 
 void merry_graves_destroy() {
-  if (!graves.core_base_func_list)
-    merry_destroy_list(graves.core_base_func_list);
   if (!graves.all_cores) {
     for (msize_t i = 0; i <= graves.core_count; i++) {
       MerryGravesCoreRepr *repr = merry_dynamic_list_pop(graves.all_cores);
@@ -244,8 +233,8 @@ void merry_graves_destroy() {
     merry_destroy_dynamic_list(graves.all_cores);
   }
   merry_graves_reader_destroy(graves.reader);
-  merry_cond_destroy(graves.master_cond);
-  merry_mutex_destroy(graves.master_lock);
+  merry_cond_destroy(&graves.master_cond);
+  merry_mutex_destroy(&graves.master_lock);
   merry_graves_req_queue_free();
 }
 

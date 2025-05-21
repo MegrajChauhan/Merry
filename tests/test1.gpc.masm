@@ -1,0 +1,25 @@
+
+; First real test of Merry and Masm
+
+; DATE: 2025/05/19 AD or 2081/02/05 BS
+; AUTHOR: Aryan Chauhan
+
+; SUCCESSFUL FIRST RUN: 11:04 PM, 2025/05/21 AD or 2081/02/07
+
+main:
+   
+   ; Using the simple method
+   mov r0, LEN ; The length of the string in r0
+   sout msg
+
+   ; Using pointers
+   loadq r2, ptr ; load the pointer
+   sout r2
+
+   hlt  ; 
+
+msg: ds "Hello World by Merry!\n\0"
+
+define LEN 23
+
+ptr: dp msg

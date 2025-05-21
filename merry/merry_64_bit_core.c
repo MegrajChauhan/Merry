@@ -25,7 +25,7 @@ MerryCoreBase *merry_64_bit_core_base(MerryState *state) {
     merry_assign_state(*state, _MERRY_INTERNAL_SYSTEM_ERROR_,
                        _MERRY_FAILED_TO_OBTAIN_LOCK_);
     merry_provide_context(*state, _MERRY_CORE_BASE_INITIALIZATION_);
-    merry_cond_destroy(base->cond);
+    merry_cond_destroy(&base->cond);
     free(base);
     return RET_NULL;
   }
@@ -42,6 +42,7 @@ void *merry_64_bit_core_init(MerryCoreBase *base, MerryRAM *ram, MerryRAM *iram,
                              maddress_t start_point) {
   merry_check_ptr(base);
   merry_check_ptr(ram);
+  merry_check_ptr(iram);
 
   base->state.arg.qword = base->core_id;
   Merry64BitCore *core = (Merry64BitCore *)malloc(sizeof(Merry64BitCore));
@@ -52,7 +53,6 @@ void *merry_64_bit_core_init(MerryCoreBase *base, MerryRAM *ram, MerryRAM *iram,
     return RET_NULL;
   }
   core->base = base;
-  core->pc = start_point;
   core->pc = start_point;
   core->ram = ram;
   core->iram = iram;
@@ -86,6 +86,7 @@ void *merry_64_bit_core_init(MerryCoreBase *base, MerryRAM *ram, MerryRAM *iram,
     free(core);
     return RET_NULL;
   }
+
   if ((core->req = (MerryGravesRequest *)malloc(sizeof(MerryGravesRequest))) ==
       NULL) {
     merry_assign_state(base->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
@@ -118,6 +119,7 @@ void merry_64_bit_core_destroy(void *cptr) {
   merry_stack_destroy(c->cstack);
   // The RAM is handled by Graves
 
+  free(c->req);
   free(cptr);
 }
 
@@ -413,8 +415,6 @@ _THRET_T_ merry_64_bit_core_run(void *arg) {
     case OP_NOP:
       break;
     case OP_HALT:
-      core->req->type = SHUT_DOWN;
-      merry_SEND_REQUEST(core->req);
       core->base->stop = mtrue;
       break;
     case OP_ADD_IMM:
@@ -641,16 +641,19 @@ _THRET_T_ merry_64_bit_core_run(void *arg) {
       excg64(core, current);
       break;
     case OP_MOV8:
-      core->regr[current.bytes.b6 & REG_COUNT_64] |=
-          (core->regr[current.bytes.b7 & REG_COUNT_64] & 0xFF);
+      core->regr[current.bytes.b6 & REG_COUNT_64] &=
+          (0xFFFFFFFFFFFFFF00 |
+           (core->regr[current.bytes.b7 & REG_COUNT_64] & 0xFF));
       break;
     case OP_MOV16:
-      core->regr[current.bytes.b6 & REG_COUNT_64] |=
-          (core->regr[current.bytes.b7 & REG_COUNT_64] & 0xFFFF);
+      core->regr[current.bytes.b6 & REG_COUNT_64] &=
+          (0xFFFFFFFFFFFF0000 |
+           (core->regr[current.bytes.b7 & REG_COUNT_64] & 0xFFFF));
       break;
     case OP_MOV32:
-      core->regr[current.bytes.b6 & REG_COUNT_64] |=
-          (core->regr[current.bytes.b7 & REG_COUNT_64] & 0xFFFFFFFF);
+      core->regr[current.bytes.b6 & REG_COUNT_64] &=
+          (0xFFFFFFFF00000000 |
+           (core->regr[current.bytes.b7 & REG_COUNT_64] & 0xFFFFFFFF));
       break;
     case OP_MOVNZ:
     case OP_MOVNE:
@@ -1995,7 +1998,7 @@ EXEC64(mov_imm) {
   register mbyte_t op1 = inst.bytes.b7 & REG_COUNT_64;
   mqword_t val;
 
-  core->pc++;
+  core->pc += 8;
   if (merry_64_GET_INST(core, core->pc, &val) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -3103,17 +3106,22 @@ EXEC64(cmpxchg) {
     core->base->stop = mtrue;
     return;
   }
-  if (merry_RAM_cmpxchg(core->ram, address, desired, expected,
-                        &core->base->state) == RET_FAILURE) {
+  MerryFlagsRegr reg = core->fregr;
+  mret_t ret = merry_RAM_cmpxchg(core->ram, address, desired, expected,
+                                 &core->base->state);
+  merry_update_flags_regr(&core->fregr);
+  if (ret == RET_FAILURE) {
     core->req->type = TRY_LOADING_NEW_PAGE_DATA;
     core->req->args[0] = address / _MERRY_PAGE_LEN_;
     if (merry_SEND_REQUEST(core->req) == RET_FAILURE ||
         core->req->args[0] == 1) {
       core->base->stop = mtrue;
+      core->fregr = reg;
       return;
     }
-    merry_RAM_cmpxchg(core->ram, address, desired, expected,
-                      &core->base->state); // this shouldn't fail now
+    ret = merry_RAM_cmpxchg(core->ram, address, desired, expected,
+                            &core->base->state); // this shouldn't fail now
+    merry_update_flags_regr(&core->fregr);
   }
 }
 
@@ -3121,17 +3129,22 @@ EXEC64(cmpxchg_reg) {
   register mbyte_t desired = inst.bytes.b6 & REG_COUNT_64;
   register mbyte_t expected = inst.bytes.b7 & REG_COUNT_64;
   register mqword_t address = core->regr[inst.bytes.b5 & REG_COUNT_64];
-  if (merry_RAM_cmpxchg(core->ram, address, desired, expected,
-                        &core->base->state) == RET_FAILURE) {
+  MerryFlagsRegr reg = core->fregr;
+  mret_t ret = merry_RAM_cmpxchg(core->ram, address, desired, expected,
+                                 &core->base->state);
+  merry_update_flags_regr(&core->fregr);
+  if (ret == RET_FAILURE) {
     core->req->type = TRY_LOADING_NEW_PAGE_DATA;
     core->req->args[0] = address / _MERRY_PAGE_LEN_;
     if (merry_SEND_REQUEST(core->req) == RET_FAILURE ||
         core->req->args[0] == 1) {
       core->base->stop = mtrue;
+      core->fregr = reg;
       return;
     }
-    merry_RAM_cmpxchg(core->ram, address, desired, expected,
-                      &core->base->state); // this shouldn't fail now
+    ret = merry_RAM_cmpxchg(core->ram, address, desired, expected,
+                            &core->base->state); // this shouldn't fail now
+    merry_update_flags_regr(&core->fregr);
   }
 }
 
