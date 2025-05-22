@@ -1,0 +1,78 @@
+; TEST 2
+; READING INPUT AND DISPLAYING IT
+
+; NOTE: The first tests do have any conventions and follow none
+
+; PROC: Display new line
+display_new_line:
+	mov r0, NEW_LINE
+	cout r0
+
+	ret
+
+; PROC: pre-display
+display_arrow:
+	mov r0, ARROW_LEN
+	sout arrow
+
+	ret
+
+; PROC: read and store 7 bytes to name directly
+read_using_var: 
+	mov r0, NAME_LENGTH
+	sin name
+
+	ret
+
+; PROC: read and store 7 bytes to name using the pointer
+read_using_ptr:
+	mov r0, NAME_LENGTH
+	loadq r1, name_ptr
+        sin r1
+
+	ret
+
+; PROC: display a message to the name
+display_msg_using_var:
+	mov r0, MSG_LEN
+	sout msg
+
+	mov r0, NAME_LENGTH
+	sout name
+	
+	call display_new_line
+	ret
+
+; PROC: display a message to the name using ptr
+display_msg_using_ptr:
+	mov r0, MSG_LEN
+	sout msg
+
+	loadq r1, name_ptr
+	mov r0, NAME_LENGTH
+	sout r1
+	
+	call display_new_line
+	ret
+
+; PROC: the main procedure
+main:
+	call display_arrow
+	call read_using_var
+	call display_msg_using_var
+	call display_arrow
+	call read_using_ptr
+	call display_msg_using_ptr
+	hlt
+
+define NEW_LINE 10
+define NAME_LENGTH 7
+define ARROW_LEN 5
+define MSG_LEN 8
+
+name: resb 7 ; reserve 7 bytes for name
+name_ptr: dp name ; pointer to name
+
+arrow: ds ">>> \0"
+
+msg: ds "Hello! \0"

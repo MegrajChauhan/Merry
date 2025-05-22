@@ -2083,22 +2083,22 @@ EXEC64(excg32) {
 
 EXEC64(call) {
   mqword_t addr = inst.whole_word & 0xFFFFFFFFFFFF;
-  if (merry_stack_push(core->tbs, &core->pc) == RET_FAILURE) {
+  if (merry_stack_push(core->tbs, (mptr_t)core->pc) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
-  if (merry_stack_push(core->cstack, &addr) == RET_FAILURE) {
+  if (merry_stack_push(core->cstack, (mptr_t)addr) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
-  core->pc = addr; // the address to the first instruction of the procedure
+  core->pc = addr - 8; // the address to the first instruction of the procedure
 }
 
 EXEC64(ret) {
-  mqptr_t a;
+  MerryPtrToQword a;
 
   // restore PC
-  if ((a = merry_stack_pop(core->tbs)) == RET_NULL) {
+  if ((a.ptr = merry_stack_pop(core->tbs)) == RET_NULL) {
     core->base->stop = mtrue;
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_,
                        _INVALID_PROCEDURE_RETURN_);
@@ -2114,19 +2114,22 @@ EXEC64(ret) {
     core->base->stop = mtrue;
     return;
   }
+
+  core->pc = a.qword;
 }
 
 EXEC64(call_reg) {
-  mqword_t addr = core->regr[inst.bytes.b7 & REG_COUNT_64];
-  if (merry_stack_push(core->tbs, &core->pc) == RET_FAILURE) {
+  MerryPtrToQword addr;
+  addr.qword = core->regr[inst.bytes.b7 & REG_COUNT_64];
+  if (merry_stack_push(core->tbs, (mqptr_t)core->pc) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
-  if (merry_stack_push(core->cstack, &addr) == RET_FAILURE) {
+  if (merry_stack_push(core->cstack, addr.ptr) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
-  core->pc = addr;
+  core->pc = addr.qword - 8;
 }
 
 EXEC64(push_immb) {
