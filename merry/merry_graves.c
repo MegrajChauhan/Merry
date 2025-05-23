@@ -186,20 +186,20 @@ _THRET_T_ merry_graves_run_VM(void *arg) {
         HANDLE_SHUTDOWN(request);
         break;
       case TRY_LOADING_NEW_PAGE_DATA:
-        merry_cond_signal(&request->base->cond);
         HANDLE_LOADING_NEW_PAGE_DATA(request);
+        merry_cond_signal(&request->base->cond);
         break;
       case TRY_LOADING_NEW_PAGE_INST:
-        merry_cond_signal(&request->base->cond);
         HANDLE_LOADING_NEW_PAGE_INST(request);
+        merry_cond_signal(&request->base->cond);
         break;
       case PROBLEM_ENCOUNTERED:
-        merry_cond_signal(&request->base->cond);
         HANDLE_PROBLEM_ENCOUNTERED(request);
+        merry_cond_signal(&request->base->cond);
         break;
       case PROGRAM_REQUEST:
-        merry_cond_signal(&request->base->cond);
         HANDLE_PROGRAM_REQUEST(request);
+        merry_cond_signal(&request->base->cond);
         break;
       }
     }

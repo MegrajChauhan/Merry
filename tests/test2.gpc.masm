@@ -21,6 +21,8 @@ display_arrow:
 read_using_var: 
 	mov r0, NAME_LENGTH
 	sin name
+        
+        cin r2 ; Get rid of the new line
 
 	ret
 
@@ -29,6 +31,8 @@ read_using_ptr:
 	mov r0, NAME_LENGTH
 	loadq r1, name_ptr
         sin r1
+
+	cin r2 ; get rid of new line
 
 	ret
 
@@ -66,11 +70,11 @@ main:
 	hlt
 
 define NEW_LINE 10
-define NAME_LENGTH 7
+define NAME_LENGTH 10
 define ARROW_LEN 5
 define MSG_LEN 8
 
-name: resb 7 ; reserve 7 bytes for name
+name: resb 10 ; reserve 7 bytes for name
 name_ptr: dp name ; pointer to name
 
 arrow: ds ">>> \0"

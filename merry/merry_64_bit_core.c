@@ -1088,11 +1088,11 @@ _THRET_T_ merry_64_bit_core_run(void *arg) {
       fprintf(stdout, "%f", ftod.fl_val);
       break;
     case OP_OUTR:
-      for (msize_t i = 0; i < REG_COUNT_64; i++)
+      for (msize_t i = 0; i <= REG_COUNT_64; i++)
         fprintf(stdout, "%zi\n", core->regr[i]);
       break;
     case OP_UOUTR:
-      for (msize_t i = 0; i < REG_COUNT_64; i++)
+      for (msize_t i = 0; i <= REG_COUNT_64; i++)
         fprintf(stdout, "%zu\n", core->regr[i]);
       break;
     case OP_LOADB:
@@ -1733,6 +1733,9 @@ EXEC64(div_memb) {
   if (temp == 0) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
+    merry_SEND_REQUEST(core->req);
+    core->base->stop = mtrue;
+    return;
   }
   core->regr[op1] /= temp;
   merry_update_flags_regr(&core->fregr);
@@ -1749,6 +1752,9 @@ EXEC64(div_memw) {
   if (temp == 0) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
+    merry_SEND_REQUEST(core->req);
+    core->base->stop = mtrue;
+    return;
   }
   core->regr[op1] /= temp;
   merry_update_flags_regr(&core->fregr);
@@ -1765,6 +1771,9 @@ EXEC64(div_memd) {
   if (temp == 0) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
+    merry_SEND_REQUEST(core->req);
+    core->base->stop = mtrue;
+    return;
   }
   core->regr[op1] /= temp;
   merry_update_flags_regr(&core->fregr);
@@ -1781,6 +1790,9 @@ EXEC64(div_memq) {
   if (temp == 0) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
+    merry_SEND_REQUEST(core->req);
+    core->base->stop = mtrue;
+    return;
   }
   core->regr[op1] /= temp;
   merry_update_flags_regr(&core->fregr);
@@ -1797,6 +1809,9 @@ EXEC64(mod_memb) {
   if (temp == 0) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
+    merry_SEND_REQUEST(core->req);
+    core->base->stop = mtrue;
+    return;
   }
   core->regr[op1] %= temp;
   merry_update_flags_regr(&core->fregr);
@@ -1813,6 +1828,9 @@ EXEC64(mod_memw) {
   if (temp == 0) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
+    merry_SEND_REQUEST(core->req);
+    core->base->stop = mtrue;
+    return;
   }
   core->regr[op1] %= temp;
   merry_update_flags_regr(&core->fregr);
@@ -1829,6 +1847,9 @@ EXEC64(mod_memd) {
   if (temp == 0) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
+    merry_SEND_REQUEST(core->req);
+    core->base->stop = mtrue;
+    return;
   }
   core->regr[op1] %= temp;
   merry_update_flags_regr(&core->fregr);
@@ -1845,6 +1866,9 @@ EXEC64(mod_memq) {
   if (temp == 0) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
+    merry_SEND_REQUEST(core->req);
+    core->base->stop = mtrue;
+    return;
   }
   core->regr[op1] %= temp;
   merry_update_flags_regr(&core->fregr);
@@ -1908,6 +1932,7 @@ EXEC64(fdiv64_mem) {
   }
   if (temp.d_val == 0.0) {
     core->req->type = PROBLEM_ENCOUNTERED;
+    merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
     return;
@@ -1981,6 +2006,7 @@ EXEC64(fdiv32_mem) {
   }
   if (temp.d_val == 0.0) {
     core->req->type = PROBLEM_ENCOUNTERED;
+    merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
     return;
@@ -2734,14 +2760,21 @@ EXEC64(sin) {
   if (merry_RAM_bulk_write(core->ram, addr, len, temp, &core->base->state) ==
       RET_FAILURE) {
 
-    for (msize_t i = 0; i < tolerance; i++) {
-      core->req->type = TRY_LOADING_NEW_PAGE_DATA;
-      core->req->args[0] = addr + i * _MERRY_PAGE_LEN_;
-      if (merry_SEND_REQUEST(core->req) == RET_FAILURE ||
-          core->req->args[0] == 1) {
-        core->base->stop = mtrue;
-        return;
+    if (core->base->state.err.sys_error == _MERRY_PAGE_FAULT_) {
+      for (msize_t i = 0; i < tolerance; i++) {
+        core->req->type = TRY_LOADING_NEW_PAGE_DATA;
+        core->req->args[0] = addr + i * _MERRY_PAGE_LEN_;
+        if (merry_SEND_REQUEST(core->req) == RET_FAILURE ||
+            core->req->args[0] == 1) {
+          core->base->stop = mtrue;
+          return;
+        }
       }
+    } else {
+      core->req->type = PROBLEM_ENCOUNTERED;
+      merry_SEND_REQUEST(core->req);
+      core->base->stop = mtrue;
+      return;
     }
     merry_RAM_bulk_write(core->ram, addr, len, temp,
                          &core->base->state); // this shouldn't fail now
@@ -2758,14 +2791,21 @@ EXEC64(sout) {
 
   if ((temp = merry_RAM_bulk_read(core->ram, addr, len, &core->base->state)) ==
       RET_NULL) {
-    for (msize_t i = 0; i < tolerance; i++) {
-      core->req->type = TRY_LOADING_NEW_PAGE_DATA;
-      core->req->args[0] = addr + i * _MERRY_PAGE_LEN_;
-      if (merry_SEND_REQUEST(core->req) == RET_FAILURE ||
-          core->req->args[0] == 1) {
-        core->base->stop = mtrue;
-        return;
+    if (core->base->state.err.sys_error == _MERRY_PAGE_FAULT_) {
+      for (msize_t i = 0; i < tolerance; i++) {
+        core->req->type = TRY_LOADING_NEW_PAGE_DATA;
+        core->req->args[0] = addr + i * _MERRY_PAGE_LEN_;
+        if (merry_SEND_REQUEST(core->req) == RET_FAILURE ||
+            core->req->args[0] == 1) {
+          core->base->stop = mtrue;
+          return;
+        }
       }
+    } else {
+      core->req->type = PROBLEM_ENCOUNTERED;
+      merry_SEND_REQUEST(core->req);
+      core->base->stop = mtrue;
+      return;
     }
     temp = merry_RAM_bulk_read(core->ram, addr, len,
                                &core->base->state); // this shouldn't fail now
