@@ -1,47 +1,52 @@
 # Merry Virtual Machine
 
 ## Terms
-**__Virtual Core__**: A virtual core(short for vcore) refers to the implementation of a computation model within the virtual machine 
-**__GPC__**:  General Purpose Computation
-**__virtual thread__**: OS-level threads at the virtual level. Shortened to vthread.
+
+- **Virtual Core (vcore)**: A virtual core refers to the implementation of a computation model within the virtual machine.  
+- **GPC**: General Purpose Computation.  
+- **Virtual Thread (vthread)**: An OS-level thread abstracted within the virtual layer.
 
 ## Overview
 
-Merry Virtual Machine, or MVM for short, is a hybrid virtual machine that makes use of various different computation models packed into one big system.
-The term **hybrid** here doesn't imply that MVM uses both, registers and stack, for its computation. In the case of MVM, the term **hybrid** refers to the capability of MVM to 
-make use of multiple different computation models to solve problems. What this implies is that MVM can work like a stack-based VM, or MVM can also work as a registers based VM, or
-MVM can also work as a hybrid VM where **hybrid** refers to the use of both stack and registers. This might get a little confusing so the term **broadly hybrid** will be used for MVM.
+**Merry Virtual Machine (MVM)** is a **broadly hybrid** virtual machine that integrates multiple computation models into a unified system.
 
-MVM is designed such that one can make use of any computation model as long as it has a built-in vcore to support that model. As of writing of this document, MVM only supports
-the 64-bit GPC model commonly referred to as the Hybrid model which makes use of both a stack and registers. In truth, MVM has the capacity to implement hundreds of different types of vcore.
-Just to give you an idea on the flexibiltiy and versatility of MVM's architecture, let's explore some ideas.
+The term **hybrid** in MVM does *not* refer to a combination of register- and stack-based computing alone. Instead, it refers to MVM’s ability to operate under *any* computation model, as long as the required virtual core (vcore) is implemented. For example, MVM can behave like a stack-based VM, a register-based VM, or a combination of both. To clarify this unique flexibility, we use the term **broadly hybrid**.
 
-The GPC model already provides the ability to perform normal computation that a real CPU would perform such as arithmetic instructions, logical instructions, conditional instructions, data movement instructions,
-branch instructions and so on i.e GPC model is turing complete. Let's imagine that a task is being done that requires a lot of data to be processed such as rendering. A vectored computation model could be implemented
-as a vcore that is optimized for vectored operations and makes use of the GPU. The program only needs to start a new vthread that runs the vectored model. Another vcore that is optimized and specialized for processing 
-and parsing standard file formats could be implemented. 
+MVM is designed with extensibility in mind: any computation model can be supported through a corresponding vcore. Currently, MVM supports the 64-bit GPC model—commonly known as the Hybrid Model—which utilizes both a stack and registers. However, the architecture allows for potentially hundreds of other vcore implementations.
 
-The only limits here are the hardware capabilities, Operating system features and your imagination. I could simply write a vcore that will just draw a flower on a screen somewhere and be done with it. As long as you
-can imagine and the operating system allows for those imaginations to become reality, MVM can encompass it all, hence, **Broadly hybrid**.
+To illustrate MVM’s flexibility, consider these examples:
 
-So will I keep implementing new vcore for whatever comes to my mind? What will others do? What about the ideas that comes to their mind? How will I know about them? (PS: __You can tell them to me on my patreon ;\)__ )
-The simple answer lies in the architecture of Merry. MVM uses an architecture that allows anyone to write their imagination. The only requirement? Follow some extremely simple conventions. As of the moment of writing this
-document, the idea is not yet implemented but it is already designed. This new idea is called **Subsystem**.
+- The GPC model is Turing complete and supports standard CPU-like instructions (arithmetic, logic, branching, etc.).
+- A vcore could be designed for high-performance vector computations using GPU acceleration—ideal for tasks like rendering.
+- Another vcore could specialize in parsing and processing common file formats.
 
-With this architecture, I can focus on providing extremely useful vcore that are baked into the VM while you, the users, may use what is already available of write subsystems to cover what you are missing. This 
-architecture only cares that you follow the conventions and nothing else, thus, you may use any programming language you desire to write these subsystems as long as they follow the conventions. Dedicated documentations
-will be provided once the idea is implemented with examples.
+The only limits are your **hardware**, **operating system capabilities**, and **imagination**. You could even write a vcore that simply draws a flower on the screen—and that’s valid. If you can dream it and your OS can support it, MVM can run it. This is the essence of being **broadly hybrid**.
 
-**Side Note**: __The name Merry comes from Going Merry in One piece. The name was decided because I was watching Luffy put her to rest on youtube shorts at the time.__
+### Extensibility for All
+
+Will I personally write a new vcore for every idea I have? What about your ideas? How will I know about them?  
+(**P.S. You can always share them with me on [Patreon]!**)
+
+That’s where MVM’s **Subsystem Architecture** comes in.
+
+This architecture allows *anyone* to create and plug in their own computation models (subsystems), provided they follow a few simple conventions. While this subsystem system isn't implemented yet, the design is complete. Once available, documentation and examples will guide users through creating their own subsystems in *any* programming language they prefer.
+
+I will focus on developing powerful, foundational vcores built into the VM. You—yes, you—can use them or build your own subsystems to extend the system even further.
+
+---
+
+**Side Note**: The name *Merry* comes from the *Going Merry* in *One Piece*. I chose it because I happened to be watching Luffy give her a farewell on YouTube Shorts at the time. 
 
 ## The Architecture
 
-MVM has a very simple architecture comprised of: 
+MVM’s architecture is elegantly simple and consists of the following components:
+
 - **Graves**: The managing director of the entire VM.
-- **VCores**: The workers.
-- **Memory**: No need to explain.
-- **Request Queue**: How else do you think vcores talk to graves?
-- **Reader**: Reads the input file.
+- **VCores**: The workers that execute code based on specific computation models.
+- **Memory**: No explanation needed.
+- **Request Queue**: How vcores communicate with Graves.
+- **Reader**: Handles reading and parsing the input file.
 
-The input file format **BEB** or **Broadly Emitted Binary** will be discussed separately on a different document, thus, understanding the role of the reader besides reading the input file is more important.
+The input file format—**BEB (Broadly Emitted Binary)**—will be detailed in a separate document. For now, it's more important to understand that the **Reader** serves a deeper role than just reading the file.
 
+---
