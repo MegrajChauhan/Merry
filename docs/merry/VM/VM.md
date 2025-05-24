@@ -49,4 +49,26 @@ MVM’s architecture is elegantly simple and consists of the following component
 
 The input file format—**BEB (Broadly Emitted Binary)**—will be detailed in a separate document. For now, it's more important to understand that the **Reader** serves a deeper role than just reading the file.
 
+The architecture is very simple and the way each component works and communicates is also extremely simple. Let's go through each of the components and also see how they work together.
+
+**Graves** is the manager of the entire virtual machine. It is responsible for managing resources, providing OS interface for the programs, and providing various features and services to the programs.
+Graves manages a request queue from which the vcores communicate with it. VCores post their requests on to the queue and Graves fulfills them one by one. In a sense, Graves is an event-driven entity.
+To simplify, except for executing instructions, reading input file, storing and retrieving data/instructions, everything else is the work of Graves. 
+VCores do not require any explanation, I believe. The memory is interesting though. Each vcore has its own dedicated instruction memory but one data memory is shared among all. Yes! Instructions and data are separated
+to increase security. VCores never write to the instruction memory and one cannot access the instructions of another. Some tradeoffs have been made here and there to either get more flexibility or speed. I will get into
+those as I write these documents even more. 
+
+**Reader** won't get a separate section but the file format will so let's discuss it here. Once the command line options are parsed and the input file is identified, the reader not only reads the input file but prepares
+the memory for Graves which is then provided to the corresponding vcore. As reader reads the input, the respective instruction memory or data memory is populated on a page basis(I will get to pages a bit later). The reader
+also provides the Read On Demand feature. It is better demonstrated with an example. Imagine you wish to play RDR2. It is a very heavy game! The rate of reading the source binary into the RAM is limited and so is the RAM!
+The RAM has not enough space so even if RDR2 took 100% of the available space for itself, it still wouldn't fit so then how? The solution to this problem lies in paging and Read On Demand features provided by the host
+Operating system in conjunction with the hardware. How this works is a bit complicated but let me summarize. So the OS stores the say 90GB game in chunks called Pages. One page is 4KB or more in size depending on the OS.
+That makes for a lot of pages. Now say the details required to render Arthur is in page 100 but the details required to render his gun is in page 1000. What will the OS do? The OS will read just those two pages into the
+RAM and the rest are left on the hard drive waiting to be retrived on need, hence, Read On Demand. 
+
+The reader does something similar with some mentionable differences. For eg: The OS will swap pages to accomodate other programs but the reader will just read on demand and there is no swapping and such involved.
+The memory of MVM is also paged. One page is 1MB in size. Say there is a 20MB program. Reading time increases with larger file size so to solve the problem, the reader reads just the first 1MB and if other parts are needed
+then they are read as requested on demand.
+
 ---
+
