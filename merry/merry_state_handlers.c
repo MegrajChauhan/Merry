@@ -99,6 +99,12 @@ void merry_HANDLE_INTERNAL_SYS_ERROR(msyserr_t err, MerryPtrToQword arg) {
               "sections found.",
               NULL);
     break;
+  case _MERRY_MISALIGNED_DATA_SECTION_:
+    merry_msg("Data section must be 8-byte, 4-byte or 2-byte aligned. "
+              "Misaligned data "
+              "sections found.",
+              NULL);
+    break;
   case _MERRY_INSTRUCTION_SECTION_CANNOT_BE_ZERO_:
     merry_msg("Instruction sections cannot have a length of 0 bytes.", NULL);
     break;
