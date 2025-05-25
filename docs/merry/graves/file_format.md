@@ -1,100 +1,149 @@
-# The Input File Format For Merry
+# The Input File Format for Merry
 
-The input file format for Merry is called **BEB** which stands for **Broadly Emitted Binary**. The format is quite simple really. 
-If the file is to be divided into portions based on the different type of information contained, then the divisions can be made as:
+The input file format for Merry is called **BEB**, which stands for **Broadly Emitted Binary**. The format is quite simple.  
+If we divide the file based on the types of information it contains, the parts are:
 
 - Head
 - Body
 - Optional Tail
 
-Let's go through each chunk:
+Let’s go through each chunk:
 
-1) Head:
-   The head is the metadata for the input file. It contains information such as the type of file, ITIT length, data section length, string section length DIT length and so on.
-   I will delve into each section properly later on. 
-2) Body:
-   The body contains the ITIT, instructions, data and string. This is everything that is of value to the VM.
-3) Tail:
-   The tail is absolutely optional to have. This is the space for DIT. I will explain the importance of this section later on. It is notable that the reader completely ignores this portion and doesn't even bother reading
-   it.
+### 1. Head
 
-# Structures
+The Head is the metadata section. It contains information such as:
 
-## Head
-The head is 40 bytes in size and occupies the first 40 bytes of the file. The structure of head goes as:
+- File type
+- ITIT length
+- Data section length
+- String section length
+- DIT (Debug Information Table) length
 
-62 65 62 FT Rs Rs Rs Rs (Identification Header)
-00 00 00 00 00 00 00 00 (ITIT Length in bytes)
-00 00 00 00 00 00 00 00 (Data section Length in bytes)
-00 00 00 00 00 00 00 00 (String section Length in bytes)
-00 00 00 00 00 00 00 00 (DIT Length in bytes)
+I’ll go into the details of each of these fields below.
 
-Note: FT=File Type, Rs=Reserved
+### 2. Body
 
-The magic bytes 62, 64, and 62 in hex represent 'beb' which is used to identify the file. Currently, FT only has one value of 0 indicating a Normal input file. As reader gets more complex, it will support more file types.
-
-| File Type | Value |
-| NORMAL INPUT FILE | 0 |
-
-It is to be noted that accept for the Identification header everything else in the file must be in little endian format.
-
-## Body
-
-The body is comprised of four part:
+The Body contains the actual content of the file. This includes:
 
 - ITIT
 - Instructions
-- Data Metadata
+- Data metadata
 - Data
-- String
+- Strings
 
-### ITIT
+This section holds everything valuable to the VM.
 
-ITIT stands for Instruction Type Identification Table. The main purpose of this table is to hint the reader on the different sections and which vcore they belong to. It is important to note that ITIT can only have at most
-CORE\_COUNT entries. Here CORE\_COUNT refers to the number of types of vcores that MVM supports. This also implies that the instructions for one vcore type must not be fragmented. Each entry has a structure of:
+### 3. Tail (Optional)
 
-CT Rs Rs Rs Rs Rs Rs Rs (Type Identification)
+The Tail is optional. It contains the **DIT** section, which can be used to store debug information.  
+It’s important to note that the reader completely ignores this section — it’s not even read.  
+This space is reserved for toolchain developers (assemblers, compilers, etc.) to store whatever additional metadata they want.
+
+---
+
+## Structures
+
+### Head
+
+The Head occupies the first **40 bytes** of the file. The layout is as follows:
+
+62 65 62 FT Rs Rs Rs Rs (Identification Header)
+
+00 00 00 00 00 00 00 00 (ITIT Length in bytes)
+
+00 00 00 00 00 00 00 00 (Data Section Length in bytes)
+
+00 00 00 00 00 00 00 00 (String Section Length in bytes)
+
+00 00 00 00 00 00 00 00 (DIT Length in bytes)
+
+- `FT` = File Type  
+- `Rs` = Reserved  
+- The first three bytes (`62 65 62`) spell "beb" in ASCII, which serves as the file's magic number.
+
+Currently, the only defined file type is:
+
+| File Type        | Value |
+|------------------|-------|
+| NORMAL INPUT FILE | 0     |
+
+**Note:** Except for the identification header, all fields in the file must be in **little-endian** format.
+
+---
+
+### Body
+
+The Body is divided into the following sections:
+
+- **ITIT** (Instruction Type Identification Table)
+- **Instructions**
+- **Data Metadata**
+- **Data**
+- **Strings**
+
+#### ITIT
+
+The ITIT tells the reader how to interpret the instruction section and which vcore type each chunk of instructions belongs to.
+
+- There can be **at most `CORE_COUNT` entries** in the ITIT.
+- Each entry corresponds to a type of vcore. Instructions for the same core type **must not be fragmented**.
+
+Each ITIT entry is 16 bytes:
+
+CT Rs Rs Rs Rs Rs Rs Rs (Core Type Identification)
+
 00 00 00 00 00 00 00 00 (Section Length in bytes)
 
-Note: CT=Core Type
+- `CT` = Core Type  
+- Section Length = Number of bytes of instructions for that core type.
 
-Section length indicates the length of the instructions section for one particular core type.
+Currently defined core types:
 
 | Core Type | Value |
-| GPC | 0 |
+|-----------|-------|
+| GPC       | 0     |
 
-### Instructions
+#### Instructions
 
-After ITIT is parsed, the following sections are interpreted as instructions. If the first entry to ITIT was for GPC with length 16 bytes then the reader expects the first 16 bytes following ITIT to belong to GPC.
-Instructions must appear in the same order as provided in the ITIT.
+The instruction section immediately follows the ITIT.  
+Instructions must appear in the same order as the ITIT entries.  
+For example, if the first ITIT entry is for GPC with a length of 16 bytes, the reader expects the next 16 bytes to belong to GPC instructions.
 
-### Data Metadata
+#### Data Metadata
 
-Data metadata is a 24-byte data structure that provides the length of the available Quad-words(Qwords), Double-words(Dwords), and Words. The structure is something like:
+The data metadata is 24 bytes long and describes the structure of the data section:
 
-00 00 00 00 00 00 00 00 (Number of Qwords * 8)
-00 00 00 00 00 00 00 00 (Number of Dwords * 4)
-00 00 00 00 00 00 00 00 (Number of Words * 2)
+00 00 00 00 00 00 00 00 (Qword count * 8)
 
-It is also to be noted that all of these numbers must be properly 8-byte, 4-byte and 2-byte aligned respectively.
+00 00 00 00 00 00 00 00 (Dword count * 4)
 
-### Data
+00 00 00 00 00 00 00 00 (Word count * 2)
 
-Data also has a structure: 
+- All values must be properly aligned (Qwords = 8 bytes, Dwords = 4 bytes, Words = 2 bytes).
 
-- First the Qwords
-- Followed by Dwords
-- and lastly Words
+#### Data
 
-Each of these sections must be as large as the respective length provided in the metadata.
+The Data section comes right after the metadata and is laid out in the following order:
 
-### String
+1. Qwords
+2. Dwords
+3. Words
 
-String section, despite the name, holds byte type values. The reason for all this separation for different data type is to make Merry cross-platform. Since everything in the file is in little endian format, Merry has to 
-perform an endian conversion which means qwords can handle the conversion but the rest of the data types won't be able to handle the conversion without getting destroyed.
+Each sub-section must match the lengths defined in the metadata.
 
-## Tail(Optional)
+#### String
 
-The tail is left for the user, more preciesly, assembler and compiler writers. This is the DIT section or Debug Information Table. MVM has no use for it, thus, anyone can do anything with this section. As the name suggests,
-the main motive for the section is to store debugging information. Since the section is irrelevant to MVM but could be relevant to something else, the name might need a little change but yeah! Do what you feel like!
+Despite the name, this section holds raw byte data.
+The reason for separating data by type is to make Merry **cross-platform**, especially for endian conversion.  
+Qwords can handle conversion efficiently, but Dwords and Words might lose structure if not properly handled.
+
+---
+
+## Tail (Optional)
+
+This section is reserved for **Debug Information Table (DIT)** or anything else the user wants.  
+The MVM **ignores** this section entirely, meaning it has **no restrictions**.  
+While originally intended for debugging metadata, the name could change to reflect more flexible usage.
+
+Assembler and compiler developers are free to use this section however they want.
 
