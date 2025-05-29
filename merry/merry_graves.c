@@ -88,7 +88,8 @@ mret_t merry_graves_find_old_core(msize_t *ind) {
   return RET_FAILURE;
 }
 
-mret_t merry_graves_add_new_core(mcore_t c_type, maddress_t begin) {
+mret_t merry_graves_add_new_core(mcore_t c_type, maddress_t begin,
+                                 msize_t *id) {
   MerryCoreBase *base;
   mcoredetails_t details = graves.core_base_func_list[c_type];
 
@@ -116,12 +117,16 @@ mret_t merry_graves_add_new_core(mcore_t c_type, maddress_t begin) {
       merry_core_base_clean(base);
       return RET_FAILURE;
     }
+    if (id)
+      *id = base->core_id;
     graves.core_count++;
   } else {
     MerryGravesCoreRepr *repr = merry_dynamic_list_at(graves.all_cores, i);
     repr->base = base;
     repr->cptr = tmp;
     base->core_id = i;
+    if (id)
+      *id = base->core_id;
   }
 
   return RET_SUCCESS;
@@ -138,6 +143,7 @@ mret_t merry_graves_boot_core(msize_t core_id) {
 
   if (merry_create_detached_thread(&th, repr->base->exec_func, repr->cptr,
                                    &graves.master_state) == RET_FAILURE) {
+    return RET_FAILURE;
   }
 
   return RET_SUCCESS;
@@ -158,10 +164,15 @@ mret_t merry_graves_clean_a_core(msize_t cid) {
   return RET_SUCCESS;
 }
 
+mptr_t merry_graves_get_hands_on_cptr(msize_t id) {
+  return ((MerryGravesCoreRepr *)merry_dynamic_list_at(graves.all_cores, id))
+      ->cptr; // id is always valid
+}
+
 _THRET_T_ merry_graves_run_VM(void *arg) {
 
   // First start a new core
-  if (merry_graves_add_new_core(graves.reader->itit.entries[0].type, 0) ==
+  if (merry_graves_add_new_core(graves.reader->itit.entries[0].type, 0, NULL) ==
       RET_FAILURE) {
     merry_provide_context(graves.master_state, _MERRY_GRAVES_INITIALIZATION_);
     merry_MAKE_SENSE_OF_STATE(&graves.master_state);
@@ -245,9 +256,9 @@ REQ_HDLR(HANDLE_LOADING_NEW_PAGE_INST) {
                                             req->args[0] / _MERRY_PAGE_LEN_) ==
       RET_FAILURE) {
     merry_MAKE_SENSE_OF_STATE(&graves.reader->state);
-    req->args[0] = 1;
+    req->args[0] = REQUEST_FAILED;
   } else {
-    req->args[0] = 0;
+    req->args[0] = REQUEST_SERVED;
   }
 }
 
@@ -255,9 +266,9 @@ REQ_HDLR(HANDLE_LOADING_NEW_PAGE_DATA) {
   if (merry_graves_reader_load_data(
           graves.reader, req->args[0] / _MERRY_PAGE_LEN_) == RET_FAILURE) {
     merry_MAKE_SENSE_OF_STATE(&graves.reader->state);
-    req->args[0] = 1;
+    req->args[0] = REQUEST_FAILED;
   } else {
-    req->args[0] = 0;
+    req->args[0] = REQUEST_SERVED;
   }
 }
 
@@ -265,4 +276,43 @@ REQ_HDLR(HANDLE_PROBLEM_ENCOUNTERED) {
   merry_MAKE_SENSE_OF_STATE(&req->base->state);
 }
 
-REQ_HDLR(HANDLE_PROGRAM_REQUEST) {}
+REQ_HDLR(HANDLE_PROGRAM_REQUEST) {
+  switch (req->args[0]) {
+  case NEW_THREAD:
+    HANDLE_NEW_THREAD(req);
+    break;
+  }
+}
+
+/*------Handling Program Requests------*/
+
+PREQ_HDLR(HANDLE_NEW_THREAD) {
+  // We are attempting to create a new core of the same type.
+  msize_t id = 0;
+  if (merry_graves_add_new_core(req->base->core_type, req->args[1], &id) ==
+      RET_FAILURE) {
+    req->args[0] = FAILED_TO_ADD_CORE;
+    return;
+  }
+  if (merry_graves_boot_core(id) == RET_FAILURE) {
+    req->args[0] = FAILED_TO_ADD_CORE;
+    return;
+  }
+  req->args[0] = REQUEST_SERVED;
+  req->args[1] = id;
+}
+
+PREQ_HDLR(HANDLE_ADD_A_NEW_DATA_MEMORY_PAGE) {
+  MerryRAM *ram = req->base->gmem_func(
+      merry_graves_get_hands_on_cptr(req->base->core_id), 0);
+  msize_t tmp = ram->page_count;
+
+  if (merry_RAM_add_pages(ram, req->args[1], &graves.master_state) ==
+      RET_FAILURE) {
+    merry_MAKE_SENSE_OF_STATE(&graves.master_state);
+    req->args[0] = REQUEST_FAILED;
+  } else {
+    req->args[0] = REQUEST_SERVED;
+    req->args[1] = tmp * _MERRY_BYTES_PER_PAGE_;
+  }
+}

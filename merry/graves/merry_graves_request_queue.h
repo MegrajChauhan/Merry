@@ -13,7 +13,7 @@ typedef struct MerryGravesRequest MerryGravesRequest;
 struct MerryGravesRequest {
   mgreq_t type;
   MerryCoreBase *base;
-  mqword_t args[4];
+  mqword_t args[6];
 };
 
 struct MerryGravesReqQueue {

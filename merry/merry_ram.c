@@ -73,6 +73,12 @@ mret_t merry_RAM_add_pages(MerryRAM *ram, msize_t num, MerryState *state) {
   }
 
   memcpy(pages, ram->pages, sizeof(MerryNormalMemoryPage *) * ram->page_count);
+  for (msize_t j = ram->page_count; j < temp; j++) {
+    if (merry_initialize_normal_memory_page(pages[j]) == RET_FAILURE) {
+      merry_obtain_memory_interface_state(state);
+      goto __rid_of_during_error;
+    }
+  }
   ram->page_count = temp;
   free(ram->pages);
   ram->pages = pages;

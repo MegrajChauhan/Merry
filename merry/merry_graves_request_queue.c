@@ -29,9 +29,11 @@ mret_t merry_graves_req_queue_init(mcond_t *graves_cond, MerryState *state) {
 MerryState *merry_graves_req_queue_state() { return &g_queue.queue_state; }
 
 mret_t merry_SEND_REQUEST(MerryGravesRequest *creq) {
-  if (g_queue.accept_requests == mfalse)
-    return RET_FAILURE;
   merry_mutex_lock(&g_queue.queue_lock);
+  if (g_queue.accept_requests == mfalse) {
+    merry_mutex_unlock(&g_queue.queue_lock);
+    return RET_FAILURE;
+  }
 
   if (merry_dynamic_queue_push(g_queue.req_queue, creq) == RET_FAILURE) {
     merry_assign_state(g_queue.queue_state, _MERRY_INTERNAL_SYSTEM_ERROR_,

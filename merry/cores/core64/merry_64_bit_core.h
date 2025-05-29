@@ -11,6 +11,7 @@
 #include "merry_state.h"
 #include "merry_types.h"
 #include "merry_utils.h"
+#include <merry_core_base_mem_access.h>
 #include <stdlib.h>
 
 #define _MERRY_64_BIT_CORE_REGR_COUNT_ 16
@@ -35,14 +36,15 @@ enum {
   R10,
   R11,
   R12,
-  REG_COUNT_64 = 15,
+  GPC_64_LAST_REGR = 15,
+  REG_COUNT_GPC_64,
 };
 
 typedef struct Merry64BitCore Merry64BitCore;
 
 struct Merry64BitCore {
   MerryCoreBase *base;
-  mqword_t regr[REG_COUNT_64];
+  mqword_t regr[REG_COUNT_GPC_64];
   MerryFlagsRegr fregr;
   MerryFFlagsRegr ffregr;
   mqword_t pc; // program counter
@@ -55,6 +57,8 @@ struct Merry64BitCore {
 };
 
 MerryCoreBase *merry_64_bit_core_base(MerryState *state);
+
+MerryRAM *merry_64_bit_core_get_memory(mptr_t core, msize_t what);
 
 void *merry_64_bit_core_init(MerryCoreBase *base, MerryRAM *ram, MerryRAM *iram,
                              maddress_t start_point);
@@ -131,6 +135,7 @@ EXEC64(fmul32_mem);
 EXEC64(fdiv32_mem);
 
 EXEC64(mov_imm);
+EXEC64(movf32);
 
 // mov_reg, mov_reg8, mov_reg16, mov_reg32 don't need a dedicated function
 

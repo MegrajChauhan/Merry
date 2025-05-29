@@ -1,8 +1,7 @@
 #ifndef _MERRY_64_BIT_CORE_ISA_
 #define _MERRY_64_BIT_CORE_ISA_
 
-enum
-{
+enum {
   OP_NOP,  // no operation instruction
   OP_HALT, // halt instruction
 
@@ -28,7 +27,7 @@ enum
   OP_IDIV_REG,
   OP_IMOD_IMM,
   OP_IMOD_REG,
-  
+
   OP_FADD,
   OP_FSUB,
   OP_FMUL,
@@ -78,24 +77,32 @@ enum
   OP_DEC,
 
   /* --------------------- Internal Data Movement Instructions ------------*/
-  OP_MOVE_IMM_64,  // MOVE 64-bit immediate into a register 
+  OP_MOVE_IMM_64, // MOVE 64-bit immediate into a register
+  OP_MOVF,
+  OP_MOVF32,
   OP_MOVE_REG,     // move a value from one register to another
   OP_MOVE_REG8,    // move the lowest byte of one register to another
   OP_MOVE_REG16,   // move the lowest two bytes of one register to another
   OP_MOVE_REG32,   // move the lowest 4 bytes of one register to another
-  OP_MOVESX_IMM8,  // move a value and sign extend it as well[only 8-bit numbers are accepted]
-  OP_MOVESX_IMM16, // move a value and sign extend it as well[only 16-bit numbers are accepted]
-  OP_MOVESX_IMM32, // move a value and sign extend it as well[only 32-bit numbers are accepted]
-  OP_MOVESX_REG8,  // move the lower 1 byte to another register while sign extending it
-  OP_MOVESX_REG16, // move the lower 2 bytes to another register while sign extending it
-  OP_MOVESX_REG32, // move the lower 4 bytes to another register while sign extending it
-  
+  OP_MOVESX_IMM8,  // move a value and sign extend it as well[only 8-bit numbers
+                   // are accepted]
+  OP_MOVESX_IMM16, // move a value and sign extend it as well[only 16-bit
+                   // numbers are accepted]
+  OP_MOVESX_IMM32, // move a value and sign extend it as well[only 32-bit
+                   // numbers are accepted]
+  OP_MOVESX_REG8,  // move the lower 1 byte to another register while sign
+                   // extending it
+  OP_MOVESX_REG16, // move the lower 2 bytes to another register while sign
+                   // extending it
+  OP_MOVESX_REG32, // move the lower 4 bytes to another register while sign
+                   // extending it
+
   // exchanging values between two registers
   OP_EXCG8,  // exchange only 1 lower byte
   OP_EXCG16, // exchange only 2 lower bytes
   OP_EXCG32, // exchange only 4 lower bytes
   OP_EXCG,   // exchange the entire values
- 
+
   // This also move the values but other bytes of the register is not affected
   OP_MOV8,
   OP_MOV16,
@@ -120,10 +127,11 @@ enum
   OP_MOVSE,
 
   // we won't need zero extend. It can simply be aliased with simple move
-  
- /*-------------------Control Flow Instructions ------------------*/
-  
-  OP_JMP_OFF,  // JMP inst but the offset from current PC is provided[If the offset provided is in 2's complement then we can jump back]
+
+  /*-------------------Control Flow Instructions ------------------*/
+
+  OP_JMP_OFF,  // JMP inst but the offset from current PC is provided[If the
+               // offset provided is in 2's complement then we can jump back]
   OP_JMP_ADDR, // JMP inst but the address is directly provided
   OP_JNZ,
   OP_JZ,
@@ -141,10 +149,10 @@ enum
   OP_JS,
   OP_JGE,
   OP_JSE,
- 
-  OP_CALL,     // the call instruction
 
-  OP_RET,      // return from a call
+  OP_CALL, // the call instruction
+
+  OP_RET, // return from a call
   OP_RETNZ,
   OP_RETZ,
   OP_RETNE,
@@ -162,11 +170,12 @@ enum
   OP_RETGE,
   OP_RETSE,
 
-  OP_LOOP, // automatically jumps to the given address until the specified register is 0
+  OP_LOOP, // automatically jumps to the given address until the specified
+           // register is 0
 
   OP_CALL_REG,
   OP_JMP_REGR, // address in register
-	       
+
   OP_INTR,
 
   /*------------------------ Stack-Based Instructions-------------------*/
@@ -176,10 +185,10 @@ enum
   OP_PUSH_IMM32,
   OP_PUSH_IMM64,
   OP_PUSH_REG,
-  OP_POP8,     
-  OP_POP16,     
-  OP_POP32,     
-  OP_POP64,     
+  OP_POP8,
+  OP_POP16,
+  OP_POP32,
+  OP_POP64,
   OP_PUSHA, // R0, R1, R2, ......
   OP_POPA,  // In reverse
 
@@ -202,35 +211,35 @@ enum
   OP_STORESD,
   OP_STORESQ,
 
- /*--------------------Logical Instructions--------------------------*/
+  /*--------------------Logical Instructions--------------------------*/
 
   OP_AND_IMM, // REG & IMM
   OP_AND_REG, // REG & REG
 
-  OP_OR_IMM,  // REG | TMM
-  OP_OR_REG,  // REG | REG
-  
+  OP_OR_IMM, // REG | TMM
+  OP_OR_REG, // REG | REG
+
   OP_XOR_IMM, // REG ^ IMM
   OP_XOR_REG, // REG ^ REG
-  
-  OP_NOT,     // ~REG
-  
-  OP_LSHIFT,  // REG << <num>
-  OP_RSHIFT,  // REG >> <num>
+
+  OP_NOT, // ~REG
+
+  OP_LSHIFT, // REG << <num>
+  OP_RSHIFT, // REG >> <num>
   OP_LSHIFT_REGR,
   OP_RSHIFT_REGR,
-  
+
   OP_CMP_IMM, // CMP REG and IMM
   OP_CMP_REG, // CMP REG and REG
   OP_CMP_IMM_MEMB,
   OP_CMP_IMM_MEMW,
   OP_CMP_IMM_MEMD,
   OP_CMP_IMM_MEMQ,
-  
+
   OP_FCMP,
   OP_FCMP32,
 
-/*------------------------IO Instructions-----------------------------*/
+  /*------------------------IO Instructions-----------------------------*/
   OP_CIN,  // character input
   OP_COUT, // character output
   OP_SIN,  // input a given number of bytes[characters or a string][string in]
@@ -261,11 +270,12 @@ enum
   OP_OUTF32, // print a 32-bit float
 
   OP_OUTR,  // print all register's contents as signed values[takes no operands]
-  OP_UOUTR, // print all register's contents as unsigned values[takes no operands]
+  OP_UOUTR, // print all register's contents as unsigned values[takes no
+            // operands]
   OP_SIN_REG,
   OP_SOUT_REG,
 
-/*-----------------Mem-Regr Data Movement Instructions----------------*/
+  /*-----------------Mem-Regr Data Movement Instructions----------------*/
 
   // load/store DEST/SOURCE REGR, DEST/SOURCE ADDRESS
   OP_LOADB,  // load byte
@@ -290,23 +300,22 @@ enum
   OP_ATOMIC_LOADB,  // load byte atomically
   OP_ATOMIC_LOADW,  // load 2 bytes atomically
   OP_ATOMIC_LOADD,  // load 4 bytes atomically
-  OP_ATOMIC_LOADQ,   // load 8 bytes atomically
+  OP_ATOMIC_LOADQ,  // load 8 bytes atomically
   OP_ATOMIC_STOREB, // store byte atomically
   OP_ATOMIC_STOREW, // store 2 bytes atomically
   OP_ATOMIC_STORED, // store 4 bytes atomically
-  OP_ATOMIC_STOREQ,  // store 8 bytes atomically
+  OP_ATOMIC_STOREQ, // store 8 bytes atomically
 
   OP_ATOMIC_LOADB_REG,  // load byte atomically
   OP_ATOMIC_LOADW_REG,  // load 2 bytes atomically
   OP_ATOMIC_LOADD_REG,  // load 4 bytes atomically
-  OP_ATOMIC_LOADQ_REG,   // load 8 bytes atomically
+  OP_ATOMIC_LOADQ_REG,  // load 8 bytes atomically
   OP_ATOMIC_STOREB_REG, // store byte atomically
   OP_ATOMIC_STOREW_REG, // store 2 bytes atomically
   OP_ATOMIC_STORED_REG, // store 4 bytes atomically
-  OP_ATOMIC_STOREQ_REG,  // store 8 bytes atomically
+  OP_ATOMIC_STOREQ_REG, // store 8 bytes atomically
 
-/*-------------------Utility Instructions-----------------------------*/
-
+  /*-------------------Utility Instructions-----------------------------*/
 
   /*
     LEA will require many operands.
@@ -317,14 +326,52 @@ enum
     dest = base + index * scale [Useful for arrays: Doesn't change flags]
   */
   OP_LEA,
-  
-  OP_CFLAGS, // clear the flags register
-  OP_RESET,  // reset all the registers
+
+  OP_CFLAGS,  // clear the flags register
+  OP_CFFLAGS, // clear the float flags register
+  OP_RESET,   // reset all the registers
 
   OP_CMPXCHG, // the atomic compare and exchange instruction
 
   OP_CMPXCHG_REGR,
+  OP_RETFNI,
   OP_WHDLR, // set a wild handler
- };
+
+  OP_MOVFZ = 0,
+  OP_MOVFNZ,
+  OP_MOVFN,
+  OP_MOVFNN,
+  OP_MOVFUF,
+  OP_MOVFNUF,
+  OP_MOVFO,
+  OP_MOVFNO,
+  OP_MOVFU,
+  OP_MOVFNU,
+  OP_MOVFI,
+  OP_MOVFNI,
+  OP_JFZ,
+  OP_JFNZ,
+  OP_JFN,
+  OP_JFNN,
+  OP_JFUF,
+  OP_JFNUF,
+  OP_JFO,
+  OP_JFNO,
+  OP_JFU,
+  OP_JFNU,
+  OP_JFI,
+  OP_JFNI,
+  OP_RETFZ,
+  OP_RETFNZ,
+  OP_RETFN,
+  OP_RETFNN,
+  OP_RETFUF,
+  OP_RETFNUF,
+  OP_RETFO,
+  OP_RETFNO,
+  OP_RETFU,
+  OP_RETFNU,
+  OP_RETFI,
+};
 
 #endif

@@ -43,12 +43,17 @@ _MERRY_DEFINE_FUNC_PTR_(void *, mcoreinit_t, MerryCoreBase *base, MerryRAM *ram,
 // Destroy the core
 _MERRY_DEFINE_FUNC_PTR_(void, mcoredest_t, void *);
 
+// executing instructions
 _MERRY_DEFINE_FUNC_PTR_(_THRET_T_, mcoreexec_t, void *arg);
+
+// getting IRAM and RAM[what=0? ram: iram]
+_MERRY_DEFINE_FUNC_PTR_(MerryRAM *, mcoregmem_t, mptr_t core, msize_t what);
 
 struct MerryCoreBase {
   mcoreinit_t init_func;
   mcoredest_t free_func;
   mcoreexec_t exec_func;
+  mcoregmem_t gmem_func;
 
   unsigned int core_id; // assigned by Graves for every core
   mbool_t stop;

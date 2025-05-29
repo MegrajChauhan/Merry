@@ -1,0 +1,43 @@
+
+take_input:
+	mov r0, INP_MSG_LEN
+	sout inp_msg
+
+        uinq r3
+        cout r8
+	ret
+
+factorial:
+        cmp r3, 0
+	rete
+	dec r3
+	mul r0, r3
+	call factorial
+	ret
+
+display_res:
+	movq r1, r0
+	mov r0, OUT_MSG_LEN
+	sout out_msg
+
+	uoutq r1
+
+	mov r0, 10
+	cout r0
+	ret
+
+main:
+	mov r8, 10
+	call take_input
+	mov r0, 1
+	call factorial
+	hlt
+
+define INP_MSG_LEN 17
+define OUT_MSG_LEN 18
+
+inp_msg: ds "Enter a number: \0"
+out_msg: ds "The factorial is \0"
+num: resq 1
+res: dq 1
+

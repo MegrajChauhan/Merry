@@ -25,6 +25,7 @@
 #include <stdatomic.h>
 
 #define REQ_HDLR(name) void name(MerryGravesRequest *req)
+#define PREQ_HDLR(name) void name(MerryGravesRequest *req)
 
 typedef struct MerryGraves MerryGraves;
 typedef struct MerryGravesCoreRepr MerryGravesCoreRepr;
@@ -61,11 +62,13 @@ mret_t merry_graves_init(int argc, char **argv);
 
 mret_t merry_graves_acquaint_with_cores();
 
-mret_t merry_graves_add_new_core(mcore_t c_type, maddress_t begin);
+mret_t merry_graves_add_new_core(mcore_t c_type, maddress_t begin, msize_t *id);
 
 mret_t merry_graves_clean_a_core(msize_t cid);
 
 mret_t merry_graves_find_old_core(msize_t *ind);
+
+mptr_t merry_graves_get_hands_on_cptr(msize_t id);
 
 int merry_GRAVES_RULE(int argc, char **argv);
 
@@ -78,5 +81,9 @@ REQ_HDLR(HANDLE_LOADING_NEW_PAGE_DATA);
 REQ_HDLR(HANDLE_LOADING_NEW_PAGE_INST);
 REQ_HDLR(HANDLE_PROBLEM_ENCOUNTERED);
 REQ_HDLR(HANDLE_PROGRAM_REQUEST);
+
+/*--- Handling Program Requests ----*/
+PREQ_HDLR(HANDLE_NEW_THREAD);
+PREQ_HDLR(HANDLE_ADD_A_NEW_DATA_MEMORY_PAGE);
 
 #endif
