@@ -123,6 +123,22 @@ mptr_t merry_list_at(MerryList *list, msize_t at) {
   return (mptr_t)((char *)list->buf + (list->elem_len * at));
 }
 
+mret_t merry_list_replace(MerryList *list, mptr_t new_elem, msize_t at) {
+  merry_check_ptr(list);
+  merry_check_ptr(new_elem);
+  merry_check_ptr(list->buf);
+
+  if (surelyF(merry_is_list_empty(list)))
+    return RET_FAILURE;
+
+  if (surelyF(!merry_list_has_at_least(list, at)))
+    return RET_FAILURE;
+
+  mptr_t old = (mptr_t)((char *)list->buf + (list->elem_len * at));
+  memcpy(old, new_elem, list->elem_len);
+  return RET_SUCCESS;
+}
+
 void merry_erase_list(MerryList *list) {
   merry_check_ptr(list);
   merry_check_ptr(list->buf);

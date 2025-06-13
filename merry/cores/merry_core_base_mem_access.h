@@ -85,4 +85,13 @@ mret_t merry_core_mem_access_WRITE_DATA_qword_atm(MerryGravesRequest *req,
                                                   maddress_t addr,
                                                   mqword_t to_store);
 
+mret_t merry_core_base_mem_access_bulk_read(MerryGravesRequest *req,
+                                            MerryState *state, MerryRAM *ram,
+                                            maddress_t addr, mbptr_t *buf,
+                                            msize_t n);
+mret_t merry_core_base_mem_access_bulk_write(MerryGravesRequest *req,
+                                             MerryState *state, MerryRAM *ram,
+                                             maddress_t addr, mbptr_t buf,
+                                             msize_t n);
+
 #endif

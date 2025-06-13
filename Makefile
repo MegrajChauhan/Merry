@@ -1,7 +1,7 @@
 # Variable definitions
 CC = gcc
 FLAGS = -Wall -Wextra -MMD -MP
-DIRS = utils utils/base merry/abs merry/cores merry/cores/core64 merry/graves merry/internals merry/memory 
+DIRS = utils utils/base merry/abs merry/cores merry/cores/core64 merry/graves merry/internals merry/memory merry/graves/organ 
 SRC_DIR = merry/
 INC_DIRS = ${addprefix -I, ${DIRS}}
 FLAGS += ${flags}

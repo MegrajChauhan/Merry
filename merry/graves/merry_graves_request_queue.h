@@ -9,6 +9,16 @@
 
 typedef struct MerryGravesReqQueue MerryGravesReqQueue;
 typedef struct MerryGravesRequest MerryGravesRequest;
+typedef struct MerryGravesExecReturn MerryGravesExecReturn;
+
+_MERRY_DEFINE_FUNC_PTR_(mret_t, mexecret_t, MerryCoreBase *,
+                        MerryGravesExecReturn *, MerryRAM *, MerryRAM *);
+
+struct MerryGravesExecReturn {
+  mexecret_t func;
+  void *arg;
+  mqword_t args[5];
+};
 
 struct MerryGravesRequest {
   mgreq_t type;

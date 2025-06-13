@@ -8,16 +8,36 @@ MerryCoreBase *merry_64_bit_core_base(MerryState *state) {
     merry_provide_context(*state, _MERRY_CORE_BASE_INITIALIZATION_);
     return RET_NULL;
   }
+  /*
+    if ((base->execution_queue = merry_dynamic_queue_init(state)) == RET_NULL) {
+      merry_provide_context(*state, _MERRY_CORE_BASE_INITIALIZATION_);
+      free(base);
+      return RET_NULL;
+    }
+  */
+
+  if ((base->execution_states = merry_create_dynamic_list(
+           _MERRY_EXECUTING_STATE_INIT_CAP_, sizeof(Merry64BitCoreState),
+           &base->state)) == RET_NULL) {
+    merry_provide_context(*state, _MERRY_CORE_BASE_INITIALIZATION_);
+    free(base);
+    return RET_NULL;
+  }
 
   base->init_func = merry_64_bit_core_init;
   base->free_func = merry_64_bit_core_destroy;
   base->exec_func = merry_64_bit_core_run;
-  base->gmem_func = merry_64_bit_core_get_memory;
+  base->save_state_func = merry_64_bit_core_save_state;
+  base->jmp_state_func = merry_64_bit_core_jmp_state;
+  base->del_state_func = merry_64_bit_core_del_state;
+  base->replace_state_func = merry_64_bit_core_replace_state;
 
   if (merry_cond_init(&base->cond) == RET_FAILURE) {
     merry_assign_state(*state, _MERRY_INTERNAL_SYSTEM_ERROR_,
                        _MERRY_FAILED_TO_OBTAIN_COND_);
     merry_provide_context(*state, _MERRY_CORE_BASE_INITIALIZATION_);
+    //    merry_dynamic_queue_destroy(base->execution_queue);
+    merry_destroy_dynamic_list(base->execution_states);
     free(base);
     return RET_NULL;
   }
@@ -27,21 +47,25 @@ MerryCoreBase *merry_64_bit_core_base(MerryState *state) {
                        _MERRY_FAILED_TO_OBTAIN_LOCK_);
     merry_provide_context(*state, _MERRY_CORE_BASE_INITIALIZATION_);
     merry_cond_destroy(&base->cond);
+    merry_destroy_dynamic_list(base->execution_states);
+    //  merry_dynamic_queue_destroy(base->execution_queue);
     free(base);
     return RET_NULL;
   }
 
-  base->core_type = __CORE_64_BIT;
+  base->priviledge = mfalse;
+  base->do_not_disturb = mfalse;
+  base->ignore_pause = mfalse;
+  base->wrequest = mfalse;
+  base->pause = mfalse;
   base->stop = mfalse;
+  base->wild_request_hdlr_set = mfalse;
+  base->occupied = mfalse;
+  base->core_type = __CORE_64_BIT;
   merry_assign_state(base->state, _MERRY_ORIGIN_NONE_, 0);
   base->state.child_state = NULL;
   base->wild_request = 0;
   return base;
-}
-
-MerryRAM *merry_64_bit_core_get_memory(mptr_t core, msize_t what) {
-  return (what == 0) ? ((Merry64BitCore *)core)->ram
-                     : ((Merry64BitCore *)core)->iram;
 }
 
 void *merry_64_bit_core_init(MerryCoreBase *base, MerryRAM *ram, MerryRAM *iram,
@@ -60,8 +84,8 @@ void *merry_64_bit_core_init(MerryCoreBase *base, MerryRAM *ram, MerryRAM *iram,
   }
   core->base = base;
   core->pc = start_point;
-  core->ram = ram;
-  core->iram = iram;
+  core->base->ram = ram;
+  core->base->iram = iram;
   core->regr[SP] = 0;
   core->regr[BP] = 0;
 
@@ -109,8 +133,6 @@ void *merry_64_bit_core_init(MerryCoreBase *base, MerryRAM *ram, MerryRAM *iram,
   core->stack = stack;
   core->tbs = tbs;
   core->cstack = cstack;
-  core->base->wild_request_hdlr = 0;
-  core->base->wild_request_hdlr_set = mfalse;
 
   return (void *)core;
 }
@@ -139,12 +161,38 @@ _THRET_T_ merry_64_bit_core_run(void *arg) {
 
   while (mtrue) {
     if (core->base->stop) {
-      core->req->type = SHUT_DOWN;
-      merry_SEND_REQUEST(core->req);
-      break;
+      if (core->base->pause &&
+          (!core->base->ignore_pause || !core->base->do_not_disturb)) {
+        merry_cond_wait(&core->base->cond, &core->base->lock);
+        core->base->pause = mfalse;
+      } else if (core->base->wrequest) {
+        if (!core->base->wild_request_hdlr_set) {
+          // we ignore if no whdlr is provided
+          core->base->occupied = mfalse;
+        } else {
+          // save the current state and jump to
+          if (merry_64_bit_core_save_state(arg) == RET_FAILURE) {
+            core->req->type = PROBLEM_ENCOUNTERED;
+            merry_SEND_REQUEST(core->req);
+            core->req->type = SHUT_DOWN;
+            merry_SEND_REQUEST(core->req);
+            break;
+          }
+          // It is the handler's job to restore the state
+          core->pc = core->base->wild_request_hdlr;
+          core->regr[R0] = core->base->wild_request;
+          // wild handler
+          core->base->wrequest = mfalse;
+        }
+      } else {
+        core->req->type = SHUT_DOWN;
+        merry_SEND_REQUEST(core->req);
+        break;
+      }
+      core->base->stop = mfalse;
     }
     if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
-                                       core->iram, core->pc,
+                                       core->base->iram, core->pc,
                                        &current.whole_word) == RET_FAILURE)
       break;
     switch (current.bytes.b0) {
@@ -584,7 +632,10 @@ _THRET_T_ merry_64_bit_core_run(void *arg) {
       core->req->args[3] = core->regr[R3];
       core->req->args[4] = core->regr[R11];
       core->req->args[5] = core->regr[R12];
-      core->regr[R0] = (merry_SEND_REQUEST(core->req) == RET_FAILURE) ? 1 : 0;
+      core->regr[R0] = (merry_SEND_REQUEST(core->req) == RET_FAILURE)
+                           ? 1
+                           : core->req->args[0];
+      core->regr[R1] = core->req->args[1];
       break;
     case OP_PUSH_IMM8:
       push_immb64(core, current);
@@ -1123,8 +1174,9 @@ EXEC64(add_imm) {
   register mbyte_t op1 = inst.bytes.b7 & GPC_64_LAST_REGR;
   mqword_t op2;
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc, &op2) == RET_FAILURE) {
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
+                                     &op2) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
@@ -1143,8 +1195,9 @@ EXEC64(sub_imm) {
   register mbyte_t op1 = inst.bytes.b7 & GPC_64_LAST_REGR;
   mqword_t op2;
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc, &op2) == RET_FAILURE) {
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
+                                     &op2) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
@@ -1163,8 +1216,9 @@ EXEC64(mul_imm) {
   register mbyte_t op1 = inst.bytes.b7 & GPC_64_LAST_REGR;
   mqword_t op2;
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc, &op2) == RET_FAILURE) {
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
+                                     &op2) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
@@ -1183,8 +1237,9 @@ EXEC64(div_imm) {
   register mbyte_t op1 = inst.bytes.b7 & GPC_64_LAST_REGR;
   mqword_t op2;
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc, &op2) == RET_FAILURE) {
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
+                                     &op2) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
@@ -1217,8 +1272,9 @@ EXEC64(mod_imm) {
   register mbyte_t op1 = inst.bytes.b7 & GPC_64_LAST_REGR;
   mqword_t op2;
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc, &op2) == RET_FAILURE) {
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
+                                     &op2) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
@@ -1251,8 +1307,9 @@ EXEC64(iadd_imm) {
   register msqword_t op1 = core->regr[inst.bytes.b7 & GPC_64_LAST_REGR];
   msqword_t op2;
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc, (mqptr_t)&op2) == RET_FAILURE) {
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
+                                     (mqptr_t)&op2) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
@@ -1271,8 +1328,9 @@ EXEC64(isub_imm) {
   register msqword_t op1 = core->regr[inst.bytes.b7 & GPC_64_LAST_REGR];
   msqword_t op2;
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc, (mqptr_t)&op2) == RET_FAILURE) {
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
+                                     (mqptr_t)&op2) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
@@ -1291,8 +1349,9 @@ EXEC64(imul_imm) {
   register msqword_t op1 = core->regr[inst.bytes.b7 & GPC_64_LAST_REGR];
   msqword_t op2;
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc, (mqptr_t)&op2) == RET_FAILURE) {
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
+                                     (mqptr_t)&op2) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
@@ -1311,8 +1370,9 @@ EXEC64(idiv_imm) {
   register msqword_t op1 = core->regr[inst.bytes.b7 & GPC_64_LAST_REGR];
   msqword_t op2;
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc, (mqptr_t)&op2) == RET_FAILURE) {
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
+                                     (mqptr_t)&op2) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
@@ -1345,8 +1405,9 @@ EXEC64(imod_imm) {
   register msqword_t op1 = core->regr[inst.bytes.b7 & GPC_64_LAST_REGR];
   msqword_t op2;
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc, (mqptr_t)&op2) == RET_FAILURE) {
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
+                                     (mqptr_t)&op2) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
@@ -1490,7 +1551,7 @@ EXEC64(add_memb) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mbyte_t temp = 0;
   if (merry_core_mem_access_GET_DATA_byte(core->req, &core->base->state,
-                                          core->ram, addr,
+                                          core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1504,7 +1565,7 @@ EXEC64(add_memw) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mword_t temp = 0;
   if (merry_core_mem_access_GET_DATA_word(core->req, &core->base->state,
-                                          core->ram, addr,
+                                          core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1518,7 +1579,7 @@ EXEC64(add_memd) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mdword_t temp = 0;
   if (merry_core_mem_access_GET_DATA_dword(core->req, &core->base->state,
-                                           core->ram, addr,
+                                           core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1532,7 +1593,7 @@ EXEC64(add_memq) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mqword_t temp = 0;
   if (merry_core_mem_access_GET_DATA_qword(core->req, &core->base->state,
-                                           core->ram, addr,
+                                           core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1546,7 +1607,7 @@ EXEC64(sub_memb) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mbyte_t temp = 0;
   if (merry_core_mem_access_GET_DATA_byte(core->req, &core->base->state,
-                                          core->ram, addr,
+                                          core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1560,7 +1621,7 @@ EXEC64(sub_memw) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mword_t temp = 0;
   if (merry_core_mem_access_GET_DATA_word(core->req, &core->base->state,
-                                          core->ram, addr,
+                                          core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1574,7 +1635,7 @@ EXEC64(sub_memd) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mdword_t temp = 0;
   if (merry_core_mem_access_GET_DATA_dword(core->req, &core->base->state,
-                                           core->ram, addr,
+                                           core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1588,7 +1649,7 @@ EXEC64(sub_memq) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mqword_t temp = 0;
   if (merry_core_mem_access_GET_DATA_qword(core->req, &core->base->state,
-                                           core->ram, addr,
+                                           core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1602,7 +1663,7 @@ EXEC64(mul_memb) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mbyte_t temp = 0;
   if (merry_core_mem_access_GET_DATA_byte(core->req, &core->base->state,
-                                          core->ram, addr,
+                                          core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1616,7 +1677,7 @@ EXEC64(mul_memw) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mword_t temp = 0;
   if (merry_core_mem_access_GET_DATA_word(core->req, &core->base->state,
-                                          core->ram, addr,
+                                          core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1630,7 +1691,7 @@ EXEC64(mul_memd) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mdword_t temp = 0;
   if (merry_core_mem_access_GET_DATA_dword(core->req, &core->base->state,
-                                           core->ram, addr,
+                                           core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1644,7 +1705,7 @@ EXEC64(mul_memq) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mqword_t temp = 0;
   if (merry_core_mem_access_GET_DATA_qword(core->req, &core->base->state,
-                                           core->ram, addr,
+                                           core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1658,7 +1719,7 @@ EXEC64(div_memb) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mbyte_t temp = 0;
   if (merry_core_mem_access_GET_DATA_byte(core->req, &core->base->state,
-                                          core->ram, addr,
+                                          core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1679,7 +1740,7 @@ EXEC64(div_memw) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mword_t temp = 0;
   if (merry_core_mem_access_GET_DATA_word(core->req, &core->base->state,
-                                          core->ram, addr,
+                                          core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1700,7 +1761,7 @@ EXEC64(div_memd) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mdword_t temp = 0;
   if (merry_core_mem_access_GET_DATA_dword(core->req, &core->base->state,
-                                           core->ram, addr,
+                                           core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1721,7 +1782,7 @@ EXEC64(div_memq) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mqword_t temp = 0;
   if (merry_core_mem_access_GET_DATA_qword(core->req, &core->base->state,
-                                           core->ram, addr,
+                                           core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1742,7 +1803,7 @@ EXEC64(mod_memb) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mbyte_t temp = 0;
   if (merry_core_mem_access_GET_DATA_byte(core->req, &core->base->state,
-                                          core->ram, addr,
+                                          core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1763,7 +1824,7 @@ EXEC64(mod_memw) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mword_t temp = 0;
   if (merry_core_mem_access_GET_DATA_word(core->req, &core->base->state,
-                                          core->ram, addr,
+                                          core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1784,7 +1845,7 @@ EXEC64(mod_memd) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mdword_t temp = 0;
   if (merry_core_mem_access_GET_DATA_dword(core->req, &core->base->state,
-                                           core->ram, addr,
+                                           core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1805,7 +1866,7 @@ EXEC64(mod_memq) {
   register maddress_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   mqword_t temp = 0;
   if (merry_core_mem_access_GET_DATA_qword(core->req, &core->base->state,
-                                           core->ram, addr,
+                                           core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1826,7 +1887,7 @@ EXEC64(fadd64_mem) {
   register mqword_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   MerryDoubleToQword temp;
   if (merry_core_mem_access_GET_DATA_qword(core->req, &core->base->state,
-                                           core->ram, addr,
+                                           core->base->ram, addr,
                                            &temp.q_val) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1844,7 +1905,7 @@ EXEC64(fsub64_mem) {
   register mqword_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   MerryDoubleToQword temp;
   if (merry_core_mem_access_GET_DATA_qword(core->req, &core->base->state,
-                                           core->ram, addr,
+                                           core->base->ram, addr,
                                            &temp.q_val) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1862,7 +1923,7 @@ EXEC64(fmul64_mem) {
   register mqword_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   MerryDoubleToQword temp;
   if (merry_core_mem_access_GET_DATA_qword(core->req, &core->base->state,
-                                           core->ram, addr,
+                                           core->base->ram, addr,
                                            &temp.q_val) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1880,7 +1941,7 @@ EXEC64(fdiv64_mem) {
   register mqword_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   MerryDoubleToQword temp;
   if (merry_core_mem_access_GET_DATA_qword(core->req, &core->base->state,
-                                           core->ram, addr,
+                                           core->base->ram, addr,
                                            &temp.q_val) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1905,7 +1966,7 @@ EXEC64(fadd32_mem) {
   register mqword_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   MerryFloatToDword temp;
   if (merry_core_mem_access_GET_DATA_dword(core->req, &core->base->state,
-                                           core->ram, addr,
+                                           core->base->ram, addr,
                                            &temp.d_val) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1924,7 +1985,7 @@ EXEC64(fsub32_mem) {
   register mqword_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   MerryFloatToDword temp;
   if (merry_core_mem_access_GET_DATA_dword(core->req, &core->base->state,
-                                           core->ram, addr,
+                                           core->base->ram, addr,
                                            &temp.d_val) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1943,7 +2004,7 @@ EXEC64(fmul32_mem) {
   register mqword_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   MerryFloatToDword temp;
   if (merry_core_mem_access_GET_DATA_dword(core->req, &core->base->state,
-                                           core->ram, addr,
+                                           core->base->ram, addr,
                                            &temp.d_val) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1962,7 +2023,7 @@ EXEC64(fdiv32_mem) {
   register mqword_t addr = (inst.whole_word & 0xFFFFFFFFFFFF);
   MerryFloatToDword temp;
   if (merry_core_mem_access_GET_DATA_dword(core->req, &core->base->state,
-                                           core->ram, addr,
+                                           core->base->ram, addr,
                                            &temp.d_val) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -1988,8 +2049,9 @@ EXEC64(mov_imm) {
   mqword_t val;
 
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc, &val) == RET_FAILURE) {
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
+                                     &val) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
@@ -2002,8 +2064,9 @@ EXEC64(movf32) {
   mqword_t val;
 
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc, &val) == RET_FAILURE) {
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
+                                     &val) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
@@ -2139,8 +2202,8 @@ EXEC64(call_reg) {
 EXEC64(push_immb) {
   MerryHostMemLayout imm;
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc,
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
                                      &imm.whole_word) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2161,8 +2224,8 @@ EXEC64(push_immb) {
 EXEC64(push_immw) {
   MerryHostMemLayout imm;
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc,
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
                                      &imm.whole_word) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2183,8 +2246,8 @@ EXEC64(push_immw) {
 EXEC64(push_immd) {
   MerryHostMemLayout imm;
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc,
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
                                      &imm.whole_word) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2205,8 +2268,8 @@ EXEC64(push_immd) {
 EXEC64(push_immq) {
   MerryHostMemLayout imm;
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc,
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
                                      &imm.whole_word) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2345,7 +2408,7 @@ EXEC64(popa) {
 EXEC64(push_memb) {
   MerryHostMemLayout imm;
   if (merry_core_mem_access_GET_DATA_byte(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm.bytes.b7) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2366,7 +2429,7 @@ EXEC64(push_memb) {
 EXEC64(push_memw) {
   MerryHostMemLayout imm;
   if (merry_core_mem_access_GET_DATA_word(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF,
           &imm.half_half_words.w3) == RET_FAILURE) {
     core->base->stop = mtrue;
@@ -2388,7 +2451,7 @@ EXEC64(push_memw) {
 EXEC64(push_memd) {
   MerryHostMemLayout imm;
   if (merry_core_mem_access_GET_DATA_dword(core->req, &core->base->state,
-                                           core->ram,
+                                           core->base->ram,
                                            inst.whole_word & 0xFFFFFFFFFFFF,
                                            &imm.half_words.w1) == RET_FAILURE) {
     core->base->stop = mtrue;
@@ -2410,7 +2473,7 @@ EXEC64(push_memd) {
 EXEC64(push_memq) {
   MerryHostMemLayout imm;
   if (merry_core_mem_access_GET_DATA_qword(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm.whole_word) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2442,7 +2505,7 @@ EXEC64(pop_memb) {
     return;
   }
   if (merry_core_mem_access_WRITE_DATA_byte(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, tmp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2464,7 +2527,7 @@ EXEC64(pop_memw) {
     return;
   }
   if (merry_core_mem_access_WRITE_DATA_word(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, tmp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2486,7 +2549,7 @@ EXEC64(pop_memd) {
     return;
   }
   if (merry_core_mem_access_WRITE_DATA_dword(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, tmp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2508,7 +2571,7 @@ EXEC64(pop_memq) {
     return;
   }
   if (merry_core_mem_access_WRITE_DATA_qword(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, tmp) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2653,8 +2716,9 @@ EXEC64(storesq) {
 EXEC64(and_imm) {
   mqword_t imm;
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc, &imm) == RET_FAILURE) {
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
+                                     &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
@@ -2664,8 +2728,9 @@ EXEC64(and_imm) {
 EXEC64(or_imm) {
   mqword_t imm;
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc, &imm) == RET_FAILURE) {
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
+                                     &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
@@ -2675,8 +2740,9 @@ EXEC64(or_imm) {
 EXEC64(xor_imm) {
   mqword_t imm;
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc, &imm) == RET_FAILURE) {
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
+                                     &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
@@ -2686,8 +2752,9 @@ EXEC64(xor_imm) {
 EXEC64(cmp_imm) {
   mqword_t imm;
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->ram,
-                                     core->pc, &imm) == RET_FAILURE) {
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->ram, core->pc,
+                                     &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
@@ -2698,7 +2765,7 @@ EXEC64(cmp_imm) {
 EXEC64(cmp_imm_memb) {
   MerryHostMemLayout imm;
   if (merry_core_mem_access_GET_DATA_byte(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm.bytes.b7) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2711,7 +2778,7 @@ EXEC64(cmp_imm_memb) {
 EXEC64(cmp_imm_memw) {
   MerryHostMemLayout imm;
   if (merry_core_mem_access_GET_DATA_word(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF,
           &imm.half_half_words.w3) == RET_FAILURE) {
     core->base->stop = mtrue;
@@ -2725,7 +2792,7 @@ EXEC64(cmp_imm_memw) {
 EXEC64(cmp_imm_memd) {
   MerryHostMemLayout imm;
   if (merry_core_mem_access_GET_DATA_dword(core->req, &core->base->state,
-                                           core->ram,
+                                           core->base->ram,
                                            inst.whole_word & 0xFFFFFFFFFFFF,
                                            &imm.half_words.w1) == RET_FAILURE) {
     core->base->stop = mtrue;
@@ -2739,7 +2806,7 @@ EXEC64(cmp_imm_memd) {
 EXEC64(cmp_imm_memq) {
   MerryHostMemLayout imm;
   if (merry_core_mem_access_GET_DATA_qword(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm.whole_word) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2765,31 +2832,10 @@ EXEC64(sin) {
   for (msize_t i = 0; i < len; i++) {
     temp[i] = getchar();
   }
-  register mqword_t tolerance =
-      len / _MERRY_PAGE_LEN_ + ((len % _MERRY_PAGE_LEN_) > 0 ? 1 : 0);
-
-  if (merry_RAM_bulk_write(core->ram, addr, len, temp, &core->base->state) ==
-      RET_FAILURE) {
-
-    if (core->base->state.err.sys_error == _MERRY_PAGE_FAULT_) {
-      for (msize_t i = 0; i < tolerance; i++) {
-        core->req->type = TRY_LOADING_NEW_PAGE_DATA;
-        core->req->args[0] = addr + i * _MERRY_PAGE_LEN_;
-        if (merry_SEND_REQUEST(core->req) == RET_FAILURE ||
-            core->req->args[0] == 1) {
-          core->base->stop = mtrue;
-          return;
-        }
-      }
-    } else {
-      core->req->type = PROBLEM_ENCOUNTERED;
-      merry_SEND_REQUEST(core->req);
-      core->base->stop = mtrue;
-      return;
-    }
-    merry_RAM_bulk_write(core->ram, addr, len, temp,
-                         &core->base->state); // this shouldn't fail now
-  }
+  if (merry_core_base_mem_access_bulk_write(core->req, &core->base->state,
+                                            core->base->ram, addr, temp,
+                                            len) == RET_FAILURE)
+    core->base->stop = mtrue;
   free(temp);
 }
 
@@ -2797,39 +2843,21 @@ EXEC64(sout) {
   register mqword_t len = core->regr[R0];
   register mqword_t addr = inst.whole_word & 0xFFFFFFFFFFFF;
   mbptr_t temp;
-  register mqword_t tolerance =
-      len / _MERRY_PAGE_LEN_ + ((len % _MERRY_PAGE_LEN_) > 0 ? 1 : 0);
-
-  if ((temp = merry_RAM_bulk_read(core->ram, addr, len, &core->base->state)) ==
-      RET_NULL) {
-    if (core->base->state.err.sys_error == _MERRY_PAGE_FAULT_) {
-      for (msize_t i = 0; i < tolerance; i++) {
-        core->req->type = TRY_LOADING_NEW_PAGE_DATA;
-        core->req->args[0] = addr + i * _MERRY_PAGE_LEN_;
-        if (merry_SEND_REQUEST(core->req) == RET_FAILURE ||
-            core->req->args[0] == 1) {
-          core->base->stop = mtrue;
-          return;
-        }
-      }
-    } else {
-      core->req->type = PROBLEM_ENCOUNTERED;
-      merry_SEND_REQUEST(core->req);
-      core->base->stop = mtrue;
-      return;
-    }
-    temp = merry_RAM_bulk_read(core->ram, addr, len,
-                               &core->base->state); // this shouldn't fail now
+  if (merry_core_base_mem_access_bulk_read(core->req, &core->base->state,
+                                           core->base->ram, addr, &temp,
+                                           len) == RET_FAILURE)
+    core->base->stop = mtrue;
+  else {
+    printf("%s", temp);
+    free(temp);
   }
-  printf("%s", temp);
-  free(temp);
 }
 
 EXEC64(loadb) {
   register mbyte_t op1 = inst.bytes.b1 & GPC_64_LAST_REGR;
   mbyte_t imm;
   if (merry_core_mem_access_GET_DATA_byte(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2840,7 +2868,7 @@ EXEC64(loadb) {
 EXEC64(storeb) {
   register mbyte_t op1 = inst.bytes.b1 & GPC_64_LAST_REGR;
   if (merry_core_mem_access_WRITE_DATA_byte(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF,
           core->regr[op1] & 0xFF) == RET_FAILURE) {
     core->base->stop = mtrue;
@@ -2852,7 +2880,7 @@ EXEC64(loadw) {
   register mbyte_t op1 = inst.bytes.b1 & GPC_64_LAST_REGR;
   mword_t imm;
   if (merry_core_mem_access_GET_DATA_word(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2863,7 +2891,7 @@ EXEC64(loadw) {
 EXEC64(storew) {
   register mbyte_t op1 = inst.bytes.b1 & GPC_64_LAST_REGR;
   if (merry_core_mem_access_WRITE_DATA_word(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF,
           core->regr[op1] & 0xFFFF) == RET_FAILURE) {
     core->base->stop = mtrue;
@@ -2875,7 +2903,7 @@ EXEC64(loadd) {
   register mbyte_t op1 = inst.bytes.b1 & GPC_64_LAST_REGR;
   mdword_t imm;
   if (merry_core_mem_access_GET_DATA_dword(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2886,7 +2914,7 @@ EXEC64(loadd) {
 EXEC64(stored) {
   register mbyte_t op1 = inst.bytes.b1 & GPC_64_LAST_REGR;
   if (merry_core_mem_access_WRITE_DATA_dword(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF,
           core->regr[op1] & 0xFFFFFFFF) == RET_FAILURE) {
     core->base->stop = mtrue;
@@ -2898,7 +2926,7 @@ EXEC64(loadq) {
   register mbyte_t op1 = inst.bytes.b1 & GPC_64_LAST_REGR;
   mqword_t imm;
   if (merry_core_mem_access_GET_DATA_qword(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2909,7 +2937,7 @@ EXEC64(loadq) {
 EXEC64(storeq) {
   register mbyte_t op1 = inst.bytes.b1 & GPC_64_LAST_REGR;
   if (merry_core_mem_access_WRITE_DATA_qword(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, core->regr[op1]) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2921,7 +2949,7 @@ EXEC64(loadb_reg) {
   register mbyte_t op2 = inst.bytes.b7 & GPC_64_LAST_REGR;
   mbyte_t imm;
   if (merry_core_mem_access_GET_DATA_byte(core->req, &core->base->state,
-                                          core->ram, core->regr[op2],
+                                          core->base->ram, core->regr[op2],
                                           &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2933,7 +2961,7 @@ EXEC64(storeb_reg) {
   register mbyte_t op1 = inst.bytes.b6 & GPC_64_LAST_REGR;
   register mbyte_t op2 = inst.bytes.b7 & GPC_64_LAST_REGR;
   if (merry_core_mem_access_WRITE_DATA_byte(
-          core->req, &core->base->state, core->ram, core->regr[op2],
+          core->req, &core->base->state, core->base->ram, core->regr[op2],
           core->regr[op1] & 0xFF) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2945,7 +2973,7 @@ EXEC64(loadw_reg) {
   register mbyte_t op2 = inst.bytes.b7 & GPC_64_LAST_REGR;
   mword_t imm;
   if (merry_core_mem_access_GET_DATA_word(core->req, &core->base->state,
-                                          core->ram, core->regr[op2],
+                                          core->base->ram, core->regr[op2],
                                           &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2957,7 +2985,7 @@ EXEC64(storew_reg) {
   register mbyte_t op1 = inst.bytes.b6 & GPC_64_LAST_REGR;
   register mbyte_t op2 = inst.bytes.b7 & GPC_64_LAST_REGR;
   if (merry_core_mem_access_WRITE_DATA_word(
-          core->req, &core->base->state, core->ram, core->regr[op2],
+          core->req, &core->base->state, core->base->ram, core->regr[op2],
           core->regr[op1] & 0xFFFF) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2969,7 +2997,7 @@ EXEC64(loadd_reg) {
   register mbyte_t op2 = inst.bytes.b7 & GPC_64_LAST_REGR;
   mdword_t imm;
   if (merry_core_mem_access_GET_DATA_dword(core->req, &core->base->state,
-                                           core->ram, core->regr[op2],
+                                           core->base->ram, core->regr[op2],
                                            &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2981,7 +3009,7 @@ EXEC64(stored_reg) {
   register mbyte_t op1 = inst.bytes.b6 & GPC_64_LAST_REGR;
   register mbyte_t op2 = inst.bytes.b7 & GPC_64_LAST_REGR;
   if (merry_core_mem_access_WRITE_DATA_dword(
-          core->req, &core->base->state, core->ram, core->regr[op2],
+          core->req, &core->base->state, core->base->ram, core->regr[op2],
           core->regr[op1] & 0xFFFFFFFF) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -2992,7 +3020,7 @@ EXEC64(loadq_reg) {
   register mbyte_t op1 = inst.bytes.b6 & GPC_64_LAST_REGR;
   register mbyte_t op2 = inst.bytes.b7 & GPC_64_LAST_REGR;
   if (merry_core_mem_access_GET_DATA_qword(core->req, &core->base->state,
-                                           core->ram, core->regr[op2],
+                                           core->base->ram, core->regr[op2],
                                            &core->regr[op1]) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -3003,7 +3031,7 @@ EXEC64(storeq_reg) {
   register mbyte_t op1 = inst.bytes.b6 & GPC_64_LAST_REGR;
   register mbyte_t op2 = inst.bytes.b7 & GPC_64_LAST_REGR;
   if (merry_core_mem_access_WRITE_DATA_qword(core->req, &core->base->state,
-                                             core->ram, core->regr[op2],
+                                             core->base->ram, core->regr[op2],
                                              core->regr[op1]) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -3014,7 +3042,7 @@ EXEC64(atm_loadb) {
   register mbyte_t op1 = inst.bytes.b1 & GPC_64_LAST_REGR;
   mbyte_t imm;
   if (merry_core_mem_access_GET_DATA_byte_atm(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -3026,7 +3054,7 @@ EXEC64(atm_loadw) {
   register mbyte_t op1 = inst.bytes.b1 & GPC_64_LAST_REGR;
   mword_t imm;
   if (merry_core_mem_access_GET_DATA_word_atm(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -3038,7 +3066,7 @@ EXEC64(atm_loadd) {
   register mbyte_t op1 = inst.bytes.b1 & GPC_64_LAST_REGR;
   mdword_t imm;
   if (merry_core_mem_access_GET_DATA_dword_atm(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -3050,7 +3078,7 @@ EXEC64(atm_loadq) {
   register mbyte_t op1 = inst.bytes.b1 & GPC_64_LAST_REGR;
   mqword_t imm;
   if (merry_core_mem_access_GET_DATA_qword_atm(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -3061,7 +3089,7 @@ EXEC64(atm_loadq) {
 EXEC64(atm_storeb) {
   register mbyte_t op1 = inst.bytes.b1 & GPC_64_LAST_REGR;
   if (merry_core_mem_access_WRITE_DATA_byte_atm(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, core->regr[op1]) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -3071,7 +3099,7 @@ EXEC64(atm_storeb) {
 EXEC64(atm_storew) {
   register mbyte_t op1 = inst.bytes.b1 & GPC_64_LAST_REGR;
   if (merry_core_mem_access_WRITE_DATA_word_atm(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, core->regr[op1]) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -3081,7 +3109,7 @@ EXEC64(atm_storew) {
 EXEC64(atm_stored) {
   register mbyte_t op1 = inst.bytes.b1 & GPC_64_LAST_REGR;
   if (merry_core_mem_access_WRITE_DATA_dword_atm(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, core->regr[op1]) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -3091,7 +3119,7 @@ EXEC64(atm_stored) {
 EXEC64(atm_storeq) {
   register mbyte_t op1 = inst.bytes.b1 & GPC_64_LAST_REGR;
   if (merry_core_mem_access_WRITE_DATA_qword_atm(
-          core->req, &core->base->state, core->ram,
+          core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, core->regr[op1]) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -3103,7 +3131,7 @@ EXEC64(atm_loadb_reg) {
   register mbyte_t op2 = inst.bytes.b7 & GPC_64_LAST_REGR;
   mbyte_t imm;
   if (merry_core_mem_access_GET_DATA_byte_atm(core->req, &core->base->state,
-                                              core->ram, core->regr[op2],
+                                              core->base->ram, core->regr[op2],
                                               &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -3116,7 +3144,7 @@ EXEC64(atm_loadw_reg) {
   register mbyte_t op2 = inst.bytes.b7 & GPC_64_LAST_REGR;
   mword_t imm;
   if (merry_core_mem_access_GET_DATA_word_atm(core->req, &core->base->state,
-                                              core->ram, core->regr[op2],
+                                              core->base->ram, core->regr[op2],
                                               &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -3129,7 +3157,7 @@ EXEC64(atm_loadd_reg) {
   register mbyte_t op2 = inst.bytes.b7 & GPC_64_LAST_REGR;
   mdword_t imm;
   if (merry_core_mem_access_GET_DATA_dword_atm(core->req, &core->base->state,
-                                               core->ram, core->regr[op2],
+                                               core->base->ram, core->regr[op2],
                                                &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -3141,7 +3169,7 @@ EXEC64(atm_loadq_reg) {
   register mbyte_t op1 = inst.bytes.b6 & GPC_64_LAST_REGR;
   register mbyte_t op2 = inst.bytes.b7 & GPC_64_LAST_REGR;
   if (merry_core_mem_access_GET_DATA_qword_atm(
-          core->req, &core->base->state, core->ram, core->regr[op2],
+          core->req, &core->base->state, core->base->ram, core->regr[op2],
           &core->regr[op1]) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -3152,7 +3180,7 @@ EXEC64(atm_storeb_reg) {
   register mbyte_t op1 = inst.bytes.b6 & GPC_64_LAST_REGR;
   register mbyte_t op2 = inst.bytes.b7 & GPC_64_LAST_REGR;
   if (merry_core_mem_access_WRITE_DATA_byte_atm(
-          core->req, &core->base->state, core->ram, core->regr[op1],
+          core->req, &core->base->state, core->base->ram, core->regr[op1],
           core->regr[op2] & 0xFF) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -3163,7 +3191,7 @@ EXEC64(atm_storew_reg) {
   register mbyte_t op1 = inst.bytes.b6 & GPC_64_LAST_REGR;
   register mbyte_t op2 = inst.bytes.b7 & GPC_64_LAST_REGR;
   if (merry_core_mem_access_WRITE_DATA_word_atm(
-          core->req, &core->base->state, core->ram, core->regr[op1],
+          core->req, &core->base->state, core->base->ram, core->regr[op1],
           core->regr[op2] & 0xFFFF) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -3174,7 +3202,7 @@ EXEC64(atm_stored_reg) {
   register mbyte_t op1 = inst.bytes.b6 & GPC_64_LAST_REGR;
   register mbyte_t op2 = inst.bytes.b7 & GPC_64_LAST_REGR;
   if (merry_core_mem_access_WRITE_DATA_dword_atm(
-          core->req, &core->base->state, core->ram, core->regr[op1],
+          core->req, &core->base->state, core->base->ram, core->regr[op1],
           core->regr[op2] & 0xFFFFFFFF) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -3185,7 +3213,7 @@ EXEC64(atm_storeq_reg) {
   register mbyte_t op1 = inst.bytes.b6 & GPC_64_LAST_REGR;
   register mbyte_t op2 = inst.bytes.b7 & GPC_64_LAST_REGR;
   if (merry_core_mem_access_WRITE_DATA_qword_atm(
-          core->req, &core->base->state, core->ram, core->regr[op1],
+          core->req, &core->base->state, core->base->ram, core->regr[op1],
           core->regr[op2]) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
@@ -3197,13 +3225,14 @@ EXEC64(cmpxchg) {
   register mbyte_t expected = inst.bytes.b7;
   mqword_t address;
   core->pc += 8;
-  if (merry_core_mem_access_GET_INST(core->req, &core->base->state, core->iram,
-                                     core->pc, &address) == RET_FAILURE) {
+  if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
+                                     core->base->iram, core->pc,
+                                     &address) == RET_FAILURE) {
     core->base->stop = mtrue;
     return;
   }
   MerryFlagsRegr reg = core->fregr;
-  mret_t ret = merry_RAM_cmpxchg(core->ram, address, desired, expected,
+  mret_t ret = merry_RAM_cmpxchg(core->base->ram, address, desired, expected,
                                  &core->base->state);
   merry_update_flags_regr(&core->fregr);
   if (ret == RET_FAILURE) {
@@ -3215,7 +3244,7 @@ EXEC64(cmpxchg) {
       core->fregr = reg;
       return;
     }
-    ret = merry_RAM_cmpxchg(core->ram, address, desired, expected,
+    ret = merry_RAM_cmpxchg(core->base->ram, address, desired, expected,
                             &core->base->state); // this shouldn't fail now
     merry_update_flags_regr(&core->fregr);
   }
@@ -3226,7 +3255,7 @@ EXEC64(cmpxchg_reg) {
   register mbyte_t expected = inst.bytes.b7 & GPC_64_LAST_REGR;
   register mqword_t address = core->regr[inst.bytes.b5 & GPC_64_LAST_REGR];
   MerryFlagsRegr reg = core->fregr;
-  mret_t ret = merry_RAM_cmpxchg(core->ram, address, desired, expected,
+  mret_t ret = merry_RAM_cmpxchg(core->base->ram, address, desired, expected,
                                  &core->base->state);
   merry_update_flags_regr(&core->fregr);
   if (ret == RET_FAILURE) {
@@ -3238,7 +3267,7 @@ EXEC64(cmpxchg_reg) {
       core->fregr = reg;
       return;
     }
-    ret = merry_RAM_cmpxchg(core->ram, address, desired, expected,
+    ret = merry_RAM_cmpxchg(core->base->ram, address, desired, expected,
                             &core->base->state); // this shouldn't fail now
     merry_update_flags_regr(&core->fregr);
   }
@@ -3247,11 +3276,116 @@ EXEC64(cmpxchg_reg) {
 EXEC64(whdlr) {
   core->pc += 8;
   if (merry_core_mem_access_GET_INST(
-          core->req, &core->base->state, core->iram, core->pc,
+          core->req, &core->base->state, core->base->iram, core->pc,
           &core->base->wild_request_hdlr) == RET_FAILURE) {
     core->base->stop = mtrue;
     core->base->wild_request_hdlr_set = mfalse;
     return;
   }
   core->base->wild_request_hdlr_set = mtrue;
+}
+
+msize_t merry_64_bit_core_find_free_state(Merry64BitCore *core) {
+  for (msize_t i = 0; i < merry_dynamic_list_size(core->base->execution_states);
+       i++) {
+    Merry64BitCoreState *st = (Merry64BitCoreState *)merry_dynamic_list_at(
+        core->base->execution_states, i);
+    if (st->state_valid) {
+      return i;
+    }
+  }
+  return (mqword_t)(-1);
+}
+
+mret_t merry_64_bit_core_save_state(void *cptr) {
+  merry_check_ptr(cptr);
+  Merry64BitCore *core = (Merry64BitCore *)cptr;
+
+  Merry64BitCoreState st;
+  st.state_valid = mfalse; // occupied state
+  st.ffregr = core->ffregr;
+  st.fregr = core->fregr;
+  st.pc = core->pc;
+  for (msize_t i = 0; i < REG_COUNT_GPC_64; i++) {
+    st.regr[i] = core->regr[i];
+  }
+
+  // See if we have any saved states
+  msize_t id;
+  if ((id = merry_64_bit_core_find_free_state(core)) == (mqword_t)(-1)) {
+    // Need a new state
+    if (merry_dynamic_list_push(core->base->execution_states, (mqptr_t)(&st)) ==
+        RET_FAILURE) {
+      merry_assign_state(core->base->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
+                         _MERRY_CANNOT_CREATE_NEW_STATE_);
+      return RET_FAILURE;
+    }
+    id = merry_dynamic_list_size(core->base->execution_states);
+  } else {
+    if (merry_dynamic_list_replace(core->base->execution_states, (mptr_t)(&st),
+                                   id) == RET_FAILURE) {
+      // This should not be executed since
+      // it is valid.
+      return RET_FAILURE;
+    }
+  }
+  core->regr[ACC] = id;
+  return RET_SUCCESS;
+}
+
+mret_t merry_64_bit_core_jmp_state(void *cptr, msize_t id) {
+  merry_check_ptr(cptr);
+  Merry64BitCore *core = (Merry64BitCore *)cptr;
+  Merry64BitCoreState *st;
+  if ((st = merry_dynamic_list_at(core->base->execution_states, id)) ==
+      RET_NULL) {
+    merry_assign_state(core->base->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
+                       _MERRY_INVALID_STATE_ID_);
+    return RET_FAILURE;
+  }
+
+  core->ffregr = st->ffregr;
+  core->fregr = st->fregr;
+  core->pc = st->pc;
+  for (msize_t i = 0; i < REG_COUNT_GPC_64; i++) {
+    core->regr[i] = st->regr[i];
+  }
+
+  return RET_SUCCESS;
+}
+
+mret_t merry_64_bit_core_replace_state(void *cptr, msize_t id) {
+  merry_check_ptr(cptr);
+  Merry64BitCore *core = (Merry64BitCore *)cptr;
+  Merry64BitCoreState *st;
+  if ((st = merry_dynamic_list_at(core->base->execution_states, id)) ==
+      RET_NULL) {
+    merry_assign_state(core->base->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
+                       _MERRY_INVALID_STATE_ID_);
+    return RET_FAILURE;
+  }
+
+  st->ffregr = core->ffregr;
+  st->fregr = core->fregr;
+  st->pc = core->pc;
+  for (msize_t i = 0; i < REG_COUNT_GPC_64; i++) {
+    st->regr[i] = core->regr[i];
+  }
+
+  return RET_SUCCESS;
+}
+
+mret_t merry_64_bit_core_del_state(void *cptr, msize_t id) {
+  merry_check_ptr(cptr);
+  Merry64BitCore *core = (Merry64BitCore *)cptr;
+  Merry64BitCoreState *st;
+  if ((st = merry_dynamic_list_at(core->base->execution_states, id)) ==
+      RET_NULL) {
+    merry_assign_state(core->base->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
+                       _MERRY_INVALID_STATE_ID_);
+    return RET_FAILURE;
+  }
+  st->state_valid = mtrue; // free again
+
+  return RET_SUCCESS;
 }

@@ -20,7 +20,9 @@
  * */
 
 #include "merry_core_types.h"
+#include "merry_dynamic_list.h"
 #include "merry_platform.h"
+#include "merry_queue.h"
 #include "merry_ram.h"
 #include "merry_state.h"
 #include "merry_types.h"
@@ -44,19 +46,44 @@ _MERRY_DEFINE_FUNC_PTR_(void *, mcoreinit_t, MerryCoreBase *base, MerryRAM *ram,
 _MERRY_DEFINE_FUNC_PTR_(void, mcoredest_t, void *);
 
 // executing instructions
-_MERRY_DEFINE_FUNC_PTR_(_THRET_T_, mcoreexec_t, void *arg);
+_MERRY_DEFINE_FUNC_PTR_(_THRET_T_, mcoreexec_t, void *);
 
-// getting IRAM and RAM[what=0? ram: iram]
-_MERRY_DEFINE_FUNC_PTR_(MerryRAM *, mcoregmem_t, mptr_t core, msize_t what);
+// saving state
+_MERRY_DEFINE_FUNC_PTR_(mret_t, mstatesave_t, void *);
+
+// jump to state
+_MERRY_DEFINE_FUNC_PTR_(mret_t, mjmpstate_t, void *, msize_t);
+
+// removing state
+_MERRY_DEFINE_FUNC_PTR_(mret_t, mdelstate_t, void *, msize_t);
+
+// replacing states
+_MERRY_DEFINE_FUNC_PTR_(mret_t, mreplacestate_t, void *, msize_t);
 
 struct MerryCoreBase {
   mcoreinit_t init_func;
   mcoredest_t free_func;
   mcoreexec_t exec_func;
-  mcoregmem_t gmem_func;
+  mstatesave_t save_state_func;
+  mjmpstate_t jmp_state_func;
+  mdelstate_t del_state_func;
+  mreplacestate_t replace_state_func;
+
+  MerryRAM *iram, *ram;
 
   unsigned int core_id; // assigned by Graves for every core
-  mbool_t stop;
+  mbool_t priviledge;   // If not priviledged, cannot perform some things
+  mbool_t
+      do_not_disturb; // if set, no wild requests or pause will affect the core
+  mbool_t ignore_pause;          // if set, cannot be paused
+  mbool_t stop;                  // stop execution or perform some action
+  mbool_t wrequest;              // some wild request is available
+  mbool_t pause;                 // pause the vcore for a while
+  mbool_t wild_request_hdlr_set; // is the wild request handler set?
+
+  mbool_t occupied; // implying that: (stop || wrequest || pause)? DONOT ACCEPT
+                    // ANOTHER FLAG: ACCEPT ANOTHER FLAG; meaning only one flag
+                    // to be set at once
 
   mcond_t cond;
   mmutex_t lock;
@@ -66,7 +93,9 @@ struct MerryCoreBase {
 
   mqword_t wild_request;
   mqword_t wild_request_hdlr;
-  mbool_t wild_request_hdlr_set;
+
+  // MerryDynamicQueue *execution_queue;
+  MerryDynamicList *execution_states;
 };
 
 struct MerryFFlagsRegr {

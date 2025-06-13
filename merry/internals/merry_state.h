@@ -68,12 +68,18 @@ enum msyserr_t {
   _MERRY_FAILED_TO_ADD_CORE_,
   _MERRY_STACK_OVERFLOW_,
   _MERRY_STACK_UNDERFLOW_,
+  _MERRY_FAILED_TO_OPEN_FILE_,
+  _MERRY_CANNOT_CREATE_NEW_STATE_,
+  _MERRY_INVALID_STATE_ID_,
 };
 
 enum mprogerr_t {
   _DIV_BY_ZERO_,
   _INVALID_PROCEDURE_RETURN_,
   _INVALID_STACK_ACCESS_,
+  _MERRY_TRYING_TO_OVERWRITE_ALREADY_OPEN_FILE_, // The file descriptor is
+                                                 // already being used but
+                                                 // trying to re-open a file.
 };
 
 struct MerryState {

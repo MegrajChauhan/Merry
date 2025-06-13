@@ -4,6 +4,8 @@ void merry_core_base_clean(MerryCoreBase *base) {
   merry_check_ptr(base);
   merry_mutex_destroy(&base->lock);
   merry_cond_destroy(&base->cond);
+  //  merry_dynamic_queue_destroy(base->execution_queue);
+  merry_destroy_dynamic_list(base->execution_states);
   free(base);
 }
 

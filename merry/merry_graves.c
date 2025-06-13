@@ -303,16 +303,32 @@ PREQ_HDLR(HANDLE_NEW_THREAD) {
 }
 
 PREQ_HDLR(HANDLE_ADD_A_NEW_DATA_MEMORY_PAGE) {
-  MerryRAM *ram = req->base->gmem_func(
-      merry_graves_get_hands_on_cptr(req->base->core_id), 0);
-  msize_t tmp = ram->page_count;
+  msize_t tmp = req->base->ram->page_count;
 
-  if (merry_RAM_add_pages(ram, req->args[1], &graves.master_state) ==
+  if (merry_RAM_add_pages(req->base->ram, req->args[1], &graves.master_state) ==
       RET_FAILURE) {
     merry_MAKE_SENSE_OF_STATE(&graves.master_state);
-    req->args[0] = REQUEST_FAILED;
+    req->args[0] = FAILED_TO_ADD_DATA_MEMORY_PAGE;
   } else {
     req->args[0] = REQUEST_SERVED;
     req->args[1] = tmp * _MERRY_BYTES_PER_PAGE_;
   }
 }
+
+PREQ_HDLR(HANDLE_SAVE_STATE) {
+  void *cptr = merry_graves_get_hands_on_cptr(req->base->core_id);
+  if (req->base->save_state_func(cptr) == RET_FAILURE) {
+    merry_MAKE_SENSE_OF_STATE(&req->base->state);
+    req->args[0] = REQUEST_FAILED;
+  }
+  req->args[0] = REQUEST_SERVED;
+  req->args[1] = merry_dynamic_list_size(req->base->execution_states);
+}
+
+PREQ_HDLR(HANDLE_DELETE_STATE) {}
+
+PREQ_HDLR(HANDLE_JMP_STATE) {}
+
+PREQ_HDLR(HANDLE_SWITCH_STATE) {}
+
+PREQ_HDLR(HANDLE_WILD_RESTORE) {}

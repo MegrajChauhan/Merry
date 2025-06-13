@@ -41,6 +41,7 @@ enum {
 };
 
 typedef struct Merry64BitCore Merry64BitCore;
+typedef struct Merry64BitCoreState Merry64BitCoreState;
 
 struct Merry64BitCore {
   MerryCoreBase *base;
@@ -49,21 +50,35 @@ struct Merry64BitCore {
   MerryFFlagsRegr ffregr;
   mqword_t pc; // program counter
   MerryRAM *stack;
-  MerryRAM *ram;
-  MerryRAM *iram;     // only for instructions
   MerryStack *tbs;    // Trace-back Stack
   MerryStack *cstack; // Call Stack
   MerryGravesRequest *req;
 };
 
-MerryCoreBase *merry_64_bit_core_base(MerryState *state);
+struct Merry64BitCoreState {
+  mqword_t regr[REG_COUNT_GPC_64];
+  MerryFlagsRegr fregr;
+  MerryFFlagsRegr ffregr;
+  mqword_t pc;
+  mbool_t state_valid;
+};
 
-MerryRAM *merry_64_bit_core_get_memory(mptr_t core, msize_t what);
+MerryCoreBase *merry_64_bit_core_base(MerryState *state);
 
 void *merry_64_bit_core_init(MerryCoreBase *base, MerryRAM *ram, MerryRAM *iram,
                              maddress_t start_point);
 
 void merry_64_bit_core_destroy(void *cptr);
+
+msize_t merry_64_bit_core_find_free_state(Merry64BitCore *core);
+
+mret_t merry_64_bit_core_save_state(void *cptr);
+
+mret_t merry_64_bit_core_replace_state(void *cptr, msize_t id);
+
+mret_t merry_64_bit_core_del_state(void *cptr, msize_t id);
+
+mret_t merry_64_bit_core_jmp_state(void *cptr, msize_t id);
 
 _THRET_T_ merry_64_bit_core_run(void *arg);
 
