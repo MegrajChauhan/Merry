@@ -162,6 +162,7 @@ _THRET_T_ merry_64_bit_core_run(void *arg) {
 
   while (mtrue) {
     if (core->base->stop) {
+      merry_mutex_lock(&core->base->lock);
       if (core->base->pause &&
           (!core->base->ignore_pause || !core->base->do_not_disturb)) {
         merry_cond_wait(&core->base->cond, &core->base->lock);
@@ -169,7 +170,6 @@ _THRET_T_ merry_64_bit_core_run(void *arg) {
       } else if (core->base->wrequest && !core->base->do_not_disturb) {
         if (!core->base->wild_request_hdlr_set) {
           // we ignore if no whdlr is provided
-          core->base->occupied = mfalse;
         } else {
           // save the current state and jump to
           if (merry_64_bit_core_save_state(arg) == RET_FAILURE) {
@@ -177,6 +177,7 @@ _THRET_T_ merry_64_bit_core_run(void *arg) {
             merry_SEND_REQUEST(core->req);
             core->req->type = SHUT_DOWN;
             merry_SEND_REQUEST(core->req);
+            merry_mutex_unlock(&core->base->lock);
             break;
           }
           // It is the handler's job to restore the state
@@ -189,9 +190,11 @@ _THRET_T_ merry_64_bit_core_run(void *arg) {
       } else {
         core->req->type = SHUT_DOWN;
         merry_SEND_REQUEST(core->req);
+        merry_mutex_unlock(&core->base->lock);
         break;
       }
       core->base->stop = mfalse;
+      merry_mutex_unlock(&core->base->lock);
     }
     if (merry_core_mem_access_GET_INST(core->req, &core->base->state,
                                        core->base->iram, core->pc,

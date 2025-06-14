@@ -71,8 +71,9 @@ struct MerryCoreBase {
 
   MerryRAM *iram, *ram;
 
-  unsigned int core_id; // assigned by Graves for every core
-  mbool_t priviledge;   // If not priviledged, cannot perform some things
+  unsigned int core_id;   // assigned by Graves for every core
+  unsigned int unique_id; // Cannot be shared
+  mbool_t priviledge;     // If not priviledged, cannot perform some things
   mbool_t
       do_not_disturb; // if set, no wild requests or pause will affect the core
   mbool_t ignore_pause;          // if set, cannot be paused
@@ -91,7 +92,8 @@ struct MerryCoreBase {
 
   mqword_t active_state;
   mqword_t prior_active_state;
-  mqword_t parent_core;
+  mqword_t parent_core_id;
+  mqword_t parent_unique_id;
 
   mcond_t cond;
   mmutex_t lock;
