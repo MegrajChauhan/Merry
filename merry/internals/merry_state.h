@@ -70,7 +70,6 @@ enum msyserr_t {
   _MERRY_STACK_UNDERFLOW_,
   _MERRY_FAILED_TO_OPEN_FILE_,
   _MERRY_CANNOT_CREATE_NEW_STATE_,
-  _MERRY_INVALID_STATE_ID_,
 };
 
 enum mprogerr_t {
@@ -80,6 +79,10 @@ enum mprogerr_t {
   _MERRY_TRYING_TO_OVERWRITE_ALREADY_OPEN_FILE_, // The file descriptor is
                                                  // already being used but
                                                  // trying to re-open a file.
+  _MERRY_INVALID_STATE_ID_,
+  _MERRY_CANNOT_WILD_RESTORE_WHEN_NO_WILD_REQUEST_SERVED_,
+  _MERRY_ATTEMPT_TO_PERFORM_STATE_OPERATIONS_DURING_WREQUEST_HANDLING,
+  _MERRY_NOT_PRIVILEDGED_FOR_THIS_OPERATION_,
 };
 
 struct MerryState {

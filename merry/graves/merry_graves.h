@@ -62,13 +62,18 @@ mret_t merry_graves_init(int argc, char **argv);
 
 mret_t merry_graves_acquaint_with_cores();
 
-mret_t merry_graves_add_new_core(mcore_t c_type, maddress_t begin, msize_t *id);
+mret_t merry_graves_add_new_core(mcore_t c_type, maddress_t begin,
+                                 mbool_t priviledge, msize_t *id);
 
 mret_t merry_graves_clean_a_core(msize_t cid);
 
 mret_t merry_graves_find_old_core(msize_t *ind);
 
 mptr_t merry_graves_get_hands_on_cptr(msize_t id);
+
+mret_t merry_graves_bestow_priviledge(msize_t bestower, msize_t bestowed);
+
+mbool_t merry_graves_check_vcore_priviledge_or_permission(msize_t id);
 
 int merry_GRAVES_RULE(int argc, char **argv);
 

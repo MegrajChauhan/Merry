@@ -65,6 +65,7 @@ MerryCoreBase *merry_64_bit_core_base(MerryState *state) {
   merry_assign_state(base->state, _MERRY_ORIGIN_NONE_, 0);
   base->state.child_state = NULL;
   base->wild_request = 0;
+  base->active_state = (mqword_t)(-1);
   return base;
 }
 
@@ -165,7 +166,7 @@ _THRET_T_ merry_64_bit_core_run(void *arg) {
           (!core->base->ignore_pause || !core->base->do_not_disturb)) {
         merry_cond_wait(&core->base->cond, &core->base->lock);
         core->base->pause = mfalse;
-      } else if (core->base->wrequest) {
+      } else if (core->base->wrequest && !core->base->do_not_disturb) {
         if (!core->base->wild_request_hdlr_set) {
           // we ignore if no whdlr is provided
           core->base->occupied = mfalse;
@@ -181,8 +182,9 @@ _THRET_T_ merry_64_bit_core_run(void *arg) {
           // It is the handler's job to restore the state
           core->pc = core->base->wild_request_hdlr;
           core->regr[R0] = core->base->wild_request;
-          // wild handler
-          core->base->wrequest = mfalse;
+          core->base->prior_active_state = core->base->active_state;
+          core->base->active_state =
+              merry_dynamic_list_size(core->base->execution_states);
         }
       } else {
         core->req->type = SHUT_DOWN;

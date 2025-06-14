@@ -85,6 +85,14 @@ struct MerryCoreBase {
                     // ANOTHER FLAG: ACCEPT ANOTHER FLAG; meaning only one flag
                     // to be set at once
 
+  mbool_t permission_granted; // non-priviledged vcore must ask for
+                              // permission from it's priviledged
+                              // parent vcore.
+
+  mqword_t active_state;
+  mqword_t prior_active_state;
+  mqword_t parent_core;
+
   mcond_t cond;
   mmutex_t lock;
 

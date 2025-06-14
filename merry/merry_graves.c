@@ -89,7 +89,7 @@ mret_t merry_graves_find_old_core(msize_t *ind) {
 }
 
 mret_t merry_graves_add_new_core(mcore_t c_type, maddress_t begin,
-                                 msize_t *id) {
+                                 mbool_t priviledge, msize_t *id) {
   MerryCoreBase *base;
   mcoredetails_t details = graves.core_base_func_list[c_type];
 
@@ -104,6 +104,7 @@ mret_t merry_graves_add_new_core(mcore_t c_type, maddress_t begin,
     return RET_FAILURE;
   }
   msize_t i;
+  base->priviledge = priviledge;
   if (merry_graves_find_old_core(&i) == RET_FAILURE) {
     MerryGravesCoreRepr repr;
     repr.base = base;
@@ -130,6 +131,36 @@ mret_t merry_graves_add_new_core(mcore_t c_type, maddress_t begin,
   }
 
   return RET_SUCCESS;
+}
+
+mret_t merry_graves_bestow_priviledge(msize_t bestower, msize_t bestowed) {
+  MerryGravesCoreRepr *_bestower =
+      merry_dynamic_list_at(graves.all_cores, bestower);
+  // if bestowed is invalid, we fail silently
+  if (!(merry_dyn_list_has_at_least(graves.all_cores, bestowed + 1)))
+    return RET_FAILURE;
+  MerryGravesCoreRepr *_bestowed =
+      merry_dynamic_list_at(graves.all_cores, bestowed);
+  if (_bestower->base->priviledge != mtrue) {
+    merry_assign_state(_bestower->base->state, _MERRY_PROGRAM_ERROR_,
+                       _MERRY_NOT_PRIVILEDGED_FOR_THIS_OPERATION_);
+    merry_provide_context(_bestower->base->state,
+                          _MERRY_GRAVES_SERVING_REQUEST_);
+    _bestower->base->state.arg.qword = _bestower->base->core_id;
+    merry_MAKE_SENSE_OF_STATE(&_bestower->base->state);
+    // bestower cannot continue working anymore.
+    _bestower->base->stop = mtrue;
+    _bestower->base->do_not_disturb = mtrue;
+    return RET_FAILURE;
+  }
+  atomic_store((atomic_bool *)&_bestowed->base->priviledge, mtrue);
+  return RET_SUCCESS;
+}
+
+mbool_t merry_graves_check_vcore_priviledge_or_permission(msize_t id) {
+  MerryGravesCoreRepr *core = merry_dynamic_list_at(graves.all_cores, id);
+  return (core != NULL && ((core->base->priviledge == mtrue) ||
+                           (core->base->permission_granted == mtrue)));
 }
 
 mret_t merry_graves_boot_core(msize_t core_id) {
@@ -172,8 +203,8 @@ mptr_t merry_graves_get_hands_on_cptr(msize_t id) {
 _THRET_T_ merry_graves_run_VM(void *arg) {
 
   // First start a new core
-  if (merry_graves_add_new_core(graves.reader->itit.entries[0].type, 0, NULL) ==
-      RET_FAILURE) {
+  if (merry_graves_add_new_core(graves.reader->itit.entries[0].type, 0, mtrue,
+                                NULL) == RET_FAILURE) {
     merry_provide_context(graves.master_state, _MERRY_GRAVES_INITIALIZATION_);
     merry_MAKE_SENSE_OF_STATE(&graves.master_state);
     return NULL;
@@ -288,9 +319,12 @@ REQ_HDLR(HANDLE_PROGRAM_REQUEST) {
 
 PREQ_HDLR(HANDLE_NEW_THREAD) {
   // We are attempting to create a new core of the same type.
+  if (!merry_graves_check_vcore_priviledge_or_permission(req->base->core_id)) {
+    // merry_assign_state();
+  }
   msize_t id = 0;
-  if (merry_graves_add_new_core(req->base->core_type, req->args[1], &id) ==
-      RET_FAILURE) {
+  if (merry_graves_add_new_core(req->base->core_type, req->args[1],
+                                req->args[2] & 0xFF, &id) == RET_FAILURE) {
     req->args[0] = FAILED_TO_ADD_CORE;
     return;
   }
@@ -316,6 +350,17 @@ PREQ_HDLR(HANDLE_ADD_A_NEW_DATA_MEMORY_PAGE) {
 }
 
 PREQ_HDLR(HANDLE_SAVE_STATE) {
+  if (req->base->wrequest == mtrue) {
+    merry_assign_state(
+        req->base->state, _MERRY_PROGRAM_ERROR_,
+        _MERRY_ATTEMPT_TO_PERFORM_STATE_OPERATIONS_DURING_WREQUEST_HANDLING);
+    merry_provide_context(req->base->state, _MERRY_GRAVES_SERVING_REQUEST_);
+    req->base->state.arg.qword = req->base->core_id;
+    merry_MAKE_SENSE_OF_STATE(&req->base->state);
+    req->base->stop = mtrue;
+    req->base->do_not_disturb = mtrue;
+    return;
+  }
   void *cptr = merry_graves_get_hands_on_cptr(req->base->core_id);
   if (req->base->save_state_func(cptr) == RET_FAILURE) {
     merry_MAKE_SENSE_OF_STATE(&req->base->state);
@@ -325,10 +370,95 @@ PREQ_HDLR(HANDLE_SAVE_STATE) {
   req->args[1] = merry_dynamic_list_size(req->base->execution_states);
 }
 
-PREQ_HDLR(HANDLE_DELETE_STATE) {}
+PREQ_HDLR(HANDLE_DELETE_STATE) {
+  if (req->base->wrequest == mtrue) {
+    merry_assign_state(
+        req->base->state, _MERRY_PROGRAM_ERROR_,
+        _MERRY_ATTEMPT_TO_PERFORM_STATE_OPERATIONS_DURING_WREQUEST_HANDLING);
+    merry_provide_context(req->base->state, _MERRY_GRAVES_SERVING_REQUEST_);
+    req->base->state.arg.qword = req->base->core_id;
+    merry_MAKE_SENSE_OF_STATE(&req->base->state);
+    req->base->stop = mtrue;
+    req->base->do_not_disturb = mtrue;
+    return;
+  }
+  void *cptr = merry_graves_get_hands_on_cptr(req->base->core_id);
+  if (req->base->del_state_func(cptr, req->args[1]) == RET_FAILURE) {
+    merry_MAKE_SENSE_OF_STATE(&req->base->state);
+    req->args[0] = REQUEST_FAILED;
+  }
+  if (req->base->active_state == req->args[1])
+    req->base->active_state = (mqword_t)(-1);
+  req->args[0] = REQUEST_SERVED;
+}
 
-PREQ_HDLR(HANDLE_JMP_STATE) {}
+PREQ_HDLR(HANDLE_JMP_STATE) {
+  if (req->base->wrequest == mtrue) {
+    merry_assign_state(
+        req->base->state, _MERRY_PROGRAM_ERROR_,
+        _MERRY_ATTEMPT_TO_PERFORM_STATE_OPERATIONS_DURING_WREQUEST_HANDLING);
+    merry_provide_context(req->base->state, _MERRY_GRAVES_SERVING_REQUEST_);
+    req->base->state.arg.qword = req->base->core_id;
+    merry_MAKE_SENSE_OF_STATE(&req->base->state);
+    req->base->stop = mtrue;
+    req->base->do_not_disturb = mtrue;
+    return;
+  }
+  void *cptr = merry_graves_get_hands_on_cptr(req->base->core_id);
+  if (req->base->jmp_state_func(cptr, req->args[1]) == RET_FAILURE) {
+    merry_MAKE_SENSE_OF_STATE(&req->base->state);
+    req->args[0] = REQUEST_FAILED;
+  }
+  req->args[0] = REQUEST_SERVED;
+  req->base->active_state = req->args[1];
+}
 
-PREQ_HDLR(HANDLE_SWITCH_STATE) {}
+PREQ_HDLR(HANDLE_SWITCH_STATE) {
+  if (req->base->wrequest == mtrue) {
+    merry_assign_state(
+        req->base->state, _MERRY_PROGRAM_ERROR_,
+        _MERRY_ATTEMPT_TO_PERFORM_STATE_OPERATIONS_DURING_WREQUEST_HANDLING);
+    merry_provide_context(req->base->state, _MERRY_GRAVES_SERVING_REQUEST_);
+    req->base->state.arg.qword = req->base->core_id;
+    merry_MAKE_SENSE_OF_STATE(&req->base->state);
+    req->base->stop = mtrue;
+    req->base->do_not_disturb = mtrue;
+    return;
+  }
+  void *cptr = merry_graves_get_hands_on_cptr(req->base->core_id);
+  if (req->base->replace_state_func(cptr, req->args[1]) == RET_FAILURE) {
+    merry_MAKE_SENSE_OF_STATE(&req->base->state);
+    req->args[0] = REQUEST_FAILED;
+  }
+  req->args[0] = REQUEST_SERVED;
+  req->base->active_state = req->args[1];
+}
 
-PREQ_HDLR(HANDLE_WILD_RESTORE) {}
+PREQ_HDLR(HANDLE_WILD_RESTORE) {
+  if (req->base->wrequest == mfalse) {
+    merry_assign_state(req->base->state, _MERRY_PROGRAM_ERROR_,
+                       _MERRY_CANNOT_WILD_RESTORE_WHEN_NO_WILD_REQUEST_SERVED_);
+    merry_provide_context(req->base->state, _MERRY_GRAVES_SERVING_REQUEST_);
+    req->base->state.arg.qword = req->base->core_id;
+    merry_MAKE_SENSE_OF_STATE(&req->base->state);
+    // we do not clear the "occupied" mark
+    // the vcore must terminate
+    // even clearing "occupied" won't have any consequences
+    // since "do_not_disturb" is set
+    req->base->stop = mtrue;
+    req->base->do_not_disturb = mtrue;
+    return;
+  }
+  void *cptr = merry_graves_get_hands_on_cptr(req->base->core_id);
+  // restore the prior active state
+  if (req->base->jmp_state_func(cptr, req->base->prior_active_state) ==
+      RET_FAILURE) {
+    merry_MAKE_SENSE_OF_STATE(&req->base->state);
+    req->args[0] = REQUEST_FAILED;
+  }
+  // delete that state
+  req->base->del_state_func(cptr, req->base->active_state);
+  // restore the prior active state
+  req->base->active_state = req->base->prior_active_state;
+  req->args[0] = REQUEST_SERVED;
+}
