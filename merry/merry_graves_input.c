@@ -26,6 +26,10 @@ mbool_t merry_graves_reader_confirm_input_file(MerryGravesInput *reader) {
     return mfalse;
   }
 
+  for (msize_t i = 0; i < __CORE_TYPE_COUNT; i++) {
+    reader->_instruction_for_core_already_read[i] = mfalse;
+  }
+
   return mtrue;
 }
 
@@ -78,6 +82,8 @@ mret_t merry_graves_reader_read_input(MerryGravesInput *reader) {
     return RET_FAILURE;
   if (merry_graves_reader_parse_instruction_sections(reader) == RET_FAILURE)
     return RET_FAILURE;
+  if (merry_graves_reader_parse_data_type_metadata(reader) == RET_FAILURE)
+    return RET_FAILURE;
   if (merry_graves_reader_parse_data_and_string_section(reader) == RET_FAILURE)
     return RET_FAILURE;
   if (merry_graves_reader_prep_memory(reader) == RET_FAILURE)
@@ -98,7 +104,7 @@ void merry_graves_reader_destroy(MerryGravesInput *reader) {
     if (reader->iram[i] != NULL)
       merry_destroy_RAM(reader->iram[i]);
     if (reader->instruction_offsets[i] != NULL)
-      free(reader->instruction_offsets);
+      free(reader->instruction_offsets[i]);
   }
 
   if (reader->data_ram != NULL)
@@ -138,10 +144,9 @@ merry_graves_reader_parse_identification_header(MerryGravesInput *reader) {
     return RET_FAILURE;
   }
 
-  mbyte_t st_available;
-  fread(&st_available, 1, 1, reader->fd);
-  if (st_available == 1)
-    reader->metadata.st_available = mtrue;
+  msize_t tmp = 0;
+
+  fread(&tmp, 1, 4, reader->fd);
 
   return RET_SUCCESS;
 }
@@ -149,6 +154,7 @@ merry_graves_reader_parse_identification_header(MerryGravesInput *reader) {
 mret_t merry_graves_reader_parse_ITIT_header(MerryGravesInput *reader) {
   merry_check_ptr(reader);
   MerryHostMemLayout le;
+  le.whole_word = 0;
   fread(&le.whole_word, 8, 1, reader->fd);
 #if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
   merry_LITTLE_ENDIAN_to_BIG_ENDIAN(&le);
@@ -160,7 +166,7 @@ mret_t merry_graves_reader_parse_ITIT_header(MerryGravesInput *reader) {
                        _MERRY_MISALIGNED_ITIT_HEADER_);
     return RET_FAILURE;
   }
-  if ((reader->metadata.ITIT_len / 16) >= __CORE_TYPE_COUNT) {
+  if ((reader->metadata.ITIT_len / 16) > __CORE_TYPE_COUNT) {
     merry_assign_state(reader->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
                        _MERRY_FRAGMENTED_INSTRUCTION_SECTION_);
     return RET_FAILURE;
@@ -183,7 +189,7 @@ merry_graves_reader_parse_data_and_string_header(MerryGravesInput *reader) {
 #if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
   merry_LITTLE_ENDIAN_to_BIG_ENDIAN(&le);
 #endif
-  reader->metadata.string_section_len = 0;
+  reader->metadata.string_section_len = le.whole_word;
 
   return RET_SUCCESS;
 }
@@ -260,7 +266,7 @@ mret_t merry_graves_reader_parse_ITIT(MerryGravesInput *reader) {
 
   if ((reader->metadata.DI_len + reader->metadata.ITIT_len +
        reader->metadata.data_section_len + reader->metadata.string_section_len +
-       reader->metadata.total_instructions_len + 56) > reader->file_size) {
+       reader->metadata.total_instructions_len + 40) > reader->file_size) {
     merry_assign_state(reader->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
                        _MERRY_INVALID_FILE_STRUCTURE_DOESNT_MATCH_HEADER_INFO_);
     return RET_FAILURE;
@@ -272,9 +278,10 @@ mret_t
 merry_graves_reader_parse_instruction_sections(MerryGravesInput *reader) {
   merry_check_ptr(reader);
 
+  msize_t off = ftell(reader->fd);
   for (msize_t i = 0; i < reader->itit.entry_count; i++) {
     MerryITITEntry entry = reader->itit.entries[i];
-    msize_t off = ftell(reader->fd);
+    msize_t curr_section_len = entry.section_len;
     msize_t section_count =
         entry.section_len / _MERRY_PAGE_LEN_ +
         ((entry.section_len % _MERRY_PAGE_LEN_) > 0 ? 1 : 0);
@@ -289,14 +296,59 @@ merry_graves_reader_parse_instruction_sections(MerryGravesInput *reader) {
     for (msize_t j = 0; j < section_count; j++) {
       reader->instruction_offsets[entry.type][j].offset = off;
       reader->instruction_offsets[entry.type][j].section_length =
-          ((entry.section_len - _MERRY_PAGE_LEN_) < 0 ? entry.section_len
-                                                      : _MERRY_PAGE_LEN_);
-      entry.section_len -= _MERRY_PAGE_LEN_;
+          ((curr_section_len - _MERRY_PAGE_LEN_) < 0 ? curr_section_len
+                                                     : _MERRY_PAGE_LEN_);
+      curr_section_len -= _MERRY_PAGE_LEN_;
       off += reader->instruction_offsets[entry.type][j].section_length;
     }
     fseek(reader->fd, entry.section_len, SEEK_CUR);
   }
 
+  return RET_SUCCESS;
+}
+
+mret_t merry_graves_reader_parse_data_type_metadata(MerryGravesInput *reader) {
+  merry_check_ptr(reader);
+
+  // Exactly 24 bytes
+  fread(&reader->qword.off_ed, 8, 1, reader->fd);
+  fread(&reader->dword.off_ed, 8, 1, reader->fd);
+  fread(&reader->word.off_ed, 8, 1, reader->fd);
+#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
+  MerryHostMemLayout l;
+  l.whole_word = reader->qword.off_ed;
+  merry_LITTLE_ENDIAN_to_BIG_ENDIAN(&l);
+  reader->qword = l.whole_word;
+
+  l.whole_word = reader->dword.off_ed;
+  merry_LITTLE_ENDIAN_to_BIG_ENDIAN(&l);
+  reader->dword = l.whole_word;
+
+  l.whole_word = reader->word.off_ed;
+  merry_LITTLE_ENDIAN_to_BIG_ENDIAN(&l);
+  reader->word = l.whole_word;
+#endif
+  if ((reader->qword.off_ed + reader->dword.off_ed + reader->word.off_ed) !=
+      reader->metadata.data_section_len) {
+    merry_assign_state(reader->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
+                       _MERRY_INVALID_FILE_STRUCTURE_DOESNT_MATCH_HEADER_INFO_);
+    return RET_FAILURE;
+  }
+  if ((reader->qword.off_ed % 8) != 0) {
+    merry_assign_state(reader->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
+                       _MERRY_MISALIGNED_DATA_SECTION_);
+    return RET_FAILURE;
+  }
+  if ((reader->dword.off_ed % 4) != 0) {
+    merry_assign_state(reader->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
+                       _MERRY_MISALIGNED_DATA_SECTION_);
+    return RET_FAILURE;
+  }
+  if ((reader->word.off_ed % 2) != 0) {
+    merry_assign_state(reader->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
+                       _MERRY_MISALIGNED_DATA_SECTION_);
+    return RET_FAILURE;
+  }
   return RET_SUCCESS;
 }
 
@@ -316,61 +368,73 @@ merry_graves_reader_parse_data_and_string_section(MerryGravesInput *reader) {
     return RET_FAILURE;
   }
 
+  reader->qword.off_st = off;
+  reader->qword.off_ed = reader->qword.off_ed + off;
+
+  reader->dword.off_st = reader->qword.off_ed;
+  reader->dword.off_ed = reader->dword.off_ed + reader->dword.off_st;
+
+  reader->word.off_st = reader->dword.off_ed;
+  reader->word.off_ed = reader->word.off_ed + reader->word.off_st;
+
   msize_t data_section_len = reader->metadata.data_section_len;
 
   for (msize_t i = 0; i < section_count; i++) {
     reader->data_offsets[i].offset = off;
     reader->data_offsets[i].section_length =
-        ((data_section_len - _MERRY_PAGE_LEN_) < 0 ? data_section_len
-                                                   : _MERRY_PAGE_LEN_);
-    reader->data_offsets[i].section_length -= _MERRY_PAGE_LEN_;
+        ((int64_t)(data_section_len - _MERRY_PAGE_LEN_) < 0 ? data_section_len
+                                                            : _MERRY_PAGE_LEN_);
+    data_section_len -= _MERRY_PAGE_LEN_;
     off += reader->data_offsets[i].section_length;
   }
   fseek(reader->fd, reader->metadata.data_section_len, SEEK_CUR);
+  if (reader->metadata.string_section_len > 0) {
+    off = ftell(reader->fd);
+    msize_t i = 0;
+    msize_t last_pg_len = reader->metadata.data_section_len % _MERRY_PAGE_LEN_;
+    data_section_len = reader->metadata.string_section_len;
+    if (last_pg_len > 0) {
+      msize_t diff = _MERRY_PAGE_LEN_ - last_pg_len;
+      if (data_section_len > diff) {
+        data_section_len -= diff;
+      }
+      section_count = data_section_len / _MERRY_PAGE_LEN_ +
+                      ((data_section_len % _MERRY_PAGE_LEN_) > 0 ? 1 : 0);
 
-  off = ftell(reader->fd);
-  msize_t i = 0;
-  msize_t last_pg_len = reader->metadata.data_section_len % _MERRY_PAGE_LEN_;
-  data_section_len = reader->metadata.string_section_len;
-  if (last_pg_len > 0) {
-    msize_t diff = _MERRY_PAGE_LEN_ - last_pg_len;
-    data_section_len -= diff;
-    section_count = data_section_len / _MERRY_PAGE_LEN_ +
-                    ((data_section_len % _MERRY_PAGE_LEN_) > 0 ? 1 : 0);
+      if ((reader->string_offsets = (MerrySection *)malloc(
+               sizeof(MerrySection) * (section_count + 1))) == NULL) {
+        merry_assign_state(reader->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
+                           _MERRY_MEM_ALLOCATION_FAILURE_);
+        return RET_FAILURE;
+      }
+      reader->string_offsets[i].section_length = diff;
+      reader->string_offsets[i].offset = off;
+      off += reader->data_offsets[i].section_length;
+      reader->string_offsets_count = section_count + 1;
+      i++;
+    } else {
+      section_count = data_section_len / _MERRY_PAGE_LEN_ +
+                      ((data_section_len % _MERRY_PAGE_LEN_) > 0 ? 1 : 0);
 
-    if ((reader->string_offsets = (MerrySection *)malloc(
-             sizeof(MerrySection) * (section_count + 1))) == NULL) {
-      merry_assign_state(reader->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
-                         _MERRY_MEM_ALLOCATION_FAILURE_);
-      return RET_FAILURE;
+      if ((reader->string_offsets = (MerrySection *)malloc(
+               sizeof(MerrySection) * section_count)) == NULL) {
+        merry_assign_state(reader->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
+                           _MERRY_MEM_ALLOCATION_FAILURE_);
+        return RET_FAILURE;
+      }
+      reader->string_offsets_count = section_count;
     }
-    reader->data_offsets[i].section_length = diff;
-    reader->data_offsets[i].offset = off;
-    off += reader->data_offsets[i].section_length;
-    reader->string_offsets_count = section_count + 1;
-    i++;
-  } else {
-    section_count = data_section_len / _MERRY_PAGE_LEN_ +
-                    ((data_section_len % _MERRY_PAGE_LEN_) > 0 ? 1 : 0);
-
-    if ((reader->string_offsets = (MerrySection *)malloc(
-             sizeof(MerrySection) * section_count)) == NULL) {
-      merry_assign_state(reader->state, _MERRY_INTERNAL_SYSTEM_ERROR_,
-                         _MERRY_MEM_ALLOCATION_FAILURE_);
-      return RET_FAILURE;
+    for (; i < section_count; i++) {
+      reader->string_offsets[i].offset = off;
+      reader->string_offsets[i].section_length =
+          ((data_section_len - _MERRY_PAGE_LEN_) < 0 ? data_section_len
+                                                     : _MERRY_PAGE_LEN_);
+      reader->string_offsets[i].section_length -= _MERRY_PAGE_LEN_;
+      off += reader->string_offsets[i].section_length;
+      data_section_len -= reader->string_offsets[i].section_length;
     }
-    reader->string_offsets_count = section_count;
+    fseek(reader->fd, reader->metadata.string_section_len, SEEK_CUR);
   }
-  for (; i < section_count; i++) {
-    reader->string_offsets[i].offset = off;
-    reader->string_offsets[i].section_length =
-        ((data_section_len - _MERRY_PAGE_LEN_) < 0 ? data_section_len
-                                                   : _MERRY_PAGE_LEN_);
-    reader->string_offsets[i].section_length -= _MERRY_PAGE_LEN_;
-    off += reader->string_offsets[i].section_length;
-  }
-  fseek(reader->fd, reader->metadata.string_section_len, SEEK_CUR);
-
   return RET_SUCCESS;
 }
 
@@ -404,7 +468,7 @@ mret_t merry_graves_reader_load_instructions(MerryGravesInput *reader,
   }
 
   MerryRAM *ram = reader->iram[c_type];
-  if (ram->pages[pgnum]->init)
+  if (ram->pages[pgnum]->init == mtrue)
     return RET_SUCCESS;
   if (merry_initialize_normal_memory_page(ram->pages[pgnum]) == RET_FAILURE) {
     merry_obtain_memory_interface_state(&reader->state);
@@ -413,7 +477,7 @@ mret_t merry_graves_reader_load_instructions(MerryGravesInput *reader,
 
   MerrySection section = reader->instruction_offsets[c_type][pgnum];
 
-  fseek(reader->fd, 0, section.offset);
+  fseek(reader->fd, section.offset, SEEK_SET);
 
   fread(ram->pages[pgnum]->buf, 8, section.section_length / 8, reader->fd);
 #if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
@@ -441,7 +505,7 @@ mret_t merry_graves_reader_load_data(MerryGravesInput *reader, msize_t pgnum) {
   MerryRAM *ram = reader->data_ram;
   MerrySection section;
 
-  if (ram->pages[pgnum]->init)
+  if (ram->pages[pgnum]->init == mtrue)
     return RET_SUCCESS;
   if (merry_initialize_normal_memory_page(ram->pages[pgnum]) == RET_FAILURE) {
     merry_obtain_memory_interface_state(&reader->state);
@@ -451,42 +515,151 @@ mret_t merry_graves_reader_load_data(MerryGravesInput *reader, msize_t pgnum) {
   if (pgnum < (reader->data_offsets_count - 1)) {
     // This implies everything is in the data section
     section = reader->data_offsets[pgnum];
-    fseek(reader->fd, 0, section.offset);
-    fread(ram->pages[pgnum]->buf, 8, section.section_length / 8, reader->fd);
-#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
-    mqptr_t buf = (mqptr_t)ram->pages[pgnum]->buf;
-    for (msize_t i = 0; i < (section.section_len / 8); i++) {
-      MerryHostMemLayout le;
-      le.whole_word = buf[i];
-      merry_LITTLE_ENDIAN_to_BIG_ENDIAN(&le);
-      buf[i] = le.whole_word;
-    }
-#endif
+    fseek(reader->fd, section.offset, SEEK_SET);
 
+    msize_t bytes_to_read = 0;
+    msize_t bytes_already_read = 0;
+
+    if (section.offset >= reader->qword.off_st &&
+        section.offset < reader->qword.off_ed) {
+      bytes_to_read = (reader->qword.off_ed - section.offset);
+      if (bytes_to_read > section.section_length) {
+        bytes_to_read = section.section_length;
+      }
+      fread(ram->pages[pgnum]->buf, 8, (bytes_to_read) / 8, reader->fd);
+      bytes_already_read += bytes_to_read;
+#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
+      mqptr_t buf = (mqptr_t)ram->pages[pgnum]->buf;
+      for (msize_t i = 0; i < (bytes_to_read / 8); i++) {
+        MerryHostMemLayout le;
+        le.whole_word = buf[i];
+        merry_LITTLE_ENDIAN_to_BIG_ENDIAN(&le);
+        buf[i] = le.whole_word;
+      }
+#endif
+      section.section_length -= bytes_to_read;
+    }
+    section.offset += bytes_already_read;
+    if (section.offset >= reader->dword.off_st &&
+        section.offset < reader->dword.off_ed) {
+      bytes_to_read = (reader->dword.off_ed - section.offset);
+      fread((mbptr_t)ram->pages[pgnum]->buf + bytes_already_read, 4,
+            (bytes_to_read) / 4, reader->fd);
+#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
+      mdptr_t buf =
+          (mdptr_t)((mbptr_t)ram->pages[pgnum]->buf + bytes_already_read);
+      for (msize_t i = 0; i < (bytes_to_read / 4); i++) {
+        MerryHostMemLayout l, r;
+        l.whole_word = *buf;
+        r.bytes.b7 = l.bytes.b4;
+        r.bytes.b6 = l.bytes.b5;
+        r.bytes.b5 = l.bytes.b6;
+        r.bytes.b4 = l.bytes.b7;
+        *buf = r.w1;
+      }
+#endif
+      bytes_already_read += bytes_to_read;
+      section.section_length -= bytes_to_read;
+    }
+    section.offset += bytes_already_read;
+    if (section.offset >= reader->word.off_st &&
+        section.offset < reader->word.off_ed) {
+      bytes_to_read = (reader->word.off_ed - section.offset);
+      fread((mbptr_t)ram->pages[pgnum]->buf + bytes_already_read, 2,
+            (bytes_to_read) / 2, reader->fd);
+#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
+      mwptr_t buf =
+          (mwptr_t)((mbptr_t)ram->pages[pgnum]->buf + bytes_already_read);
+      for (msize_t i = 0; i < (bytes_to_read / 2); i++) {
+        MerryHostMemLayout l, r;
+        l.whole_word = *buf;
+        r.bytes.b7 = l.bytes.b6;
+        r.bytes.b6 = l.bytes.b7;
+        *buf = r.word.w4;
+      }
+#endif
+      bytes_already_read += bytes_to_read;
+      section.section_length -= bytes_to_read;
+    }
   } else if (pgnum == (reader->data_offsets_count - 1)) {
     section = reader->data_offsets[pgnum];
-    fseek(reader->fd, 0, section.offset);
-    fread(ram->pages[pgnum]->buf, 8, section.section_length / 8, reader->fd);
-#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
-    mqptr_t buf = (mqptr_t)ram->pages[pgnum]->buf;
-    for (msize_t i = 0; i < (section.section_len / 8); i++) {
-      MerryHostMemLayout le;
-      le.whole_word = buf[i];
-      merry_LITTLE_ENDIAN_to_BIG_ENDIAN(&le);
-      buf[i] = le.whole_word;
-    }
-#endif
-    if (section.section_length != _MERRY_PAGE_LEN_) {
-      msize_t tmp = section.section_length;
-      section = reader->string_offsets[0];
-      fseek(reader->fd, 0, section.offset);
-      fread(ram->pages[pgnum]->buf + tmp, 1, section.section_length,
-            reader->fd);
-    }
+    msize_t actual_len = section.section_length;
+    fseek(reader->fd, section.offset, SEEK_SET);
+    msize_t bytes_to_read = 0;
+    msize_t bytes_already_read = 0;
 
+    if (section.offset >= reader->qword.off_st &&
+        section.offset < reader->qword.off_ed) {
+      bytes_to_read = (reader->qword.off_ed - section.offset);
+      if (bytes_to_read > section.section_length) {
+        bytes_to_read = section.section_length;
+      }
+      fread(ram->pages[pgnum]->buf, 8, (bytes_to_read) / 8, reader->fd);
+      bytes_already_read += bytes_to_read;
+#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
+      mqptr_t buf = (mqptr_t)ram->pages[pgnum]->buf;
+      for (msize_t i = 0; i < (bytes_to_read / 8); i++) {
+        MerryHostMemLayout le;
+        le.whole_word = buf[i];
+        merry_LITTLE_ENDIAN_to_BIG_ENDIAN(&le);
+        buf[i] = le.whole_word;
+      }
+#endif
+      section.section_length -= bytes_to_read;
+    }
+    section.offset += bytes_already_read;
+    if (section.offset >= reader->dword.off_st &&
+        section.offset < reader->dword.off_ed) {
+      bytes_to_read = (reader->dword.off_ed - section.offset);
+      fread((mbptr_t)ram->pages[pgnum]->buf + bytes_already_read, 4,
+            (bytes_to_read) / 4, reader->fd);
+#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
+      mdptr_t buf =
+          (mdptr_t)((mbptr_t)ram->pages[pgnum]->buf + bytes_already_read);
+      for (msize_t i = 0; i < (bytes_to_read / 4); i++) {
+        MerryHostMemLayout l, r;
+        l.whole_word = *buf;
+        r.bytes.b7 = l.bytes.b4;
+        r.bytes.b6 = l.bytes.b5;
+        r.bytes.b5 = l.bytes.b6;
+        r.bytes.b4 = l.bytes.b7;
+        *buf = r.w1;
+      }
+#endif
+      bytes_already_read += bytes_to_read;
+      section.section_length -= bytes_to_read;
+    }
+    section.offset += bytes_already_read;
+    if (section.offset >= reader->word.off_st &&
+        section.offset < reader->word.off_ed) {
+      bytes_to_read = (reader->word.off_ed - section.offset);
+      fread((mbptr_t)ram->pages[pgnum]->buf + bytes_already_read, 2,
+            (bytes_to_read) / 2, reader->fd);
+#if _MERRY_BYTE_ORDER_ == _MERRY_BIG_ENDIAN_
+      mwptr_t buf =
+          (mwptr_t)((mbptr_t)ram->pages[pgnum]->buf + bytes_already_read);
+      for (msize_t i = 0; i < (bytes_to_read / 2); i++) {
+        MerryHostMemLayout l, r;
+        l.whole_word = *buf;
+        r.bytes.b7 = l.bytes.b6;
+        r.bytes.b6 = l.bytes.b7;
+        *buf = r.word.w4;
+      }
+#endif
+      bytes_already_read += bytes_to_read;
+      section.section_length -= bytes_to_read;
+    }
+    if (actual_len != _MERRY_PAGE_LEN_) {
+      section = reader->string_offsets[0];
+      fseek(reader->fd, section.offset, SEEK_SET);
+      fread((mbptr_t)ram->pages[pgnum]->buf + actual_len, 1,
+            section.section_length, reader->fd);
+    }
   } else {
-    section = reader->string_offsets[pgnum - reader->data_offsets_count];
-    fseek(reader->fd, 0, section.offset);
+    section =
+        reader->string_offsets[pgnum - reader->data_offsets_count -
+                               (reader->string_offsets_count > 0 ? 1 : 0)];
+    fseek(reader->fd, section.offset, SEEK_SET);
     fread(ram->pages[pgnum]->buf, 1, section.section_length, reader->fd);
   }
 

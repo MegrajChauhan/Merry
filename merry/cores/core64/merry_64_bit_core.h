@@ -11,6 +11,7 @@
 #include "merry_state.h"
 #include "merry_types.h"
 #include "merry_utils.h"
+#include <merry_core_base_mem_access.h>
 #include <stdlib.h>
 
 #define _MERRY_64_BIT_CORE_REGR_COUNT_ 16
@@ -35,23 +36,31 @@ enum {
   R10,
   R11,
   R12,
-  REG_COUNT_64,
+  GPC_64_LAST_REGR = 15,
+  REG_COUNT_GPC_64,
 };
 
 typedef struct Merry64BitCore Merry64BitCore;
+typedef struct Merry64BitCoreState Merry64BitCoreState;
 
 struct Merry64BitCore {
   MerryCoreBase *base;
-  mqword_t regr[REG_COUNT_64];
+  mqword_t regr[REG_COUNT_GPC_64];
   MerryFlagsRegr fregr;
   MerryFFlagsRegr ffregr;
   mqword_t pc; // program counter
   MerryRAM *stack;
-  MerryRAM *ram;
-  MerryRAM *iram;     // only for instructions
   MerryStack *tbs;    // Trace-back Stack
   MerryStack *cstack; // Call Stack
   MerryGravesRequest *req;
+};
+
+struct Merry64BitCoreState {
+  mqword_t regr[REG_COUNT_GPC_64];
+  MerryFlagsRegr fregr;
+  MerryFFlagsRegr ffregr;
+  mqword_t pc;
+  mbool_t state_valid;
 };
 
 MerryCoreBase *merry_64_bit_core_base(MerryState *state);
@@ -60,6 +69,16 @@ void *merry_64_bit_core_init(MerryCoreBase *base, MerryRAM *ram, MerryRAM *iram,
                              maddress_t start_point);
 
 void merry_64_bit_core_destroy(void *cptr);
+
+msize_t merry_64_bit_core_find_free_state(Merry64BitCore *core);
+
+mret_t merry_64_bit_core_save_state(void *cptr);
+
+mret_t merry_64_bit_core_replace_state(void *cptr, msize_t id);
+
+mret_t merry_64_bit_core_del_state(void *cptr, msize_t id);
+
+mret_t merry_64_bit_core_jmp_state(void *cptr, msize_t id);
 
 _THRET_T_ merry_64_bit_core_run(void *arg);
 
@@ -131,6 +150,7 @@ EXEC64(fmul32_mem);
 EXEC64(fdiv32_mem);
 
 EXEC64(mov_imm);
+EXEC64(movf32);
 
 // mov_reg, mov_reg8, mov_reg16, mov_reg32 don't need a dedicated function
 

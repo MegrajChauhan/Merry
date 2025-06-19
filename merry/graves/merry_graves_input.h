@@ -65,6 +65,7 @@ typedef struct MerryInstructionTypeIdentificationTableEntry MerryITITEntry;
 typedef struct MerryInstructionTypeIdentificationTable MerryITIT;
 typedef struct MerryFileMetadata MerryFileMetadata;
 typedef struct MerrySection MerrySection;
+typedef struct MerryPortion MerryPortion;
 
 enum MerryFileType {
   _NORMAL_INPUT_FILE,
@@ -96,6 +97,10 @@ struct MerrySection {
   msize_t section_length;
 };
 
+struct MerryPortion {
+  msize_t off_st, off_ed;
+};
+
 struct MerryGravesInput {
   FILE *fd;
   mstr_t file_path;
@@ -107,6 +112,7 @@ struct MerryGravesInput {
   msize_t data_offsets_count;
   MerrySection *string_offsets;
   msize_t string_offsets_count;
+  MerryPortion qword, dword, word;
   MerryRAM *data_ram;
   MerryRAM *iram[__CORE_TYPE_COUNT];
   MerryState state;
@@ -136,6 +142,8 @@ mret_t merry_graves_reader_perform_checksum(MerryGravesInput *reader);
 mret_t merry_graves_reader_parse_ITIT(MerryGravesInput *reader);
 
 mret_t merry_graves_reader_parse_instruction_sections(MerryGravesInput *reader);
+
+mret_t merry_graves_reader_parse_data_type_metadata(MerryGravesInput *reader);
 
 mret_t
 merry_graves_reader_parse_data_and_string_section(MerryGravesInput *reader);

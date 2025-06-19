@@ -73,6 +73,12 @@ mret_t merry_RAM_add_pages(MerryRAM *ram, msize_t num, MerryState *state) {
   }
 
   memcpy(pages, ram->pages, sizeof(MerryNormalMemoryPage *) * ram->page_count);
+  for (msize_t j = ram->page_count; j < temp; j++) {
+    if (merry_initialize_normal_memory_page(pages[j]) == RET_FAILURE) {
+      merry_obtain_memory_interface_state(state);
+      goto __rid_of_during_error;
+    }
+  }
   ram->page_count = temp;
   free(ram->pages);
   ram->pages = pages;
@@ -252,7 +258,6 @@ mret_t merry_RAM_read_qword(MerryRAM *ram, maddress_t address, mqptr_t store_in,
     layout.whole_word = *(mqptr_t)(ram->pages[page_num]->buf + page_off);
     break;
   }
-
   *store_in = layout.whole_word;
   return RET_SUCCESS;
 }
@@ -433,7 +438,7 @@ void merry_destroy_RAM(MerryRAM *ram) {
     merry_check_ptr(ram->pages[i]);
     merry_return_normal_memory_page(ram->pages[i]);
   }
-  merry_mutex_destroy(ram->lock);
+  merry_mutex_destroy(&ram->lock);
   free(ram->pages);
   free(ram);
 }
@@ -460,9 +465,9 @@ mbptr_t merry_RAM_bulk_read(MerryRAM *ram, maddress_t address, msize_t length,
   msize_t off;
 
   merry_deduce_address(address, pg_num, off);
-
   while (length > 0) {
-    if (surelyF(pg_num >= ram->page_count) || !ram->pages[pg_num]->init) {
+    if (surelyF(pg_num >= ram->page_count) ||
+        ram->pages[pg_num]->init == mfalse) {
       merry_assign_state(*state, _MERRY_INTERNAL_SYSTEM_ERROR_,
                          _MERRY_PAGE_FAULT_);
       free(buf);
@@ -471,7 +476,6 @@ mbptr_t merry_RAM_bulk_read(MerryRAM *ram, maddress_t address, msize_t length,
 
     if (length > _MERRY_PAGE_LEN_) {
       memcpy(iter, (char *)ram->pages[pg_num]->buf + off, _MERRY_PAGE_LEN_);
-      ;
       pg_num++;
       length -= _MERRY_PAGE_LEN_;
       off = 0;
@@ -484,7 +488,6 @@ mbptr_t merry_RAM_bulk_read(MerryRAM *ram, maddress_t address, msize_t length,
       off = 0;
     }
   }
-
   return buf;
 }
 
