@@ -67,6 +67,7 @@ mret_t merry_graves_init(int argc, char **argv) {
   // We shall do it here.
   graves.core_count = 0;
   graves.lifetime_core_count = 0;
+  graves.group_count = 0;
 
   return RET_SUCCESS;
 }
@@ -92,7 +93,8 @@ mret_t merry_graves_find_old_core(msize_t *ind) {
 
 mret_t merry_graves_add_new_core(mcore_t c_type, maddress_t begin,
                                  mqword_t parent_id, mqword_t parent_uid,
-                                 mbool_t priviledge, msize_t *id) {
+                                 mqword_t parent_group, mbool_t priviledge,
+                                 msize_t *id) {
   MerryCoreBase *base;
   mcoredetails_t details = graves.core_base_func_list[c_type];
 
@@ -136,6 +138,7 @@ mret_t merry_graves_add_new_core(mcore_t c_type, maddress_t begin,
   graves.lifetime_core_count++;
   base->parent_core_id = parent_id;
   base->parent_unique_id = parent_uid;
+  base->group_id = parent_group;
   return RET_SUCCESS;
 }
 
@@ -143,30 +146,45 @@ mret_t merry_graves_bestow_priviledge(msize_t bestower, msize_t bestowed) {
   MerryGravesCoreRepr *_bestower =
       merry_dynamic_list_at(graves.all_cores, bestower);
   // if bestowed is invalid, we fail silently
-  if (!(merry_dyn_list_has_at_least(graves.all_cores, bestowed + 1)))
+  if (surelyF(!(merry_dyn_list_has_at_least(graves.all_cores, bestowed + 1))))
     return RET_FAILURE;
+  mbool_t f = mfalse;
   MerryGravesCoreRepr *_bestowed =
       merry_dynamic_list_at(graves.all_cores, bestowed);
-  if (_bestower->base->priviledge != mtrue) {
+  if (_bestowed->base->group_id != _bestower->base->group_id) {
+    merry_assign_state(_bestower->base->state, _MERRY_PROGRAM_ERROR_,
+                       _MERRY_GROUPS_DONT_MATCH_);
+    f = mtrue;
+  } else if (_bestower->base->priviledge != mtrue) {
     merry_assign_state(_bestower->base->state, _MERRY_PROGRAM_ERROR_,
                        _MERRY_NOT_PRIVILEDGED_FOR_THIS_OPERATION_);
+    f = mtrue;
+  }
+  if (f) {
     merry_provide_context(_bestower->base->state,
                           _MERRY_GRAVES_SERVING_REQUEST_);
     _bestower->base->state.arg.qword = _bestower->base->core_id;
     merry_MAKE_SENSE_OF_STATE(&_bestower->base->state);
     // bestower cannot continue working anymore.
     _bestower->base->stop = mtrue;
-    _bestower->base->do_not_disturb = mtrue;
+    _bestower->base->terminate = mtrue;
     return RET_FAILURE;
   }
   atomic_store((atomic_bool *)&_bestowed->base->priviledge, mtrue);
   return RET_SUCCESS;
 }
 
+mbool_t merry_graves_check_vcore_alive_or_dead(msize_t id, msize_t uid) {
+  MerryGravesCoreRepr *core = merry_dynamic_list_at(graves.all_cores, id);
+  return (core != NULL && core->cptr != NULL && core->base->unique_id == uid &&
+          core->base->terminate == mfalse);
+}
+
 mbool_t merry_graves_check_vcore_priviledge_or_permission(msize_t id) {
   MerryGravesCoreRepr *core = merry_dynamic_list_at(graves.all_cores, id);
-  return (core != NULL && ((core->base->priviledge == mtrue) ||
-                           (core->base->permission_granted == mtrue)));
+  return (core != NULL && core->cptr != NULL &&
+          ((core->base->priviledge == mtrue) ||
+           (core->base->permission_granted == mtrue)));
 }
 
 void merry_graves_encountered_error_serving(merrOrigin_t orig, mqword_t err,
@@ -175,7 +193,7 @@ void merry_graves_encountered_error_serving(merrOrigin_t orig, mqword_t err,
   merry_provide_context(base->state, _MERRY_GRAVES_SERVING_REQUEST_);
   base->state.arg.qword = base->core_id;
   merry_MAKE_SENSE_OF_STATE(&base->state);
-  base->do_not_disturb = mtrue;
+  base->terminate = mtrue;
   base->stop = mtrue;
 }
 
@@ -220,7 +238,7 @@ _THRET_T_ merry_graves_run_VM(void *arg) {
 
   // First start a new core
   if (merry_graves_add_new_core(graves.reader->itit.entries[0].type, 0, -1, -1,
-                                mtrue, NULL) == RET_FAILURE) {
+                                0, mtrue, NULL) == RET_FAILURE) {
     merry_provide_context(graves.master_state, _MERRY_GRAVES_INITIALIZATION_);
     merry_MAKE_SENSE_OF_STATE(&graves.master_state);
     return NULL;
@@ -335,15 +353,14 @@ REQ_HDLR(HANDLE_PROGRAM_REQUEST) {
 
 PREQ_HDLR(HANDLE_NEW_THREAD) {
   if (!merry_graves_check_vcore_priviledge_or_permission(req->base->core_id)) {
-    merry_graves_encountered_error_serving(
-        _MERRY_PROGRAM_ERROR_, _MERRY_NOT_PRIVILEDGED_FOR_THIS_OPERATION_,
-        req->base);
+    req->args[0] = NOT_PRIVILEDGED;
     return;
   }
   msize_t id = 0;
   if (merry_graves_add_new_core(req->args[1] & __CORE_TYPE_COUNT, req->args[2],
                                 req->base->core_id, req->base->unique_id,
-                                req->args[3] & 0xFF, &id) == RET_FAILURE) {
+                                req->base->group_id, req->args[3] & 0xFF,
+                                &id) == RET_FAILURE) {
     req->args[0] = FAILED_TO_ADD_CORE;
     return;
   }
@@ -357,9 +374,7 @@ PREQ_HDLR(HANDLE_NEW_THREAD) {
 
 PREQ_HDLR(HANDLE_ADD_A_NEW_DATA_MEMORY_PAGE) {
   if (!merry_graves_check_vcore_priviledge_or_permission(req->base->core_id)) {
-    merry_graves_encountered_error_serving(
-        _MERRY_PROGRAM_ERROR_, _MERRY_NOT_PRIVILEDGED_FOR_THIS_OPERATION_,
-        req->base);
+    req->args[0] = NOT_PRIVILEDGED;
     return;
   }
   msize_t tmp = req->base->ram->page_count;
@@ -386,6 +401,7 @@ PREQ_HDLR(HANDLE_SAVE_STATE) {
   if (req->base->save_state_func(cptr) == RET_FAILURE) {
     merry_MAKE_SENSE_OF_STATE(&req->base->state);
     req->args[0] = REQUEST_FAILED;
+    return;
   }
   req->args[0] = REQUEST_SERVED;
   req->args[1] = merry_dynamic_list_size(req->base->execution_states);
@@ -403,6 +419,7 @@ PREQ_HDLR(HANDLE_DELETE_STATE) {
   if (req->base->del_state_func(cptr, req->args[1]) == RET_FAILURE) {
     merry_MAKE_SENSE_OF_STATE(&req->base->state);
     req->args[0] = REQUEST_FAILED;
+    return;
   }
   if (req->base->active_state == req->args[1])
     req->base->active_state = (mqword_t)(-1);
@@ -421,6 +438,7 @@ PREQ_HDLR(HANDLE_JMP_STATE) {
   if (req->base->jmp_state_func(cptr, req->args[1]) == RET_FAILURE) {
     merry_MAKE_SENSE_OF_STATE(&req->base->state);
     req->args[0] = REQUEST_FAILED;
+    return;
   }
   req->args[0] = REQUEST_SERVED;
   req->base->active_state = req->args[1];
@@ -438,6 +456,7 @@ PREQ_HDLR(HANDLE_SWITCH_STATE) {
   if (req->base->replace_state_func(cptr, req->args[1]) == RET_FAILURE) {
     merry_MAKE_SENSE_OF_STATE(&req->base->state);
     req->args[0] = REQUEST_FAILED;
+    return;
   }
   req->args[0] = REQUEST_SERVED;
   req->base->active_state = req->args[1];
@@ -460,11 +479,242 @@ PREQ_HDLR(HANDLE_WILD_RESTORE) {
       RET_FAILURE) {
     merry_MAKE_SENSE_OF_STATE(&req->base->state);
     req->args[0] = REQUEST_FAILED;
+    return;
   }
   // delete that state
   req->base->del_state_func(cptr, req->base->active_state);
   // restore the prior active state
   req->base->active_state = req->base->prior_active_state;
   req->args[0] = REQUEST_SERVED;
-  req->base->wrequest = mfalse;
+  req->base->wrequest = req->base->stop =
+      ((merry_simple_queue_empty(req->base->wild_request) ? mtrue : mfalse));
 }
+
+PREQ_HDLR(HANDLE_NEW_GROUP) {
+  // make a new vcore for a new group
+  if (!merry_graves_check_vcore_priviledge_or_permission(req->base->core_id)) {
+    req->args[0] = NOT_PRIVILEDGED;
+    return;
+  }
+  msize_t id = 0;
+  graves.group_count++;
+  if (merry_graves_add_new_core(req->args[1] & __CORE_TYPE_COUNT, req->args[2],
+                                -1, -1, graves.group_count, mtrue,
+                                &id) == RET_FAILURE) {
+    req->args[0] = FAILED_TO_ADD_CORE;
+    return;
+  }
+  if (merry_graves_boot_core(id) == RET_FAILURE) {
+    req->args[0] = FAILED_TO_ADD_CORE;
+    return;
+  }
+  req->args[0] = REQUEST_SERVED;
+  req->args[1] = id;
+}
+
+PREQ_HDLR(HANDLE_BESTOW_PRIVILEDGE) {
+  merry_graves_bestow_priviledge(req->base->core_id, req->args[1]);
+}
+
+PREQ_HDLR(HANDLE_DO_NOT_DISTURB) { req->base->do_not_disturb = mtrue; }
+
+PREQ_HDLR(HANDLE_IGNORE_PAUSE) { req->base->ignore_pause = mtrue; }
+
+PREQ_HDLR(HANDLE_WILD_REQUEST) {
+  /*
+   * It is clear that just using the core id is not going to be
+   * enough. As the core being requested might be dead and some other
+   * core might have taken it's id so it is not a full-proof
+   * identification method. Thus, for cases like these, unique
+   * id will be used for making sure
+   * */
+  /*
+   * One interesting thing one might notice is that Graves never
+   * checks the status flags for each vcore. Is it in do not disturb
+   * state? This is because the flags are for the vcore itself.
+   * Graves doesn't have to bother itself for them.
+   * */
+  if (!merry_graves_check_vcore_alive_or_dead(req->args[1], req->args[2])) {
+    // the core is already dead
+    req->args[0] = CORE_DEAD;
+    return;
+  }
+  MerryGravesCoreRepr *getter =
+      merry_dynamic_list_at(graves.all_cores, req->args[1]);
+  // the core is alive
+  // We need to push to the wild request queue of
+  // the getter
+  merry_mutex_lock(&getter->base->lock);
+  if (merry_simple_queue_full(getter->base->wild_request)) {
+    req->args[0] = WRQ_FULL;
+    merry_mutex_unlock(&getter->base->lock);
+    return;
+  }
+  MerryWildRequest r;
+  r.request = req->args[3];
+  r.requester_id = req->base->core_id;
+  r.requester_uid = req->base->unique_id;
+  r.arg = req->args[4];
+  merry_simple_queue_enqueue(getter->base->wild_request, &r);
+  getter->base->wrequest = mtrue;
+  getter->base->stop = mtrue;
+  merry_mutex_unlock(&getter->base->lock);
+}
+
+PREQ_HDLR(HANDLE_PAUSE) {
+  if (!merry_graves_check_vcore_priviledge_or_permission(req->base->core_id)) {
+    req->args[0] = NOT_PRIVILEDGED;
+    return;
+  }
+  if (!merry_graves_check_vcore_alive_or_dead(req->args[1], req->args[2])) {
+    // the core is already dead
+    req->args[0] = CORE_DEAD;
+    return;
+  }
+  MerryGravesCoreRepr *other =
+      merry_dynamic_list_at(graves.all_cores, req->args[1]);
+  if (req->base->group_id != other->base->group_id) {
+    // violation of a pact
+    // violator cannot continue
+    merry_graves_encountered_error_serving(
+        _MERRY_PROGRAM_ERROR_, _MERRY_GROUPS_DONT_MATCH_, req->base);
+    return;
+  }
+  other->base->pause = mtrue;
+  other->base->stop = mtrue;
+}
+
+PREQ_HDLR(HANDLE_UNPAUSE) {
+  if (!merry_graves_check_vcore_priviledge_or_permission(req->base->core_id)) {
+    req->args[0] = NOT_PRIVILEDGED;
+    return;
+  }
+  if (!merry_graves_check_vcore_alive_or_dead(req->args[1], req->args[2])) {
+    // the core is already dead
+    req->args[0] = CORE_DEAD;
+    return;
+  }
+  MerryGravesCoreRepr *other =
+      merry_dynamic_list_at(graves.all_cores, req->args[1]);
+  if (req->base->group_id != other->base->group_id) {
+    // violation of a pact
+    // violator cannot continue
+    merry_graves_encountered_error_serving(
+        _MERRY_PROGRAM_ERROR_, _MERRY_GROUPS_DONT_MATCH_, req->base);
+    return;
+  }
+  if (other->base->pause == mtrue)
+    merry_cond_signal(&other->base->cond);
+}
+
+PREQ_HDLR(HANDLE_GRANT_PERMISSION) {
+  if (!merry_graves_check_vcore_priviledge_or_permission(req->base->core_id)) {
+    req->args[0] = NOT_PRIVILEDGED;
+    return;
+  }
+  if (!merry_graves_check_vcore_alive_or_dead(req->args[1], req->args[2])) {
+    // the core is already dead
+    req->args[0] = CORE_DEAD;
+    return;
+  }
+  MerryGravesCoreRepr *other =
+      merry_dynamic_list_at(graves.all_cores, req->args[1]);
+  if (req->base->group_id != other->base->group_id) {
+    // violation of a pact
+    // violator cannot continue
+    merry_graves_encountered_error_serving(
+        _MERRY_PROGRAM_ERROR_, _MERRY_GROUPS_DONT_MATCH_, req->base);
+    return;
+  }
+  other->base->permission_granted = mtrue;
+  req->args[0] = REQUEST_SERVED;
+}
+
+PREQ_HDLR(HANDLE_IS_CORE_DEAD) {
+  // This doesn't require permission or priviledge
+  req->args[0] = REQUEST_SERVED;
+  req->args[1] =
+      merry_graves_check_vcore_alive_or_dead(req->args[1], req->args[2]) ? YES
+                                                                         : NO;
+}
+
+PREQ_HDLR(HANDLE_IS_PARENT_ALIVE) {
+  if (req->base->parent_core_id == -1) {
+    req->args[0] = REQUEST_SERVED;
+    req->args[1] = HAS_NO_PARENT;
+  }
+  req->args[0] = merry_graves_check_vcore_alive_or_dead(
+                     req->base->parent_core_id, req->base->parent_unique_id)
+                     ? CORE_ALIVE
+                     : CORE_DEAD;
+}
+
+PREQ_HDLR(HANDLE_GET_CID) {
+  req->args[0] = REQUEST_SERVED;
+  req->args[1] = req->base->core_id;
+}
+
+PREQ_HDLR(HANDLE_GET_UID) {
+  MerryGravesCoreRepr *other =
+      merry_dynamic_list_at(graves.all_cores, req->args[1]);
+  if (!other) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = INVALID_CORE_ID;
+    return;
+  }
+  req->args[0] = REQUEST_SERVED;
+  req->args[1] = other->base->unique_id;
+}
+
+PREQ_HDLR(HANDLE_GET_GROUP) {
+  MerryGravesCoreRepr *other =
+      merry_dynamic_list_at(graves.all_cores, req->args[1]);
+  if (!other) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = INVALID_CORE_ID;
+    return;
+  }
+  req->args[0] = REQUEST_SERVED;
+  req->args[1] = other->base->group_id;
+}
+
+PREQ_HDLR(HANDLE_KILL_CORE) {
+  /*
+   * To kill a core, the killing core must
+   * 1) be priviledged(or have permission)
+   * 2) have same group id as the dying core.
+   * This is a controlled kill i.e intentional
+   * or at least that is what i assume.
+   * */
+  if (!merry_graves_check_vcore_priviledge_or_permission(req->base->core_id)) {
+    req->args[0] = NOT_PRIVILEDGED;
+    return;
+  }
+  if (!merry_graves_check_vcore_alive_or_dead(req->args[1], req->args[2])) {
+    // the core is already dead
+    req->args[0] = REQUEST_SERVED;
+    return;
+  }
+  MerryGravesCoreRepr *other =
+      merry_dynamic_list_at(graves.all_cores, req->args[1]);
+  if (req->base->group_id != other->base->group_id) {
+    // violation of a pact
+    // violator cannot continue
+    merry_graves_encountered_error_serving(
+        _MERRY_PROGRAM_ERROR_, _MERRY_GROUPS_DONT_MATCH_, req->base);
+    return;
+  }
+  req->args[0] = REQUEST_SERVED;
+  other->base->terminate = mtrue;
+  other->base->stop = mtrue;
+}
+
+PREQ_HDLR(HANDLE_IS_CHILD) {}
+
+PREQ_HDLR(HANDLE_CHANGE_PARENT) {}
+
+PREQ_HDLR(HANDLE_CHANGE_CHILD_PARENT) {}
+
+PREQ_HDLR(HANDLE_GIVEUP_PRIVILEDGE) {}
+
+PREQ_HDLR(HANDLE_PURGE_WREQUESTS) {}

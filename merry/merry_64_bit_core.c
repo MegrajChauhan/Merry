@@ -53,14 +53,27 @@ MerryCoreBase *merry_64_bit_core_base(MerryState *state) {
     return RET_NULL;
   }
 
+  if ((base->wild_request = merry_create_simple_queue(
+           _MERRY_WILD_REQUEST_QUEUE_LEN_, sizeof(MerryWildRequest),
+           &base->state)) == RET_NULL) {
+    merry_provide_context(base->state, _MERRY_CORE_BASE_INITIALIZATION_);
+    merry_cond_destroy(&base->cond);
+    merry_mutex_destroy(&base->lock);
+    merry_destroy_dynamic_list(base->execution_states);
+    //  merry_dynamic_queue_destroy(base->execution_queue);
+    free(base);
+    return RET_NULL;
+  }
+
   base->priviledge = mfalse;
+  base->terminate = mfalse;
+  base->terminate = mtrue;
   base->do_not_disturb = mfalse;
   base->ignore_pause = mfalse;
   base->wrequest = mfalse;
   base->pause = mfalse;
   base->stop = mfalse;
   base->wild_request_hdlr_set = mfalse;
-  base->occupied = mfalse;
   base->core_type = __CORE_64_BIT;
   merry_assign_state(base->state, _MERRY_ORIGIN_NONE_, 0);
   base->state.child_state = NULL;
@@ -163,8 +176,13 @@ _THRET_T_ merry_64_bit_core_run(void *arg) {
   while (mtrue) {
     if (core->base->stop) {
       merry_mutex_lock(&core->base->lock);
-      if (core->base->pause &&
-          (!core->base->ignore_pause || !core->base->do_not_disturb)) {
+      if (core->base->terminate) {
+        core->req->type = SHUT_DOWN;
+        merry_SEND_REQUEST(core->req);
+        merry_mutex_unlock(&core->base->lock);
+        break;
+      } else if (core->base->pause &&
+                 (!core->base->ignore_pause || !core->base->do_not_disturb)) {
         merry_cond_wait(&core->base->cond, &core->base->lock);
         core->base->pause = mfalse;
       } else if (core->base->wrequest && !core->base->do_not_disturb) {
@@ -172,27 +190,32 @@ _THRET_T_ merry_64_bit_core_run(void *arg) {
           // we ignore if no whdlr is provided
         } else {
           // save the current state and jump to
-          if (merry_64_bit_core_save_state(arg) == RET_FAILURE) {
-            core->req->type = PROBLEM_ENCOUNTERED;
-            merry_SEND_REQUEST(core->req);
-            core->req->type = SHUT_DOWN;
-            merry_SEND_REQUEST(core->req);
-            merry_mutex_unlock(&core->base->lock);
-            break;
+          if (merry_simple_queue_empty(core->base->wild_request)) {
+            core->base->wrequest = mfalse;
+          } else {
+            if (merry_64_bit_core_save_state(arg) == RET_FAILURE) {
+              core->req->type = PROBLEM_ENCOUNTERED;
+              merry_SEND_REQUEST(core->req);
+              core->req->type = SHUT_DOWN;
+              merry_SEND_REQUEST(core->req);
+              merry_mutex_unlock(&core->base->lock);
+              break;
+            }
+            // It is the handler's job to restore the state
+            MerryWildRequest tmp;
+            merry_simple_queue_dequeue(core->base->wild_request, &tmp);
+            core->regr[R0] = tmp.request;
+            core->regr[R1] = tmp.requester_id;
+            core->regr[R2] = tmp.requester_uid;
+            core->regr[R3] = tmp.arg;
+            core->pc = core->base->wild_request_hdlr;
+            core->base->prior_active_state = core->base->active_state;
+            core->base->active_state =
+                merry_dynamic_list_size(core->base->execution_states);
           }
-          // It is the handler's job to restore the state
-          core->pc = core->base->wild_request_hdlr;
-          core->regr[R0] = core->base->wild_request;
-          core->base->prior_active_state = core->base->active_state;
-          core->base->active_state =
-              merry_dynamic_list_size(core->base->execution_states);
         }
-      } else {
-        core->req->type = SHUT_DOWN;
-        merry_SEND_REQUEST(core->req);
-        merry_mutex_unlock(&core->base->lock);
-        break;
       }
+      core->base->pause = mfalse;
       core->base->stop = mfalse;
       merry_mutex_unlock(&core->base->lock);
     }
@@ -638,7 +661,7 @@ _THRET_T_ merry_64_bit_core_run(void *arg) {
       core->req->args[4] = core->regr[R11];
       core->req->args[5] = core->regr[R12];
       core->regr[R0] = (merry_SEND_REQUEST(core->req) == RET_FAILURE)
-                           ? 1
+                           ? REQUEST_FAILED
                            : core->req->args[0];
       core->regr[R1] = core->req->args[1];
       break;
@@ -1183,6 +1206,7 @@ EXEC64(add_imm) {
                                      core->base->ram, core->pc,
                                      &op2) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] += op2;
@@ -1204,6 +1228,7 @@ EXEC64(sub_imm) {
                                      core->base->ram, core->pc,
                                      &op2) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] -= op2;
@@ -1225,6 +1250,7 @@ EXEC64(mul_imm) {
                                      core->base->ram, core->pc,
                                      &op2) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] *= op2;
@@ -1246,6 +1272,7 @@ EXEC64(div_imm) {
                                      core->base->ram, core->pc,
                                      &op2) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (op2 == 0) {
@@ -1253,6 +1280,7 @@ EXEC64(div_imm) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] /= op2;
@@ -1267,6 +1295,7 @@ EXEC64(div_reg) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] /= core->regr[op2];
@@ -1281,6 +1310,7 @@ EXEC64(mod_imm) {
                                      core->base->ram, core->pc,
                                      &op2) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (op2 == 0) {
@@ -1288,6 +1318,7 @@ EXEC64(mod_imm) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] %= op2;
@@ -1302,6 +1333,7 @@ EXEC64(mod_reg) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] %= core->regr[op2];
@@ -1316,6 +1348,7 @@ EXEC64(iadd_imm) {
                                      core->base->ram, core->pc,
                                      (mqptr_t)&op2) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[inst.bytes.b7 & GPC_64_LAST_REGR] = (mqword_t)(op1 + op2);
@@ -1337,6 +1370,7 @@ EXEC64(isub_imm) {
                                      core->base->ram, core->pc,
                                      (mqptr_t)&op2) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[inst.bytes.b7 & GPC_64_LAST_REGR] = (mqword_t)(op1 - op2);
@@ -1358,6 +1392,7 @@ EXEC64(imul_imm) {
                                      core->base->ram, core->pc,
                                      (mqptr_t)&op2) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[inst.bytes.b7 & GPC_64_LAST_REGR] = (mqword_t)(op1 * op2);
@@ -1379,6 +1414,7 @@ EXEC64(idiv_imm) {
                                      core->base->ram, core->pc,
                                      (mqptr_t)&op2) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (op2 == 0) {
@@ -1386,6 +1422,7 @@ EXEC64(idiv_imm) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[inst.bytes.b7 & GPC_64_LAST_REGR] = (mqword_t)(op1 / op2);
@@ -1400,6 +1437,7 @@ EXEC64(idiv_reg) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[inst.bytes.b6 & GPC_64_LAST_REGR] = (mqword_t)(op1 / op2);
@@ -1414,6 +1452,7 @@ EXEC64(imod_imm) {
                                      core->base->ram, core->pc,
                                      (mqptr_t)&op2) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (op2 == 0) {
@@ -1421,6 +1460,7 @@ EXEC64(imod_imm) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[inst.bytes.b7 & GPC_64_LAST_REGR] = (mqword_t)(op1 % op2);
@@ -1435,6 +1475,7 @@ EXEC64(imod_reg) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[inst.bytes.b6 & GPC_64_LAST_REGR] = (mqword_t)(op1 % op2);
@@ -1489,6 +1530,7 @@ EXEC64(fdiv) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   merry_compare_f64(a.d_val, b.d_val, &core->ffregr);
@@ -1544,6 +1586,7 @@ EXEC64(fdiv32) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   merry_compare_f32(a.fl_val, b.fl_val, &core->ffregr);
@@ -1559,6 +1602,7 @@ EXEC64(add_memb) {
                                           core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] += temp;
@@ -1573,6 +1617,7 @@ EXEC64(add_memw) {
                                           core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] += temp;
@@ -1587,6 +1632,7 @@ EXEC64(add_memd) {
                                            core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] += temp;
@@ -1601,6 +1647,7 @@ EXEC64(add_memq) {
                                            core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] += temp;
@@ -1615,6 +1662,7 @@ EXEC64(sub_memb) {
                                           core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] -= temp;
@@ -1629,6 +1677,7 @@ EXEC64(sub_memw) {
                                           core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] -= temp;
@@ -1643,6 +1692,7 @@ EXEC64(sub_memd) {
                                            core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] -= temp;
@@ -1657,6 +1707,7 @@ EXEC64(sub_memq) {
                                            core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] -= temp;
@@ -1671,6 +1722,7 @@ EXEC64(mul_memb) {
                                           core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] *= temp;
@@ -1685,6 +1737,7 @@ EXEC64(mul_memw) {
                                           core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] *= temp;
@@ -1699,6 +1752,7 @@ EXEC64(mul_memd) {
                                            core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] *= temp;
@@ -1713,6 +1767,7 @@ EXEC64(mul_memq) {
                                            core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] *= temp;
@@ -1727,6 +1782,7 @@ EXEC64(div_memb) {
                                           core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (temp == 0) {
@@ -1734,6 +1790,7 @@ EXEC64(div_memb) {
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] /= temp;
@@ -1748,6 +1805,7 @@ EXEC64(div_memw) {
                                           core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (temp == 0) {
@@ -1755,6 +1813,7 @@ EXEC64(div_memw) {
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] /= temp;
@@ -1769,6 +1828,7 @@ EXEC64(div_memd) {
                                            core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (temp == 0) {
@@ -1776,6 +1836,7 @@ EXEC64(div_memd) {
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] /= temp;
@@ -1790,6 +1851,7 @@ EXEC64(div_memq) {
                                            core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (temp == 0) {
@@ -1797,6 +1859,7 @@ EXEC64(div_memq) {
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] /= temp;
@@ -1811,6 +1874,7 @@ EXEC64(mod_memb) {
                                           core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (temp == 0) {
@@ -1818,6 +1882,7 @@ EXEC64(mod_memb) {
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] %= temp;
@@ -1832,6 +1897,7 @@ EXEC64(mod_memw) {
                                           core->base->ram, addr,
                                           &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (temp == 0) {
@@ -1839,6 +1905,7 @@ EXEC64(mod_memw) {
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] %= temp;
@@ -1853,6 +1920,7 @@ EXEC64(mod_memd) {
                                            core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (temp == 0) {
@@ -1860,6 +1928,7 @@ EXEC64(mod_memd) {
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] %= temp;
@@ -1874,6 +1943,7 @@ EXEC64(mod_memq) {
                                            core->base->ram, addr,
                                            &temp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (temp == 0) {
@@ -1881,6 +1951,7 @@ EXEC64(mod_memq) {
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] %= temp;
@@ -1895,6 +1966,7 @@ EXEC64(fadd64_mem) {
                                            core->base->ram, addr,
                                            &temp.q_val) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   MerryDoubleToQword rval;
@@ -1913,6 +1985,7 @@ EXEC64(fsub64_mem) {
                                            core->base->ram, addr,
                                            &temp.q_val) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   MerryDoubleToQword rval;
@@ -1931,6 +2004,7 @@ EXEC64(fmul64_mem) {
                                            core->base->ram, addr,
                                            &temp.q_val) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   MerryDoubleToQword rval;
@@ -1949,6 +2023,7 @@ EXEC64(fdiv64_mem) {
                                            core->base->ram, addr,
                                            &temp.q_val) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (temp.d_val == 0.0) {
@@ -1956,6 +2031,7 @@ EXEC64(fdiv64_mem) {
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   MerryDoubleToQword rval;
@@ -1974,6 +2050,7 @@ EXEC64(fadd32_mem) {
                                            core->base->ram, addr,
                                            &temp.d_val) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   MerryFloatToDword rval;
@@ -1993,6 +2070,7 @@ EXEC64(fsub32_mem) {
                                            core->base->ram, addr,
                                            &temp.d_val) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   MerryFloatToDword rval;
@@ -2012,6 +2090,7 @@ EXEC64(fmul32_mem) {
                                            core->base->ram, addr,
                                            &temp.d_val) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   MerryFloatToDword rval;
@@ -2031,6 +2110,7 @@ EXEC64(fdiv32_mem) {
                                            core->base->ram, addr,
                                            &temp.d_val) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (temp.d_val == 0.0) {
@@ -2038,6 +2118,7 @@ EXEC64(fdiv32_mem) {
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_, _DIV_BY_ZERO_);
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   MerryFloatToDword rval;
@@ -2058,6 +2139,7 @@ EXEC64(mov_imm) {
                                      core->base->ram, core->pc,
                                      &val) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 
@@ -2073,6 +2155,7 @@ EXEC64(movf32) {
                                      core->base->ram, core->pc,
                                      &val) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 
@@ -2157,10 +2240,12 @@ EXEC64(call) {
   mqword_t addr = inst.whole_word & 0xFFFFFFFFFFFF;
   if (merry_stack_push(core->tbs, (mptr_t)core->pc) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (merry_stack_push(core->cstack, (mptr_t)addr) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->pc = addr - 8; // the address to the first instruction of the procedure
@@ -2172,6 +2257,7 @@ EXEC64(ret) {
   // restore PC
   if ((a.ptr = merry_stack_pop(core->tbs)) == RET_NULL) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     merry_assign_state(core->base->state, _MERRY_PROGRAM_ERROR_,
                        _INVALID_PROCEDURE_RETURN_);
     merry_provide_context(core->base->state, _MERRY_CORE_EXECUTING_);
@@ -2184,6 +2270,7 @@ EXEC64(ret) {
   // of above won't reach this
   if ((merry_stack_pop(core->cstack)) == RET_NULL) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 
@@ -2195,10 +2282,12 @@ EXEC64(call_reg) {
   addr.qword = core->regr[inst.bytes.b7 & GPC_64_LAST_REGR];
   if (merry_stack_push(core->tbs, (mqptr_t)core->pc) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (merry_stack_push(core->cstack, addr.ptr) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->pc = addr.qword - 8;
@@ -2211,6 +2300,7 @@ EXEC64(push_immb) {
                                      core->base->ram, core->pc,
                                      &imm.whole_word) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (merry_RAM_write_byte(core->stack, core->regr[SP], imm.bytes.b7,
@@ -2221,6 +2311,7 @@ EXEC64(push_immb) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[SP]++;
@@ -2233,6 +2324,7 @@ EXEC64(push_immw) {
                                      core->base->ram, core->pc,
                                      &imm.whole_word) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (merry_RAM_write_word(core->stack, core->regr[SP], imm.half_half_words.w3,
@@ -2243,6 +2335,7 @@ EXEC64(push_immw) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[SP] += 2;
@@ -2255,6 +2348,7 @@ EXEC64(push_immd) {
                                      core->base->ram, core->pc,
                                      &imm.whole_word) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (merry_RAM_write_dword(core->stack, core->regr[SP], imm.half_words.w1,
@@ -2265,6 +2359,7 @@ EXEC64(push_immd) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[SP] += 4;
@@ -2277,6 +2372,7 @@ EXEC64(push_immq) {
                                      core->base->ram, core->pc,
                                      &imm.whole_word) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (merry_RAM_write_qword(core->stack, core->regr[SP], imm.whole_word,
@@ -2287,6 +2383,7 @@ EXEC64(push_immq) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[SP] += 8;
@@ -2302,6 +2399,7 @@ EXEC64(push_reg) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[SP] += 8;
@@ -2318,6 +2416,7 @@ EXEC64(popb) {
     // This will not fail at all
     // i.e this section should never be executed
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[inst.bytes.b7 & GPC_64_LAST_REGR] = tmp;
@@ -2335,6 +2434,7 @@ EXEC64(popw) {
     // This will not fail at all
     // i.e this section should never be executed
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[inst.bytes.b7 & GPC_64_LAST_REGR] = tmp;
@@ -2352,6 +2452,7 @@ EXEC64(popd) {
     // This will not fail at all
     // i.e this section should never be executed
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[inst.bytes.b7 & GPC_64_LAST_REGR] = tmp;
@@ -2369,6 +2470,7 @@ EXEC64(popq) {
     // This will not fail at all
     // i.e this section should never be executed
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[SP] -= 8;
@@ -2384,6 +2486,7 @@ EXEC64(pusha) {
       core->req->type = PROBLEM_ENCOUNTERED;
       merry_SEND_REQUEST(core->req);
       core->base->stop = mtrue;
+      core->base->terminate = mtrue;
       return;
     }
     core->regr[SP] += 8;
@@ -2404,6 +2507,7 @@ EXEC64(popa) {
       core->req->type = PROBLEM_ENCOUNTERED;
       merry_SEND_REQUEST(core->req);
       core->base->stop = mtrue;
+      core->base->terminate = mtrue;
       return;
     }
     core->regr[SP] -= 8;
@@ -2416,6 +2520,7 @@ EXEC64(push_memb) {
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm.bytes.b7) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (merry_RAM_write_byte(core->stack, core->regr[SP], imm.bytes.b7,
@@ -2426,6 +2531,7 @@ EXEC64(push_memb) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[SP] += 1;
@@ -2438,6 +2544,7 @@ EXEC64(push_memw) {
           inst.whole_word & 0xFFFFFFFFFFFF,
           &imm.half_half_words.w3) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (merry_RAM_write_word(core->stack, core->regr[SP], imm.half_half_words.w3,
@@ -2448,6 +2555,7 @@ EXEC64(push_memw) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[SP] += 2;
@@ -2460,6 +2568,7 @@ EXEC64(push_memd) {
                                            inst.whole_word & 0xFFFFFFFFFFFF,
                                            &imm.half_words.w1) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (merry_RAM_write_dword(core->stack, core->regr[SP], imm.half_words.w1,
@@ -2470,6 +2579,7 @@ EXEC64(push_memd) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[SP] += 4;
@@ -2481,6 +2591,7 @@ EXEC64(push_memq) {
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm.whole_word) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (merry_RAM_write_qword(core->stack, core->regr[SP], imm.whole_word,
@@ -2491,6 +2602,7 @@ EXEC64(push_memq) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[SP] += 8;
@@ -2507,12 +2619,14 @@ EXEC64(pop_memb) {
     // This will not fail at all
     // i.e this section should never be executed
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (merry_core_mem_access_WRITE_DATA_byte(
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, tmp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[SP] -= 1;
@@ -2529,12 +2643,14 @@ EXEC64(pop_memw) {
     // This will not fail at all
     // i.e this section should never be executed
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (merry_core_mem_access_WRITE_DATA_word(
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, tmp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[SP] -= 2;
@@ -2551,12 +2667,14 @@ EXEC64(pop_memd) {
     // This will not fail at all
     // i.e this section should never be executed
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (merry_core_mem_access_WRITE_DATA_dword(
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, tmp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[SP] -= 4;
@@ -2573,12 +2691,14 @@ EXEC64(pop_memq) {
     // This will not fail at all
     // i.e this section should never be executed
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   if (merry_core_mem_access_WRITE_DATA_qword(
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, tmp) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[SP] -= 8;
@@ -2596,6 +2716,7 @@ EXEC64(loadsb) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[inst.bytes.b1 & GPC_64_LAST_REGR] = tmp;
@@ -2613,6 +2734,7 @@ EXEC64(loadsw) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[inst.bytes.b1 & GPC_64_LAST_REGR] = tmp;
@@ -2630,6 +2752,7 @@ EXEC64(loadsd) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[inst.bytes.b1 & GPC_64_LAST_REGR] = tmp;
@@ -2647,6 +2770,7 @@ EXEC64(loadsq) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[inst.bytes.b1 & GPC_64_LAST_REGR] = tmp;
@@ -2664,6 +2788,7 @@ EXEC64(storesb) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -2681,6 +2806,7 @@ EXEC64(storesw) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -2698,6 +2824,7 @@ EXEC64(storesd) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -2714,6 +2841,7 @@ EXEC64(storesq) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -2725,6 +2853,7 @@ EXEC64(and_imm) {
                                      core->base->ram, core->pc,
                                      &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[inst.bytes.b7 & GPC_64_LAST_REGR] &= imm;
@@ -2737,6 +2866,7 @@ EXEC64(or_imm) {
                                      core->base->ram, core->pc,
                                      &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[inst.bytes.b7 & GPC_64_LAST_REGR] |= imm;
@@ -2749,6 +2879,7 @@ EXEC64(xor_imm) {
                                      core->base->ram, core->pc,
                                      &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[inst.bytes.b7 & GPC_64_LAST_REGR] ^= imm;
@@ -2761,6 +2892,7 @@ EXEC64(cmp_imm) {
                                      core->base->ram, core->pc,
                                      &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   merry_compare_two_values(imm, core->regr[inst.bytes.b7 & GPC_64_LAST_REGR],
@@ -2773,6 +2905,7 @@ EXEC64(cmp_imm_memb) {
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm.bytes.b7) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   merry_compare_two_values(imm.whole_word,
@@ -2787,6 +2920,7 @@ EXEC64(cmp_imm_memw) {
           inst.whole_word & 0xFFFFFFFFFFFF,
           &imm.half_half_words.w3) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   merry_compare_two_values(imm.whole_word,
@@ -2801,6 +2935,7 @@ EXEC64(cmp_imm_memd) {
                                            inst.whole_word & 0xFFFFFFFFFFFF,
                                            &imm.half_words.w1) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   merry_compare_two_values(imm.whole_word,
@@ -2814,6 +2949,7 @@ EXEC64(cmp_imm_memq) {
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm.whole_word) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   merry_compare_two_values(imm.whole_word,
@@ -2832,6 +2968,7 @@ EXEC64(sin) {
     core->req->type = PROBLEM_ENCOUNTERED;
     merry_SEND_REQUEST(core->req);
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   for (msize_t i = 0; i < len; i++) {
@@ -2841,6 +2978,7 @@ EXEC64(sin) {
                                             core->base->ram, addr, temp,
                                             len) == RET_FAILURE)
     core->base->stop = mtrue;
+  core->base->terminate = mtrue;
   free(temp);
 }
 
@@ -2850,9 +2988,10 @@ EXEC64(sout) {
   mbptr_t temp;
   if (merry_core_base_mem_access_bulk_read(core->req, &core->base->state,
                                            core->base->ram, addr, &temp,
-                                           len) == RET_FAILURE)
+                                           len) == RET_FAILURE) {
     core->base->stop = mtrue;
-  else {
+    core->base->terminate = mtrue;
+  } else {
     printf("%s", temp);
     free(temp);
   }
@@ -2865,6 +3004,7 @@ EXEC64(loadb) {
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] = imm;
@@ -2877,6 +3017,7 @@ EXEC64(storeb) {
           inst.whole_word & 0xFFFFFFFFFFFF,
           core->regr[op1] & 0xFF) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -2888,6 +3029,7 @@ EXEC64(loadw) {
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] = imm;
@@ -2900,6 +3042,7 @@ EXEC64(storew) {
           inst.whole_word & 0xFFFFFFFFFFFF,
           core->regr[op1] & 0xFFFF) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -2911,6 +3054,7 @@ EXEC64(loadd) {
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] = imm;
@@ -2923,6 +3067,7 @@ EXEC64(stored) {
           inst.whole_word & 0xFFFFFFFFFFFF,
           core->regr[op1] & 0xFFFFFFFF) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -2934,6 +3079,7 @@ EXEC64(loadq) {
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] = imm;
@@ -2945,6 +3091,7 @@ EXEC64(storeq) {
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, core->regr[op1]) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -2957,6 +3104,7 @@ EXEC64(loadb_reg) {
                                           core->base->ram, core->regr[op2],
                                           &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] = imm;
@@ -2969,6 +3117,7 @@ EXEC64(storeb_reg) {
           core->req, &core->base->state, core->base->ram, core->regr[op2],
           core->regr[op1] & 0xFF) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -2981,6 +3130,7 @@ EXEC64(loadw_reg) {
                                           core->base->ram, core->regr[op2],
                                           &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] = imm;
@@ -2993,6 +3143,7 @@ EXEC64(storew_reg) {
           core->req, &core->base->state, core->base->ram, core->regr[op2],
           core->regr[op1] & 0xFFFF) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -3005,6 +3156,7 @@ EXEC64(loadd_reg) {
                                            core->base->ram, core->regr[op2],
                                            &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] = imm;
@@ -3017,6 +3169,7 @@ EXEC64(stored_reg) {
           core->req, &core->base->state, core->base->ram, core->regr[op2],
           core->regr[op1] & 0xFFFFFFFF) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -3028,6 +3181,7 @@ EXEC64(loadq_reg) {
                                            core->base->ram, core->regr[op2],
                                            &core->regr[op1]) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -3039,6 +3193,7 @@ EXEC64(storeq_reg) {
                                              core->base->ram, core->regr[op2],
                                              core->regr[op1]) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -3050,6 +3205,7 @@ EXEC64(atm_loadb) {
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] = imm;
@@ -3062,6 +3218,7 @@ EXEC64(atm_loadw) {
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] = imm;
@@ -3074,6 +3231,7 @@ EXEC64(atm_loadd) {
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] = imm;
@@ -3086,6 +3244,7 @@ EXEC64(atm_loadq) {
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] = imm;
@@ -3097,6 +3256,7 @@ EXEC64(atm_storeb) {
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, core->regr[op1]) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -3107,6 +3267,7 @@ EXEC64(atm_storew) {
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, core->regr[op1]) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -3117,6 +3278,7 @@ EXEC64(atm_stored) {
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, core->regr[op1]) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -3127,6 +3289,7 @@ EXEC64(atm_storeq) {
           core->req, &core->base->state, core->base->ram,
           inst.whole_word & 0xFFFFFFFFFFFF, core->regr[op1]) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -3139,6 +3302,7 @@ EXEC64(atm_loadb_reg) {
                                               core->base->ram, core->regr[op2],
                                               &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] = imm;
@@ -3152,6 +3316,7 @@ EXEC64(atm_loadw_reg) {
                                               core->base->ram, core->regr[op2],
                                               &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] = imm;
@@ -3165,6 +3330,7 @@ EXEC64(atm_loadd_reg) {
                                                core->base->ram, core->regr[op2],
                                                &imm) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   core->regr[op1] = imm;
@@ -3177,6 +3343,7 @@ EXEC64(atm_loadq_reg) {
           core->req, &core->base->state, core->base->ram, core->regr[op2],
           &core->regr[op1]) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -3188,6 +3355,7 @@ EXEC64(atm_storeb_reg) {
           core->req, &core->base->state, core->base->ram, core->regr[op1],
           core->regr[op2] & 0xFF) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -3199,6 +3367,7 @@ EXEC64(atm_storew_reg) {
           core->req, &core->base->state, core->base->ram, core->regr[op1],
           core->regr[op2] & 0xFFFF) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -3210,6 +3379,7 @@ EXEC64(atm_stored_reg) {
           core->req, &core->base->state, core->base->ram, core->regr[op1],
           core->regr[op2] & 0xFFFFFFFF) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -3221,6 +3391,7 @@ EXEC64(atm_storeq_reg) {
           core->req, &core->base->state, core->base->ram, core->regr[op1],
           core->regr[op2]) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
 }
@@ -3234,6 +3405,7 @@ EXEC64(cmpxchg) {
                                      core->base->iram, core->pc,
                                      &address) == RET_FAILURE) {
     core->base->stop = mtrue;
+    core->base->terminate = mtrue;
     return;
   }
   MerryFlagsRegr reg = core->fregr;
@@ -3246,6 +3418,7 @@ EXEC64(cmpxchg) {
     if (merry_SEND_REQUEST(core->req) == RET_FAILURE ||
         core->req->args[0] == 1) {
       core->base->stop = mtrue;
+      core->base->terminate = mtrue;
       core->fregr = reg;
       return;
     }

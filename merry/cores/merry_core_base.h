@@ -23,6 +23,7 @@
 #include "merry_dynamic_list.h"
 #include "merry_platform.h"
 #include "merry_queue.h"
+#include "merry_queue_simple.h"
 #include "merry_ram.h"
 #include "merry_state.h"
 #include "merry_types.h"
@@ -34,6 +35,7 @@
 typedef struct MerryCoreBase MerryCoreBase;
 typedef struct MerryFlagsRegr MerryFlagsRegr;
 typedef struct MerryFFlagsRegr MerryFFlagsRegr;
+typedef struct MerryWildRequest MerryWildRequest;
 // Some of the functions that the cores have to provide
 // cptr is the core: Get the core details
 _MERRY_DEFINE_FUNC_PTR_(MerryCoreBase *, mcoredetails_t, MerryState *state);
@@ -71,20 +73,18 @@ struct MerryCoreBase {
 
   MerryRAM *iram, *ram;
 
-  unsigned int core_id;   // assigned by Graves for every core
-  unsigned int unique_id; // Cannot be shared
-  mbool_t priviledge;     // If not priviledged, cannot perform some things
+  mqword_t core_id;   // assigned by Graves for every core
+  mqword_t unique_id; // Cannot be shared
+  mqword_t group_id;
+  mbool_t priviledge; // If not priviledged, cannot perform some things
   mbool_t
       do_not_disturb; // if set, no wild requests or pause will affect the core
-  mbool_t ignore_pause;          // if set, cannot be paused
-  mbool_t stop;                  // stop execution or perform some action
+  mbool_t ignore_pause; // if set, cannot be paused
+  mbool_t stop;         // stop execution or perform some action
+  mbool_t terminate;
   mbool_t wrequest;              // some wild request is available
   mbool_t pause;                 // pause the vcore for a while
   mbool_t wild_request_hdlr_set; // is the wild request handler set?
-
-  mbool_t occupied; // implying that: (stop || wrequest || pause)? DONOT ACCEPT
-                    // ANOTHER FLAG: ACCEPT ANOTHER FLAG; meaning only one flag
-                    // to be set at once
 
   mbool_t permission_granted; // non-priviledged vcore must ask for
                               // permission from it's priviledged
@@ -101,11 +101,18 @@ struct MerryCoreBase {
   mcore_t core_type;
   MerryState state; // The state of the core
 
-  mqword_t wild_request;
+  MerryQueueSimple *wild_request;
   mqword_t wild_request_hdlr;
 
   // MerryDynamicQueue *execution_queue;
   MerryDynamicList *execution_states;
+};
+
+struct MerryWildRequest {
+  msize_t requester_id;
+  msize_t requester_uid;
+  msize_t request;
+  msize_t arg; // A memory address to some structure should suffice
 };
 
 struct MerryFFlagsRegr {

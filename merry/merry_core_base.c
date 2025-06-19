@@ -6,6 +6,7 @@ void merry_core_base_clean(MerryCoreBase *base) {
   merry_cond_destroy(&base->cond);
   //  merry_dynamic_queue_destroy(base->execution_queue);
   merry_destroy_dynamic_list(base->execution_states);
+  merry_destroy_simple_queue(base->wild_request);
   free(base);
 }
 
