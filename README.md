@@ -6,7 +6,7 @@ An attempt was made to write an assembler to showcase the virtual machine but I 
 **NOTE**: __Visit docs/merry for documentation.__
 
 # LICENSE
-This project is released under the [MIT License](https://www.github.com/MegrajChauhan/Merry/blob/master/LICENSE).
+This project is released under the [License](https://www.github.com/MegrajChauhan/Merry/blob/master/LICENSE).
 
 # Contributing
 Currently there are no guidelines however, you may:
@@ -19,3 +19,5 @@ You may also contribute via [Patreon](https://www.patreon.com/AryanChauhan)
 
 # Contacting
 You may contact me via the links provided on the [profile](https://github.com/MegrajChauhan).
+
+More detailed documentations and README coming soon....
