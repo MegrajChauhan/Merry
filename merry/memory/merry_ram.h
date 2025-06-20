@@ -40,6 +40,18 @@ struct MerryRAM {
   mmutex_t lock;
 };
 
+struct MerryRAMRepr {
+  MerryRAM *ram;
+  msize_t shared_count; // How many vcores share this RAM?
+  msize_t max_page_count;
+
+  mbool_t shareable;             // Can this RAM be shared?
+  mbool_t cross_group_shareable; // Should this RAM be shared between
+                                 // groups(only if shareable is mtrue)?
+  mbool_t keep_fixed;            // Keep the number of pages fixed
+  mbool_t have_max_size; // Should the RAM have a limit to its dynamic length?
+};
+
 MerryRAM *merry_create_RAM(msize_t number_of_pages, MerryState *state);
 
 mret_t merry_RAM_add_pages(MerryRAM *ram, msize_t num,

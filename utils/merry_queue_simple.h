@@ -19,6 +19,8 @@ struct MerryQueueSimple {
 #define merry_simple_queue_empty(queue) ((queue)->head == (mqword_t)(-1))
 #define merry_simple_queue_full(queue)                                         \
   ((((queue)->rear + 1) % (queue)->buf_cap) == (queue)->head)
+#define merry_simple_queue_clear(queue)                                        \
+  ((queue)->head = (queue)->rear = (mqword_t)(-1))
 
 MerryQueueSimple *merry_create_simple_queue(msize_t cap, msize_t elen,
                                             MerryState *state);

@@ -26,6 +26,19 @@
 
 #define REQ_HDLR(name) void name(MerryGravesRequest *req)
 #define PREQ_HDLR(name) void name(MerryGravesRequest *req)
+#define merry_is_vcore_id_valid(id) (id < graves.core_count)
+#define merry_graves_check_vcore_priviledge_or_permission(repr)                \
+  ((repr) != NULL && (repr)->cptr != NULL &&                                   \
+   (((repr)->base->priviledge == mtrue) ||                                     \
+    ((repr)->base->permission_granted == mtrue)))
+
+#define merry_graves_check_vcore_priviledge(repr)                              \
+  ((repr) != NULL && (repr)->cptr != NULL &&                                   \
+   (((repr)->base->priviledge == mtrue)))
+
+#define merry_graves_check_vcore_alive_or_dead(repr, uid)                      \
+  ((repr) != NULL && (repr)->cptr != NULL && (repr)->base->unique_id == uid && \
+   (repr)->base->terminate == mfalse)
 
 typedef struct MerryGraves MerryGraves;
 typedef struct MerryGravesCoreRepr MerryGravesCoreRepr;
@@ -75,15 +88,12 @@ mret_t merry_graves_find_old_core(msize_t *ind);
 
 mptr_t merry_graves_get_hands_on_cptr(msize_t id);
 
-mret_t merry_graves_bestow_priviledge(msize_t bestower, msize_t bestowed);
+mret_t merry_graves_bestow_priviledge(MerryGravesCoreRepr *bestower,
+                                      MerryGravesCoreRepr *bestowed,
+                                      mqptr_t ret);
 
 void merry_graves_encountered_error_serving(merrOrigin_t orig, mqword_t err,
                                             MerryCoreBase *base);
-
-mbool_t merry_graves_check_vcore_priviledge_or_permission(msize_t id);
-
-mbool_t merry_graves_check_vcore_alive_or_dead(msize_t id, msize_t uid);
-
 int merry_GRAVES_RULE(int argc, char **argv);
 
 _THRET_T_ merry_graves_run_VM(void *arg);
