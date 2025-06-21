@@ -151,7 +151,8 @@ mret_t merry_graves_bestow_priviledge(MerryGravesCoreRepr *bestower,
   if (bestowed->base->group_id != bestower->base->group_id) {
     *ret = NOT_THE_SAME_GROUP;
     return RET_FAILURE;
-  } else if (bestower->base->priviledge != mtrue) {
+  } else if (bestower->base->priviledge != mtrue ||
+             bestower->base->permission_to_bestow_priviledge == mfalse) {
     *ret = NOT_PRIVILEDGED;
     return RET_FAILURE;
   }
@@ -357,8 +358,29 @@ REQ_HDLR(HANDLE_PROGRAM_REQUEST) {
   case UNPAUSE:
     HANDLE_UNPAUSE(req);
     break;
-  case GRANT_PERMISSION:
-    HANDLE_GRANT_PERMISSION(req);
+  case GRANT_PERMISSION_TO_CREATE_THREAD:
+    HANDLE_GRANT_PERMISSION_TO_CREATE_THREAD(req);
+    break;
+  case GRANT_PERMISSION_TO_ADD_MEM_PAGE:
+    HANDLE_GRANT_PERMISSION_TO_ADD_MEM_PAGE(req);
+    break;
+  case GRANT_PERMISSION_TO_CREATE_NEW_GROUP:
+    HANDLE_GRANT_PERMISSION_TO_CREATE_NEW_GROUP(req);
+    break;
+  case GRANT_PERMISSION_TO_BESTOW_PRIVILEDGE:
+    HANDLE_GRANT_PERMISSION_TO_BESTOW_PRIVILEDGE(req);
+    break;
+  case GRANT_PERMISSION_TO_PAUSE:
+    HANDLE_GRANT_PERMISSION_TO_PAUSE(req);
+    break;
+  case GRANT_PERMISSION_TO_UNPAUSE:
+    HANDLE_GRANT_PERMISSION_TO_UNPAUSE(req);
+    break;
+  case GRANT_PERMISSION_TO_KILL_CORE:
+    HANDLE_GRANT_PERMISSION_TO_KILL_CORE(req);
+    break;
+  case GRANT_PERMISSION_TO_CHANGE_PARENT:
+    HANDLE_GRANT_PERMISSION_TO_CHANGE_PARENT(req);
     break;
   case IS_CORE_DEAD:
     HANDLE_IS_CORE_DEAD(req);
@@ -405,11 +427,15 @@ REQ_HDLR(HANDLE_PROGRAM_REQUEST) {
 PREQ_HDLR(HANDLE_NEW_THREAD) {
   MerryGravesCoreRepr *repr =
       merry_dynamic_list_at(graves.all_cores, req->base->core_id);
-  if (!merry_graves_check_vcore_priviledge_or_permission(repr)) {
+  if (merry_graves_check_vcore_priviledge(repr) ||
+      repr->base->permission_to_create_thread) {
     req->args[0] = REQUEST_FAILED;
     req->args[1] = NOT_PRIVILEDGED;
     return;
   }
+
+  repr->base->permission_to_create_thread = mfalse;
+
   msize_t id = 0;
   if (merry_graves_add_new_core(req->args[1] & __CORE_TYPE_COUNT, req->args[2],
                                 req->base->core_id, req->base->unique_id,
@@ -431,11 +457,15 @@ PREQ_HDLR(HANDLE_NEW_THREAD) {
 PREQ_HDLR(HANDLE_ADD_A_NEW_DATA_MEMORY_PAGE) {
   MerryGravesCoreRepr *repr =
       merry_dynamic_list_at(graves.all_cores, req->base->core_id);
-  if (!merry_graves_check_vcore_priviledge_or_permission(repr)) {
+  if (merry_graves_check_vcore_priviledge(repr) ||
+      repr->base->permission_to_add_mem_page) {
     req->args[0] = REQUEST_FAILED;
     req->args[1] = NOT_PRIVILEDGED;
     return;
   }
+
+  repr->base->permission_to_add_mem_page = mfalse;
+
   msize_t tmp = req->base->ram->page_count;
 
   if (merry_RAM_add_pages(req->base->ram, req->args[1], &graves.master_state) ==
@@ -555,11 +585,15 @@ PREQ_HDLR(HANDLE_NEW_GROUP) {
   // make a new vcore for a new group
   MerryGravesCoreRepr *repr =
       merry_dynamic_list_at(graves.all_cores, req->base->core_id);
-  if (!merry_graves_check_vcore_priviledge_or_permission(repr)) {
+  if (merry_graves_check_vcore_priviledge(repr) ||
+      repr->base->permission_to_create_group) {
     req->args[0] = REQUEST_FAILED;
     req->args[1] = NOT_PRIVILEDGED;
     return;
   }
+
+  repr->base->permission_to_create_group = mfalse;
+
   msize_t id = 0;
   graves.group_count++;
   if (merry_graves_add_new_core(req->args[1] & __CORE_TYPE_COUNT, req->args[2],
@@ -592,6 +626,7 @@ PREQ_HDLR(HANDLE_BESTOW_PRIVILEDGE) {
                                                 &req->args[1]) == RET_FAILURE
                      ? REQUEST_FAILED
                      : REQUEST_SERVED;
+  bestower->base->permission_to_bestow_priviledge = mfalse;
 }
 
 PREQ_HDLR(HANDLE_DO_NOT_DISTURB) { req->base->do_not_disturb = mtrue; }
@@ -652,11 +687,15 @@ PREQ_HDLR(HANDLE_PAUSE) {
       merry_dynamic_list_at(graves.all_cores, req->args[1]);
   MerryGravesCoreRepr *this =
       merry_dynamic_list_at(graves.all_cores, req->base->core_id);
-  if (!merry_graves_check_vcore_priviledge_or_permission(this)) {
+  if (merry_graves_check_vcore_priviledge(this) ||
+      this->base->permission_to_pause) {
     req->args[0] = REQUEST_FAILED;
     req->args[1] = NOT_PRIVILEDGED;
     return;
   }
+
+  this->base->permission_to_pause = mfalse;
+
   if (!merry_is_vcore_id_valid(req->args[1])) {
     req->args[0] = REQUEST_FAILED;
     req->args[1] = INVALID_CORE_ID;
@@ -686,11 +725,15 @@ PREQ_HDLR(HANDLE_UNPAUSE) {
       merry_dynamic_list_at(graves.all_cores, req->args[1]);
   MerryGravesCoreRepr *this =
       merry_dynamic_list_at(graves.all_cores, req->base->core_id);
-  if (!merry_graves_check_vcore_priviledge_or_permission(this)) {
+  if (merry_graves_check_vcore_priviledge(this) ||
+      this->base->permission_to_unpause) {
     req->args[0] = REQUEST_FAILED;
     req->args[1] = NOT_PRIVILEDGED;
     return;
   }
+
+  this->base->permission_to_unpause = mfalse;
+
   if (!merry_is_vcore_id_valid(req->args[1])) {
     req->args[0] = REQUEST_FAILED;
     req->args[1] = INVALID_CORE_ID;
@@ -713,12 +756,12 @@ PREQ_HDLR(HANDLE_UNPAUSE) {
   req->args[0] = REQUEST_SERVED;
 }
 
-PREQ_HDLR(HANDLE_GRANT_PERMISSION) {
+PREQ_HDLR(HANDLE_GRANT_PERMISSION_TO_CREATE_THREAD) {
   MerryGravesCoreRepr *repr =
       merry_dynamic_list_at(graves.all_cores, req->args[1]);
   MerryGravesCoreRepr *this =
       merry_dynamic_list_at(graves.all_cores, req->base->core_id);
-  if (!merry_graves_check_vcore_priviledge_or_permission(this)) {
+  if (merry_graves_check_vcore_priviledge(this)) {
     req->args[0] = REQUEST_FAILED;
     req->args[1] = NOT_PRIVILEDGED;
     return;
@@ -740,7 +783,224 @@ PREQ_HDLR(HANDLE_GRANT_PERMISSION) {
     req->args[1] = NOT_THE_SAME_GROUP;
     return;
   }
-  repr->base->permission_granted = mtrue;
+  repr->base->permission_to_create_thread = mtrue;
+  req->args[0] = REQUEST_SERVED;
+}
+
+PREQ_HDLR(HANDLE_GRANT_PERMISSION_TO_ADD_NEW_PAGE) {
+  MerryGravesCoreRepr *repr =
+      merry_dynamic_list_at(graves.all_cores, req->args[1]);
+  MerryGravesCoreRepr *this =
+      merry_dynamic_list_at(graves.all_cores, req->base->core_id);
+  if (merry_graves_check_vcore_priviledge(this)) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = NOT_PRIVILEDGED;
+    return;
+  }
+  if (!merry_is_vcore_id_valid(req->args[1])) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = INVALID_CORE_ID;
+    return;
+  }
+  if (!merry_graves_check_vcore_alive_or_dead(repr, req->args[2])) {
+    // the core is already dead
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = CORE_DEAD;
+    return;
+  }
+
+  if (req->base->group_id != repr->base->group_id) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = NOT_THE_SAME_GROUP;
+    return;
+  }
+  repr->base->permission_to_add_mem_page = mtrue;
+  req->args[0] = REQUEST_SERVED;
+}
+
+PREQ_HDLR(HANDLE_GRANT_PERMISSION_TO_CREATE_NEW_GROUP) {
+  MerryGravesCoreRepr *repr =
+      merry_dynamic_list_at(graves.all_cores, req->args[1]);
+  MerryGravesCoreRepr *this =
+      merry_dynamic_list_at(graves.all_cores, req->base->core_id);
+  if (merry_graves_check_vcore_priviledge(this)) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = NOT_PRIVILEDGED;
+    return;
+  }
+  if (!merry_is_vcore_id_valid(req->args[1])) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = INVALID_CORE_ID;
+    return;
+  }
+  if (!merry_graves_check_vcore_alive_or_dead(repr, req->args[2])) {
+    // the core is already dead
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = CORE_DEAD;
+    return;
+  }
+
+  if (req->base->group_id != repr->base->group_id) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = NOT_THE_SAME_GROUP;
+    return;
+  }
+  repr->base->permission_to_create_group = mtrue;
+  req->args[0] = REQUEST_SERVED;
+}
+
+PREQ_HDLR(HANDLE_GRANT_PERMISSION_TO_BESTOW_PRIVILEDGE) {
+  MerryGravesCoreRepr *repr =
+      merry_dynamic_list_at(graves.all_cores, req->args[1]);
+  MerryGravesCoreRepr *this =
+      merry_dynamic_list_at(graves.all_cores, req->base->core_id);
+  if (merry_graves_check_vcore_priviledge(this)) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = NOT_PRIVILEDGED;
+    return;
+  }
+  if (!merry_is_vcore_id_valid(req->args[1])) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = INVALID_CORE_ID;
+    return;
+  }
+  if (!merry_graves_check_vcore_alive_or_dead(repr, req->args[2])) {
+    // the core is already dead
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = CORE_DEAD;
+    return;
+  }
+
+  if (req->base->group_id != repr->base->group_id) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = NOT_THE_SAME_GROUP;
+    return;
+  }
+  repr->base->permission_to_bestow_priviledge = mtrue;
+  req->args[0] = REQUEST_SERVED;
+}
+
+PREQ_HDLR(HANDLE_GRANT_PERMISSION_TO_PAUSE) {
+  MerryGravesCoreRepr *repr =
+      merry_dynamic_list_at(graves.all_cores, req->args[1]);
+  MerryGravesCoreRepr *this =
+      merry_dynamic_list_at(graves.all_cores, req->base->core_id);
+  if (merry_graves_check_vcore_priviledge(this)) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = NOT_PRIVILEDGED;
+    return;
+  }
+  if (!merry_is_vcore_id_valid(req->args[1])) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = INVALID_CORE_ID;
+    return;
+  }
+  if (!merry_graves_check_vcore_alive_or_dead(repr, req->args[2])) {
+    // the core is already dead
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = CORE_DEAD;
+    return;
+  }
+
+  if (req->base->group_id != repr->base->group_id) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = NOT_THE_SAME_GROUP;
+    return;
+  }
+  repr->base->permission_to_pause = mtrue;
+  req->args[0] = REQUEST_SERVED;
+}
+
+PREQ_HDLR(HANDLE_GRANT_PERMISSION_TO_UNPAUSE) {
+  MerryGravesCoreRepr *repr =
+      merry_dynamic_list_at(graves.all_cores, req->args[1]);
+  MerryGravesCoreRepr *this =
+      merry_dynamic_list_at(graves.all_cores, req->base->core_id);
+  if (merry_graves_check_vcore_priviledge(this)) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = NOT_PRIVILEDGED;
+    return;
+  }
+  if (!merry_is_vcore_id_valid(req->args[1])) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = INVALID_CORE_ID;
+    return;
+  }
+  if (!merry_graves_check_vcore_alive_or_dead(repr, req->args[2])) {
+    // the core is already dead
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = CORE_DEAD;
+    return;
+  }
+
+  if (req->base->group_id != repr->base->group_id) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = NOT_THE_SAME_GROUP;
+    return;
+  }
+  repr->base->permission_to_unpause = mtrue;
+  req->args[0] = REQUEST_SERVED;
+}
+
+PREQ_HDLR(HANDLE_GRANT_PERMISSION_TO_KILL_CORE) {
+  MerryGravesCoreRepr *repr =
+      merry_dynamic_list_at(graves.all_cores, req->args[1]);
+  MerryGravesCoreRepr *this =
+      merry_dynamic_list_at(graves.all_cores, req->base->core_id);
+  if (merry_graves_check_vcore_priviledge(this)) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = NOT_PRIVILEDGED;
+    return;
+  }
+  if (!merry_is_vcore_id_valid(req->args[1])) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = INVALID_CORE_ID;
+    return;
+  }
+  if (!merry_graves_check_vcore_alive_or_dead(repr, req->args[2])) {
+    // the core is already dead
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = CORE_DEAD;
+    return;
+  }
+
+  if (req->base->group_id != repr->base->group_id) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = NOT_THE_SAME_GROUP;
+    return;
+  }
+  repr->base->permission_to_kill_core = mtrue;
+  req->args[0] = REQUEST_SERVED;
+}
+
+PREQ_HDLR(HANDLE_GRANT_PERMISSION_TO_CHANGE_PARENT) {
+  MerryGravesCoreRepr *repr =
+      merry_dynamic_list_at(graves.all_cores, req->args[1]);
+  MerryGravesCoreRepr *this =
+      merry_dynamic_list_at(graves.all_cores, req->base->core_id);
+  if (merry_graves_check_vcore_priviledge(this)) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = NOT_PRIVILEDGED;
+    return;
+  }
+  if (!merry_is_vcore_id_valid(req->args[1])) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = INVALID_CORE_ID;
+    return;
+  }
+  if (!merry_graves_check_vcore_alive_or_dead(repr, req->args[2])) {
+    // the core is already dead
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = CORE_DEAD;
+    return;
+  }
+
+  if (req->base->group_id != repr->base->group_id) {
+    req->args[0] = REQUEST_FAILED;
+    req->args[1] = NOT_THE_SAME_GROUP;
+    return;
+  }
+  repr->base->permission_to_change_parent = mtrue;
   req->args[0] = REQUEST_SERVED;
 }
 
@@ -819,11 +1079,15 @@ PREQ_HDLR(HANDLE_KILL_CORE) {
       merry_dynamic_list_at(graves.all_cores, req->args[1]);
   MerryGravesCoreRepr *this =
       merry_dynamic_list_at(graves.all_cores, req->base->core_id);
-  if (!merry_graves_check_vcore_priviledge_or_permission(this)) {
+  if (merry_graves_check_vcore_priviledge(this) ||
+      this->base->permission_to_kill_core) {
     req->args[0] = REQUEST_FAILED;
     req->args[1] = NOT_PRIVILEDGED;
     return;
   }
+
+  this->base->permission_to_kill_core = mfalse;
+
   if (!merry_is_vcore_id_valid(req->args[1])) {
     req->args[0] = REQUEST_FAILED;
     req->args[1] = INVALID_CORE_ID;
@@ -863,12 +1127,16 @@ PREQ_HDLR(HANDLE_CHANGE_PARENT) {
   // With permission.
   MerryGravesCoreRepr *this =
       merry_dynamic_list_at(graves.all_cores, req->base->core_id);
-  if (!merry_graves_check_vcore_priviledge_or_permission(this)) {
+  if (merry_graves_check_vcore_priviledge(this) ||
+      this->base->permission_to_change_parent) {
     // This child doesn't have permission or priviledge
     req->args[0] = REQUEST_FAILED;
     req->args[1] = NOT_PRIVILEDGED;
     return;
   }
+
+  this->base->permission_to_change_parent = mfalse;
+
   // Now that the child CAN change its parent, so,
   // Check if the parent is valid
   // Check if the parent is alive
@@ -890,7 +1158,7 @@ PREQ_HDLR(HANDLE_CHANGE_PARENT) {
     return;
   }
 
-  if (!merry_graves_check_vcore_priviledge(newparent)) {
+  if (merry_graves_check_vcore_priviledge(newparent)) {
     req->args[0] = REQUEST_FAILED;
     req->args[1] = NEW_PARENT_NOT_PRIVILEDGED;
     return;
@@ -926,11 +1194,12 @@ PREQ_HDLR(HANDLE_CHANGE_CHILD_PARENT) {
   MerryGravesCoreRepr *newparent =
       merry_dynamic_list_at(graves.all_cores, req->args[3]);
 
-  if (!merry_graves_check_vcore_priviledge_or_permission(this)) {
+  if (!merry_graves_check_vcore_priviledge(this)) {
     req->args[0] = REQUEST_FAILED;
     req->args[1] = NOT_PRIVILEDGED;
     return;
   }
+
   if (!merry_is_vcore_id_valid(req->args[1]) ||
       !merry_is_vcore_id_valid(req->args[3])) {
     req->args[0] = REQUEST_FAILED;

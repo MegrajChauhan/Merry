@@ -73,6 +73,14 @@ MerryCoreBase *merry_64_bit_core_base(MerryState *state) {
   base->wrequest = mfalse;
   base->pause = mfalse;
   base->stop = mfalse;
+  base->permission_to_pause = mfalse;
+  base->permission_to_unpause = mfalse;
+  base->permission_to_add_mem_page = mfalse;
+  base->permission_to_bestow_priviledge = mfalse;
+  base->permission_to_change_parent = mfalse;
+  base->permission_to_create_group = mfalse;
+  base->permission_to_create_thread = mfalse;
+  base->permission_to_kill_core = mfalse;
   base->wild_request_hdlr_set = mfalse;
   base->core_type = __CORE_64_BIT;
   merry_assign_state(base->state, _MERRY_ORIGIN_NONE_, 0);

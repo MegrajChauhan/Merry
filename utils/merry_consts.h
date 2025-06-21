@@ -24,6 +24,7 @@
 
 #define _MERRY_EXECUTING_STATE_INIT_CAP_ 10
 #define _MERRY_WILD_REQUEST_QUEUE_LEN_ 10
+#define _MERRY_DEAD_PAGES_BUFFER_LEN_ 20
 
 typedef struct MerryConsts MerryConsts;
 

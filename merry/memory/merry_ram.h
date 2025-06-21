@@ -36,26 +36,20 @@ typedef struct MerryRAM MerryRAM;
 
 struct MerryRAM {
   MerryNormalMemoryPage **pages; // all of the pages
-  msize_t page_count;            // Number of pages
-  mmutex_t lock;
-};
-
-struct MerryRAMRepr {
-  MerryRAM *ram;
-  msize_t shared_count; // How many vcores share this RAM?
-  msize_t max_page_count;
-
-  mbool_t shareable;             // Can this RAM be shared?
-  mbool_t cross_group_shareable; // Should this RAM be shared between
-                                 // groups(only if shareable is mtrue)?
-  mbool_t keep_fixed;            // Keep the number of pages fixed
-  mbool_t have_max_size; // Should the RAM have a limit to its dynamic length?
+  MerryNormalMemoryPage **tmp;   // temporary pages
+  msize_t number_of_changes; // The core that last makes the update frees the
+                             // old pages pointer
+  msize_t page_count;        // Number of pages
+  mbool_t vm_owned;          // is this RAM owned by the VM?
 };
 
 MerryRAM *merry_create_RAM(msize_t number_of_pages, MerryState *state);
 
 mret_t merry_RAM_add_pages(MerryRAM *ram, msize_t num,
                            MerryState *state); // add num new pages
+
+mret_t merry_RAM_append_page(MerryRAM *ram, MerryNormalMemoryPage *page,
+                             MerryState *state);
 
 mret_t merry_RAM_read_byte(MerryRAM *ram, maddress_t address, mbptr_t store_in,
                            MerryState *state);

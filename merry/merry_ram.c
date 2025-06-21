@@ -29,13 +29,9 @@ MerryRAM *merry_create_RAM(msize_t number_of_pages, MerryState *state) {
   }
 
   ram->pages = pages;
+  ram->tmp = NULL;
   ram->page_count = number_of_pages;
-  if (merry_mutex_init(&ram->lock) == RET_FAILURE) {
-    merry_assign_state(*state, _MERRY_INTERNAL_SYSTEM_ERROR_,
-                       _MERRY_FAILED_TO_OBTAIN_LOCK_);
-    goto __rid_of_during_error;
-  }
-
+  ram->vm_owned = mtrue; // Graves will set this
   return ram;
 __rid_of_during_error: // not the best names :(
   for (msize_t j = 0; j < i; j++) {
@@ -79,9 +75,7 @@ mret_t merry_RAM_add_pages(MerryRAM *ram, msize_t num, MerryState *state) {
       goto __rid_of_during_error;
     }
   }
-  ram->page_count = temp;
-  free(ram->pages);
-  ram->pages = pages;
+  ram->tmp = pages;
   return RET_SUCCESS;
 
 __rid_of_during_error:
@@ -90,6 +84,40 @@ __rid_of_during_error:
   }
   free(pages);
   return RET_FAILURE;
+}
+
+mret_t merry_RAM_append_page(MerryRAM *ram, MerryNormalMemoryPage *page,
+                             MerryState *state) {
+  merry_check_ptr(ram);
+  merry_check_ptr(ram->pages);
+  merry_check_ptr(page);
+  merry_assert(ram->page_count != 0);
+
+  register msize_t temp = ram->page_count++;
+  MerryNormalMemoryPage **pages =
+      (MerryNormalMemoryPage **)malloc(sizeof(MerryNormalMemoryPage *) * temp);
+  if (!pages) {
+    merry_assign_state(*state, _MERRY_INTERNAL_SYSTEM_ERROR_,
+                       _MERRY_MEM_ALLOCATION_FAILURE_);
+    merry_obtain_memory_interface_state(state->child_state);
+    return RET_FAILURE;
+  }
+
+  pages[ram->page_count] = page;
+
+  memcpy(pages, ram->pages, sizeof(MerryNormalMemoryPage *) * ram->page_count);
+
+  /*
+   * NOTE: There is a serious security risk here.
+   * What if another core was accessing this memory current and
+   * we just free'd the memory? The core will crash without any
+   * warning.Shared RAMs are a security risk(Even the public RAM!!!)
+   * So to solve this: There is a new pointer "tmp".
+   * Each core will be notified of the change and they can update
+   * themselves.
+   * */
+  ram->tmp = pages;
+  return RET_SUCCESS;
 }
 
 mret_t merry_RAM_read_byte(MerryRAM *ram, maddress_t address, mbptr_t store_in,
@@ -438,7 +466,6 @@ void merry_destroy_RAM(MerryRAM *ram) {
     merry_check_ptr(ram->pages[i]);
     merry_return_normal_memory_page(ram->pages[i]);
   }
-  merry_mutex_destroy(&ram->lock);
   free(ram->pages);
   free(ram);
 }

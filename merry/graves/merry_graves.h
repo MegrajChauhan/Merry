@@ -27,11 +27,6 @@
 #define REQ_HDLR(name) void name(MerryGravesRequest *req)
 #define PREQ_HDLR(name) void name(MerryGravesRequest *req)
 #define merry_is_vcore_id_valid(id) (id < graves.core_count)
-#define merry_graves_check_vcore_priviledge_or_permission(repr)                \
-  ((repr) != NULL && (repr)->cptr != NULL &&                                   \
-   (((repr)->base->priviledge == mtrue) ||                                     \
-    ((repr)->base->permission_granted == mtrue)))
-
 #define merry_graves_check_vcore_priviledge(repr)                              \
   ((repr) != NULL && (repr)->cptr != NULL &&                                   \
    (((repr)->base->priviledge == mtrue)))
@@ -121,7 +116,14 @@ PREQ_HDLR(HANDLE_IGNORE_PAUSE);
 PREQ_HDLR(HANDLE_WILD_REQUEST);
 PREQ_HDLR(HANDLE_PAUSE);
 PREQ_HDLR(HANDLE_UNPAUSE);
-PREQ_HDLR(HANDLE_GRANT_PERMISSION);
+PREQ_HDLR(HANDLE_GRANT_PERMISSION_TO_CREATE_THREAD);
+PREQ_HDLR(HANDLE_GRANT_PERMISSION_TO_ADD_MEM_PAGE);
+PREQ_HDLR(HANDLE_GRANT_PERMISSION_TO_CREATE_NEW_GROUP);
+PREQ_HDLR(HANDLE_GRANT_PERMISSION_TO_BESTOW_PRIVILEDGE);
+PREQ_HDLR(HANDLE_GRANT_PERMISSION_TO_PAUSE);
+PREQ_HDLR(HANDLE_GRANT_PERMISSION_TO_UNPAUSE);
+PREQ_HDLR(HANDLE_GRANT_PERMISSION_TO_KILL_CORE);
+PREQ_HDLR(HANDLE_GRANT_PERMISSION_TO_CHANGE_PARENT);
 PREQ_HDLR(HANDLE_IS_CORE_DEAD);
 PREQ_HDLR(HANDLE_IS_PARENT_ALIVE);
 PREQ_HDLR(HANDLE_GET_CID);

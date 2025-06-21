@@ -86,9 +86,14 @@ struct MerryCoreBase {
   mbool_t pause;                 // pause the vcore for a while
   mbool_t wild_request_hdlr_set; // is the wild request handler set?
 
-  mbool_t permission_granted; // non-priviledged vcore must ask for
-                              // permission from it's priviledged
-                              // parent vcore.
+  mbool_t permission_to_create_thread;
+  mbool_t permission_to_create_group;
+  mbool_t permission_to_add_mem_page;
+  mbool_t permission_to_bestow_priviledge;
+  mbool_t permission_to_pause;
+  mbool_t permission_to_unpause;
+  mbool_t permission_to_kill_core;
+  mbool_t permission_to_change_parent;
 
   mqword_t active_state;
   mqword_t prior_active_state;
