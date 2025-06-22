@@ -98,7 +98,7 @@ mret_t merry_share_RAM(msize_t rid, mqptr_t res, MerryRAMList *l1,
 
 MerryRAMRepr *merry_get_RAM(MerryRAMList *r1, msize_t rid);
 
-msize_t merry_search_for_dead_RAM(MerryRAMList *r1, msize_t threshold);
+msize_t merry_search_for_dead_RAM(MerryRAMList *r1);
 
 mret_t merry_transfer_dead_RAM_pages(MerryRAMList *list, MerryState *state);
 
@@ -106,8 +106,6 @@ mret_t merry_revive_dead_RAM_pages(MerryRAMList *list, MerryRAMRepr *repr,
                                    MerryState *state);
 
 void merry_kill_RAM(MerryRAMRepr *repr);
-
-void merry_keep_RAM_fixed(MerryRAMRepr *repr);
 
 void merry_destroy_RAM_list(MerryRAMList *list);
 // IMPLEMENT THIS SHIT!!!

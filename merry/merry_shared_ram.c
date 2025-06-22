@@ -8,6 +8,20 @@ MerryRAMList *merry_create_RAM_list(MerryState *state) {
                        _MERRY_MEM_ALLOCATION_FAILURE_);
     return RET_NULL;
   }
+  if ((list->rams = merry_create_dynamic_list(1, sizeof(MerryRAMRepr *),
+                                              state)) == RET_NULL) {
+    free(list);
+    return RET_NULL;
+  }
+
+  if ((list->all_dead_pages =
+           merry_create_list(_MERRY_DEAD_PAGES_BUFFER_LEN_,
+                             sizeof(MerryRAMRepr *), state)) == RET_NULL) {
+    merry_dynamic_queue_destroy(list->rams);
+    free(list);
+    return RET_NULL;
+  }
+
   return list;
 }
 
@@ -29,12 +43,72 @@ mret_t merry_move_pages_from_dead_RAM_to_alive_RAM(MerryRAMRepr *alive,
                                                    msize_t count,
                                                    MerryState *state);
 
-MerryRAMRepr *merry_get_RAM(MerryRAMList *r1, msize_t rid);
+MerryRAMRepr *merry_get_RAM(MerryRAMList *r1, msize_t rid) {
+  merry_check_ptr(r1);
+  merry_check_ptr(r1->all_dead_pages);
+  merry_check_ptr(r1->rams);
 
-msize_t merry_search_for_dead_RAM(MerryRAMList *r1, msize_t threshold);
+  if (!merry_is_RAM_id_valid(rid, r1->rams))
+    return RET_NULL;
 
-void merry_kill_RAM(MerryRAMRepr *repr);
+  return *((MerryRAMRepr **)merry_dynamic_list_at(r1->rams, rid));
+}
 
-void merry_keep_RAM_fixed(MerryRAMRepr *repr);
+msize_t merry_search_for_dead_RAM(MerryRAMList *r1) {
+  merry_check_ptr(r1);
+  merry_check_ptr(r1->all_dead_pages);
+  merry_check_ptr(r1->rams);
 
-void merry_destroy_RAM_list(MerryRAMList *list);
+  for (msize_t i = 0; i < merry_dynamic_list_size(r1->rams); i++) {
+    MerryRAMRepr *repr =
+        (((MerryRAMRepr **)
+              r1->rams->buf)[i]); // direct access for faster execution
+    if (repr->state == DEAD)
+      return i;
+  }
+  return (mqword_t)(-1);
+}
+
+mret_t merry_transfer_dead_RAM_pages(MerryRAMList *list, MerryState *state);
+
+mret_t merry_revive_dead_RAM_pages(MerryRAMList *list, MerryRAMRepr *repr,
+                                   MerryState *state);
+
+void merry_kill_RAM(MerryRAMRepr *repr) {
+  // we will not free repr but declare it dead.
+  // The RAM will not be free'd either but it will be
+  // stripped off of its pages
+}
+
+void merry_destroy_RAM_list(MerryRAMList *list) {
+  merry_check_ptr(list);
+  merry_check_ptr(list->all_dead_pages);
+  merry_check_ptr(list->rams);
+
+  for (msize_t i = 0; i < merry_dynamic_list_size(list->rams); i++) {
+    MerryRAMRepr *repr =
+        (((MerryRAMRepr **)
+              list->rams->buf)[i]); // direct access for faster execution
+    merry_destroy_RAM(repr->ram);
+    free(repr);
+    /*
+     * Why is this safe?
+     * When a core shares its RAM with some other core and if either
+     * of them free'd the RAM first then the other will trigger a
+     * double free exception which is why, although it takes more
+     * memory, we will allow Graves to keep track of every RAM list
+     * created and Graves will be entrusted with cleaning the
+     * RAMLists.
+     * */
+  }
+
+  for (msize_t i = 0; i < merry_list_size(list->all_dead_pages); i++) {
+    MerryNormalMemoryPage *page =
+        (((MerryNormalMemoryPage **)list->all_dead_pages->buf)[i]);
+    merry_return_normal_memory_page(page);
+  }
+
+  merry_destroy_dynamic_list(list->rams);
+  merry_destroy_list(list->all_dead_pages);
+  free(list);
+}
