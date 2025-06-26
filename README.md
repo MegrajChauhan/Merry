@@ -1,4 +1,4 @@
-# Merry VM
+9# Merry VM
 
 Merry is an attempt at reimagining computation exploration- a result of 2 years of architectural refinement. It is a powerful virtual machine designed to support multiple computation models, custom memory systems, and privilege-based control — all inside a unified, extensible architecture.
 
@@ -74,8 +74,7 @@ I'm a full-time student in Nepal working on Merry alone, during nights and weeke
 | Platform | Link |
 |---------|------|
 | 🧾 OpenCollective | *[pending approval]* |
-| ❤️ Patreon | [https://patreon.com/YOURNAME](https://patreon.com/AryanChauhan) |
-| 💡 Email (for Payoneer) | `your@email.com` |
+| ❤️ Patreon | [Aryan Chauhan](https://www.patreon.com/AeternumVeritas?utm_campaign=creatorshare_creator) |
 
 Even a small tip or share means a lot. Thank you!
 
