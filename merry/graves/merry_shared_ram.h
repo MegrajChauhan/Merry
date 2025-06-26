@@ -100,12 +100,13 @@ MerryRAMRepr *merry_get_RAM(MerryRAMList *r1, msize_t rid);
 
 msize_t merry_search_for_dead_RAM(MerryRAMList *r1);
 
-mret_t merry_transfer_dead_RAM_pages(MerryRAMList *list, MerryState *state);
+mret_t merry_reclaim_dead_RAM_pages(MerryRAMList *list, MerryState *state);
 
 mret_t merry_revive_dead_RAM_pages(MerryRAMList *list, MerryRAMRepr *repr,
-                                   MerryState *state);
+                                   msize_t num_of_pages, MerryState *state);
 
-void merry_kill_RAM(MerryRAMRepr *repr);
+mret_t merry_kill_RAM(MerryRAMList *list, MerryRAMRepr *repr,
+                      MerryState *state);
 
 void merry_destroy_RAM_list(MerryRAMList *list);
 // IMPLEMENT THIS SHIT!!!

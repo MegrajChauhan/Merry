@@ -19,8 +19,14 @@
 
 #ifndef surelyT
 
-#define surelyT(x) __builtin_expect(!!(x), 1) // tell the compiler that the expression x is most likely to be true
-#define surelyF(x) __builtin_expect(!!(x), 0) // tell the compiler that the expression x is most likely to be false
+#define surelyT(x)                                                             \
+  __builtin_expect(                                                            \
+      !!(x),                                                                   \
+      1) // tell the compiler that the expression x is most likely to be true
+#define surelyF(x)                                                             \
+  __builtin_expect(                                                            \
+      !!(x),                                                                   \
+      0) // tell the compiler that the expression x is most likely to be false
 
 #endif
 
@@ -35,21 +41,24 @@
 #define _MERRY_NO_RETURN_ __attribute__((no_return))
 #define _MERRY_NO_NULL_ __attribute__((nonnull))
 
-#define _MERRY_INTERNAL_ static // for a variable or a function that is localized to a module only
-#define _MERRY_LOCAL_ static    // any static variable inside a function
+#define _MERRY_INTERNAL_                                                       \
+  static // for a variable or a function that is localized to a module only
+#define _MERRY_LOCAL_ static // any static variable inside a function
 
 // tools
-#define merry_talk(f, kind, message, ...) fprintf(f, kind ": " message, __VA_ARGS__)
+#define merry_talk(f, kind, message, ...)                                      \
+  fprintf(f, kind ": " message, __VA_ARGS__)
 
-#define merry_check_condition(cond)                                                                                                     \
-    do                                                                                                                                  \
-    {                                                                                                                                   \
-        if (surelyF(!(cond)))                                                                                                           \
-        {                                                                                                                               \
-            merry_talk(stderr, "ERROR", "Condition: "_MERRY_STRINGIFY_((cond)) ": Failed. Line %d[FILE: %s]\n", __LINE__, __FILE__); \
-            exit(-1);                                                                                                                   \
-        }                                                                                                                               \
-    } while (0)
+#define merry_check_condition(cond)                                            \
+  do {                                                                         \
+    if (surelyF(!(cond))) {                                                    \
+      merry_talk(stderr, "ERROR",                                              \
+                 "Condition: "_MERRY_STRINGIFY_(                               \
+                     (cond)) ": Failed. Line %d[FILE: %s]\n",                  \
+                 __LINE__, __FILE__);                                          \
+      exit(-1);                                                                \
+    }                                                                          \
+  } while (0)
 
 #ifdef _MERRY_RELEASE_
 
@@ -65,8 +74,8 @@
 /**
  * The existence of this pointer checker is based on:
  * -- The VM may pass in NULL pointers or invalid pointers
- * So during the testing, if we figure out which pointers are freed and how, we can solve the issue
- * and this macro is  useless in the release mode.
+ * So during the testing, if we figure out which pointers are freed and how, we
+ * can solve the issue and this macro is  useless in the release mode.
  */
 #define merry_check_ptr(ptr) merry_assert(ptr != NULL)
 
@@ -79,5 +88,12 @@
 #define merry_err(msg, ...) merry_talk(stderr, "ERROR", msg, __VA_ARGS__)
 
 #define merry_msg(msg, ...) fprintf(stderr, msg "\n", __VA_ARGS__)
+
+#define merry_unreachable(msg, ...)                                            \
+  do {                                                                         \
+    merry_talk(stderr, "MERRY PANIC", "Unreachable code executed\n\t" msg,     \
+               __VA_ARGS__);                                                   \
+    exit(-1);                                                                  \
+  } while (0)
 
 #endif
