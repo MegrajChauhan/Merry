@@ -1,4 +1,4 @@
-9# Merry VM
+# Merry VM
 
 Merry is an attempt at reimagining computation exploration- a result of 2 years of architectural refinement. It is a powerful virtual machine designed to support multiple computation models, custom memory systems, and privilege-based control — all inside a unified, extensible architecture.
 
