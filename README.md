@@ -47,7 +47,7 @@ This project at its current stage is for those interested in:
 
 ##  Preview Build
 
-Check out the [latest preview release here](https://github.com/MegrajChauhan/Merry/releases).
+Check out the [latest preview release here](https://github.com/AeternumVeritas/Merry/releases).
 
 Please take the warning seriously.
 ---
@@ -63,7 +63,7 @@ Follow along as I document weekly progress, decisions, bugs, breakdowns, breakth
 ##  Discussions & Feedback
 
 Want to ask questions or offer feedback?  
-Check out the [GitHub Discussions](https://github.com/MegrajChauhan/Merry/discussions) page — I’d love to hear your thoughts or ideas.
+Check out the [GitHub Discussions](https://github.com/AeternumVeritas/Merry/discussions) page — I’d love to hear your thoughts or ideas.
 
 ---
 
@@ -73,7 +73,6 @@ I'm a full-time student in Nepal working on Merry alone, during nights and weeke
 
 | Platform | Link |
 |---------|------|
-| 🧾 OpenCollective | *[pending approval]* |
 | ❤️ Patreon | [Aryan Chauhan](https://www.patreon.com/AeternumVeritas?utm_campaign=creatorshare_creator) |
 
 Even a small tip or share means a lot. Thank you!
@@ -96,7 +95,7 @@ Even a small tip or share means a lot. Thank you!
 **Merry** is built by one person — me.  
 I’m a student, developer, and systems enthusiast trying to create something that lets people play with computing from the ground up.
 
-Want to help or collaborate? Reach out via [GitHub Issues](https://github.com/MegrajChauhan/Merry/issues) or [email](mailto: megrajchauhan123@gmail.com).
+Want to help or collaborate? Reach out via [GitHub Issues](https://github.com/AeternumVeritas/Merry/issues) or [email](mailto: megrajchauhan123@gmail.com).
 
 ---
 
